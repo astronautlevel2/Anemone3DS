@@ -32,21 +32,21 @@ s8 prepareThemes()
 			archive2 = 0x00;
 	}
 
-	retValue = FSUSER_OpenArchive(&ARCHIVE_SD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+	retValue = FSUSER_OpenArchive(&ArchiveSD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
 	u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
 	home.type = PATH_BINARY;
 	home.size = 0xC;
 	home.data = homeMenuPath;
-	retValue = FSUSER_OpenArchive(&ARCHIVE_HOMEEXT, ARCHIVE_EXTDATA, home);	
+	retValue = FSUSER_OpenArchive(&ArchiveHomeExt, ARCHIVE_EXTDATA, home);	
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
 	u32 themePath[3] = {MEDIATYPE_SD, archive1, 0};
 	theme.type = PATH_BINARY;
 	theme.size = 0xC;
 	theme.data = themePath;
-	retValue = FSUSER_OpenArchive(&ARCHIVE_THEMEEXT, ARCHIVE_EXTDATA, theme);	
+	retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);	
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
 	return 0;
@@ -60,11 +60,18 @@ s8 themeInstall()
 	u64 bgmSize;
 	Handle bodyHandle;
 	Handle bgmHandle;
-	
+	u32 bytes;
 	Result retValue;
 
 	// This fails, for some reason, 4 is returned aka NOT FOUND
-	retValue = FSUSER_OpenFile(&bodyHandle, ARCHIVE_SDMC, fsMakePath(PATH_ASCII, u"/Themes/theme/body_LZ.bin"), FS_OPEN_READ, 0);
+	retValue = FSUSER_OpenFile(&bodyHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes/theme/body_LZ.bin"), FS_OPEN_READ, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	retValue = FSFILE_GetSize(bodyHandle, &bodySize);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	body = malloc(sizeof(char) * bodySize);
+	retValue = FSFILE_Read(bodyHandle, &bytes, 0, body, (u64)bodySize);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+
+
 return 0;
 }
