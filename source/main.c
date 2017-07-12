@@ -27,7 +27,7 @@ u8 themeInstall()
 			break;
 		case 2:
 			archive = 0x000002ce;
-			archive2 = 0x00000090;
+			archive2 = 0x00000098;
 			break;
 		case 3:
 			archive = 0x000002cc;
@@ -38,7 +38,18 @@ u8 themeInstall()
 			archive2 = 0;
 			break;
 	}
-	
+
+	u64 ARCHIVE_SD;
+	u64 ARCHIVE_HomeExt;
+	u64 ARCHIVE_ThemeExt;
+
+
+	FSUSER_OpenArchive(&ARCHIVE_SD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+	u32 homemenu_path[3] = {MEDIATYPE_SD, archive2, 0};
+	FSUSER_OpenArchive(&ARCHIVE_HomeExt, ARCHIVE_EXTDATA, fsMakePath(PATH_BINARY,  homemenu_path));
+
+	u32 theme_path[3] = {MEDIATYPE_SD, archive, 0};
+	FSUSER_OpenArchive(&ARCHIVE_ThemeExt, ARCHIVE_EXTDATA, fsMakePath(PATH_BINARY, theme_path));
 
 	FSUSER_OpenFile(&bodyHandle, ARCHIVE_SDMC, fsMakePath(PATH_ASCII, "/Themes/theme/body_LZ.bin"), FS_OPEN_READ, 0);
 	
@@ -56,7 +67,7 @@ u8 themeInstall()
 	u64 saveDataSize;
 
 
-	FSUSER_OpenFile(&saveDataHandle, archive2, fsMakePath(PATH_ASCII, "/SaveData.dat"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
+	FSUSER_OpenFile(&saveDataHandle, ARCHIVE_HomeExt, fsMakePath(PATH_ASCII, "/SaveData.dat"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	FSFILE_GetSize(saveDataHandle, &saveDataSize);
 
 	saveDataBuffer = malloc(sizeof(u8) * saveDataSize);
@@ -75,23 +86,23 @@ u8 themeInstall()
 
 
 	Handle bodyCache;
-	FSUSER_DeleteFile(archive, fsMakePath(PATH_ASCII, "/BodyCache.bin"));
-	FSUSER_CreateFile(archive, fsMakePath(PATH_ASCII, "/BodyCache.bin"), 0, (u64)0x150000);
-	FSUSER_OpenFile(&bodyCache, archive, fsMakePath(PATH_ASCII, "/BodyCache.bin"), FS_OPEN_WRITE, 0);
+	FSUSER_DeleteFile(ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/BodyCache.bin"));
+	FSUSER_CreateFile(ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/BodyCache.bin"), 0, (u64)0x150000);
+	FSUSER_OpenFile(&bodyCache, ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/BodyCache.bin"), FS_OPEN_WRITE, 0);
 	FSFILE_Write(bodyCache, &bytes, 0, body, (u64)bodySize, FS_WRITE_FLUSH);
 	FSFILE_Close(bodyCache);
 
 	Handle bgmCache;
-	FSUSER_DeleteFile(archive, fsMakePath(PATH_ASCII, "/BgmCache.bin"));
-	FSUSER_CreateFile(archive, fsMakePath(PATH_ASCII, "/BgmCache.bin"), 0, (u64)3371008); 
-	FSUSER_OpenFile(&bgmCache, archive, fsMakePath(PATH_ASCII, "/BgmCache.bin"), FS_OPEN_WRITE, 0);
+	FSUSER_DeleteFile(ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"));
+	FSUSER_CreateFile(ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), 0, (u64)3371008); 
+	FSUSER_OpenFile(&bgmCache, ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), FS_OPEN_WRITE, 0);
 	FSFILE_Write(bgmCache, &bytes, 0, body, (u64)bgmSize, FS_WRITE_FLUSH);
 	FSFILE_Close(bgmCache);
 
 	u8* themeManageBuffer = malloc((sizeof(u8) * 2048) * 8);
 	Handle themeManageHandle;
 
-	FSUSER_OpenFile(&themeManageHandle, 0x000002cc, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_WRITE, 0);
+	FSUSER_OpenFile(&themeManageHandle, ARCHIVE_ThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_WRITE, 0);
 	FSFILE_Read(themeManageHandle, &bytes, 0, themeManageBuffer, (u32)2048);
 
 	themeManageBuffer[0x00] = 1;
