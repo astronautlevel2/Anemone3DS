@@ -55,10 +55,8 @@ u8 themeInstall()
 	u8* saveDataBuffer;
 	u64 saveDataSize;
 
-	Result ret;
-	ret = FSUSER_OpenFile(&saveDataHandle, archive2, fsMakePath(PATH_ASCII, "/SaveData.dat"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
-	return (u8)ret;
-	
+
+	FSUSER_OpenFile(&saveDataHandle, archive2, fsMakePath(PATH_ASCII, "/SaveData.dat"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	FSFILE_GetSize(saveDataHandle, &saveDataSize);
 
 	saveDataBuffer = malloc(sizeof(u8) * saveDataSize);
@@ -130,6 +128,9 @@ int main(int argc, char **argv)
 {
 	gfxInitDefault();
 	cfguInit();
+	srvInit();	
+	hidInit();
+	fsInit();	
 	
 	consoleInit(GFX_TOP, NULL);
 
