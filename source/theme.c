@@ -118,7 +118,7 @@ s8 themeInstall()
 	Handle bgmCache;
 	retValue = FSUSER_DeleteFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"));
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
-	retValue = FSUSER_CreateFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), 0, (u64)0x3371008);
+	retValue = FSUSER_CreateFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), 0, (u64)3371008);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSUSER_OpenFile(&bgmCache, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
