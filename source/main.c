@@ -12,7 +12,8 @@ int main(int argc, char **argv)
 	srvInit();	
 	hidInit();
 	fsInit();	
-	
+	ptmSysmInit();
+
 	consoleInit(GFX_TOP, NULL);
 
 	s8 ret = prepareThemes();
@@ -25,7 +26,11 @@ int main(int argc, char **argv)
 	{
 		hidScanInput();
 		u32 kDown = hidKeysDown();
-		if (kDown & KEY_START) break;
+		if (kDown & KEY_START)
+		{
+				PTMSYSM_ShutdownAsync(0);
+					ptmSysmExit();
+		}
 		gfxFlushBuffers();
 		gfxSwapBuffers();
 		gspWaitForVBlank();
