@@ -95,8 +95,15 @@ s8 themeInstall()
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
 	saveDataBuffer[0x141b] = 0x00;
-	saveDataBuffer[0x13bd] = 0x03;
 	saveDataBuffer[0x13b8] = 0xFF;
+	saveDataBuffer[0x13b9] = 0x00;
+	saveDataBuffer[0x13ba] = 0x00;
+	saveDataBuffer[0x13bb] = 0x00;
+	saveDataBuffer[0x13bc] = 0x00;
+	saveDataBuffer[0x13bd] = 0x03;
+	saveDataBuffer[0x13be] = 0x00;
+	saveDataBuffer[0x13bf] = 0x00;
+
 
 	retValue = FSFILE_Write(saveDataHandle, &bytes, 0, saveDataBuffer, saveDataSize, FS_WRITE_FLUSH);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
