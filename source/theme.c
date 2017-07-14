@@ -52,7 +52,7 @@ s8 prepareThemes()
 	return 0;
 }
 
-s8 themeInstall()
+s8 themeInstall(const char* path, bool music)
 {
 	char *body;
 	char *bgm;
@@ -72,7 +72,10 @@ s8 themeInstall()
 	u32 bytes;
 
 	// Opening relevant files
-	retValue = FSUSER_OpenFile(&bodyHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes/theme/body_LZ.bin"), FS_OPEN_READ, 0);
+	char bodyPath[128];
+	strcpy(bodyPath, path);
+	strcat(bodyPath, "/body_LZ.bin");
+	retValue = FSUSER_OpenFile(&bodyHandle, ArchiveSD, fsMakePath(PATH_ASCII, bodyPath), FS_OPEN_READ, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_GetSize(bodyHandle, &bodySize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
@@ -80,8 +83,11 @@ s8 themeInstall()
 	retValue = FSFILE_Read(bodyHandle, &bytes, 0, body, (u64)bodySize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(bodyHandle);
-
-	retValue = FSUSER_OpenFile(&bgmHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes/theme/bgm.bcstm"), FS_OPEN_READ, 0);
+	
+	char bgmPath[128];
+	strcpy(bgmPath, path);
+	strcat(bgmPath, "/bgm.bcstm");
+	retValue = FSUSER_OpenFile(&bgmHandle, ArchiveSD, fsMakePath(PATH_ASCII, bgmPath), FS_OPEN_READ, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_GetSize(bgmHandle, &bgmSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);

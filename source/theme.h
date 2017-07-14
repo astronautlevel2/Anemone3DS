@@ -7,4 +7,4 @@ FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
 
 s8 prepareThemes();
-s8 themeInstall();
+s8 themeInstall(const char* path, bool music);
