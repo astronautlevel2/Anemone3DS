@@ -163,6 +163,7 @@ s8 themeInstall(const char* path, bool music)
 
 	retValue = FSUSER_OpenFile(&bgmHandle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	if(!music) memset(bgm, 0x00, 337000 );
 	retValue = FSFILE_Write(bgmHandle, &bytes, 0, bgm, (u64)bgmSize, FS_WRITE_FLUSH);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(bgmHandle);

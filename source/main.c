@@ -13,20 +13,19 @@ int main(int argc, char **argv)
 	hidInit();
 	fsInit();	
 	ptmSysmInit();
-
 	consoleInit(GFX_TOP, NULL);
 
 	prepareThemes();
 
-	printf("\x1b[20;10HN3DSThemeManager");
+	printf("\x1b[20;10H3DSThemeManager");
 
-	
 	while (aptMainLoop())
 	{
 		hidScanInput();
 		u32 kDown = hidKeysDown();
 		if (kDown & KEY_START)
 		{
+			closeThemeArchives();	
 			PTMSYSM_ShutdownAsync(0);
 			ptmSysmExit();
 		}
