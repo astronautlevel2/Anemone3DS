@@ -79,7 +79,7 @@ s8 themeInstall(const char* path, bool music)
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_GetSize(bodyHandle, &bodySize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
-	body = malloc(sizeof(char) * bodySize);
+	body = malloc(bodySize);
 	retValue = FSFILE_Read(bodyHandle, &bytes, 0, body, (u64)bodySize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(bodyHandle);
@@ -91,7 +91,7 @@ s8 themeInstall(const char* path, bool music)
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_GetSize(bgmHandle, &bgmSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
-	bgm = malloc(sizeof(char) * bgmSize);
+	bgm = malloc(bgmSize);
 	retValue = FSFILE_Read(bgmHandle, &bytes, 0, bgm, (u64)bgmSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(bgmHandle);
@@ -100,7 +100,7 @@ s8 themeInstall(const char* path, bool music)
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_GetSize(saveDataHandle, &saveDataSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
-	saveData = malloc(sizeof(char) * saveDataSize);
+	saveData = malloc(saveDataSize);
 	retValue = FSFILE_Read(saveDataHandle, &bytes, 0, saveData, (u32)saveDataSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(saveDataHandle);	
@@ -109,7 +109,7 @@ s8 themeInstall(const char* path, bool music)
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_GetSize(themeManageHandle, &themeManageSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
-	themeManage = malloc(sizeof(char) * themeManageSize);
+	themeManage = malloc(themeManageSize);
 	retValue = FSFILE_Read(themeManageHandle, &bytes, 0, themeManage, (u32)themeManageSize);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(themeManageHandle);
@@ -159,29 +159,42 @@ s8 themeInstall(const char* path, bool music)
 	retValue = FSFILE_Write(bodyHandle, &bytes, 0, body, (u64)bodySize, FS_WRITE_FLUSH);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(bodyHandle);
+	free(body);
 
 	retValue = FSUSER_OpenFile(&bgmHandle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_Write(bgmHandle, &bytes, 0, bgm, (u64)bgmSize, FS_WRITE_FLUSH);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(bgmHandle);
-	
+	free(bgm);
+
 	retValue = FSUSER_OpenFile(&themeManageHandle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_Write(themeManageHandle, &bytes, 0, themeManage, (u64)themeManageSize, FS_WRITE_FLUSH);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(themeManageHandle);
+	free(themeManage);
 
 	retValue = FSUSER_OpenFile(&saveDataHandle, ArchiveHomeExt, fsMakePath(PATH_ASCII, "/SaveData.dat"), FS_OPEN_READ | FS_OPEN_WRITE, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_Write(saveDataHandle, &bytes, 0, saveData, (u64)saveDataSize, FS_WRITE_FLUSH);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	FSFILE_Close(saveDataHandle);
+	free(saveData);
 
+	return 0;
+}
 
-	FSUSER_CloseArchive(ArchiveSD);
-	FSUSER_CloseArchive(ArchiveHomeExt);
-	FSUSER_CloseArchive(ArchiveThemeExt);
+s8 closeThemeArchives()
+{
+	Result retValue;
 
-return 0;
+	retValue = FSUSER_CloseArchive(ArchiveSD);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	retValue = FSUSER_CloseArchive(ArchiveHomeExt);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	retValue = FSUSER_CloseArchive(ArchiveThemeExt);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	
+	return 0;
 }

@@ -8,3 +8,4 @@ FS_Archive ArchiveThemeExt;
 
 s8 prepareThemes();
 s8 themeInstall(const char* path, bool music);
+s8 closeThemeArchives();
