@@ -131,6 +131,9 @@ s8 prepareThemes()
             len -= 4;
             u8 *utf8_filename = malloc(len);
             len = utf32_to_utf8(utf8_filename, filename, len);
+            u32 theme_path_u32[len * 4];
+            utf8_to_utf32(theme_path_u32, utf8_filename, len * 4);
+            printf("Theme name: %ls\n", theme_path_u32);
             if (!strcmp(entry->shortExt, "ZIP")) unzip_theme(utf8_filename, len);
             free(filename);
             free(utf8_filename);
