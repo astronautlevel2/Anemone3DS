@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "theme.h"
+#include "minizip/unzip.h"
 
 s8 prepareThemes()
 {
