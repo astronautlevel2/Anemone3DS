@@ -54,6 +54,7 @@ Result unzip_theme(char *theme_name)
 
 	char zip_path[128];
 	sprintf(zip_path, "%s.zip", theme_path_char); // Make the path to the zip file
+	printf(zip_path);
 	unzFile zip_handle = unzOpen(zip_path); // Open up the zip file
 	if (zip_handle == NULL)
 	{
@@ -64,7 +65,7 @@ Result unzip_theme(char *theme_name)
 	extract_current_file(zip_handle, theme_path_char);
 	while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_char); // While next file exists, unzip it
 	unzClose(zip_handle);
-	FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zip_path));
+	// FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zip_path));
 	return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS); // And return success \o/
 }
 
@@ -112,11 +113,32 @@ s8 prepareThemes()
 	retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);	
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
+	// This is where the fun begins
+	Handle themes_dir;
+	FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"));
+	FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
+	while (true)
+	{
+		u32 entries_read;
+		FSDIR_Read(themes_dir, &entries_read, 1, entry);
+		if (entries_read)
+		{
+			char *filename = malloc((sizeof(entry->name) / 2) + 1);
+			utf16_to_utf8(filename, entry->name, sizeof(entry->name) / 2);
+			strcat(filename, "\0");
+			char *theme_name = malloc(sizeof(filename));
+			strcpy(theme_name, filename);
+			theme_name[strlen(theme_name) - 4] = '\0';
+			if (!strcmp(entry->shortExt, "ZIP")) unzip_theme(theme_name);
+		} else break;
+	}
 	return 0;
 }
 
-s8 themeInstall(const char* path, bool music)
+s8 themeInstall(theme theme_to_install)
 {
+	char *path = theme_to_install.path;
+	bool music = theme_to_install.bgm;
 	char *body;
 	char *bgm;
 	char *saveData;
