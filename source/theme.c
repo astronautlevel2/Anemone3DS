@@ -118,28 +118,31 @@ s8 prepareThemes()
     // This is where the fun begins
     Handle themes_dir;
     FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"));
-    FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
     while (true)
     {
+        FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
         u32 entries_read;
         FSDIR_Read(themes_dir, &entries_read, 1, entry);
         if (entries_read)
         {
-            u32 *filename = malloc(sizeof(entry->name) * 2);
-            ssize_t len = utf16_to_utf32(filename, entry->name, sizeof(entry->name));
-            filename[len-4] = '\0';
-            len -= 4;
-            u8 *utf8_filename = malloc(len);
-            len = utf32_to_utf8(utf8_filename, filename, len);
-            u32 theme_path_u32[len * 4];
-            utf8_to_utf32(theme_path_u32, utf8_filename, len * 4);
-            printf("Theme name: %ls\n", theme_path_u32);
-            if (!strcmp(entry->shortExt, "ZIP")) unzip_theme(utf8_filename, len);
-            free(filename);
-            free(utf8_filename);
+		ssize_t len = sizeof(entry->name);	
+		u8* utf8_filename = malloc(len);
+		len = utf16_to_utf8(utf8_filename, entry->name, sizeof(entry->name));
+		utf8_filename[len-4] = '\0';
+		u32* utf32_filename = malloc(sizeof(entry->name));
+		utf8_to_utf32(utf32_filename, utf8_filename, sizeof(entry->name)-4);	
+
+		printf("  %d  %ls \n", len, utf32_filename);
+		
+		if (!strcmp(entry->shortExt, "ZIP")) unzip_theme(utf8_filename, len-4);
+				
+		free(utf8_filename);
+		free(utf32_filename);
+		free(entry);
         } else break;
     }
-    free(entry);
+    
+    
     return 0;
 }
 
