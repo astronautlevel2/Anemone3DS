@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 	consoleInit(GFX_TOP, NULL);
 
 	prepareThemes();
+	unzip_theme("Relaxing Space");
 
 	printf("\x1b[20;10H3DSThemeManager");
 

@@ -6,6 +6,68 @@
 #include "theme.h"
 #include "minizip/unzip.h"
 
+Result extract_current_file(unzFile zip_handle, char *theme_path)
+{
+	unz_file_info *file_info = malloc(sizeof(unz_file_info)); // Make the file_info struct
+	char filename[64]; 
+	unzGetCurrentFileInfo(zip_handle, file_info, filename, 64, NULL, 0, NULL, 0); // Get file info, as well as filename
+	u32 file_size = file_info->uncompressed_size;
+
+	char file_path[128];
+	sprintf(file_path, "%s/%s", theme_path, filename); // Create the path
+	
+	Result ret;
+	ret = FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, file_path), 0, file_size); // Create the file
+	if (R_FAILED(ret)) return ret;
+
+	char *file; // Read the compressed file into a buffer
+	file = malloc(file_size);
+	unzOpenCurrentFile(zip_handle);
+	unzReadCurrentFile(zip_handle, file, file_size);
+	unzCloseCurrentFile(zip_handle);
+
+	Handle console_file; // And write it onto the SD card
+	ret = FSUSER_OpenFile(&console_file, ArchiveSD, fsMakePath(PATH_ASCII, file_path), FS_OPEN_WRITE, 0);
+	if (R_FAILED(ret)) return ret;
+ 	ret = FSFILE_Write(console_file, NULL, 0, file, file_size, FS_WRITE_FLUSH);
+ 	if (R_FAILED(ret)) return ret;
+	ret = FSFILE_Close(console_file);
+	if (R_FAILED(ret)) return ret;
+
+	return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS);
+}
+
+Result unzip_theme(char *theme_name)
+{
+	char *base_path = "/Themes/";
+	char theme_path_char[128]; // If your path is more than 127 characters you've got issues
+	
+	strcpy(theme_path_char, base_path);
+	strcat(theme_path_char, theme_name); // concat the theme name onto /Themes/
+	
+	FS_Path theme_path = fsMakePath(PATH_ASCII, theme_path_char); // Turn it into a 3ds directory
+	
+	if (R_SUMMARY(FSUSER_OpenDirectory(NULL, ArchiveSD, theme_path)) == RS_NOTFOUND) // If it doesn't exist, make it
+	{
+		FSUSER_CreateDirectory(ArchiveSD, theme_path, FS_ATTRIBUTE_DIRECTORY);
+	}
+
+	char zip_path[128];
+	sprintf(zip_path, "%s.zip", theme_path_char); // Make the path to the zip file
+	unzFile zip_handle = unzOpen(zip_path); // Open up the zip file
+	if (zip_handle == NULL)
+	{
+		return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_COMMON, RD_NOT_FOUND);
+	}
+
+	unzGoToFirstFile(zip_handle); // Go to the first file and unzip it
+	extract_current_file(zip_handle, theme_path_char);
+	while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_char); // While next file exists, unzip it
+	unzClose(zip_handle);
+	FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zip_path));
+	return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS); // And return success \o/
+}
+
 s8 prepareThemes()
 {
 	Result retValue;
