@@ -22,8 +22,7 @@ FS_Archive ArchiveSD;
 FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
 
-Result unzip_file(unzFile, char);
-Result unzip_theme(char*);
+Result unzip_theme(u8*, ssize_t);
 s8 prepareThemes();
 s8 themeInstall(theme);
 s8 closeThemeArchives();
