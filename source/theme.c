@@ -6,18 +6,65 @@
 #include "theme.h"
 #include "minizip/unzip.h"
 
-Result extract_current_file(unzFile zip_handle, u8 *theme_path)
+void wtoa(char *out, u16 *in)
+{
+    u8 lastByte = 1; // Initialize to 1 because
+    while(*in != 0 || lastByte != 0)
+    {
+        lastByte = *in;
+        if (*in == 0) continue;
+        *out = *in;
+        out++;
+        in++;
+    }
+    *out = 0;
+}
+
+ssize_t atow(u16 *out, char *in)
+{
+    u8 i = 0;
+    for (i = 0; i < strlen(in); i++) 
+    {
+        out[i] = in[i];
+    }
+    return i;
+}
+
+ssize_t trim_extension(u16 *out, u16 *in, ssize_t len)
+{
+    for (int i = 0; i < len; i++)
+    {
+        if (in[i] == '.')
+        {
+            out[i] = '\0';
+            return i;
+        }
+        out[i] = in[i];
+    }
+    return len;
+}
+
+Result extract_current_file(unzFile zip_handle, u16 *theme_path, ssize_t len)
 {
     unz_file_info *file_info = malloc(sizeof(unz_file_info)); // Make the file_info struct
     char filename[64]; 
     unzGetCurrentFileInfo(zip_handle, file_info, filename, 64, NULL, 0, NULL, 0); // Get file info, as well as filename
     u32 file_size = file_info->uncompressed_size;
-
-    u8 file_path[128];
-    sprintf(file_path, "%s/%s", theme_path, filename); // Create the path
+    u16 ufilename[128] = {0};
+    ssize_t filename_len = atow(ufilename, filename);
     
+    u16 file_path[256] = {0};
+    memcpy(file_path, theme_path, len * sizeof(u16));
+    memset(&file_path[len], '/', 1);
+    len += 1;
+    memcpy(&file_path[len], ufilename, filename_len * sizeof(u16));
+    u32 debug[256] = {0};
+    for (int i = 0; i < 256; i++) debug[i] = file_path[i];
+    printf("file_path: %ls; len: %u\n", debug, len);
+
+
     Result ret;
-    ret = FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, file_path), 0, file_size); // Create the file
+    ret = FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_UTF16, file_path), 0, file_size); // Create the file
     if (R_FAILED(ret)) return ret;
 
     char *file; // Read the compressed file into a buffer
@@ -27,7 +74,7 @@ Result extract_current_file(unzFile zip_handle, u8 *theme_path)
     unzCloseCurrentFile(zip_handle);
 
     Handle console_file; // And write it onto the SD card
-    ret = FSUSER_OpenFile(&console_file, ArchiveSD, fsMakePath(PATH_ASCII, file_path), FS_OPEN_WRITE, 0);
+    ret = FSUSER_OpenFile(&console_file, ArchiveSD, fsMakePath(PATH_UTF16, file_path), FS_OPEN_WRITE, 0);
     if (R_FAILED(ret)) return ret;
     ret = FSFILE_Write(console_file, NULL, 0, file, file_size, FS_WRITE_FLUSH);
     if (R_FAILED(ret)) return ret;
@@ -37,35 +84,39 @@ Result extract_current_file(unzFile zip_handle, u8 *theme_path)
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS);
 }
 
-Result unzip_theme(u8 *theme_name, ssize_t len)
+Result unzip_theme(FS_DirectoryEntry *entry)
 {
     char *base_path = "/Themes/";
-    u8 theme_path_u8[128]; // If your path is more than 127 characters you've got issues
-    
-    strcpy(theme_path_u8, base_path);
-    strcat(theme_path_u8, theme_name); // concat the theme name onto /Themes/
-    
-    u16 theme_path_u16[len * 4];
-    utf8_to_utf16(theme_path_u16, theme_path_u8, len * 4);
+    u16 zip_path[sizeof(entry->name) + (strlen(base_path) * 2) + 1];
+    memset(zip_path, 0, sizeof(entry->name) + (strlen(base_path) * 2 * sizeof(u16)));
+    atow(zip_path, base_path);
+    memcpy(&zip_path[strlen(base_path)], entry->name, sizeof(entry->name));
+    u16 theme_path_u16[128] = {0};
+    ssize_t len = trim_extension(theme_path_u16, zip_path, sizeof(entry->name));
 
     FS_Path theme_path = fsMakePath(PATH_UTF16, theme_path_u16); // Turn it into a 3ds directory
-    
-    if (R_SUMMARY(FSUSER_OpenDirectory(NULL, ArchiveSD, theme_path)) == RS_NOTFOUND) // If it doesn't exist, make it
-    {
-        FSUSER_CreateDirectory(ArchiveSD, theme_path, FS_ATTRIBUTE_DIRECTORY);
-    }
 
-    u8 zip_path[128];
-    sprintf(zip_path, "%s.zip", theme_path_u8); // Make the path to the zip file
-    unzFile zip_handle = unzOpen(zip_path); // Open up the zip file
+    Result res = FSUSER_OpenDirectory(NULL, ArchiveSD, theme_path);
+    if (R_SUMMARY(res) == RS_NOTFOUND) // If it doesn't exist, make it
+    {
+        res = FSUSER_CreateDirectory(ArchiveSD, theme_path, FS_ATTRIBUTE_DIRECTORY);
+        if (R_FAILED(res)) printf("Failed to make directory!\nSummary: %lu\n", R_SUMMARY(res));
+    } else if(R_FAILED(res)) printf("Failed to make directory!\nSummary: %lu\n", R_SUMMARY(res));
+
+    char *zipfile = malloc(524);
+    wtoa(zipfile, zip_path);
+
+    unzFile zip_handle = unzOpen(zipfile); // Open up the zip file
     if (zip_handle == NULL)
     {
+        printf("Failed to open zip: %s\n", zipfile);
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_COMMON, RD_NOT_FOUND);
     }
 
     unzGoToFirstFile(zip_handle); // Go to the first file and unzip it
-    extract_current_file(zip_handle, theme_path_u8);
-    while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_u8); // While next file exists, unzip it
+
+    extract_current_file(zip_handle, theme_path_u16, len);
+    while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_u16, len); // While next file exists, unzip it
     unzClose(zip_handle);
     // FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zip_path));
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS); // And return success \o/
@@ -125,24 +176,16 @@ s8 prepareThemes()
         FSDIR_Read(themes_dir, &entries_read, 1, entry);
         if (entries_read)
         {
-		ssize_t len = sizeof(entry->name);	
-		u8* utf8_filename = malloc(len);
-		len = utf16_to_utf8(utf8_filename, entry->name, sizeof(entry->name));
-		utf8_filename[len-4] = '\0';
-		u32* utf32_filename = malloc(sizeof(entry->name));
-		utf8_to_utf32(utf32_filename, utf8_filename, sizeof(entry->name)-4);	
-
-		printf("  %d  %ls \n", len, utf32_filename);
-		
-		if (!strcmp(entry->shortExt, "ZIP")) unzip_theme(utf8_filename, len-4);
-				
-		free(utf8_filename);
-		free(utf32_filename);
-		free(entry);
-        } else break;
+		    if (!strcmp(entry->shortExt, "ZIP")) 
+            {
+                unzip_theme(entry);
+            }
+		    free(entry);
+        } else {
+            free(entry);
+            break;
+        } 
     }
-    
-    
     return 0;
 }
 
