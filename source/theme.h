@@ -22,7 +22,7 @@ FS_Archive ArchiveSD;
 FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
 
-Result unzip_theme(FS_DirectoryEntry*);
+Result unzip_theme(FS_DirectoryEntry*, u16*);
 s8 prepareThemes();
 s8 themeInstall(theme);
 s8 closeThemeArchives();
