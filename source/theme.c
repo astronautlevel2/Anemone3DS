@@ -14,13 +14,13 @@ Result extract_current_file(unzFile zip_handle, u16 *theme_path, ssize_t len)
     unzGetCurrentFileInfo(zip_handle, file_info, filename, 64, NULL, 0, NULL, 0); // Get file info, as well as filename
     u32 file_size = file_info->uncompressed_size;
     u16 ufilename[128] = {0};
-    ssize_t filename_len = atow(ufilename, filename);
+    ssize_t filename_len = atow(ufilename, filename); // Make the filename Unicode, as the folder name is unicode.
     
     u16 file_path[256] = {0};
-    memcpy(file_path, theme_path, len * sizeof(u16));
-    memset(&file_path[len], '/', 1);
-    len += 1;
-    memcpy(&file_path[len], ufilename, filename_len * sizeof(u16));
+    memcpy(file_path, theme_path, len * sizeof(u16)); // Copy the base theme folder name into the file
+    memset(&file_path[len], '/', 1); // Put a / so it recognizes a directory
+    len += 1; // Manually push len up one
+    memcpy(&file_path[len], ufilename, filename_len * sizeof(u16)); // Copy the file name into the file path
 
     Result ret;
     ret = FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_UTF16, file_path), 0, file_size); // Create the file
@@ -43,20 +43,22 @@ Result extract_current_file(unzFile zip_handle, u16 *theme_path, ssize_t len)
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS);
 }
 
+// TODO: There's a lot of duplicated code here, especially considering that we already built the paths in prepare_themes(). Maybe clean it up a bit later
 Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_zip)
 {
     char *base_path = "/Themes/";
-    u16 zip_path[sizeof(entry->name) + (strlen(base_path) * 2) + 1];
+    u16 zip_path[sizeof(entry->name) + (strlen(base_path) * 2) + 1]; // Make two u16*s that are big enough to hold the entire path
     u16 uzipfile[sizeof(entry->name) + (strlen(base_path) * 2) + 1];
-    memset(zip_path, 0, sizeof(entry->name) + (strlen(base_path) * 2 * sizeof(u16)));
-    atow(zip_path, base_path);
+    memset(zip_path, 0, sizeof(entry->name) + (strlen(base_path) * 2 * sizeof(u16))); // Zero it out
+    memset(uzipfile, 0, sizeof(entry->name) + (strlen(base_path) * 2 * sizeof(u16)));
+    atow(zip_path, base_path); // Copy "/Themes/" unicode equivalent into the paths
     atow(uzipfile, base_path);
-    memcpy(&zip_path[strlen(base_path)], entry->name, sizeof(entry->name));
+    memcpy(&zip_path[strlen(base_path)], entry->name, sizeof(entry->name)); // And copy the unsanitized and sanitized version respectively
     memcpy(&uzipfile[strlen(base_path)], sanitized_zip, sizeof(entry->name));
     u16 theme_path_u16[128] = {0};
-    ssize_t len = trim_extension(theme_path_u16, zip_path, sizeof(entry->name));
+    ssize_t len = trim_extension(theme_path_u16, zip_path, sizeof(entry->name)); // Get rid of the extension on the unsanitized one, which later becomes the basis for the folder
 
-    FS_Path theme_path = fsMakePath(PATH_UTF16, theme_path_u16); // Turn it into a 3ds directory
+    FS_Path theme_path = fsMakePath(PATH_UTF16, theme_path_u16); // Turn the unsanizited name into a new directory
 
     Result res = FSUSER_OpenDirectory(NULL, ArchiveSD, theme_path);
     if (R_SUMMARY(res) == RS_NOTFOUND) // If it doesn't exist, make it
@@ -65,7 +67,7 @@ Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_zip)
         if (R_FAILED(res)) printf("Failed to make directory!\nSummary: %lu\n", R_SUMMARY(res));
     } else if(R_FAILED(res)) printf("Failed to make directory!\nSummary: %lu\n", R_SUMMARY(res));
 
-    char *zipfile = malloc(524);
+    char *zipfile = malloc(524); // Plop the char* equivalent into here
     wtoa(zipfile, uzipfile);
 
     unzFile zip_handle = unzOpen(zipfile); // Open up the zip file
@@ -131,29 +133,29 @@ s8 prepareThemes()
 
     // This is where the fun begins
     Handle themes_dir;
-    FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"));
+    FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes")); // Open up the Themes directory and iterate over each file
     while (true)
     {
         FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
         u32 entries_read;
         FSDIR_Read(themes_dir, &entries_read, 1, entry);
-        if (entries_read)
+        if (entries_read) // If there is a new entry
         {
-		    if (!strcmp(entry->shortExt, "ZIP")) 
+		    if (!strcmp(entry->shortExt, "ZIP")) // if that entry is a zip
             {
                 u16 sanitized_zip[sizeof(entry->name)] = {0};
-                bool changed = strip_unicode(sanitized_zip, entry->name, sizeof(entry->name));
-                if (changed)
+                bool changed = strip_unicode(sanitized_zip, entry->name, sizeof(entry->name)); // Here we strip out the non-ASCII characters in the zip name, as minizip doesn't like them
+                if (changed) // If there were any non-ascii characters
                 {
                     u16 zip_path[550] = {0};
-                    ssize_t len = atow(zip_path, "/Themes/");
-                    memcpy(&zip_path[len], entry->name, sizeof(entry->name));
-                    u16 sanitized_zip_path[550] = {0};
+                    ssize_t len = atow(zip_path, "/Themes/"); // Copy the unicode equivalent of "/Themes/" into zip_path
+                    memcpy(&zip_path[len], entry->name, sizeof(entry->name)); // Copy the name of the zip (with unicode chars) into zip_path
+                    u16 sanitized_zip_path[550] = {0}; // Same thing as above, this time with sanitized names
                     atow(sanitized_zip_path, "/Themes/");
                     memcpy(&sanitized_zip_path[len], sanitized_zip, sizeof(entry->name));
-                    FSUSER_RenameFile(ArchiveSD, fsMakePath(PATH_UTF16, zip_path), ArchiveSD, fsMakePath(PATH_UTF16, sanitized_zip_path));
-                    unzip_theme(entry, sanitized_zip);
-                } else unzip_theme(entry, entry->name);
+                    FSUSER_RenameFile(ArchiveSD, fsMakePath(PATH_UTF16, zip_path), ArchiveSD, fsMakePath(PATH_UTF16, sanitized_zip_path)); // Rename the zip to the sanitized one
+                    unzip_theme(entry, sanitized_zip); // And unzip it
+                } else unzip_theme(entry, entry->name); // If it's the same, unzip it anyway
             }
 		    free(entry);
         } else {
