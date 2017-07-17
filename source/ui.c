@@ -3,18 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "unicode.h"
-
-struct rgbColor
-{
-	char rC;
-	char gC;
-	char bC;
-};
-
-typedef struct rgbColor Color;
-
-
 rgbColor makeColor(char r, char g, char b)
 {
 	Color n;
