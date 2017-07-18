@@ -302,6 +302,33 @@ s8 themeInstall(theme theme_to_install)
     return 0;
 }
 
+s8 parseSmdh(theme *entry, u16 *path)
+{
+	Result retValue;
+	u32 bytes;
+	Handle infoHandle;
+	u16 pathToInfo[534];
+	strucat(pathToInfo, "/info.smdh");
+	u16 infoContent[14016] = {0};
+
+	retValue = FSUSER_OpenFile(&infoHandle, ArchiveSD, fsMakePath(PATH_UTF16, pathToInfo), FS_OPEN_READ, 0);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	retValue = FSFILE_Read(infoHandle, &bytes, 0, infoContent, (u64)14016);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+	retValue = FSFILE_Close(infoHandle);
+	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
+
+	memcpy(entry->title, &infoContent[0x08], 40);
+	memcpy(entry->description, &infoContent[0x80], 80);
+	memcpy(entry->author, &infoContent[180], 40);
+	memcpy(entry->iconData, &infoContent[0x2040], 4408);
+	
+
+	entry->path = malloc(256);
+	strucpy(entry->path, path);
+
+}
+
 s8 closeThemeArchives()
 {
     Result retValue;

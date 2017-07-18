@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-rgbColor makeColor(char r, char g, char b)
+#include "ui.h"
+
+Color makeColor(char r, char g, char b)
 {
 	Color n;
 	n.rC = r;
