@@ -168,7 +168,10 @@ s8 prepareThemes()
 
 s8 themeInstall(theme theme_to_install)
 {
-    char *path = theme_to_install.path;
+    
+    u16 *u16path = theme_to_install.path;
+    char *path = malloc(524);
+    wtoa(path, u16path);
     bool music = theme_to_install.bgm;
     char *body;
     char *bgm;
@@ -308,7 +311,9 @@ s8 parseSmdh(theme *entry, u16 *path)
 	u32 bytes;
 	Handle infoHandle;
 	u16 pathToInfo[534];
-	strucat(pathToInfo, "/info.smdh");
+	u16 infoPath[12];
+	atow(infoPath, "/info.smdh");
+	strucat(pathToInfo, infoPath);
 	u16 infoContent[14016] = {0};
 
 	retValue = FSUSER_OpenFile(&infoHandle, ArchiveSD, fsMakePath(PATH_UTF16, pathToInfo), FS_OPEN_READ, 0);
