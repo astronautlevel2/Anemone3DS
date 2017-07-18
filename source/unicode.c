@@ -116,3 +116,14 @@ u16 *strucat(u16 *destination, const u16 *source)
     memcpy(&destination[dest_len], source, source_len * sizeof(u16));
     return destination;
 }
+
+// Print a u16* for debug purposes.
+// Must be properly null-terminated
+void printu(u16 *input)
+{
+    ssize_t len = strulen(input);
+    u32 buf[len + 1]; // Plus one so we can properly null terminate
+    memset(buf, 0, len + 1);
+    for (int i = 0; i < len; i++) buf[i] = input[i];
+    printf("%ls", (wchar_t*) buf);
+}
