@@ -7,20 +7,21 @@
 #include "unicode.h"
 #include "minizip/unzip.h"
 
-Result extract_current_file(unzFile zip_handle, u16 *theme_path, ssize_t len)
+Result extract_current_file(unzFile zip_handle, u16 *theme_path)
 {
     unz_file_info *file_info = malloc(sizeof(unz_file_info)); // Make the file_info struct
     char filename[64]; 
     unzGetCurrentFileInfo(zip_handle, file_info, filename, 64, NULL, 0, NULL, 0); // Get file info, as well as filename
     u32 file_size = file_info->uncompressed_size;
     u16 ufilename[128] = {0};
-    ssize_t filename_len = atow(ufilename, filename); // Make the filename Unicode, as the folder name is unicode.
+    atow(ufilename, filename); // Make the filename Unicode, as the folder name is unicode.
     
     u16 file_path[256] = {0};
-    memcpy(file_path, theme_path, len * sizeof(u16)); // Copy the base theme folder name into the file
-    memset(&file_path[len], '/', 1); // Put a / so it recognizes a directory
-    len += 1; // Manually push len up one
-    memcpy(&file_path[len], ufilename, filename_len * sizeof(u16)); // Copy the file name into the file path
+    strucpy(file_path, theme_path); // Copy the base theme folder name into the file
+    u16 slash[2] = {0};
+    atow(slash, "/");
+    strucat(file_path, slash); // Put a / so it recognizes a directory
+    strucat(file_path, ufilename); // Copy the file name into the file path
 
     Result ret;
     ret = FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_UTF16, file_path), 0, file_size); // Create the file
@@ -44,19 +45,17 @@ Result extract_current_file(unzFile zip_handle, u16 *theme_path, ssize_t len)
 }
 
 // TODO: There's a lot of duplicated code here, especially considering that we already built the paths in prepare_themes(). Maybe clean it up a bit later
-Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_zip)
+Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_name)
 {
     char *base_path = "/Themes/";
-    u16 zip_path[sizeof(entry->name) + (strlen(base_path) * 2) + 1]; // Make two u16*s that are big enough to hold the entire path
-    u16 uzipfile[sizeof(entry->name) + (strlen(base_path) * 2) + 1];
-    memset(zip_path, 0, sizeof(entry->name) + (strlen(base_path) * 2 * sizeof(u16))); // Zero it out
-    memset(uzipfile, 0, sizeof(entry->name) + (strlen(base_path) * 2 * sizeof(u16)));
-    atow(zip_path, base_path); // Copy "/Themes/" unicode equivalent into the paths
+    u16 zip_path[sizeof(entry->name) + 18] = {0}; // Make two u16*s that are big enough to hold the entire path
+    u16 uzipfile[sizeof(entry->name) + 18] = {0};
+    atow(zip_path, base_path); // Copy "/Themes/" unicode equivalent into a path
+    strucat(zip_path, entry->name); // And copy the unsanitized path in
     atow(uzipfile, base_path);
-    memcpy(&zip_path[strlen(base_path)], entry->name, sizeof(entry->name)); // And copy the unsanitized and sanitized version respectively
-    memcpy(&uzipfile[strlen(base_path)], sanitized_zip, sizeof(entry->name));
+    strucat(uzipfile, sanitized_name);
     u16 theme_path_u16[128] = {0};
-    ssize_t len = trim_extension(theme_path_u16, zip_path, sizeof(entry->name)); // Get rid of the extension on the unsanitized one, which later becomes the basis for the folder
+    trim_extension(theme_path_u16, zip_path); // Get rid of the extension on the unsanitized one, which later becomes the basis for the folder
 
     FS_Path theme_path = fsMakePath(PATH_UTF16, theme_path_u16); // Turn the unsanizited name into a new directory
 
@@ -79,8 +78,8 @@ Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_zip)
 
     unzGoToFirstFile(zip_handle); // Go to the first file and unzip it
 
-    extract_current_file(zip_handle, theme_path_u16, len);
-    while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_u16, len); // While next file exists, unzip it
+    extract_current_file(zip_handle, theme_path_u16);
+    while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_u16); // While next file exists, unzip it
     unzClose(zip_handle);
     FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zipfile));
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS); // And return success \o/
