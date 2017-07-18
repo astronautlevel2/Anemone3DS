@@ -318,15 +318,15 @@ s8 parseSmdh(theme *entry, u16 *path)
 	retValue = FSFILE_Close(infoHandle);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
-	memcpy(entry->title, &infoContent[0x08], 40);
-	memcpy(entry->description, &infoContent[0x80], 80);
-	memcpy(entry->author, &infoContent[180], 40);
-	memcpy(entry->iconData, &infoContent[0x2040], 4408);
+	memcpy(entry->title, &infoContent[0x08], 0x80);
+	memcpy(entry->description, &infoContent[0x80], 0x100);
+	memcpy(entry->author, &infoContent[180], 0x80);
+	memcpy(entry->iconData, &infoContent[0x2040], 0x1200);
 	
-
 	entry->path = malloc(256);
 	strucpy(entry->path, path);
-
+	
+	return 0;
 }
 
 s8 closeThemeArchives()
