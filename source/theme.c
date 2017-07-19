@@ -155,6 +155,8 @@ s8 prepareThemes()
                     FSUSER_RenameFile(ArchiveSD, fsMakePath(PATH_UTF16, zip_path), ArchiveSD, fsMakePath(PATH_UTF16, sanitized_zip_path)); // Rename the zip to the sanitized one
                     unzip_theme(entry, sanitized_zip); // And unzip it
                 } else unzip_theme(entry, entry->name); // If it's the same, unzip it anyway
+            } else {
+                printu(entry->name);
             }
 		    free(entry);
         } else {

@@ -117,13 +117,13 @@ u16 *strucat(u16 *destination, const u16 *source)
     return destination;
 }
 
-// Print a u16* for debug purposes.
+// Return a wchar_t* from a u16* for debug purposes
 // Must be properly null-terminated
 void printu(u16 *input)
 {
-    ssize_t len = strulen(input);
-    u32 buf[len + 1]; // Plus one so we can properly null terminate
-    memset(buf, 0, len + 1);
-    for (int i = 0; i < len; i++) buf[i] = input[i];
-    printf("%ls", (wchar_t*) buf);
+    ssize_t in_len = strulen(input);
+    ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
+    wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
+    for (int i = 0; i < buf_len; i++) buf[i] = input[i];
+    printf("%ls\n", buf);
 }
