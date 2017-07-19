@@ -6,6 +6,7 @@
 #include "theme.h"
 #include "unicode.h"
 #include "minizip/unzip.h"
+#include "linked_lists.h"
 
 Result extract_current_file(unzFile zip_handle, u16 *theme_path)
 {
@@ -155,14 +156,42 @@ s8 prepareThemes()
                     FSUSER_RenameFile(ArchiveSD, fsMakePath(PATH_UTF16, zip_path), ArchiveSD, fsMakePath(PATH_UTF16, sanitized_zip_path)); // Rename the zip to the sanitized one
                     unzip_theme(entry, sanitized_zip); // And unzip it
                 } else unzip_theme(entry, entry->name); // If it's the same, unzip it anyway
-            } else {
-                printu(entry->name);
             }
 		    free(entry);
         } else {
             free(entry);
             break;
-        } 
+        }
+    }
+    FSDIR_Close(themes_dir);
+    FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"));
+    node *first_node = malloc(sizeof(node));
+    first_node->data = NULL;
+    first_node->next = NULL; // Entry-point node
+    while (true)
+    {
+        FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
+        u32 entries_read;
+        FSDIR_Read(themes_dir, &entries_read, 1, entry);
+        if (entries_read)
+        {
+            if (entry->attributes == 1)
+            {
+                theme *theme_data = malloc(sizeof(theme));
+                u16 theme_path[533] = {0};
+                atow(theme_path, "/Themes/");
+                strucpy(theme_path, entry->name);
+                parseSmdh(*theme_data, theme_path);
+                node *current_theme = malloc(sizeof(node));
+                current_theme->data = theme_data;
+                current_theme->next = NULL;
+                add_node(first_node, current_theme);
+            }
+            free(entry);
+        } else {
+            free(entry);
+            break;
+        }
     }
     printf("Done!\n");
     return 0;
@@ -330,7 +359,6 @@ s8 parseSmdh(theme *entry, u16 *path)
 	memcpy(entry->author, &infoContent[180], 0x80);
 	memcpy(entry->iconData, &infoContent[0x2040], 0x1200);
 	
-	entry->path = malloc(256);
 	strucpy(entry->path, path);
 	
 	return 0;

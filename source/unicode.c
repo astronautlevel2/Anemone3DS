@@ -117,7 +117,7 @@ u16 *strucat(u16 *destination, const u16 *source)
     return destination;
 }
 
-// Return a wchar_t* from a u16* for debug purposes
+// Prints a u16* for debug purposes
 // Must be properly null-terminated
 void printu(u16 *input)
 {
