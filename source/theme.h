@@ -1,7 +1,7 @@
 #pragma once
 #include "minizip/unzip.h"
 
-struct theme
+typedef struct
 {
 	u16 title[0x40];
 	u16 description[0x80];
@@ -9,9 +9,7 @@ struct theme
 	char iconData[0x1200];
 	u16 path[533];
 	bool bgm;
-};
-
-typedef struct theme theme;
+} theme_data;
 
 u8 regionCode;
 u32 archive1;
@@ -23,6 +21,6 @@ FS_Archive ArchiveThemeExt;
 
 Result unzip_theme(FS_DirectoryEntry*, u16*);
 s8 prepareThemes();
-s8 themeInstall(theme);
+s8 themeInstall(theme_data);
 s8 closeThemeArchives();
-s8 parseSmdh(theme*, u16*);
+s8 parseSmdh(theme_data*, u16*);

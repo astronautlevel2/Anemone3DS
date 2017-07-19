@@ -177,13 +177,13 @@ s8 prepareThemes()
         {
             if (entry->attributes == 1)
             {
-                struct theme *theme_data = malloc(sizeof(theme));
+                theme_data *theme_info = malloc(sizeof(theme_data));
                 u16 theme_path[533] = {0};
                 atow(theme_path, "/Themes/");
                 strucpy(theme_path, entry->name);
-                parseSmdh(theme_data, theme_path);
+                parseSmdh(theme_info, theme_path);
                 node *current_theme = malloc(sizeof(node));
-                current_theme->data = theme_data;
+                current_theme->data = theme_info;
                 current_theme->next = NULL;
                 add_node(first_node, current_theme);
             }
@@ -197,7 +197,7 @@ s8 prepareThemes()
     return 0;
 }
 
-s8 themeInstall(theme theme_to_install)
+s8 themeInstall(theme_data theme_to_install)
 {
     
     u16 *u16path = theme_to_install.path;
@@ -336,7 +336,7 @@ s8 themeInstall(theme theme_to_install)
     return 0;
 }
 
-s8 parseSmdh(theme *entry, u16 *path)
+s8 parseSmdh(theme_data *entry, u16 *path)
 {
 	Result retValue;
 	u32 bytes;
