@@ -177,11 +177,11 @@ s8 prepareThemes()
         {
             if (entry->attributes == 1)
             {
-                theme *theme_data = malloc(sizeof(theme));
+                struct theme *theme_data = malloc(sizeof(theme));
                 u16 theme_path[533] = {0};
                 atow(theme_path, "/Themes/");
                 strucpy(theme_path, entry->name);
-                parseSmdh(*theme_data, theme_path);
+                parseSmdh(theme_data, theme_path);
                 node *current_theme = malloc(sizeof(node));
                 current_theme->data = theme_data;
                 current_theme->next = NULL;

@@ -1,7 +1,7 @@
 #pragma once
 #include "minizip/unzip.h"
 
-typedef struct
+struct theme
 {
 	u16 title[0x40];
 	u16 description[0x80];
@@ -9,7 +9,9 @@ typedef struct
 	char iconData[0x1200];
 	u16 path[533];
 	bool bgm;
-} theme;
+};
+
+typedef struct theme theme;
 
 u8 regionCode;
 u32 archive1;
