@@ -193,6 +193,14 @@ s8 prepareThemes()
             break;
         }
     }
+
+    node *current_node = first_node->next;
+    while (current_node != NULL)
+    {
+        printu(current_node->data->name);
+        current_node = current_node->next;
+    }
+    
     printf("Done!\n");
     return 0;
 }
