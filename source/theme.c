@@ -180,13 +180,8 @@ s8 prepareThemes()
                 theme_data *theme_info = malloc(sizeof(theme_data));
                 u16 theme_path[533] = {0};
                 atow(theme_path, "/Themes/");
-<<<<<<< HEAD
                 strucat(theme_path, entry->name);
-		parseSmdh(theme_data, theme_path);
-=======
-                strucpy(theme_path, entry->name);
                 parseSmdh(theme_info, theme_path);
->>>>>>> abb400c34f02e4f15dee07b66780bd7b88a33a2d
                 node *current_theme = malloc(sizeof(node));
                 current_theme->data = theme_info;
                 current_theme->next = NULL;
