@@ -346,7 +346,7 @@ s8 parseSmdh(theme_data *entry, u16 *path)
 	atow(infoPath, "/info.smdh");
 	strucpy(pathToInfo, path);
 	strucat(pathToInfo, infoPath);
-	u16 *infoContent = malloc(0x36C0);
+	char *infoContent = malloc(0x36C0);
 	retValue = FSUSER_OpenFile(&infoHandle, ArchiveSD, fsMakePath(PATH_UTF16, pathToInfo), FS_OPEN_READ, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_Read(infoHandle, &bytes, 0, infoContent, (u32)14016);
