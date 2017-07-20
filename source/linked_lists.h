@@ -1,8 +1,10 @@
 #pragma once
 
+#include "theme.h"
+
 typedef struct
 {
-	void *data;
+	theme *data;
 	void *next;
 } node;
 
