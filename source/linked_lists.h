@@ -1,10 +1,11 @@
 #pragma once
 
+#include "3ds.h"
 #include "theme.h"
 
 typedef struct
 {
-	theme *data;
+	theme_data *data;
 	void *next;
 } node;
 

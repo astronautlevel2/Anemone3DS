@@ -197,7 +197,7 @@ s8 prepareThemes()
     node *current_node = first_node->next;
     while (current_node != NULL)
     {
-        printu(current_node->data->name);
+        printu(current_node->data->path);
         current_node = current_node->next;
     }
     
