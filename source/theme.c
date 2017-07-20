@@ -169,7 +169,7 @@ Result prepareThemes(node *first_node)
         FSDIR_Read(themes_dir, &entries_read, 1, entry);
         if (entries_read) // If there is a new entry
         {
-		    if (!strcmp(entry->shortExt, "ZIP")) // if that entry is a zip
+            if (!strcmp(entry->shortExt, "ZIP")) // if that entry is a zip
             {
                 u16 sanitized_zip[sizeof(entry->name)] = {0};
                 bool changed = strip_unicode(sanitized_zip, entry->name, sizeof(entry->name)); // Here we strip out the non-ASCII characters in the zip name, as minizip doesn't like them
@@ -185,7 +185,7 @@ Result prepareThemes(node *first_node)
                     unzip_theme(entry, sanitized_zip); // And unzip it
                 } else unzip_theme(entry, entry->name); // If it's the same, unzip it anyway
             }
-		    free(entry);
+            free(entry);
         } else {
             free(entry);
             break;
@@ -530,24 +530,24 @@ Result themeInstall(theme_data theme_to_install)
 
 Result parseSmdh(theme_data *entry, u16 *path)
 {
-	Result retValue;
-	u32 bytes;
-	Handle infoHandle;
-	u16 pathToInfo[534] = {0};
-	u16 infoPath[12] = {0};
-	atow(infoPath, "/info.smdh");
-	strucpy(pathToInfo, path);
-	strucat(pathToInfo, infoPath);
-	char *infoContent = malloc(0x36C0);
-	retValue = FSUSER_OpenFile(&infoHandle, ArchiveSD, fsMakePath(PATH_UTF16, pathToInfo), FS_OPEN_READ, 0);
-	
+    Result retValue;
+    u32 bytes;
+    Handle infoHandle;
+    u16 pathToInfo[534] = {0};
+    u16 infoPath[12] = {0};
+    atow(infoPath, "/info.smdh");
+    strucpy(pathToInfo, path);
+    strucat(pathToInfo, infoPath);
+    char *infoContent = malloc(0x36C0);
+    retValue = FSUSER_OpenFile(&infoHandle, ArchiveSD, fsMakePath(PATH_UTF16, pathToInfo), FS_OPEN_READ, 0);
+    
     if(R_FAILED(retValue))
     {
         free(infoContent);
         return retValue;
     }
 
-	retValue = FSFILE_Read(infoHandle, &bytes, 0, infoContent, (u32)14016);
+    retValue = FSFILE_Read(infoHandle, &bytes, 0, infoContent, (u32)14016);
     
     if(R_FAILED(retValue))
     {
@@ -555,7 +555,7 @@ Result parseSmdh(theme_data *entry, u16 *path)
         return retValue;
     }
     
-	retValue = FSFILE_Close(infoHandle);
+    retValue = FSFILE_Close(infoHandle);
     
     if(R_FAILED(retValue))
     {
@@ -564,14 +564,14 @@ Result parseSmdh(theme_data *entry, u16 *path)
     }
     
 
-	memcpy(entry->title, infoContent + 0x08, 0x80);
-	memcpy(entry->description, infoContent + 0x88, 0x100);
-	memcpy(entry->author, infoContent + 0x188, 0x80);
-	memcpy(entry->iconData, infoContent + 0x2040, 0x1200);
-	
-	free(infoContent);
-	strucpy(entry->path, path);
-	return 0;
+    memcpy(entry->title, infoContent + 0x08, 0x80);
+    memcpy(entry->description, infoContent + 0x88, 0x100);
+    memcpy(entry->author, infoContent + 0x188, 0x80);
+    memcpy(entry->iconData, infoContent + 0x2040, 0x1200);
+    
+    free(infoContent);
+    strucpy(entry->path, path);
+    return 0;
 }
 
 Result closeThemeArchives()
