@@ -1,7 +1,9 @@
 #pragma once
-#include "minizip/unzip.h"
 
-typedef struct
+#include "minizip/unzip.h"
+#include "linked_lists.h"
+
+struct theme_data
 {
 	u16 title[0x40];
 	u16 description[0x80];
@@ -9,7 +11,9 @@ typedef struct
 	char iconData[0x1200];
 	u16 path[533];
 	bool bgm;
-} theme_data;
+};
+
+typedef struct theme_data theme_data;
 
 u8 regionCode;
 u32 archive1;
@@ -20,7 +24,7 @@ FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
 
 Result unzip_theme(FS_DirectoryEntry*, u16*);
-s8 prepareThemes();
-s8 themeInstall(theme_data);
-s8 closeThemeArchives();
-s8 parseSmdh(theme_data*, u16*);
+Result prepareThemes(node*);
+Result themeInstall(theme_data);
+Result closeThemeArchives();
+Result parseSmdh(theme_data*, u16*);
