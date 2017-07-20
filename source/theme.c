@@ -180,8 +180,8 @@ s8 prepareThemes()
                 struct theme *theme_data = malloc(sizeof(theme));
                 u16 theme_path[533] = {0};
                 atow(theme_path, "/Themes/");
-                strucpy(theme_path, entry->name);
-                parseSmdh(theme_data, theme_path);
+                strucat(theme_path, entry->name);
+		parseSmdh(theme_data, theme_path);
                 node *current_theme = malloc(sizeof(node));
                 current_theme->data = theme_data;
                 current_theme->next = NULL;
@@ -341,26 +341,26 @@ s8 parseSmdh(theme *entry, u16 *path)
 	Result retValue;
 	u32 bytes;
 	Handle infoHandle;
-	u16 pathToInfo[534];
-	u16 infoPath[12];
+	u16 pathToInfo[534] = {0};
+	u16 infoPath[12] = {0};
 	atow(infoPath, "/info.smdh");
+	strucpy(pathToInfo, path);
 	strucat(pathToInfo, infoPath);
-	u16 infoContent[14016] = {0};
-
+	u16 *infoContent = malloc(0x36C0);
 	retValue = FSUSER_OpenFile(&infoHandle, ArchiveSD, fsMakePath(PATH_UTF16, pathToInfo), FS_OPEN_READ, 0);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
-	retValue = FSFILE_Read(infoHandle, &bytes, 0, infoContent, (u64)14016);
+	retValue = FSFILE_Read(infoHandle, &bytes, 0, infoContent, (u32)14016);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 	retValue = FSFILE_Close(infoHandle);
 	if(R_FAILED(retValue)) return R_SUMMARY(retValue);
 
-	memcpy(entry->title, &infoContent[0x08], 0x80);
-	memcpy(entry->description, &infoContent[0x80], 0x100);
-	memcpy(entry->author, &infoContent[180], 0x80);
-	memcpy(entry->iconData, &infoContent[0x2040], 0x1200);
+	memcpy(entry->title, infoContent + 0x08, 0x80);
+	memcpy(entry->description, infoContent + 0x88, 0x100);
+	memcpy(entry->author, infoContent + 0x188, 0x80);
+	memcpy(entry->iconData, infoContent + 0x2040, 0x1200);
 	
+	free(infoContent);
 	strucpy(entry->path, path);
-	
 	return 0;
 }
 

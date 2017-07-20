@@ -15,13 +15,11 @@ int main(void)
 	ptmSysmInit();
 	consoleInit(GFX_TOP, NULL);
 
-	prepareThemes();
-	// unzip_theme("Relaxing Space");
-
 	while (aptMainLoop())
 	{
 		hidScanInput();
 		u32 kDown = hidKeysDown();
+		if (kDown & KEY_A) prepareThemes();
 		if (kDown & KEY_START)
 		{
 			closeThemeArchives();	

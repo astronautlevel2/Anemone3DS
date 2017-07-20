@@ -126,4 +126,5 @@ void printu(u16 *input)
     wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
     for (int i = 0; i < buf_len; i++) buf[i] = input[i];
     printf("%ls\n", buf);
+    free(buf);
 }
