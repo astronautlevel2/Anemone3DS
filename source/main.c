@@ -29,7 +29,7 @@ int main(void)
 			node *current_node = first_node->next;
     		while (current_node != NULL)
     		{
-        		printu(current_node->data->title);
+        		printu(((theme_data *)current_node->data)->title);
         		current_node = current_node->next;
     		}
     		puts("Done!");
