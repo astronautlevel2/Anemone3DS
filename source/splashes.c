@@ -8,7 +8,7 @@
 #include "splashes.h"
 #include "linked_lists.h"
 
-Result prepareSplashes(node* first_node)
+Result prepare_splashes(node* first_node)
 {
     Handle splashes_dir;
     FSUSER_OpenDirectory(&splashes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"));; // Open up splashes directory
@@ -53,6 +53,7 @@ Result prepareSplashes(node* first_node)
             if (entry->attributes == 1)
             {
                 u16 *splash_path = malloc(533);
+                memset(splash_path, 0, 533);
                 atow(splash_path, "/Splashes/");
                 strucat(splash_path, entry->name);
                 node *current_splash = malloc(sizeof(node));
@@ -66,5 +67,81 @@ Result prepareSplashes(node* first_node)
             break;
         }
     }
+    return 0;
+}
+
+Result install_splash(u16 *path)
+{
+    printu(path);
+    int splashes_installed = 0;
+    u16 file_path[0x106] = {0};
+    strucpy(file_path, path);
+    struacat(file_path, "/splash.bin");
+
+    Handle file_handle;
+    Result res = FSUSER_OpenFile(&file_handle, ArchiveSD, fsMakePath(PATH_UTF16, file_path), FS_OPEN_READ, 0);
+    if (R_FAILED(res) && R_SUMMARY(res) != RS_NOTFOUND) return res;
+    else if (R_SUCCEEDED(res))
+    {
+        u64 file_size;
+        u32 bytes;
+        FSFILE_GetSize(file_handle, &file_size);
+        char *splash_data = malloc(file_size);
+        memset(splash_data, 0, file_size);
+        FSFILE_Read(file_handle, &bytes, 0, splash_data, file_size);
+        FSFILE_Close(file_handle);
+        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, "/Luma/splash.bin"));
+        FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, "/Luma/splash.bin"), 0, file_size);
+        FSUSER_OpenFile(&file_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Luma/splash.bin"), FS_OPEN_WRITE, 0);
+        Result res = FSFILE_Write(file_handle, &bytes, 0, splash_data, file_size, FS_WRITE_FLUSH);
+        if (R_FAILED(res)) printf("Write: %lX\n", res);
+        free(splash_data);
+        FSFILE_Close(file_handle);
+        splashes_installed++;
+    }
+
+    memset(file_path, 0, 0x106);
+    strucpy(file_path, path);
+    struacat(file_path, "/splashbottom.bin");
+
+    res = FSUSER_OpenFile(&file_handle, ArchiveSD, fsMakePath(PATH_UTF16, file_path), FS_OPEN_READ, 0);
+    if (R_FAILED(res) && R_SUMMARY(res) != RS_NOTFOUND) return res;
+    else if (R_SUCCEEDED(res))
+    {
+        u64 file_size;
+        u32 bytes;
+        FSFILE_GetSize(file_handle, &file_size);
+        char *splash_data = malloc(file_size);
+        memset(splash_data, 0, file_size);
+        FSFILE_Read(file_handle, &bytes, 0, splash_data, file_size);
+        FSFILE_Close(file_handle);
+        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, "/Luma/splashbottom.bin"));
+        FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, "/Luma/splashbottom.bin"), 0, file_size);
+        FSUSER_OpenFile(&file_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Luma/splashbottom.bin"), FS_OPEN_WRITE, 0);
+        FSFILE_Write(file_handle, &bytes, 0, splash_data, file_size, FS_WRITE_FLUSH);
+        FSFILE_Close(file_handle);
+        free(splash_data);
+        splashes_installed += 2;
+    }
+
+    switch(splashes_installed) 
+    {
+        case 0:
+            printf("No splashes installed\n");
+            break;
+
+        case 1:
+            printf("Top splash installed\n");
+            break;
+
+        case 2:
+            printf("Bottom splash installed\n");
+            break;
+
+        case 3:
+            printf("Both splashes installed\n");
+            break;
+    }
+
     return 0;
 }

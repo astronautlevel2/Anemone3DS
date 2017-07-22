@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "theme.h"
+#include "splashes.h"
 #include "unicode.h"
 
 int main(void)
@@ -29,14 +30,7 @@ int main(void)
             node *splashes_node = malloc(sizeof(node));
             splashes_node->data = NULL;
             splashes_node->next = NULL;
-            prepareSplashes(splashes_node);
-            node *current_node = splashes_node->next;
-            while (current_node != NULL)
-            {
-                printu((u16*)current_node->data);
-                current_node = current_node->next;
-            }
-            puts("Done!");
+            prepare_splashes(splashes_node);
         }
         if (kDown & KEY_START)
         {
