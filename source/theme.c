@@ -73,9 +73,8 @@ Result extract_current_file(unzFile zip_handle, u16 *theme_path)
 }
 
 // TODO: There's a lot of duplicated code here, especially considering that we already built the paths in prepare_themes(). Maybe clean it up a bit later
-Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_name)
+Result unzip_file(char* base_path, FS_DirectoryEntry *entry, u16 *sanitized_name)
 {
-    char *base_path = "/Themes/";
     u16 zip_path[sizeof(entry->name) + 18] = {0}; // Make two u16*s that are big enough to hold the entire path
     u16 uzipfile[sizeof(entry->name) + 18] = {0};
     atow(zip_path, base_path); // Copy "/Themes/" unicode equivalent into a path
@@ -109,8 +108,13 @@ Result unzip_theme(FS_DirectoryEntry *entry, u16 *sanitized_name)
     extract_current_file(zip_handle, theme_path_u16);
     while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_u16); // While next file exists, unzip it
     unzClose(zip_handle);
+    res = FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zipfile));
+    if (R_FAILED(res))
+    {
+        free(zipfile);
+        return res;
+    }
     free(zipfile);
-    FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zipfile));
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS); // And return success \o/
 }
 
@@ -182,8 +186,8 @@ Result prepareThemes(node *first_node)
                     atow(sanitized_zip_path, "/Themes/");
                     memcpy(&sanitized_zip_path[len], sanitized_zip, sizeof(entry->name));
                     FSUSER_RenameFile(ArchiveSD, fsMakePath(PATH_UTF16, zip_path), ArchiveSD, fsMakePath(PATH_UTF16, sanitized_zip_path)); // Rename the zip to the sanitized one
-                    unzip_theme(entry, sanitized_zip); // And unzip it
-                } else unzip_theme(entry, entry->name); // If it's the same, unzip it anyway
+                    unzip_file("/Themes/", entry, sanitized_zip); // And unzip it
+                } else unzip_file("/Themes/", entry, entry->name); // If it's the same, unzip it anyway
             }
             free(entry);
         } else {

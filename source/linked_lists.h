@@ -2,11 +2,9 @@
 
 #include "3ds.h"
 
-struct theme_data;
-
 typedef struct
 {
-	struct theme_data *data;
+	void *data;
 	void *next;
 } node;
 

@@ -23,7 +23,7 @@ FS_Archive ArchiveSD;
 FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
 
-Result unzip_theme(FS_DirectoryEntry*, u16*);
+Result unzip_file(char*, FS_DirectoryEntry*, u16*);
 Result prepareThemes(node*);
 Result themeInstall(theme_data);
 Result closeThemeArchives();

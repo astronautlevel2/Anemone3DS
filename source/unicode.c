@@ -117,6 +117,17 @@ u16 *strucat(u16 *destination, const u16 *source)
     return destination;
 }
 
+u16 *struacat(u16 *destination, const char *source)
+{
+    ssize_t len = strulen(destination);
+    for (u16 i = len; i < strlen(source) + len; i++) 
+    {
+        destination[i] = source[i - len];
+    }
+    destination[strlen(source) + len] = 0;
+    return destination;
+}
+
 // Prints a u16* for debug purposes
 // Must be properly null-terminated
 void printu(u16 *input)
@@ -124,7 +135,7 @@ void printu(u16 *input)
     ssize_t in_len = strulen(input);
     ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
     wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
-    for (int i = 0; i < buf_len; i++) buf[i] = input[i];
+    for (u16 i = 0; i < buf_len; i++) buf[i] = input[i];
     printf("%ls\n", buf);
     free(buf);
 }
