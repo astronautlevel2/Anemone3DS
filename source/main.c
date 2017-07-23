@@ -31,6 +31,7 @@ int main(void)
             splashes_node->data = NULL;
             splashes_node->next = NULL;
             prepare_splashes(splashes_node);
+            printf("%li\n", shuffle_install(theme_node));
         }
         if (kDown & KEY_START)
         {
