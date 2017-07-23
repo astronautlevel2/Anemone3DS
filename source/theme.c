@@ -622,8 +622,9 @@ Result shuffle_install(node *first_node)
             free(body_data);
             if (R_FAILED(res)) return res;
         } else { // All themes have been written, write blank data to overwrite previous shuffles
-            char empty[0x150000] = {0};
+            char *empty = calloc(1, 0x150000);
             FSFILE_Write(body_cache_handle, NULL, 0x150000 * i, empty, 0x150000, FS_WRITE_FLUSH);
+            free(empty);
         }
     }
 
@@ -649,8 +650,9 @@ Result shuffle_install(node *first_node)
             
             if (R_SUMMARY(res) == RS_NOTFOUND) // Despite the flag saying "install with bgm" there's no bgm for this theme -_-
             {
-                char empty[3371008] = {0};
+                char *empty = calloc(1, 3371008);
                 res = FSFILE_Write(bgm_cache_handle, NULL, 0, empty, 3371008, FS_WRITE_FLUSH);
+                free(empty);
                 if (R_FAILED(res)) return res;
                 continue; // No need to do anything else
             }
@@ -678,8 +680,9 @@ Result shuffle_install(node *first_node)
             FSFILE_Close(bgm_cache_handle);
             FSFILE_Close(bgm_handle);
         } else { // out of themes or this theme was specified not to use BGM
-            char empty[3371008] = {0};
+            char *empty = calloc(1, 3371008);
             res = FSFILE_Write(bgm_cache_handle, NULL, 0, empty, 3371008, FS_WRITE_FLUSH);
+            free(empty);
             FSFILE_Close(bgm_cache_handle);
             if (R_FAILED(res)) return res;
         }
