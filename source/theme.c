@@ -639,7 +639,7 @@ Result shuffle_install(node *first_node)
         res = FSUSER_OpenFile(&bgm_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, bgm_cache_path), FS_OPEN_WRITE, 0);
         if (R_FAILED(res)) return res;
 
-        if (count > i && themes_to_be_shuffled[i]->bgm) // We write the bgm data if we still have themes to install and the current theme has bgm data, otherwise we write blank
+        if (count > i) // We write the bgm data if we still have themes to install and the current theme has bgm data, otherwise we write blank
         {
             Handle bgm_handle;
             u16 bgm_path[524] = {0};
@@ -653,12 +653,14 @@ Result shuffle_install(node *first_node)
                 char *empty = calloc(1, 3371008);
                 res = FSFILE_Write(bgm_cache_handle, NULL, 0, empty, 3371008, FS_WRITE_FLUSH);
                 free(empty);
+                bgm_sizes[i] = 0;
                 if (R_FAILED(res)) return res;
                 continue; // No need to do anything else
             }
             if (R_FAILED(res)) return res;
             
             FSFILE_GetSize(bgm_handle, &bgm_size); // Copy bgm data into buffer and write out to the bgm cache
+            printf("%llu\n", bgm_size);
             if (bgm_size > 3371008)
             {
                 FSFILE_Close(bgm_handle);
@@ -684,6 +686,7 @@ Result shuffle_install(node *first_node)
             res = FSFILE_Write(bgm_cache_handle, NULL, 0, empty, 3371008, FS_WRITE_FLUSH);
             free(empty);
             FSFILE_Close(bgm_cache_handle);
+            bgm_sizes[i] = 0;
             if (R_FAILED(res)) return res;
         }
     }
