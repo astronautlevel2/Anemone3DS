@@ -9,7 +9,8 @@ struct theme_data
 	u16 description[0x80];
 	u16 author[0x40];
 	char iconData[0x1200];
-	u16 path[533];
+	u16 path[524];
+	bool selected;
 	bool bgm;
 };
 
@@ -26,5 +27,6 @@ FS_Archive ArchiveThemeExt;
 Result unzip_file(char*, FS_DirectoryEntry*, u16*);
 Result prepareThemes(node*);
 Result themeInstall(theme_data);
+Result shuffle_install(node*);
 Result closeThemeArchives();
 Result parseSmdh(theme_data*, u16*);
