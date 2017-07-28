@@ -1,7 +1,9 @@
 #pragma once
 
 #include "minizip/unzip.h"
-#include "linked_lists.h"
 
-Result prepare_splashes(node*);
+#define PATH_LENGTH 524
+
+Result prepare_splashes(u16*);
+Result unzip_splashes();
 Result install_splash(u16 *);

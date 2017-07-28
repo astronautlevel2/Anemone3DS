@@ -6,9 +6,8 @@
 #include "theme.h"
 #include "unicode.h"
 #include "splashes.h"
-#include "linked_lists.h"
 
-Result prepare_splashes(node* first_node)
+Result unzip_splashes()
 {
     Handle splashes_dir;
     FSUSER_OpenDirectory(&splashes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"));; // Open up splashes directory
@@ -42,7 +41,13 @@ Result prepare_splashes(node* first_node)
         }
     }
     FSDIR_Close(splashes_dir);
+}
+
+Result prepare_splashes(u16* splash_list)
+{
+    Handle splashes_dir;
     FSUSER_OpenDirectory(&splashes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"));
+    int iter = 0;
     while (true)
     {
         FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
@@ -52,14 +57,9 @@ Result prepare_splashes(node* first_node)
         {
             if (entry->attributes == 1)
             {
-                u16 *splash_path = malloc(533);
-                memset(splash_path, 0, 533);
-                atow(splash_path, "/Splashes/");
-                strucat(splash_path, entry->name);
-                node *current_splash = malloc(sizeof(node));
-                current_splash->data = splash_path;
-                current_splash->next = NULL;
-                add_node(first_node, current_splash);
+                atow(&splash_list[iter * PATH_LENGTH/sizeof(u16)], "/Splashes/");
+                strucat(&splash_list[iter * PATH_LENGTH/sizeof(u16)], entry->name);
+                iter++;
             }
             free(entry);
         } else {

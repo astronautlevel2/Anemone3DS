@@ -16,22 +16,26 @@ int main(void)
     fsInit();   
     ptmSysmInit();
     consoleInit(GFX_TOP, NULL);
-
+    prepare_archives();
+    unzip_themes();
+    int theme_count = get_number_entries("/Themes");
+    theme_data **themes_list = calloc(theme_count, sizeof(theme_data));
+    prepare_themes(themes_list);
+    int splash_count = get_number_entries("/Splashes");
+    u16 *splashes_list = calloc(splash_count, PATH_LENGTH);
+    prepare_splashes(splashes_list);
+    printf("Theme count: %i\nSplash count: %i\n", theme_count, splash_count);
+    
     while (aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
 
         if (kDown & KEY_A) {
-            node *theme_node = malloc(sizeof(node));
-            theme_node->data = NULL;
-            theme_node->next = NULL;
-            prepareThemes(theme_node);
-            node *splashes_node = malloc(sizeof(node));
-            splashes_node->data = NULL;
-            splashes_node->next = NULL;
-            prepare_splashes(splashes_node);
-            printf("%li\n", shuffle_install(theme_node));
+            for (int iter = 0; iter < splash_count; iter++)
+            {
+                printu(&splashes_list[iter * PATH_LENGTH/sizeof(u16)]);
+            }
         }
         if (kDown & KEY_START)
         {

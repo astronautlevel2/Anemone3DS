@@ -1,7 +1,6 @@
 #pragma once
 
 #include "minizip/unzip.h"
-#include "linked_lists.h"
 
 struct theme_data
 {
@@ -24,9 +23,12 @@ FS_Archive ArchiveSD;
 FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
 
+Result prepare_archives();
+int get_number_entries(char*);
 Result unzip_file(char*, FS_DirectoryEntry*, u16*);
-Result prepareThemes(node*);
+Result unzip_themes();
+Result prepare_themes(theme_data**);
 Result themeInstall(theme_data);
-Result shuffle_install(node*);
+Result shuffle_install(theme_data**, int);
 Result closeThemeArchives();
 Result parseSmdh(theme_data*, u16*);

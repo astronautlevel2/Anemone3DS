@@ -6,7 +6,78 @@
 #include "theme.h"
 #include "unicode.h"
 #include "minizip/unzip.h"
-#include "linked_lists.h"
+
+Result prepare_archives()
+{
+    Result retValue;
+
+    FS_Path home;
+    FS_Path theme;
+
+    CFGU_SecureInfoGetRegion(&regionCode);
+    switch(regionCode)
+    {
+        case 1:
+            archive1 = 0x000002cd;
+            archive2 = 0x0000008f;
+            break;
+        case 2:
+            archive1 = 0x000002ce;
+            archive2 = 0x00000098;
+            break;
+        case 3:
+            archive1 = 0x000002cc;
+            archive2 = 0x00000082;
+            break;
+        default:
+            archive1 = 0x00;
+            archive2 = 0x00;
+    }
+
+    retValue = FSUSER_OpenArchive(&ArchiveSD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+    if(R_FAILED(retValue)) return retValue;
+
+    u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
+    home.type = PATH_BINARY;
+    home.size = 0xC;
+    home.data = homeMenuPath;
+    retValue = FSUSER_OpenArchive(&ArchiveHomeExt, ARCHIVE_EXTDATA, home);  
+    if(R_FAILED(retValue)) return retValue;
+
+    u32 themePath[3] = {MEDIATYPE_SD, archive1, 0};
+    theme.type = PATH_BINARY;
+    theme.size = 0xC;
+    theme.data = themePath;
+    retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
+    if(R_FAILED(retValue)) return retValue;
+    return 0;
+}
+
+int get_number_entries(char *path)
+{
+    int count = 0;
+    Handle dir;
+    FSUSER_OpenDirectory(&dir, ArchiveSD, fsMakePath(PATH_ASCII, path));
+    while (true)
+    {
+        FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
+        u32 entries_read;
+        FSDIR_Read(dir, &entries_read, 1, entry);
+        if (entries_read)
+        {
+            if (entry->attributes == 1)
+            {
+                count++;
+            }
+            free(entry);
+        } else {
+            free(entry);
+            break;
+        }
+    }
+    FSDIR_Close(dir);
+    return count;
+}
 
 Result extract_current_file(unzFile zip_handle, u16 *theme_path)
 {
@@ -109,6 +180,7 @@ Result unzip_file(char* base_path, FS_DirectoryEntry *entry, u16 *sanitized_name
     while(unzGoToNextFile(zip_handle) == UNZ_OK) extract_current_file(zip_handle, theme_path_u16); // While next file exists, unzip it
     unzClose(zip_handle);
     res = FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, zipfile));
+
     if (R_FAILED(res))
     {
         free(zipfile);
@@ -118,52 +190,8 @@ Result unzip_file(char* base_path, FS_DirectoryEntry *entry, u16 *sanitized_name
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS); // And return success \o/
 }
 
-Result prepareThemes(node *first_node)
+Result unzip_themes()
 {
-    printf("Preparing themes...\n");
-    Result retValue;
-
-    FS_Path home;
-    FS_Path theme;
-
-    CFGU_SecureInfoGetRegion(&regionCode);
-    switch(regionCode)
-    {
-        case 1:
-            archive1 = 0x000002cd;
-            archive2 = 0x0000008f;
-            break;
-        case 2:
-            archive1 = 0x000002ce;
-            archive2 = 0x00000098;
-            break;
-        case 3:
-            archive1 = 0x000002cc;
-            archive2 = 0x00000082;
-            break;
-        default:
-            archive1 = 0x00;
-            archive2 = 0x00;
-    }
-
-    retValue = FSUSER_OpenArchive(&ArchiveSD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
-    if(R_FAILED(retValue)) return retValue;
-
-    u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
-    home.type = PATH_BINARY;
-    home.size = 0xC;
-    home.data = homeMenuPath;
-    retValue = FSUSER_OpenArchive(&ArchiveHomeExt, ARCHIVE_EXTDATA, home);  
-    if(R_FAILED(retValue)) return retValue;
-
-    u32 themePath[3] = {MEDIATYPE_SD, archive1, 0};
-    theme.type = PATH_BINARY;
-    theme.size = 0xC;
-    theme.data = themePath;
-    retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
-    if(R_FAILED(retValue)) return retValue;
-
-    // This is where the fun begins
     Handle themes_dir;
     FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes")); // Open up the Themes directory and iterate over each file
     while (true)
@@ -196,7 +224,14 @@ Result prepareThemes(node *first_node)
         }
     }
     FSDIR_Close(themes_dir);
+    return 0;
+}
+
+Result prepare_themes(theme_data** themes_list)
+{
+    Handle themes_dir;
     FSUSER_OpenDirectory(&themes_dir, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"));
+    int iter = 0;
     while (true)
     {
         FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
@@ -218,10 +253,7 @@ Result prepareThemes(node *first_node)
                 /*
                 FOR TESTING PURPOSES ONLY, REMOVE ABOVE LINE LATER!!!
                 */
-                node *current_theme = malloc(sizeof(node));
-                current_theme->data = theme_info;
-                current_theme->next = NULL;
-                add_node(first_node, current_theme);
+                themes_list[iter++] = theme_info;
             }
             free(entry);
         } else {
@@ -539,23 +571,20 @@ Result themeInstall(theme_data theme_to_install)
     return 0;
 }
 
-Result shuffle_install(node *first_node)
+Result shuffle_install(theme_data **themes, int len)
 {
-    node *current_node = first_node->next;
     u8 count = 0;
     theme_data *themes_to_be_shuffled[10] = {0};
     u32 body_sizes[10] = {0};
     u32 bgm_sizes[10] = {0};
     
     // Load themes that are selected for shuffle
-    while (current_node != NULL) 
+    for (int iter = 0; iter < len; iter++)
     {
-        if (((theme_data*)current_node->data)->selected) count++;
-        
+        if (themes[iter]->selected == true)
+            count++;
         if (count > 10) return(MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION));
-
-        themes_to_be_shuffled[count - 1] = (theme_data *) current_node->data; // -1 because arrays are zero indexed, so the pos is one less than the count
-        current_node = current_node->next;
+        themes_to_be_shuffled[iter] = themes[iter];
     }
 
     // Load and edit SaveData
