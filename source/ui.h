@@ -18,10 +18,7 @@
 
 #define MAX_TEXTURES 				1024
 
-#define TEXTURE_BOTTOM_SCREEN_BG 	0
-#define TEXTURE_TOP_SCREEN_BG 		1
-#define TEXTURE_ICON 				2
-#define TEXTURE_DRIVE_ICON 			3
+#define THEME_PREVIEW_TEXT			 0
 
 #define RGBA8(r, g, b, a) 			((((a)&0xFF)<<24) | (((b)&0xFF)<<16) | (((g)&0xFF)<<8) | (((r)&0xFF)<<0))
 
@@ -56,5 +53,6 @@ void screen_draw_string(float x, float y, float scaleX, float scaleY, u32 color,
 void screen_draw_stringf(float x, float y, float scaleX, float scaleY, u32 color, const char * text, ...);
 void screen_draw_string_wrap(float x, float y, float scaleX, float scaleY, u32 color, float wrapX, const char * text);
 void screen_draw_rect(float x, float y, float width, float height, u32 color);
+void screen_clear(gfxScreen_t screen, u32 color);
 
 #endif

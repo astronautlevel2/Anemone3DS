@@ -90,7 +90,7 @@ static void screen_set_blend(u32 color, bool rgb, bool alpha)
 	C3D_TexEnvColor(env, color);
 }
 
-static void screen_clear(gfxScreen_t screen, u32 color)
+void screen_clear(gfxScreen_t screen, u32 color)
 {	
 	C3D_FrameBufClear(screen == GFX_TOP ? &target_top->frameBuf : &target_bottom->frameBuf, C3D_CLEAR_ALL, color, 0);
 }

@@ -128,6 +128,17 @@ u16 *struacat(u16 *destination, const char *source)
     return destination;
 }
 
+char *straucat(char *destination, const u16 *source)
+{
+    ssize_t len = strlen(destination);
+    for (u16 i = len; i < strulen(source) + len; i++)
+    {
+        destination[i] = source[i - len];
+    }
+    destination[strulen(source) + len] = 0;
+    return destination;
+}
+
 // Prints a u16* for debug purposes
 // Must be properly null-terminated
 void printu(u16 *input)

@@ -8,4 +8,5 @@ u16 *strucpy(u16*, const u16*);
 ssize_t strulen(const u16*);
 u16 *strucat(u16*, const u16*);
 u16 *struacat(u16*, const char*);
+char *straucat(char *destination, const u16 *source);
 void printu(u16*);

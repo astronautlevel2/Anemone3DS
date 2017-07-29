@@ -6,6 +6,7 @@
 #include "theme.h"
 #include "unicode.h"
 #include "minizip/unzip.h"
+#include "ui.h"
 
 Result prepare_archives()
 {
@@ -246,13 +247,7 @@ Result prepare_themes(theme_data** themes_list)
                 atow(theme_path, "/Themes/");
                 strucat(theme_path, entry->name);
                 parseSmdh(theme_info, theme_path);
-                /*
-                FOR TESTING PURPOSES ONLY, REMOVE THIS LINE LATER!!!!
-                */
-                theme_info->selected = true;
-                /*
-                FOR TESTING PURPOSES ONLY, REMOVE ABOVE LINE LATER!!!
-                */
+                theme_info->selected = false;
                 themes_list[iter++] = theme_info;
             }
             free(entry);
@@ -573,18 +568,17 @@ Result themeInstall(theme_data theme_to_install)
 
 Result shuffle_install(theme_data **themes, int len)
 {
+    
     u8 count = 0;
     theme_data *themes_to_be_shuffled[10] = {0};
     u32 body_sizes[10] = {0};
     u32 bgm_sizes[10] = {0};
-    
     // Load themes that are selected for shuffle
     for (int iter = 0; iter < len; iter++)
     {
-        if (themes[iter]->selected == true)
-            count++;
+        if (themes[iter]->selected) count++;
         if (count > 10) return(MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION));
-        themes_to_be_shuffled[iter] = themes[iter];
+        if (themes[iter]->selected) themes_to_be_shuffled[count - 1] = themes[iter];
     }
 
     // Load and edit SaveData
