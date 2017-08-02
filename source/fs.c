@@ -1,0 +1,93 @@
+#include <3ds.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "fs.h"
+
+Result open_archives(void)
+{
+
+    u8 regionCode;
+    u32 archive1;
+    u32 archive2;
+
+    Result retValue;
+
+    FS_Path home;
+    FS_Path theme;
+
+    CFGU_SecureInfoGetRegion(&regionCode);
+    switch(regionCode)
+    {
+        case 1:
+            archive1 = 0x000002cd;
+            archive2 = 0x0000008f;
+            break;
+        case 2:
+            archive1 = 0x000002ce;
+            archive2 = 0x00000098;
+            break;
+        case 3:
+            archive1 = 0x000002cc;
+            archive2 = 0x00000082;
+            break;
+        default:
+            archive1 = 0x00;
+            archive2 = 0x00;
+    }
+
+    retValue = FSUSER_OpenArchive(&ArchiveSD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+    if(R_FAILED(retValue)) return retValue;
+
+    u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
+    home.type = PATH_BINARY;
+    home.size = 0xC;
+    home.data = homeMenuPath;
+    retValue = FSUSER_OpenArchive(&ArchiveHomeExt, ARCHIVE_EXTDATA, home);  
+    if(R_FAILED(retValue)) return retValue;
+
+    u32 themePath[3] = {MEDIATYPE_SD, archive1, 0};
+    theme.type = PATH_BINARY;
+    theme.size = 0xC;
+    theme.data = themePath;
+    retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
+    if(R_FAILED(retValue)) return retValue;
+    return 0;
+}
+
+int get_number_entries(char *path)
+{
+    int count = 0;
+    Handle dir_handle;
+    Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, path));
+    if (R_FAILED(res)) return -1;
+
+    bool done = false;
+    while (!done)
+    {
+        FS_DirectoryEntry *entry = malloc(sizeof(entry));
+        u32 entries_read;
+        FSDIR_Read(dir_handle, &entries_read, 1, entry);
+        u32 attributes = entry->attributes;
+        char shortExt[0x4] = {0};
+        strcpy(shortExt, entry->shortExt);
+        free (entry);
+        if (entries_read && (!strcmp(shortExt, "ZIP") || attributes == 0)) count ++;
+        else if (!entries_read) break;
+    }
+    FSDIR_Close(dir_handle);
+    return count;
+}
+
+Result file_to_buf(FS_Path path, char* buf)
+{
+    Handle file;
+    Result res = FSUSER_OpenFile(&file, ArchiveSD, path, FS_OPEN_READ, 0);
+    if (R_FAILED(res)) return res;
+
+    u32 size;
+    FSFILE_GetSize(file, &size);
+    buf = malloc(size);
+    res = FSFILE_Read(file, NULL, 0, buf, size);
+    return res;
+}
