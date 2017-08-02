@@ -91,3 +91,30 @@ Result file_to_buf(FS_Path path, char* buf)
     res = FSFILE_Read(file, NULL, 0, buf, size);
     return res;
 }
+
+int zip_file_to_buf(char *file_name, u16 *zip_path, char *buf)
+{
+    ssize_t len = strulen(zip_path, 0x106);
+
+    u8 *path = calloc(sizeof(u8), len * 4);
+    utf16_to_utf8(path, zip_path, len);
+
+    unzFile zip_handle = unzOpen((char*)path);
+
+    if (zip_handle == NULL) return 1;
+
+    if (unzLocateFile(zip_handle, file_name, 0) == UNZ_OK)
+    {
+        unz_file_info *file_info = malloc(sizeof(unz_file_info));
+        ssize_t file_size = file_info->uncompressed_size;
+        free(file_info);
+        buf = malloc(file_size);
+        unzOpenCurrentFile(zip_handle);
+        unzReadCurrentFile(zip_handle, buf, file_size);
+        unzCloseCurrentFile(zip_handle);
+        unzClose(zip_handle);
+    }
+
+    free(path);
+    return 0;
+}

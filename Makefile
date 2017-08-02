@@ -29,7 +29,7 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source source/minizip source/stb_image
+SOURCES		:=	source source/minizip
 DATA		:=	data
 INCLUDES	:=	include
 #ROMFS		:=	romfs

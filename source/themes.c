@@ -5,13 +5,15 @@
 
 Result single_install(theme* theme)
 {
-	char *body;
+    char *body;
 
-	u16 path[262] = {0};
-	memcpy(path, theme->path, 262);
-	u16 body_path[12];
-	ssize_t len = utf8_to_utf16(body_path, (u8*) "/body_lz.bin", 12);
-	memcpy(&path[theme->path_len], body_path, 12);
-
-	file_to_buf(fsMakePath(PATH_UTF16, path), body);
+    if (theme->is_zip)
+    {
+        zip_file_to_buf("body_lz.bin", theme->path, body);
+    } else {
+        u16 path[0x106];
+        memcpy(path, theme->path, 0x106);
+        struacat(path, "/body_lz.bin");
+        file_to_buf(path, body);
+    }
 }
