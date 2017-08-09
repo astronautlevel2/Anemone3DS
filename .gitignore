@@ -57,3 +57,6 @@ dkms.conf
 
 # Build files
 build/
+
+# Sublime stuff
+.clang_complete

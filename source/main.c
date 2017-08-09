@@ -1,7 +1,11 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <3ds.h>
+#include <string.h>
 
 #include "fs.h"
 #include "themes.h"
+#include "unicode.h"
 
 int init_services(void)
 {
@@ -30,11 +34,26 @@ int de_init_services(void)
 int main(void)
 {
     init_services();
+    consoleInit(GFX_TOP, NULL);
 
     int theme_count = get_number_entries("/Themes");
-    theme** theme_list = calloc(theme_count, sizeof(theme*));
+    theme *theme = calloc(1, sizeof(theme));
+    u16 path[262] = {0};
+    utf8_to_utf16(path, (u8*)"/Themes/[11115] Saber Lily by kiss7938.zip", 262 * sizeof(u16));
+    memcpy(theme->path, path, 262 * sizeof(u16));
+    theme->is_zip = true;
+    single_install(*theme);
     
-    free(theme_list);
+    while(aptMainLoop())
+    {
+        hidScanInput();
+        u32 kDown = hidKeysDown();
+        if (kDown & KEY_START)
+        {
+            break;
+        }
+    }
+
     de_init_services();
     return 0;
 }

@@ -1,6 +1,8 @@
 #ifndef THEMES_H
 #define THEMES_H
 
+#include <3ds.h>
+
 typedef struct {
     u16 name[0x40];
     u16 desc[0x80];
@@ -11,6 +13,6 @@ typedef struct {
     bool is_zip;
 } theme;
 
-Result single_install(theme*);
+Result single_install(theme);
 
 #endif

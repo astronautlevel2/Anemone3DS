@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 #include "fs.h"
+#include "unicode.h"
+#include "minizip/unzip.h"
 
 Result open_archives(void)
 {
@@ -79,13 +81,13 @@ int get_number_entries(char *path)
     return count;
 }
 
-u32 file_to_buf(FS_Path path, FS_Archive archive, char* buf)
+u64 file_to_buf(FS_Path path, FS_Archive archive, char* buf)
 {
     Handle file;
     Result res = FSUSER_OpenFile(&file, archive, path, FS_OPEN_READ, 0);
     if (R_FAILED(res)) return 0;
 
-    u32 size;
+    u64 size;
     FSFILE_GetSize(file, &size);
     buf = malloc(size);
     FSFILE_Read(file, NULL, 0, buf, size);
@@ -95,6 +97,7 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char* buf)
 
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char *buf)
 {
+    fflush(stdout);
     ssize_t len = strulen(zip_path, 0x106);
 
     u8 *path = calloc(sizeof(u8), len * 4);
@@ -105,7 +108,8 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char *buf)
     if (zip_handle == NULL) return 0;
     u32 file_size = 0;
 
-    if (unzLocateFile(zip_handle, file_name, 0) == UNZ_OK)
+    int status = unzLocateFile(zip_handle, file_name, 0);
+    if (status == UNZ_OK)
     {
         unz_file_info *file_info = malloc(sizeof(unz_file_info));
         file_size = file_info->uncompressed_size;
@@ -114,6 +118,8 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char *buf)
         unzOpenCurrentFile(zip_handle);
         unzReadCurrentFile(zip_handle, buf, file_size);
         unzCloseCurrentFile(zip_handle);
+    } else {
+        puts("fileziprip");
     }
     unzClose(zip_handle);
 
@@ -125,10 +131,13 @@ u32 buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
 {
     Handle handle;
     u32 bytes = 0;
-    FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE | FS_OPEN_CREATE, 0);
-    FSFILE_Write(handle, &bytes, 0, buf, size, FS_WRITE_FLUSH);
-    FSFILE_Close(handle);
-    return bytes;
+    Result res = FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE, 0);
+    if (R_FAILED(res)) return res;
+    res = FSFILE_Write(handle, &bytes, 0, buf, size, FS_WRITE_FLUSH);
+    if (R_FAILED(res)) return res;
+    res = FSFILE_Close(handle);
+    if (R_FAILED(res)) return res;
+    return 0;
 }
 
 bool check_file_exists(char *path, FS_Archive archive)
