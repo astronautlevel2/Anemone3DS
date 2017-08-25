@@ -17,24 +17,25 @@ Result single_install(theme theme_to_install)
     u32 music_size;
     u32 savedata_size;
 
-    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
+    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
     savedata_buf[0x141b] = 0;
     memset(&savedata_buf[0x13b8], 0, 8);
     savedata_buf[0x13bd] = 3;
     savedata_buf[0x13b8] = 0xff;
-    Result res = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
-    printf("%li\n", res);
+    u32 size = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
+    printf("Savedata size: %lu\n", savedata_size);
+    printf("Return: %lx\n", size);
     free(savedata_buf);
 
     // Open body cache file. Test if theme is zipped
     if (theme_to_install.is_zip)
     {
-        body_size = zip_file_to_buf("body_LZ.bin", theme_to_install.path, body);
+        body_size = zip_file_to_buf("body_LZ.bin", theme_to_install.path, &body);
     } else {
         u16 path[0x106] = {0};
         memcpy(path, theme_to_install.path, 0x106 * sizeof(u16));
         struacat(path, "/body_lz.bin");
-        body_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, body);
+        body_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &body);
     }
 
     if (body_size == 0)
@@ -44,43 +45,41 @@ Result single_install(theme theme_to_install)
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
     }
 
-    if (check_file_exists("/BodyCache.bin", ArchiveThemeExt)) FSUSER_DeleteFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache.bin"));
-    FSUSER_CreateFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache.bin"), 0, body_size);
+    remake_file("/BodyCache.bin", ArchiveThemeExt, 0x150000);
 
-    u32 size = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
+    size = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
     free(body);
 
     if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
 
     if (theme_to_install.is_zip) // Same as above but this time with bgm
     {
-        music_size = zip_file_to_buf("bgm.bcstm", theme_to_install.path, music);
+        music_size = zip_file_to_buf("bgm.bcstm", theme_to_install.path, &music);
     } else {
         u16 path[0x106] = {0};
         memcpy(path, theme_to_install.path, 0x106 * sizeof(16));
         struacat(path, "/bgm.bcstm");
-        music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, music);
+        music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &music);
     }
 
     if (music_size == 0)
     {
         free(music);
         music = calloc(1, 3371008);
-    } else if (size > 3371008) {
+    } else if (music_size > 3371008) {
         free(music);
         puts("musicrip");
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
 
-    if (check_file_exists("/BgmCache.bin", ArchiveThemeExt)) FSUSER_DeleteFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"));
-    FSUSER_CreateFile(ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BgmCache.bin"), 0, music_size);
+    remake_file("/BgmCache.bin", ArchiveThemeExt, 3371008);
 
     size = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
     if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
 
-    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, thememanage_buf);
+    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
     thememanage_buf[0x01] = 0;
     thememanage_buf[0x02] = 0;
@@ -104,7 +103,7 @@ Result single_install(theme theme_to_install)
     memset(&thememanage_buf[0x340], 0, 4);
     memset(&thememanage_buf[0x360], 0, 4);
     memset(&thememanage_buf[0x368], 0, 4);
-    buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
+    size = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
     return 0;

@@ -81,7 +81,7 @@ int get_number_entries(char *path)
     return count;
 }
 
-u64 file_to_buf(FS_Path path, FS_Archive archive, char* buf)
+u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 {
     Handle file;
     Result res = FSUSER_OpenFile(&file, archive, path, FS_OPEN_READ, 0);
@@ -89,13 +89,13 @@ u64 file_to_buf(FS_Path path, FS_Archive archive, char* buf)
 
     u64 size;
     FSFILE_GetSize(file, &size);
-    buf = malloc(size);
-    FSFILE_Read(file, NULL, 0, buf, size);
+    *buf = malloc(size);
+    FSFILE_Read(file, NULL, 0, *buf, size);
     FSFILE_Close(file);
     return size;
 }
 
-u32 zip_file_to_buf(char *file_name, u16 *zip_path, char *buf)
+u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
     fflush(stdout);
     ssize_t len = strulen(zip_path, 0x106);
@@ -112,19 +112,22 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char *buf)
     if (status == UNZ_OK)
     {
         unz_file_info *file_info = malloc(sizeof(unz_file_info));
+        unzGetCurrentFileInfo(zip_handle, file_info, NULL, 0, NULL, 0, NULL, 0);
         file_size = file_info->uncompressed_size;
-        free(file_info);
-        buf = malloc(file_size);
+        *buf = malloc(file_size);
         unzOpenCurrentFile(zip_handle);
-        unzReadCurrentFile(zip_handle, buf, file_size);
+        unzReadCurrentFile(zip_handle, *buf, file_size);
         unzCloseCurrentFile(zip_handle);
-    } else {
-        puts("fileziprip");
-    }
-    unzClose(zip_handle);
+        unzClose(zip_handle);
 
-    free(path);
-    return file_size;
+        free(path);
+        free(file_info);
+        return file_size;
+    } else {
+        free(path);
+        puts("fileziprip");
+        return 0;
+    }
 }
 
 u32 buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
@@ -137,10 +140,16 @@ u32 buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
     if (R_FAILED(res)) return res;
     res = FSFILE_Close(handle);
     if (R_FAILED(res)) return res;
-    return 0;
+    return bytes;
 }
 
-bool check_file_exists(char *path, FS_Archive archive)
+void remake_file(char *path, FS_Archive archive, u32 size)
 {
-    return (R_SUMMARY(FSUSER_OpenFile(NULL, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_READ, 0)) == RS_NOTFOUND);
+    Handle handle;
+    if (R_SUCCEEDED(FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_READ, 0)))
+    {
+        FSFILE_Close(handle);
+        FSUSER_DeleteFile(archive, fsMakePath(PATH_ASCII, path));
+    }
+    FSUSER_CreateFile(archive, fsMakePath(PATH_ASCII, path), 0, size);
 }
