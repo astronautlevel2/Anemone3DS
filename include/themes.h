@@ -14,5 +14,7 @@ typedef struct {
 } theme;
 
 Result single_install(theme);
+int scan_themes(theme **themes);
+void parse_smdh(theme *entry, u16 *path);
 
 #endif

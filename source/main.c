@@ -37,17 +37,19 @@ int main(void)
     consoleInit(GFX_TOP, NULL);
 
     int theme_count = get_number_entries("/Themes");
-    theme *theme = calloc(1, sizeof(theme));
-    u16 path[262] = {0};
-    utf8_to_utf16(path, (u8*)"/Themes/Saber Lily", 262 * sizeof(u16));
-    memcpy(theme->path, path, 262 * sizeof(u16));
-    theme->is_zip = false;
     
     while(aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
-        if (kDown & KEY_A) single_install(*theme);
+        if (kDown & KEY_A)
+        {        
+            theme *theme = malloc(sizeof(theme));
+            u16 path[262] = {0};
+            struacat(path, "/Themes/Saber Lily");
+            parse_smdh(theme, path);
+            printu(theme->name);
+        }
         if (kDown & KEY_START)
         {
             close_archives();   

@@ -30,3 +30,13 @@ void printu(u16 *input)
     printf("%ls\n", buf);
     free(buf);
 }
+
+u16 *strucat(u16 *destination, const u16 *source)
+{
+    ssize_t dest_len = strulen(destination, 0x106);
+
+    ssize_t source_len = strulen(source, 0x106);
+
+    memcpy(&destination[dest_len], source, source_len * sizeof(u16));
+    return destination;
+}

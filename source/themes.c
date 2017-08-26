@@ -114,3 +114,21 @@ Result single_install(theme theme_to_install)
 
     return 0;
 }
+
+void parse_smdh(theme *entry, u16 *path)
+{
+    u16 path_to_smdh[0x106] = {0};
+    printu(path);
+    strucat(path_to_smdh, path);
+    struacat(path_to_smdh, "/info.smdh");
+    printu(path_to_smdh);
+    char *info_buffer;
+
+    u64 size = file_to_buf(fsMakePath(PATH_UTF16, path_to_smdh), ArchiveSD, &info_buffer);
+    printf("Size: %llu\n", size);
+    memcpy(entry->name, info_buffer + 0x08, 0x80);
+    memcpy(entry->desc, info_buffer + 0x88, 0x100);
+    memcpy(entry->author, info_buffer + 0x188, 0x80);
+    memcpy(entry->icon_data, info_buffer + 0x2040, 0x1200);
+    free(info_buffer);
+}
