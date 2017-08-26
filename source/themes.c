@@ -7,6 +7,11 @@
 #include "unicode.h"
 #include "fs.h"
 
+int scan_themes(theme **themes)
+{
+
+}
+
 Result single_install(theme theme_to_install)
 {
     char *body;
@@ -17,17 +22,18 @@ Result single_install(theme theme_to_install)
     u32 music_size;
     u32 savedata_size;
 
+    printf("Writing SaveData.dat...\n");
+
     savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
     savedata_buf[0x141b] = 0;
     memset(&savedata_buf[0x13b8], 0, 8);
     savedata_buf[0x13bd] = 3;
     savedata_buf[0x13b8] = 0xff;
     u32 size = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
-    printf("Savedata size: %lu\n", savedata_size);
-    printf("Return: %lx\n", size);
     free(savedata_buf);
 
     // Open body cache file. Test if theme is zipped
+    printf("Writing BodyCache.bin...\n");
     if (theme_to_install.is_zip)
     {
         body_size = zip_file_to_buf("body_LZ.bin", theme_to_install.path, &body);
@@ -50,12 +56,13 @@ Result single_install(theme theme_to_install)
 
     if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
 
+    printf("Writing BgmCache.bin...\n");
     if (theme_to_install.is_zip) // Same as above but this time with bgm
     {
         music_size = zip_file_to_buf("bgm.bcstm", theme_to_install.path, &music);
     } else {
         u16 path[0x106] = {0};
-        memcpy(path, theme_to_install.path, 0x106 * sizeof(16));
+        memcpy(path, theme_to_install.path, 0x106 * sizeof(u16));
         struacat(path, "/bgm.bcstm");
         music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &music);
     }
@@ -75,6 +82,7 @@ Result single_install(theme theme_to_install)
 
     if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
 
+    printf("Writing ThemeManage.bin...\n");
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
     thememanage_buf[0x01] = 0;
@@ -101,6 +109,8 @@ Result single_install(theme theme_to_install)
     memset(&thememanage_buf[0x368], 0, 4);
     size = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
+
+    printf("Done!\n");
 
     return 0;
 }

@@ -27,7 +27,7 @@ int de_init_services(void)
     hidExit();
     fsExit();
     ptmSysmExit();
-    // close_archives(); // TODO: Implement
+    close_archives();
     return 0;
 }
 
@@ -39,15 +39,15 @@ int main(void)
     int theme_count = get_number_entries("/Themes");
     theme *theme = calloc(1, sizeof(theme));
     u16 path[262] = {0};
-    utf8_to_utf16(path, (u8*)"/Themes/[11115] Saber Lily by kiss7938.zip", 262 * sizeof(u16));
+    utf8_to_utf16(path, (u8*)"/Themes/Saber Lily", 262 * sizeof(u16));
     memcpy(theme->path, path, 262 * sizeof(u16));
-    theme->is_zip = true;
-    single_install(*theme);
+    theme->is_zip = false;
     
     while(aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
+        if (kDown & KEY_A) single_install(*theme);
         if (kDown & KEY_START)
         {
             close_archives();   

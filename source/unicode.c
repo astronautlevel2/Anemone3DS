@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <3ds.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "unicode.h"
 
@@ -10,13 +11,22 @@ ssize_t strulen(u16 *input, ssize_t max_len)
     return max_len;
 }
 
-void struacat(u16 *input, char *addition)
+void struacat(u16 *input, const char *addition)
 {
     ssize_t len = strulen(input, 0x106);
-    u8 *data = calloc(sizeof(u8), len * 4);
-    utf16_to_utf8(data, input, len);
+    for (u16 i = len; i < strlen(addition) + len; i++) 
+    {
+        input[i] = addition[i - len];
+    }
+    input[strlen(addition) + len] = 0;
+}
 
-    memcpy(&data[len], addition, strlen(addition));
-    utf8_to_utf16(input, data, len + strlen(addition));
-    free(data);
+void printu(u16 *input)
+{
+    ssize_t in_len = strulen(input, 0x106);
+    ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
+    wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
+    for (u16 i = 0; i < buf_len; i++) buf[i] = input[i];
+    printf("%ls\n", buf);
+    free(buf);
 }
