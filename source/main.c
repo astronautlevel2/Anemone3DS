@@ -50,7 +50,9 @@ int main(void)
         u32 kDown = hidKeysDown();
         if (kDown & KEY_START)
         {
-            break;
+            close_archives();   
+            PTMSYSM_ShutdownAsync(0);
+            ptmSysmExit();
         }
     }
 

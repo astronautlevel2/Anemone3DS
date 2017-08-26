@@ -45,8 +45,6 @@ Result single_install(theme theme_to_install)
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
     }
 
-    remake_file("/BodyCache.bin", ArchiveThemeExt, 0x150000);
-
     size = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
     free(body);
 
@@ -71,8 +69,6 @@ Result single_install(theme theme_to_install)
         puts("musicrip");
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
-
-    remake_file("/BgmCache.bin", ArchiveThemeExt, 3371008);
 
     size = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);

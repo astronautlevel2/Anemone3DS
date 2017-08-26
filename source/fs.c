@@ -57,6 +57,20 @@ Result open_archives(void)
     return 0;
 }
 
+Result close_archives(void)
+{
+    Result retValue;
+
+    retValue = FSUSER_CloseArchive(ArchiveSD);
+    if(R_FAILED(retValue)) return retValue;
+    retValue = FSUSER_CloseArchive(ArchiveHomeExt);
+    if(R_FAILED(retValue)) return retValue;
+    retValue = FSUSER_CloseArchive(ArchiveThemeExt);
+    if(R_FAILED(retValue)) return retValue;
+    
+    return 0;
+}
+
 int get_number_entries(char *path)
 {
     int count = 0;
