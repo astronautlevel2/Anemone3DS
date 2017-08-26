@@ -44,11 +44,11 @@ int main(void)
         u32 kDown = hidKeysDown();
         if (kDown & KEY_A)
         {        
-            theme *theme = malloc(sizeof(theme));
+            theme *theme_data = malloc(sizeof(theme));
             u16 path[262] = {0};
             struacat(path, "/Themes/Saber Lily");
-            parse_smdh(theme, path);
-            printu(theme->name);
+            parse_smdh(theme_data, path);
+            printu(theme_data->name);
         }
         if (kDown & KEY_START)
         {
