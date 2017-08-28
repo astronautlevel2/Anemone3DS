@@ -37,6 +37,9 @@ int main(void)
     consoleInit(GFX_TOP, NULL);
 
     int theme_count = get_number_entries("/Themes");
+    printf("Theme count: %i\n", theme_count);
+    theme **themes_list = calloc(theme_count, sizeof(theme));
+    scan_themes(themes_list, theme_count);
     
     while(aptMainLoop())
     {
@@ -44,11 +47,18 @@ int main(void)
         u32 kDown = hidKeysDown();
         if (kDown & KEY_A)
         {        
-            theme *theme_data = malloc(sizeof(theme));
-            u16 path[262] = {0};
-            struacat(path, "/Themes/Saber Lily");
-            parse_smdh(theme_data, path);
-            printu(theme_data->name);
+            for (int i = 0; i < theme_count; i++)
+            {
+                printu(themes_list[i]->name);
+                printu(themes_list[i]->path);
+            }
+        } 
+        if (kDown & KEY_B)
+        {
+            shuffle_install(themes_list, theme_count);
+            close_archives();
+            PTMSYSM_ShutdownAsync(0);
+            ptmSysmExit();
         }
         if (kDown & KEY_START)
         {

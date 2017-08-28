@@ -9,12 +9,13 @@ typedef struct {
     u16 author[0x40];
     char icon_data[0x1200];
     u16 path[262];
-    ssize_t path_len;
     bool is_zip;
+    bool selected;
 } theme;
 
-Result single_install(theme);
-int scan_themes(theme **themes);
 void parse_smdh(theme *entry, u16 *path);
+int scan_themes(theme **themes, int num_themes);
+Result single_install(theme);
+Result shuffle_install(theme **themes_list, int num_themes);
 
 #endif

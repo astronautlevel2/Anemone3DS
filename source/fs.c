@@ -81,14 +81,11 @@ int get_number_entries(char *path)
     bool done = false;
     while (!done)
     {
-        FS_DirectoryEntry *entry = malloc(sizeof(entry));
-        u32 entries_read;
+        FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
+        u32 entries_read = 0;
         FSDIR_Read(dir_handle, &entries_read, 1, entry);
-        u32 attributes = entry->attributes;
-        char shortExt[0x4] = {0};
-        strcpy(shortExt, entry->shortExt);
-        free (entry);
-        if (entries_read && (!strcmp(shortExt, "ZIP") || attributes == 0)) count ++;
+        free(entry);
+        if (entries_read) count++;
         else if (!entries_read) break;
     }
     FSDIR_Close(dir_handle);
@@ -117,7 +114,7 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
     u8 *path = calloc(sizeof(u8), len * 4);
     utf16_to_utf8(path, zip_path, len);
 
-    unzFile zip_handle = unzOpen((char*)path);
+    unzFile zip_handle = unzOpen(path); // Can unzOpen really handle utf8?
 
     if (zip_handle == NULL) return 0;
     u32 file_size = 0;
