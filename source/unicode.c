@@ -26,7 +26,7 @@ void printu(u16 *input)
     ssize_t in_len = strulen(input, 0x106);
     ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
     wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
-    for (u16 i = 0; i < buf_len; i++) buf[i] = input[i];
+    utf16_to_utf32(buf, input, buf_len);
     printf("%ls\n", buf);
     free(buf);
 }

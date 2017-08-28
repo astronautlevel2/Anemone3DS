@@ -23,8 +23,8 @@ void parse_smdh(theme *entry, u16 *path)
 
     if (!size)
     {
-        printf("Failed on path: ");
-        printu(path);
+        // printf("Failed on path: ");
+        // printu(path);
         return;
     }
 

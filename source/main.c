@@ -46,7 +46,7 @@ int main(void)
         hidScanInput();
         u32 kDown = hidKeysDown();
         if (kDown & KEY_A)
-        {        
+        {
             for (int i = 0; i < theme_count; i++)
             {
                 printu(themes_list[i]->name);

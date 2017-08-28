@@ -108,13 +108,12 @@ u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
-    fflush(stdout);
     ssize_t len = strulen(zip_path, 0x106);
 
     u8 *path = calloc(sizeof(u8), len * 4);
-    utf16_to_utf8(path, zip_path, len);
+    utf16_to_utf8(path, zip_path, len * 4);
 
-    unzFile zip_handle = unzOpen(path); // Can unzOpen really handle utf8?
+    unzFile zip_handle = unzOpen((char*)path);
 
     if (zip_handle == NULL) return 0;
     u32 file_size = 0;
