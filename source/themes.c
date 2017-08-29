@@ -240,7 +240,7 @@ Result shuffle_install(theme **themes_list, int num_themes)
     for (int i = 0; i < 10; i++)
     {
         char bgm_cache_path[17] = {0};
-        sprintf(bgm_cache_path, "/BgmCache0%i.bin", i);
+        sprintf(bgm_cache_path, "/BgmCache_0%i.bin", i);
         remake_file(bgm_cache_path, ArchiveThemeExt, 3371008);
         if (count > i)
         {
@@ -259,7 +259,6 @@ Result shuffle_install(theme **themes_list, int num_themes)
 
             if (!music_size)
             {
-                printf("Writing empty for: %s\n", bgm_cache_path);
                 char *empty = calloc(1, 3371008);
                 buf_to_file(3371008, bgm_cache_path, ArchiveThemeExt, empty);
                 bgm_sizes[i] = 0;
@@ -267,11 +266,9 @@ Result shuffle_install(theme **themes_list, int num_themes)
                 continue;
             }
             bgm_sizes[i] = music_size;
-            u32 bytes_written = buf_to_file(music_size, bgm_cache_path, ArchiveThemeExt, music_buf);
-            printf("%lu bytes written\n", bytes_written);
+            buf_to_file(music_size, bgm_cache_path, ArchiveThemeExt, music_buf);
             free(music_buf);
         } else {
-            printf("Writing empty for: %s\n", bgm_cache_path);
             char *empty = calloc(1, 3371008);
             buf_to_file(3371008, bgm_cache_path, ArchiveThemeExt, empty);
             bgm_sizes[i] = 0;
