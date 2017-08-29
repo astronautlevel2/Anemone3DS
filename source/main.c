@@ -28,20 +28,28 @@
 #include <stdio.h>
 #include <3ds.h>
 #include <string.h>
+#include <time.h>
 
+#include "pp2d/pp2d/pp2d.h"
 #include "fs.h"
 #include "themes.h"
 #include "unicode.h"
 
+#define TEXTURE_ARROW   1
+#define MAX_THEMES      4
+
 int init_services(void)
 {
-    gfxInitDefault();
     cfguInit();
     srvInit();  
     hidInit();
     fsInit();   
     ptmSysmInit();
     open_archives();
+    pp2d_init();
+    pp2d_set_screen_color(GFX_TOP, ABGR8(255, 32, 28, 35));
+    pp2d_set_screen_color(GFX_BOTTOM, ABGR8(255, 32, 28, 35));
+    pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     return 0;
 }
 
@@ -57,41 +65,124 @@ int de_init_services(void)
     return 0;
 }
 
+void format_time(char *time_string)
+{
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        if (tm.tm_hour < 10)
+        {
+            char temp_string[3] = {0};
+            sprintf(temp_string, "0%i", tm.tm_hour);
+            strcat(time_string, temp_string);
+        } else {
+            char temp_string[3] = {0};
+            sprintf(temp_string, "%i", tm.tm_hour);
+            strcat(time_string, temp_string);
+        }
+        strcat(time_string, ":");
+        if (tm.tm_min < 10)
+        {
+            char temp_string[3] = {0};
+            sprintf(temp_string, "0%i", tm.tm_min);
+            strcat(time_string, temp_string);
+        } else {
+            char temp_string[3] = {0};
+            sprintf(temp_string, "%i", tm.tm_min);
+            strcat(time_string, temp_string);
+        }
+}
+
+Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork of lpp-3ds
+{
+    #define TRY(expr) if(R_FAILED(res = (expr))) { svcCloseHandle(mcuhwcHandle); return res; }
+    Result res;
+    Handle mcuhwcHandle;
+    TRY(srvGetServiceHandle(&mcuhwcHandle, "mcu::HWC"));
+    u32 *cmdbuf = getThreadCommandBuffer();
+    cmdbuf[0] = 0x50000;
+    TRY(svcSendSyncRequest(mcuhwcHandle));
+    *out = (u8) cmdbuf[2];
+    svcCloseHandle(mcuhwcHandle);
+    return cmdbuf[1];
+    #undef TRY
+}
+
 int main(void)
 {
     init_services();
-    consoleInit(GFX_TOP, NULL);
 
     int theme_count = get_number_entries("/Themes");
-    printf("Theme count: %i\n", theme_count);
     theme **themes_list = calloc(theme_count, sizeof(theme));
     scan_themes(themes_list, theme_count);
+
+    u32 color_accent = RGBA8(55, 122, 168, 255);
+    u32 color_white = RGBA8(255, 255, 255, 255);
+    u32 cursor_color = RGBA8(200, 200, 200, 255);
+    u32 color_black = RGBA8(0, 0, 0, 255);
+
+    int cursor_pos = 1;
+    int top_pos = 0;
     
     while(aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
-        if (kDown & KEY_A)
+
+        pp2d_begin_draw(GFX_TOP);
+        pp2d_draw_rectangle(0, 0, 400, 23, color_accent);
+        
+        char time_string[6] = {0};
+        format_time(time_string);
+        pp2d_draw_text(7, 2, 0.6, 0.6, color_white, time_string);
+
+        u8 battery_val;
+        MCUHWC_GetBatteryLevel(&battery_val);
+        pp2d_draw_textf(350, 2, 0.6, 0.6, color_white, "%i%%", battery_val);
+        pp2d_draw_textf(20, 50, 0.7, 0.7, color_white, "top_pos: %i", top_pos);
+
+        pp2d_draw_on(GFX_BOTTOM);
+        pp2d_draw_rectangle(0, 0, 320, 24, color_accent);
+        pp2d_draw_rectangle(0, 216, 320, 24, color_accent);
+        pp2d_draw_rectangle(0, 24 + (48 * (cursor_pos-1)), 320, 48, cursor_color);
+        
+        if (top_pos > 0)
         {
-            for (int i = 0; i < theme_count; i++)
-            {
-                printu(themes_list[i]->name);
-                printu(themes_list[i]->path);
-            }
-        } 
-        if (kDown & KEY_B)
+            pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
+        }
+
+        if (top_pos + MAX_THEMES < theme_count)
         {
-            shuffle_install(themes_list, theme_count);
-            close_archives();
-            PTMSYSM_ShutdownAsync(0);
-            ptmSysmExit();
+            pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
+        }
+
+        for (int i = 0; i < MAX_THEMES; i++)
+        {
+            if (i + top_pos == theme_count) break;
+            wchar_t name[0x40] = {0};
+            utf16_to_utf32((u32*)name, themes_list[i+top_pos]->name, 0x40);
+            if (cursor_pos-1 == i) pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_black, name);
+            else pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_white, name);
+        }
+
+        if (kDown & KEY_DOWN) 
+        {
+            if (cursor_pos < MAX_THEMES && cursor_pos < theme_count) cursor_pos++; 
+            else if (cursor_pos + top_pos < theme_count) top_pos++;
+        }
+        if (kDown & KEY_UP)
+        {
+            if (cursor_pos > 1) cursor_pos--;
+            else if (top_pos > 0) top_pos--;
         }
         if (kDown & KEY_START)
         {
-            close_archives();   
-            PTMSYSM_ShutdownAsync(0);
-            ptmSysmExit();
+            // close_archives();
+            // PTMSYSM_ShutdownAsync(0);
+            // ptmSysmExit();
+            break;
         }
+
+        pp2d_end_draw();
     }
 
     de_init_services();

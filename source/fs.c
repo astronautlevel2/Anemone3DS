@@ -80,6 +80,7 @@ Result open_archives(void)
     theme.data = themePath;
     retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
     if(R_FAILED(retValue)) return retValue;
+    romfsInit();
     return 0;
 }
 

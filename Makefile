@@ -9,48 +9,58 @@ endif
 TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
-#---------------------------------------------------------------------------------
-# TARGET is the name of the output
-# BUILD is the directory where object files & intermediate files will be placed
-# SOURCES is a list of directories containing source code
-# DATA is a list of directories containing data files
-# INCLUDES is a list of directories containing header files
-#
-# NO_SMDH: if set to anything, no SMDH file is generated.
-# ROMFS is the directory which contains the RomFS, relative to the Makefile (Optional)
-# APP_TITLE is the name of the app stored in the SMDH file (Optional)
-# APP_DESCRIPTION is the description of the app stored in the SMDH file (Optional)
-# APP_AUTHOR is the author of the app stored in the SMDH file (Optional)
-# ICON is the filename of the icon (.png), relative to the project folder.
-#   If not set, it attempts to use one of the following (in this order):
-#     - <Project name>.png
-#     - icon.png
-#     - <libctru folder>/default_icon.png
-#---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR))
-BUILD		:=	build
-SOURCES		:=	source source/minizip
-DATA		:=	data
-INCLUDES	:=	include
-#ROMFS		:=	romfs
+# Your values.
+APP_TITLE           :=	Anemone3DS
+APP_DESCRIPTION     :=	A complete themeing tool for the 3DS
+APP_AUTHOR          :=	astronautlevel and daedreth
+
+
+TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
+OUTDIR              :=	out
+BUILD               :=	build
+SOURCES             :=	source source/pp2d/pp2d source/minizip
+INCLUDES            :=	include
+ROMFS               :=	romfs
+
+
+# Path to the files
+# If left blank, will try to use "icon.png", "$(TARGET).png", or the default ctrulib icon, in that order
+ICON                := 
+
+BANNER_AUDIO        :=	meta/audio.wav
+BANNER_IMAGE        :=	meta/banner.png
+
+RSF_PATH            :=	meta/app.rsf
+
+# If left blank, makerom will use the default Homebrew logo
+LOGO                :=	
+
+
+# If left blank, makerom will use default values (0xff3ff and CTR-P-CTAP, respectively)
+# Be careful if UNIQUE_ID is the same as other apps: it will overwrite the previously installed one
+UNIQUE_ID           :=	0xAFEN
+PRODUCT_CODE        :=	CTR-P-ANEM
+
+# Don't really need to change this
+ICON_FLAGS          :=	nosavebackups,visible
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -Wextra -Wno-pointer-sign -mword-relocations \
-			-ffunction-sections \
+CFLAGS	:=	-g -Wall -Wextra -O2 -mword-relocations \
+			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
+CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -D_GNU_SOURCE
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lcitro3d -lctrud -lm -lz
+LIBS	:= -lcitro3d -lctru -lm -lz
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -66,7 +76,7 @@ LIBDIRS	:= $(CTRULIB) $(DEVKITPRO)/portlibs/armv6k
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(OUTDIR)/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -119,7 +129,7 @@ else
 endif
 
 ifeq ($(strip $(NO_SMDH)),)
-	export _3DSXFLAGS += --smdh=$(CURDIR)/$(TARGET).smdh
+	export _3DSXFLAGS += --smdh=$(OUTPUT).smdh
 endif
 
 ifneq ($(ROMFS),)
@@ -129,17 +139,76 @@ endif
 .PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
-all: $(BUILD)
+3dsx: $(BUILD) $(OUTPUT).3dsx
 
+cia : $(BUILD) $(OUTPUT).cia
+
+all: 3dsx cia
+
+#---------------------------------------------------------------------------------
 $(BUILD):
-	@[ -d $@ ] || mkdir -p $@
+	@mkdir -p $(OUTDIR)
+	@[ -d "$@" ] || mkdir -p "$@"
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf
+	@rm -fr $(BUILD) $(OUTDIR)
 
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(NO_SMDH)),)
+$(OUTPUT).3dsx	:	$(OUTPUT).elf $(OUTPUT).smdh
+else
+$(OUTPUT).3dsx	:	$(OUTPUT).elf
+endif
+
+#---------------------------------------------------------------------------------
+MAKEROM		?=	makerom
+
+MAKEROM_ARGS		:=	-elf "$(OUTPUT).elf" -rsf "$(RSF_PATH)" -banner "$(BUILD)/banner.bnr" -icon "$(BUILD)/icon.icn" -DAPP_TITLE="$(APP_TITLE)" -DAPP_PRODUCT_CODE="$(PRODUCT_CODE)" -DAPP_UNIQUE_ID="$(UNIQUE_ID)"
+
+ifneq ($(strip $(ROMFS)),)
+	MAKEROM_ARGS	+=	 -romfs "$(BUILD)/romfs.bin"
+endif
+ifneq ($(strip $(LOGO)),)
+	MAKEROM_ARGS	+=	 -logo "$(LOGO)"
+endif
+
+ifeq ($(strip $(ROMFS)),)
+$(OUTPUT).cia: $(OUTPUT).elf $(BUILD)/banner.bnr $(BUILD)/icon.icn
+	$(MAKEROM) -f cia -o "$@" -target t -exefslogo $(MAKEROM_ARGS)
+else
+$(OUTPUT).cia: $(OUTPUT).elf $(BUILD)/romfs.bin $(BUILD)/banner.bnr $(BUILD)/icon.icn
+	$(MAKEROM) -f cia -o "$@" -target t -exefslogo $(MAKEROM_ARGS)
+endif
+
+
+BANNERTOOL	?=	bannertool
+
+ifeq ($(suffix $(BANNER_IMAGE)),.cgfx)
+	BANNER_IMAGE_ARG := -ci
+else
+	BANNER_IMAGE_ARG := -i
+endif
+
+ifeq ($(suffix $(BANNER_AUDIO)),.cwav)
+	BANNER_AUDIO_ARG := -ca
+else
+	BANNER_AUDIO_ARG := -a
+endif
+
+$(BUILD)/banner.bnr	:	$(BANNER_IMAGE) $(BANNER_AUDIO)
+	$(BANNERTOOL) makebanner $(BANNER_IMAGE_ARG) "$(BANNER_IMAGE)" $(BANNER_AUDIO_ARG) "$(BANNER_AUDIO)" -o "$@"
+
+$(BUILD)/icon.icn	:	$(APP_ICON)
+	$(BANNERTOOL) makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i "$(APP_ICON)" -f "$(ICON_FLAGS)" -o "$@"
+
+
+3DSTOOL		?= 3dstool
+
+$(BUILD)/romfs.bin	:	$(ROMFS)
+	$(3DSTOOL) -ctf romfs "$@" --romfs-dir "$(ROMFS)"
 
 #---------------------------------------------------------------------------------
 else
@@ -149,11 +218,6 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-ifeq ($(strip $(NO_SMDH)),)
-$(OUTPUT).3dsx	:	$(OUTPUT).elf $(OUTPUT).smdh
-else
-$(OUTPUT).3dsx	:	$(OUTPUT).elf
-endif
 
 $(OUTPUT).elf	:	$(OFILES)
 
