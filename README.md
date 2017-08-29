@@ -17,6 +17,6 @@ Thanks to...
  * the maintainers for all used libraries, including ctrulib, zlib, citro3d, pp2d and minizip.
  * BernardoGiordano and LiquidFenrir for making pp2d and helping me out immensely with graphics
  * all the people who helped keep me going and motivated me to work. This includes, but is definitely not limited to:
-  * The members of the Nintendo Homebrew Discord
-  * The members of the Secret Shack Service Discord
-  * The members of the ThemePlaza Discord
+   * The members of the Nintendo Homebrew Discord
+   * The members of the Secret Shack Service Discord
+   * The members of the ThemePlaza Discord
