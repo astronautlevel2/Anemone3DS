@@ -81,7 +81,7 @@ static int vertical_scroll = 0;
 
 // static const int FRAMES_FOR_TEXT_SCROLL = 40;
 // static int frames_count = 0;
-static int horizontal_scroll = 0;
+// static int horizontal_scroll = 0;
 // static int previous_selected = 0;
 // static int horizontal_scroll_change = 1;
 
@@ -117,7 +117,7 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
         format_time(time_string);
         pp2d_draw_text(7, 2, 0.6, 0.6, COLOR_WHITE, time_string);
         u8 battery_val = 0;
-        // MCUHWC_GetBatteryLevel(&battery_val);
+        MCUHWC_GetBatteryLevel(&battery_val);
         pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
 
         if (current_theme.has_preview)
@@ -210,7 +210,7 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
                 front_color = COLOR_BLACK;
                 pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
             }
-            pp2d_draw_wtext(50, 40 + vertical_offset, 0.55, 0.55, front_color, name+horizontal_scroll);
+            pp2d_draw_wtext(50, 40 + vertical_offset, 0.55, 0.55, front_color, name);
             
             if (current_theme.in_shuffle)
             {
