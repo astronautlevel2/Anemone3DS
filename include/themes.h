@@ -29,7 +29,7 @@
 
 #include <3ds.h>
 
-#define TEX_COUNT       1
+#define TEX_COUNT   3
 
 typedef struct {
     u16 name[0x40];

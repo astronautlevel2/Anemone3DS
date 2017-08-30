@@ -35,7 +35,9 @@
 #include "themes.h"
 #include "unicode.h"
 
-#define TEXTURE_ARROW   1
+#define TEXTURE_ARROW           1
+#define TEXTURE_SHUFFLE_BLACK   2
+#define TEXTURE_SHUFFLE_WHITE   3
 #define MAX_THEMES      4
 
 int init_services(void)
@@ -50,6 +52,8 @@ int init_services(void)
     pp2d_set_screen_color(GFX_TOP, ABGR8(255, 32, 28, 35));
     pp2d_set_screen_color(GFX_BOTTOM, ABGR8(255, 32, 28, 35));
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
+    pp2d_load_texture_png(TEXTURE_SHUFFLE_BLACK, "romfs:/shuffle_black.png");
+    pp2d_load_texture_png(TEXTURE_SHUFFLE_WHITE, "romfs:/shuffle_white.png");
     return 0;
 }
 
@@ -172,6 +176,11 @@ int main(void)
             utf16_to_utf32((u32*)name, themes_list[i+top_pos]->name, 0x40);
             if (cursor_pos-1 == i) pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_black, name);
             else pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_white, name);
+            if (themes_list[i+top_pos]->selected)
+            {
+                if (cursor_pos-1 == i) pp2d_draw_texture(TEXTURE_SHUFFLE_BLACK, 280, 32 + (48 * i));
+                else pp2d_draw_texture(TEXTURE_SHUFFLE_WHITE, 280, 32 + (48 * i));
+            }
         }
 
         if (kDown & KEY_A)
@@ -181,7 +190,7 @@ int main(void)
 
         if (kDown & KEY_B)
         {
-            current_theme->selected = true;
+            current_theme->selected = !(current_theme->selected);
         }
 
         if (kDown & KEY_SELECT)

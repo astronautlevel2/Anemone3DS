@@ -88,7 +88,6 @@ int scan_themes(theme **themes, int num_themes)
         }
         parse_smdh(theme_info, theme_path);
         memcpy(theme_info->path, theme_path, 0x106 * sizeof(u16));
-        theme_info->selected = true;
         themes[i] = theme_info;
         free(entry);
     }
