@@ -79,18 +79,36 @@ static void load_preview(Theme_s *theme, u16 *path, ssize_t textureID)
         return;
     }
     
-    u8 * image_buf = NULL;
+    u8 * image = NULL;
     unsigned int width = 0, height = 0;
     
-    int result = lodepng_decode32(&image_buf, &width, &height, (u8*)preview_buffer, size);
+    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
     if (result == 0) // no error
     {
+        for (u32 i = 0; i < width; i++)
+        {
+            for (u32 j = 0; j < height; j++)
+            {
+                u32 p = (i + j*width) * 4;
+
+                u8 r = *(u8*)(image + p);
+                u8 g = *(u8*)(image + p + 1);
+                u8 b = *(u8*)(image + p + 2);
+                u8 a = *(u8*)(image + p + 3);
+
+                *(image + p) = a;
+                *(image + p + 1) = b;
+                *(image + p + 2) = g;
+                *(image + p + 3) = r;
+            }
+        }
+        
         theme->has_preview = true;
-        pp2d_load_texture_memory(textureID, image_buf, (u32)width, (u32)height);
+        pp2d_load_texture_memory(textureID, image, (u32)width, (u32)height);
         theme->preview_id = textureID;
     }
     
-    free(image_buf);
+    free(image);
     free(preview_buffer);
 }
 
@@ -116,7 +134,7 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
             break;
         
         Theme_s* current_theme = &(*themes_list)[*theme_count-1];
-		memset(current_theme, 0, sizeof(Theme_s));
+        memset(current_theme, 0, sizeof(Theme_s));
         
         u16 theme_path[0x106] = {0};
         struacat(theme_path, THEMES_PATH);
