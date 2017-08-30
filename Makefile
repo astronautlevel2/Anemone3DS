@@ -25,7 +25,7 @@ ROMFS               :=	romfs
 
 # Path to the files
 # If left blank, will try to use "icon.png", "$(TARGET).png", or the default ctrulib icon, in that order
-ICON                := 
+ICON                :=	meta/icon.png
 
 BANNER_AUDIO        :=	meta/audio.wav
 BANNER_IMAGE        :=	meta/banner.png
