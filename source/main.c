@@ -71,29 +71,9 @@ int de_init_services(void)
 
 void format_time(char *time_string)
 {
-        time_t t = time(NULL);
-        struct tm tm = *localtime(&t);
-        if (tm.tm_hour < 10)
-        {
-            char temp_string[3] = {0};
-            sprintf(temp_string, "0%i", tm.tm_hour);
-            strcat(time_string, temp_string);
-        } else {
-            char temp_string[3] = {0};
-            sprintf(temp_string, "%i", tm.tm_hour);
-            strcat(time_string, temp_string);
-        }
-        strcat(time_string, ":");
-        if (tm.tm_min < 10)
-        {
-            char temp_string[3] = {0};
-            sprintf(temp_string, "0%i", tm.tm_min);
-            strcat(time_string, temp_string);
-        } else {
-            char temp_string[3] = {0};
-            sprintf(temp_string, "%i", tm.tm_min);
-            strcat(time_string, temp_string);
-        }
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(time_string, "%s%.2i:%.2i", time_string, tm.tm_hour, tm.tm_min);
 }
 
 Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork of lpp-3ds
