@@ -29,6 +29,8 @@
 
 #include <3ds.h>
 
+#define TEX_COUNT       1
+
 typedef struct {
     u16 name[0x40];
     u16 desc[0x80];
@@ -37,6 +39,9 @@ typedef struct {
     u16 path[262];
     bool is_zip;
     bool selected;
+    ssize_t preview_id;
+    bool has_preview;
+    char preview_path[0x106];
 } theme;
 
 void parse_smdh(theme *entry, u16 *path);

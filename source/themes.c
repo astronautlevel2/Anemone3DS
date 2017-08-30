@@ -32,6 +32,7 @@
 #include "themes.h"
 #include "unicode.h"
 #include "fs.h"
+#include "pp2d/pp2d/pp2d.h"
 
 void parse_smdh(theme *entry, u16 *path)
 {
@@ -74,8 +75,16 @@ int scan_themes(theme **themes, int num_themes)
         if (!strcmp(entry->shortExt, "ZIP"))
         {
             theme_info->is_zip = true;
+            theme_info->has_preview = false;
         } else {
             theme_info->is_zip = false;
+            char u8_path[0x106] = {0};
+            utf16_to_utf8((u8*)u8_path, theme_path, 0x106);
+            strcat(u8_path, "/Preview.png");
+            strcpy(theme_info->preview_path, u8_path);
+            pp2d_load_texture_png(TEX_COUNT + 1 + i, u8_path);
+            theme_info->preview_id = TEX_COUNT + 1 + i;
+            theme_info->has_preview = true;
         }
         parse_smdh(theme_info, theme_path);
         memcpy(theme_info->path, theme_path, 0x106 * sizeof(u16));

@@ -125,11 +125,22 @@ int main(void)
     
     while(aptMainLoop())
     {
+        theme *current_theme = themes_list[cursor_pos + top_pos - 1];
         hidScanInput();
         u32 kDown = hidKeysDown();
 
         pp2d_begin_draw(GFX_TOP);
         pp2d_draw_rectangle(0, 0, 400, 23, color_accent);
+        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, color_white, "Theme mode");
+
+        wchar_t title[0x40] = {0};
+        utf16_to_utf32((u32*)title, current_theme->name, 0x40);
+        pp2d_draw_wtext(20, 30, 0.7, 0.7, color_white, title);
+
+        if (current_theme->has_preview)
+        {
+            pp2d_draw_texture_scale(current_theme->preview_id, 220, 35, 0.4, 0.4);
+        }
         
         char time_string[6] = {0};
         format_time(time_string);
@@ -138,7 +149,6 @@ int main(void)
         u8 battery_val;
         MCUHWC_GetBatteryLevel(&battery_val);
         pp2d_draw_textf(350, 2, 0.6, 0.6, color_white, "%i%%", battery_val);
-        pp2d_draw_textf(20, 50, 0.7, 0.7, color_white, "top_pos: %i", top_pos);
 
         pp2d_draw_on(GFX_BOTTOM);
         pp2d_draw_rectangle(0, 0, 320, 24, color_accent);
@@ -164,16 +174,33 @@ int main(void)
             else pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_white, name);
         }
 
+        if (kDown & KEY_A)
+        {
+            single_install(*current_theme);
+        }
+
+        if (kDown & KEY_B)
+        {
+            current_theme->selected = true;
+        }
+
+        if (kDown & KEY_SELECT)
+        {
+            shuffle_install(themes_list, theme_count);
+        }
+
         if (kDown & KEY_DOWN) 
         {
             if (cursor_pos < MAX_THEMES && cursor_pos < theme_count) cursor_pos++; 
             else if (cursor_pos + top_pos < theme_count) top_pos++;
         }
+
         if (kDown & KEY_UP)
         {
             if (cursor_pos > 1) cursor_pos--;
             else if (top_pos > 0) top_pos--;
         }
+
         if (kDown & KEY_START)
         {
             // close_archives();
