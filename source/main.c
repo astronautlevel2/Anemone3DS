@@ -24,183 +24,116 @@
 *         reasonable ways as different from the original version.
 */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <3ds.h>
-#include <string.h>
-#include <time.h>
-
-#include "pp2d/pp2d/pp2d.h"
 #include "fs.h"
 #include "themes.h"
-#include "unicode.h"
-
-#define TEXTURE_ARROW           1
-#define TEXTURE_SHUFFLE_BLACK   2
-#define TEXTURE_SHUFFLE_WHITE   3
-#define MAX_THEMES      4
+#include "draw.h"
 
 int init_services(void)
 {
     cfguInit();
-    srvInit();  
-    hidInit();
-    fsInit();   
-    ptmSysmInit();
     open_archives();
-    pp2d_init();
-    pp2d_set_screen_color(GFX_TOP, ABGR8(255, 32, 28, 35));
-    pp2d_set_screen_color(GFX_BOTTOM, ABGR8(255, 32, 28, 35));
-    pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
-    pp2d_load_texture_png(TEXTURE_SHUFFLE_BLACK, "romfs:/shuffle_black.png");
-    pp2d_load_texture_png(TEXTURE_SHUFFLE_WHITE, "romfs:/shuffle_white.png");
     return 0;
 }
 
-int de_init_services(void)
+int exit_services(void)
 {
-    gfxExit();
-    cfguExit();
-    srvExit();
-    hidExit();
-    fsExit();
-    ptmSysmExit();
     close_archives();
+    cfguExit();
     return 0;
-}
-
-void format_time(char *time_string)
-{
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(time_string, "%s%.2i:%.2i", time_string, tm.tm_hour, tm.tm_min);
-}
-
-Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork of lpp-3ds
-{
-    #define TRY(expr) if(R_FAILED(res = (expr))) { svcCloseHandle(mcuhwcHandle); return res; }
-    Result res;
-    Handle mcuhwcHandle;
-    TRY(srvGetServiceHandle(&mcuhwcHandle, "mcu::HWC"));
-    u32 *cmdbuf = getThreadCommandBuffer();
-    cmdbuf[0] = 0x50000;
-    TRY(svcSendSyncRequest(mcuhwcHandle));
-    *out = (u8) cmdbuf[2];
-    svcCloseHandle(mcuhwcHandle);
-    return cmdbuf[1];
-    #undef TRY
 }
 
 int main(void)
 {
     init_services();
-
-    int theme_count = get_number_entries("/Themes");
-    theme **themes_list = calloc(theme_count, sizeof(theme));
-    scan_themes(themes_list, theme_count);
-
-    u32 color_accent = RGBA8(55, 122, 168, 255);
-    u32 color_white = RGBA8(255, 255, 255, 255);
-    u32 cursor_color = RGBA8(200, 200, 200, 255);
-    u32 color_black = RGBA8(0, 0, 0, 255);
-
-    int cursor_pos = 1;
-    int top_pos = 0;
+    init_screens();
+        
+    int theme_count = 0;
+    Theme_s * themes_list = NULL;
+    Result res = get_themes(&themes_list, &theme_count);
+    
+    int selected_theme = 0;
+    bool preview_mode = false;
     
     while(aptMainLoop())
     {
-        theme *current_theme = themes_list[cursor_pos + top_pos - 1];
         hidScanInput();
         u32 kDown = hidKeysDown();
-
-        pp2d_begin_draw(GFX_TOP);
-        pp2d_draw_rectangle(0, 0, 400, 23, color_accent);
-        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, color_white, "Theme mode");
-
-        wchar_t title[0x40] = {0};
-        utf16_to_utf32((u32*)title, current_theme->name, 0x40);
-        pp2d_draw_wtext(20, 30, 0.7, 0.7, color_white, title);
-
-        if (current_theme->has_preview)
-        {
-            pp2d_draw_texture_scale(current_theme->preview_id, 220, 35, 0.4, 0.4);
-        }
         
-        char time_string[6] = {0};
-        format_time(time_string);
-        pp2d_draw_text(7, 2, 0.6, 0.6, color_white, time_string);
-
-        u8 battery_val;
-        MCUHWC_GetBatteryLevel(&battery_val);
-        pp2d_draw_textf(350, 2, 0.6, 0.6, color_white, "%i%%", battery_val);
-
-        pp2d_draw_on(GFX_BOTTOM);
-        pp2d_draw_rectangle(0, 0, 320, 24, color_accent);
-        pp2d_draw_rectangle(0, 216, 320, 24, color_accent);
-        pp2d_draw_rectangle(0, 24 + (48 * (cursor_pos-1)), 320, 48, cursor_color);
+        draw_interface(themes_list, theme_count, selected_theme, preview_mode);
         
-        if (top_pos > 0)
+        if (kDown & KEY_START)
+            break; //quit
+        
+        if (themes_list == NULL)
+            continue;
+        
+        Theme_s * current_theme = &themes_list[selected_theme];
+        
+        if (kDown & KEY_Y)
         {
-            pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
-        }
-
-        if (top_pos + MAX_THEMES < theme_count)
-        {
-            pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
-        }
-
-        for (int i = 0; i < MAX_THEMES; i++)
-        {
-            if (i + top_pos == theme_count) break;
-            wchar_t name[0x40] = {0};
-            utf16_to_utf32((u32*)name, themes_list[i+top_pos]->name, 0x40);
-            if (cursor_pos-1 == i) pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_black, name);
-            else pp2d_draw_wtext(50, 40 + (48 * i), 0.55, 0.55, color_white, name);
-            if (themes_list[i+top_pos]->selected)
+            if (!preview_mode)
             {
-                if (cursor_pos-1 == i) pp2d_draw_texture(TEXTURE_SHUFFLE_BLACK, 280, 32 + (48 * i));
-                else pp2d_draw_texture(TEXTURE_SHUFFLE_WHITE, 280, 32 + (48 * i));
+                if (current_theme->has_preview)
+                    preview_mode = true;
             }
+            else
+                preview_mode = false;
         }
 
-        if (kDown & KEY_A)
+        //don't allow anything while the preview is up
+        if (preview_mode)
+            continue;
+        
+        // Actions
+        else if (kDown & KEY_X)
+        {
+            // install_bgm(current_theme);
+        }
+        else if (kDown & KEY_A)
         {
             single_install(*current_theme);
         }
-
-        if (kDown & KEY_B)
+        else if (kDown & KEY_B)
         {
-            current_theme->selected = !(current_theme->selected);
+            current_theme->in_shuffle = !(current_theme->in_shuffle);
         }
-
-        if (kDown & KEY_SELECT)
+        else if (kDown & KEY_SELECT)
         {
             shuffle_install(themes_list, theme_count);
         }
 
-        if (kDown & KEY_DOWN) 
+        // Movement in the UI
+        else if (kDown & KEY_DOWN) 
         {
-            if (cursor_pos < MAX_THEMES && cursor_pos < theme_count) cursor_pos++; 
-            else if (cursor_pos + top_pos < theme_count) top_pos++;
+            selected_theme++;
+            if (selected_theme >= theme_count)
+                selected_theme = theme_count-1;
         }
-
-        if (kDown & KEY_UP)
+        else if (kDown & KEY_UP)
         {
-            if (cursor_pos > 1) cursor_pos--;
-            else if (top_pos > 0) top_pos--;
+            selected_theme--;
+            if (selected_theme < 0)
+                selected_theme = 0;
         }
-
-        if (kDown & KEY_START)
+        // Quick moving
+        else if (kDown & KEY_LEFT) 
         {
-            // close_archives();
-            // PTMSYSM_ShutdownAsync(0);
-            // ptmSysmExit();
-            break;
+            selected_theme = 0;
         }
-
-        pp2d_end_draw();
+        else if (kDown & KEY_UP)
+        {
+            selected_theme = theme_count-1;
+        }
     }
-
-    de_init_services();
+    
+    free(themes_list);
+    
+    exit_screens();
+    exit_services();
+    
+    ptmSysmInit();
+    PTMSYSM_ShutdownAsync(0);
+    ptmSysmExit();
+    
     return 0;
 }

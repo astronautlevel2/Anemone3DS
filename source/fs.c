@@ -24,12 +24,9 @@
 *         reasonable ways as different from the original version.
 */
 
-#include <3ds.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "fs.h"
 #include "unicode.h"
+
 #include "minizip/unzip.h"
 
 Result open_archives(void)
@@ -80,6 +77,7 @@ Result open_archives(void)
     theme.data = themePath;
     retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
     if(R_FAILED(retValue)) return retValue;
+    
     romfsInit();
     return 0;
 }

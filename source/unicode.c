@@ -24,11 +24,6 @@
 *         reasonable ways as different from the original version.
 */
 
-#include <stdlib.h>
-#include <3ds.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "unicode.h"
 
 ssize_t strulen(u16 *input, ssize_t max_len)

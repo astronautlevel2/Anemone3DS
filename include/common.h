@@ -24,30 +24,24 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef THEMES_H
-#define THEMES_H
+#ifndef COMMON_H
+#define COMMON_H
 
-#include "common.h"
+#include <3ds.h>
 
-typedef struct {
-    u16 name[0x80];
-    u16 desc[0x100];
-    u16 author[0x80];
-    
-    bool has_icon;
-    ssize_t icon_id;
-    
-    bool has_preview;
-    ssize_t preview_id;
-    
-    u16 path[262];
-    bool is_zip;
-    
-    bool in_shuffle;
-} Theme_s;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-Result get_themes(Theme_s **themes_list, int *theme_count);
-Result single_install(Theme_s theme);
-Result shuffle_install(Theme_s *themes_list, int theme_count);
+#define THEMES_PATH "/Themes/"
+
+static const int THEMES_PER_SCREEN = 4;
+
+enum TextureID {
+    TEXTURE_FONT_RESERVED = 0, //used by pp2d for the font
+    TEXTURE_ARROW,
+    TEXTURE_SHUFFLE,
+    MAX_TEXTURE,
+};
 
 #endif
