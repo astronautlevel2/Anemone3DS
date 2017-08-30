@@ -96,27 +96,6 @@ Result close_archives(void)
     return 0;
 }
 
-int get_number_entries(char *path)
-{
-    int count = 0;
-    Handle dir_handle;
-    Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, path));
-    if (R_FAILED(res)) return -1;
-
-    bool done = false;
-    while (!done)
-    {
-        FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
-        u32 entries_read = 0;
-        FSDIR_Read(dir_handle, &entries_read, 1, entry);
-        free(entry);
-        if (entries_read) count++;
-        else if (!entries_read) break;
-    }
-    FSDIR_Close(dir_handle);
-    return count;
-}
-
 u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 {
     Handle file;
