@@ -24,25 +24,23 @@
 *         reasonable ways as different from the original version.
 */
 
-#include <3ds.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "themes.h"
 #include "unicode.h"
 #include "fs.h"
-#include "pp2d/pp2d/pp2d.h"
 
-void parse_smdh(theme *entry, u16 *path)
+#include "pp2d/pp2d/pp2d.h"
+#include "pp2d/pp2d/lodepng.h"
+
+static void parse_smdh(Theme_s *theme, u16 *path, ssize_t textureID)
 {
-    char *info_buffer;
+    char *info_buffer = NULL;
     u64 size = 0;
-    if (!(entry->is_zip))
+    if (!(theme->is_zip))
     {
         u16 path_to_smdh[0x106] = {0};
         strucat(path_to_smdh, path);
         struacat(path_to_smdh, "/info.smdh");
+        
         size = file_to_buf(fsMakePath(PATH_UTF16, path_to_smdh), ArchiveSD, &info_buffer);    
     } else {
         size = zip_file_to_buf("info.smdh", path, &info_buffer);
@@ -50,52 +48,147 @@ void parse_smdh(theme *entry, u16 *path)
 
     if (!size)
     {
+        free(info_buffer);
         return;
     }
 
-    memcpy(entry->name, info_buffer + 0x08, 0x80);
-    memcpy(entry->desc, info_buffer + 0x88, 0x100);
-    memcpy(entry->author, info_buffer + 0x188, 0x80);
-    memcpy(entry->icon_data, info_buffer + 0x2040, 0x1200);
+    memcpy(theme->name, info_buffer + 0x08, 0x80);
+    memcpy(theme->desc, info_buffer + 0x88, 0x100);
+    memcpy(theme->author, info_buffer + 0x188, 0x80);
+    
+    u16 *icon_data = malloc(0x1200);
+    memcpy(icon_data, info_buffer + 0x24C0, 0x1200);
+    
+    const u32 width = 48, height = 48;
+    u32 *image = malloc(width*height*sizeof(u32));
+
+    for (u32 x = 0; x < width; x++)
+    {
+        for (u32 y = 0; y < height; y++)
+        {
+            unsigned int dest_pixel = (x + y*width);
+            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
+            
+            u8 r = ((icon_data[source_pixel] >> 11) & 0b11111) << 3;
+            u8 g = ((icon_data[source_pixel] >> 5) & 0b111111) << 2;
+            u8 b = (icon_data[source_pixel] & 0b11111) << 3;
+            u8 a = 0xFF;
+            
+            image[dest_pixel] = (r << 24) | (g << 16) | (b << 8) | a;
+        }
+    }
+    
+    theme->has_icon = true;
+    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
+    theme->icon_id = textureID;
+    
+    free(image);
+    free(icon_data);
     free(info_buffer);
 }
 
-int scan_themes(theme **themes, int num_themes)
+static void load_preview(Theme_s *theme, u16 *path, ssize_t textureID)
 {
-    Handle dir_handle;
-    FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"));
-    for (int i = 0; i < num_themes; i++)
+    char *preview_buffer = NULL;
+    u64 size = 0;
+    if (!(theme->is_zip))
     {
-        FS_DirectoryEntry *entry = malloc(sizeof(FS_DirectoryEntry));
-        FSDIR_Read(dir_handle, NULL, 1, entry);
-        theme *theme_info = malloc(sizeof(theme));
-        u16 theme_path[0x106] = {0};
-        struacat(theme_path, "/Themes/");
-        strucat(theme_path, entry->name);
-        if (!strcmp(entry->shortExt, "ZIP"))
-        {
-            theme_info->is_zip = true;
-            theme_info->has_preview = false;
-        } else {
-            theme_info->is_zip = false;
-            char u8_path[0x106] = {0};
-            utf16_to_utf8((u8*)u8_path, theme_path, 0x106);
-            strcat(u8_path, "/Preview.png");
-            strcpy(theme_info->preview_path, u8_path);
-            pp2d_load_texture_png(TEX_COUNT + 1 + i, u8_path);
-            theme_info->preview_id = TEX_COUNT + 1 + i;
-            theme_info->has_preview = true;
-        }
-        parse_smdh(theme_info, theme_path);
-        memcpy(theme_info->path, theme_path, 0x106 * sizeof(u16));
-        themes[i] = theme_info;
-        free(entry);
+        u16 path_to_preview[0x106] = {0};
+        strucat(path_to_preview, path);
+        struacat(path_to_preview, "/preview.png");
+        size = file_to_buf(fsMakePath(PATH_UTF16, path_to_preview), ArchiveSD, &preview_buffer);    
+    } else {
+        size = zip_file_to_buf("preview.png", path, &preview_buffer);
     }
-    return 0;
+
+    if (!size)
+    {
+        free(preview_buffer);
+        return;
+    }
+    
+    u8 * image = NULL;
+    unsigned int width = 0, height = 0;
+    
+    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
+    if (result == 0) // no error
+    {
+        for (u32 i = 0; i < width; i++)
+        {
+            for (u32 j = 0; j < height; j++)
+            {
+                u32 p = (i + j*width) * 4;
+
+                u8 r = *(u8*)(image + p);
+                u8 g = *(u8*)(image + p + 1);
+                u8 b = *(u8*)(image + p + 2);
+                u8 a = *(u8*)(image + p + 3);
+
+                *(image + p) = a;
+                *(image + p + 1) = b;
+                *(image + p + 2) = g;
+                *(image + p + 3) = r;
+            }
+        }
+        
+        theme->has_preview = true;
+        pp2d_load_texture_memory(textureID, image, (u32)width, (u32)height);
+        theme->preview_id = textureID;
+    }
+    
+    free(image);
+    free(preview_buffer);
+}
+
+Result get_themes(Theme_s **themes_list, int *theme_count)
+{
+    Result res = 0;
+    Handle dir_handle;
+    res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, THEMES_PATH));
+    if (R_FAILED(res))
+        return res;
+    
+    u32 entries_read = 1;
+    while (entries_read)
+    {
+        FS_DirectoryEntry entry = {0};
+        res = FSDIR_Read(dir_handle, &entries_read, 1, &entry);
+        if (R_FAILED(res) || entries_read == 0)
+            break;
+        
+        if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(entry.shortExt, "ZIP"))
+            continue;
+        
+        *theme_count += entries_read;
+        *themes_list = realloc(*themes_list, (*theme_count) * sizeof(Theme_s));
+        if (*themes_list == NULL)
+            break;
+        
+        Theme_s* current_theme = &(*themes_list)[*theme_count-1];
+        memset(current_theme, 0, sizeof(Theme_s));
+        
+        u16 theme_path[0x106] = {0};
+        struacat(theme_path, THEMES_PATH);
+        strucat(theme_path, entry.name);
+        
+        char pathchar[0x106] = {0};
+        utf16_to_utf8((u8*)pathchar, theme_path, 0x106);
+        
+        memcpy(current_theme->path, theme_path, 0x106 * sizeof(u16));
+        current_theme->is_zip = !strcmp(entry.shortExt, "ZIP");
+        
+        ssize_t textureID = MAX_TEXTURE + (*theme_count * 2);
+        parse_smdh(current_theme, theme_path, textureID);
+        load_preview(current_theme, theme_path, textureID+1);
+    }
+    
+    FSDIR_Close(dir_handle);
+    
+    return res;
 }
 
 // Install a single theme
-Result single_install(theme theme_to_install)
+Result single_install(Theme_s theme_to_install)
 {
     char *body;
     char *music;
@@ -120,7 +213,9 @@ Result single_install(theme theme_to_install)
     if (theme_to_install.is_zip)
     {
         body_size = zip_file_to_buf("body_LZ.bin", theme_to_install.path, &body);
-    } else {
+    }
+    else
+    {
         u16 path[0x106] = {0};
         memcpy(path, theme_to_install.path, 0x106 * sizeof(u16));
         struacat(path, "/body_lz.bin");
@@ -198,18 +293,18 @@ Result single_install(theme theme_to_install)
     return 0;
 }
 
-Result shuffle_install(theme **themes_list, int num_themes)
+Result shuffle_install(Theme_s *themes_list, int theme_count)
 {
     u8 count = 0;
-    theme *shuffle_themes[10] = {0};
+    Theme_s *shuffle_themes[10] = {0};
     u32 body_sizes[10] = {0};
     u32 bgm_sizes[10] = {0};
-    for (int i = 0; i < num_themes; i++)
+    for (int i = 0; i < theme_count; i++)
     {
         if (count > 9) return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
-        if (themes_list[i]->selected)
+        if (themes_list[i].in_shuffle)
         {
-            shuffle_themes[count++] = themes_list[i];
+            shuffle_themes[count++] = &themes_list[i];
         }
     }
     for (int i = 0; i < count; i++)
@@ -274,7 +369,7 @@ Result shuffle_install(theme **themes_list, int num_themes)
     for (int i = 0; i < 10; i++)
     {
         char bgm_cache_path[17] = {0};
-        sprintf(bgm_cache_path, "/BgmCache_0%i.bin", i);
+        sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", i);
         remake_file(bgm_cache_path, ArchiveThemeExt, 3371008);
         if (count > i)
         {

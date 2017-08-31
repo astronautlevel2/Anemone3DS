@@ -24,30 +24,14 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef THEMES_H
-#define THEMES_H
+#ifndef DRAW_H
+#define DRAW_H
 
-#include "common.h"
+#include "themes.h"
 
-typedef struct {
-    u16 name[0x80];
-    u16 desc[0x100];
-    u16 author[0x80];
-    
-    bool has_icon;
-    ssize_t icon_id;
-    
-    bool has_preview;
-    ssize_t preview_id;
-    
-    u16 path[262];
-    bool is_zip;
-    
-    bool in_shuffle;
-} Theme_s;
+void init_screens(void);
+void exit_screens(void);
 
-Result get_themes(Theme_s **themes_list, int *theme_count);
-Result single_install(Theme_s theme);
-Result shuffle_install(Theme_s *themes_list, int theme_count);
+void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode);
 
 #endif
