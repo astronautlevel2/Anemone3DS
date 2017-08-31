@@ -69,14 +69,6 @@ static Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork
     #undef TRY
 }
 
-static void format_time(char *time_string)
-{
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    char *separator = (tm.tm_sec % 2 ? ":" : " "); //make the : blink every second
-    sprintf(time_string, "%s%.2i%s%.2i", time_string, tm.tm_hour, separator, tm.tm_min);
-}
-
 static int vertical_scroll = 0;
 
 // static const int FRAMES_FOR_TEXT_SCROLL = 40;
@@ -113,9 +105,13 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
         utf16_to_utf32((u32*)title, current_theme.name, 0x80);
         pp2d_draw_wtext(20, 30, 0.7, 0.7, COLOR_WHITE, title);
         
-        char time_string[6] = {0};
-        format_time(time_string);
-        pp2d_draw_text(7, 2, 0.6, 0.6, COLOR_WHITE, time_string);
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        
+        pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
+        pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
+        pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
+        
         u8 battery_val = 0;
         MCUHWC_GetBatteryLevel(&battery_val);
         pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
