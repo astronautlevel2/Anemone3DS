@@ -156,6 +156,9 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
         if (R_FAILED(res) || entries_read == 0)
             break;
         
+        if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(entry.shortExt, "ZIP"))
+            continue;
+        
         *theme_count += entries_read;
         *themes_list = realloc(*themes_list, (*theme_count) * sizeof(Theme_s));
         if (*themes_list == NULL)
