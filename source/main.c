@@ -50,6 +50,12 @@ int main(void)
     int theme_count = 0;
     Theme_s * themes_list = NULL;
     Result res = get_themes(&themes_list, &theme_count);
+    if (R_FAILED(res))
+    {
+        //don't need to worry about possible textures (icons, previews), that's freed by pp2d itself
+        free(themes_list);
+        themes_list = NULL;
+    }
     
     int selected_theme = 0;
     bool preview_mode = false;
