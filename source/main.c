@@ -46,7 +46,7 @@ int main(void)
 {
     init_services();
     init_screens();
-        
+    
     int theme_count = 0;
     Theme_s * themes_list = NULL;
     Result res = get_themes(&themes_list, &theme_count);
@@ -120,7 +120,7 @@ int main(void)
         {
             selected_theme = 0;
         }
-        else if (kDown & KEY_UP)
+        else if (kDown & KEY_RIGHT)
         {
             selected_theme = theme_count-1;
         }
