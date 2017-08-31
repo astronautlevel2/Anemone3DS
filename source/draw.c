@@ -210,7 +210,7 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
                 front_color = COLOR_BLACK;
                 pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
             }
-            pp2d_draw_wtext(50, 40 + vertical_offset, 0.55, 0.55, front_color, name);
+            pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, front_color, name);
             if (current_theme.has_icon)
                 pp2d_draw_texture(current_theme.icon_id, 0, 24 + vertical_offset);
             
