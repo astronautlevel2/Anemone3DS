@@ -11,6 +11,14 @@
    See the accompanying LICENSE file for the full text of the license.
 */
 
+//taken and adapted from https://stackoverflow.com/a/13492589
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+
+// turn off the specific warning. Can also use "-Wall"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -367,3 +375,6 @@ void fill_fopen64_filefunc (zlib_filefunc64_def* pzlib_filefunc_def)
     pzlib_filefunc_def->zerror_file = ferror_file_func;
     pzlib_filefunc_def->opaque = NULL;
 }
+
+// turn the warnings back on
+#pragma GCC diagnostic pop
