@@ -55,7 +55,35 @@ static void parse_smdh(Theme_s *theme, u16 *path, ssize_t textureID)
     memcpy(theme->name, info_buffer + 0x08, 0x80);
     memcpy(theme->desc, info_buffer + 0x88, 0x100);
     memcpy(theme->author, info_buffer + 0x188, 0x80);
-    // memcpy(theme->icon_data, info_buffer + 0x2040, 0x1200);
+    
+    u16 *icon_data = malloc(0x1200);
+    memcpy(icon_data, info_buffer + 0x24C0, 0x1200);
+    
+    const u32 width = 48, height = 48;
+    u32 *image = malloc(width*height*sizeof(u32));
+
+    for (u32 x = 0; x < width; x++)
+    {
+        for (u32 y = 0; y < height; y++)
+        {
+            unsigned int dest_pixel = (x + y*width);
+            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
+            
+            u8 r = ((icon_data[source_pixel] >> 11) & 0b11111) << 3;
+            u8 g = ((icon_data[source_pixel] >> 5) & 0b111111) << 2;
+            u8 b = (icon_data[source_pixel] & 0b11111) << 3;
+            u8 a = 0xFF;
+            
+            image[dest_pixel] = (r << 24) | (g << 16) | (b << 8) | a;
+        }
+    }
+    
+    theme->has_icon = true;
+    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
+    theme->icon_id = textureID;
+    
+    free(image);
+    free(icon_data);
     free(info_buffer);
 }
 
