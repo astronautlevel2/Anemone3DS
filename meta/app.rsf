@@ -33,6 +33,9 @@ SystemControlInfo:
   RemasterVersion: 7
   StackSize: 0x40000
   
+RomFs:
+    RootPath            : romfs
+  
 # DO NOT EDIT BELOW HERE OR PROGRAMS WILL NOT LAUNCH (most likely)
 
 AccessControlInfo:
