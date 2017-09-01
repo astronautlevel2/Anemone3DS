@@ -119,9 +119,9 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         if (current_theme.has_preview)
         {
             pp2d_begin_draw(GFX_TOP);
-            pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 6, 0, 400, 240);
+            pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, preview_offset, 0, 400, 240);
             pp2d_draw_on(GFX_BOTTOM);
-            pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 46, 240, 320, 240);
+            pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 40+preview_offset, 240, 320, 240);
         }
     }
     else

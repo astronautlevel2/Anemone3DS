@@ -38,6 +38,7 @@ typedef struct {
     ssize_t icon_id;
     
     bool has_preview;
+    int preview_offset;
     
     u16 path[0x106];
     bool is_zip;
