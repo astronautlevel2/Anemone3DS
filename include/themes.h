@@ -30,9 +30,9 @@
 #include "common.h"
 
 typedef struct {
-    u16 name[0x80];
-    u16 desc[0x100];
-    u16 author[0x80];
+    u16 name[0x40];
+    u16 desc[0x80];
+    u16 author[0x40];
     
     bool has_icon;
     ssize_t icon_id;
