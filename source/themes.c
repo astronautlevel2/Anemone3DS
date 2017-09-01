@@ -179,7 +179,8 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
         
         ssize_t textureID = MAX_TEXTURE + (*theme_count * 2);
         parse_smdh(current_theme, theme_path, textureID);
-        load_preview(current_theme, theme_path, textureID+1);
+        current_theme->has_preview = false;
+        // load_preview(current_theme, theme_path, textureID+1);
     }
     
     FSDIR_Close(dir_handle);

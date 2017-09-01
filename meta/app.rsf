@@ -154,6 +154,8 @@ AccessControlInfo:
    - csnd:SND
    - am:u
    - ns:s
+   - ptm:sysm
+   - mcu::HWC
    
 SystemControlInfo:
   Dependency: 

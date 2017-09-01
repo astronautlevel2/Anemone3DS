@@ -32,6 +32,7 @@ int init_services(void)
 {
     cfguInit();
     open_archives();
+    ptmSysmInit();
     return 0;
 }
 
@@ -52,6 +53,7 @@ int main(void)
     Result res = get_themes(&themes_list, &theme_count);
     
     int selected_theme = 0;
+    int shuffle_theme_count = 0;
     bool preview_mode = false;
     
     while(aptMainLoop())
@@ -61,8 +63,6 @@ int main(void)
         
         draw_interface(themes_list, theme_count, selected_theme, preview_mode);
         
-        if (kDown & KEY_START)
-            break; //quit
         
         if (themes_list == NULL)
             continue;
@@ -93,13 +93,26 @@ int main(void)
         {
             single_install(*current_theme);
         }
+        
         else if (kDown & KEY_B)
         {
-            current_theme->in_shuffle = !(current_theme->in_shuffle);
+            if (shuffle_theme_count < 10)
+            {
+                if (current_theme->in_shuffle) shuffle_theme_count--;
+                else shuffle_theme_count++;
+                current_theme->in_shuffle = !(current_theme->in_shuffle);
+            } else {
+                if (current_theme->in_shuffle) {
+                    shuffle_theme_count--;
+                    current_theme->in_shuffle = false;
+                } 
+            }
         }
+
         else if (kDown & KEY_SELECT)
         {
-            shuffle_install(themes_list, theme_count);
+            if (shuffle_theme_count > 0)
+                shuffle_install(themes_list, theme_count);
         }
 
         // Movement in the UI
@@ -124,16 +137,17 @@ int main(void)
         {
             selected_theme = theme_count-1;
         }
+
+        if (kDown & KEY_START)
+        {
+            exit_screens();
+            exit_services();
+            PTMSYSM_RebootAsync(0);
+            ptmSysmExit();
+        }
     }
     
     free(themes_list);
-    
-    exit_screens();
-    exit_services();
-    
-    ptmSysmInit();
-    PTMSYSM_ShutdownAsync(0);
-    ptmSysmExit();
-    
+        
     return 0;
 }
