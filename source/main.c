@@ -26,6 +26,7 @@
 
 #include "fs.h"
 #include "themes.h"
+#include "splashes.h"
 #include "draw.h"
 
 int init_services(void)
@@ -47,6 +48,7 @@ int main(void)
 {
     init_services();
     init_screens();
+
     
     int theme_count = 0;
     Theme_s * themes_list = NULL;
@@ -57,7 +59,18 @@ int main(void)
         free(themes_list);
         themes_list = NULL;
     }
-    
+    int splash_count = 0;
+    Splash_s *splashes_list = NULL;
+    res = get_splashes(&splashes_list, &splash_count);
+    if (R_FAILED(res))
+    {
+        //don't need to worry about possible textures (icons, previews), that's freed by pp2d itself
+        free(themes_list);
+        themes_list = NULL;
+    }
+
+    bool splash_mode = false;
+    int selected_splash = 0;
     int selected_theme = 0;
     int shuffle_theme_count = 0;
     bool preview_mode = false;
@@ -67,12 +80,17 @@ int main(void)
         hidScanInput();
         u32 kDown = hidKeysDown();
         
-        draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
+        if (!splash_mode) draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
+        else draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
         
-        if (themes_list == NULL)
+        if (themes_list == NULL && !splash_mode)
             continue;
         
+        if (splashes_list == NULL && splash_mode)
+            continue;
+
         Theme_s * current_theme = &themes_list[selected_theme];
+        Splash_s *current_splash = &splashes_list[selected_splash];
         
         if (kDown & KEY_Y)
         {
@@ -93,61 +111,96 @@ int main(void)
             continue;
         
         // Actions
+        else if (kDown & KEY_L)
+        {
+            splash_mode = !splash_mode;
+        }
         else if (kDown & KEY_X)
         {
             // install_bgm(current_theme);
         }
         else if (kDown & KEY_A)
         {
-            draw_theme_install(false);
-            single_install(*current_theme);
+            if (splash_mode)
+            {
+                splash_install(*current_splash);
+            } else {
+                draw_theme_install(false);
+                single_install(*current_theme);
+            }
         }
         
         else if (kDown & KEY_B)
         {
-            if (shuffle_theme_count < 10)
+            if (splash_mode)
             {
-                if (current_theme->in_shuffle) shuffle_theme_count--;
-                else shuffle_theme_count++;
-                current_theme->in_shuffle = !(current_theme->in_shuffle);
+
             } else {
-                if (current_theme->in_shuffle) {
-                    shuffle_theme_count--;
-                    current_theme->in_shuffle = false;
-                } 
+                if (shuffle_theme_count < 10)
+                {
+                    if (current_theme->in_shuffle) shuffle_theme_count--;
+                    else shuffle_theme_count++;
+                    current_theme->in_shuffle = !(current_theme->in_shuffle);
+                } else {
+                    if (current_theme->in_shuffle) {
+                        shuffle_theme_count--;
+                        current_theme->in_shuffle = false;
+                    } 
+                }
             }
         }
 
         else if (kDown & KEY_SELECT)
         {
-            if (shuffle_theme_count > 0)
+            if (splash_mode)
             {
-                draw_theme_install(true);
-                shuffle_install(themes_list, theme_count);
+
+            } else {
+                if (shuffle_theme_count > 0)
+                {
+                    draw_theme_install(true);
+                    shuffle_install(themes_list, theme_count);
+                }
             }
         }
 
         // Movement in the UI
         else if (kDown & KEY_DOWN) 
         {
-            selected_theme++;
-            if (selected_theme >= theme_count)
-                selected_theme = theme_count-1;
+            if (splash_mode)
+            {
+                selected_splash++;
+                if (selected_splash >= splash_count)
+                    selected_splash = splash_count-1;
+            } else {
+                selected_theme++;
+                if (selected_theme >= theme_count)
+                    selected_theme = theme_count-1;
+            }
         }
         else if (kDown & KEY_UP)
         {
-            selected_theme--;
-            if (selected_theme < 0)
-                selected_theme = 0;
+            if (splash_mode)
+            {
+                selected_splash--;
+                if (selected_splash < 0)
+                    selected_splash = 0;
+            } else {
+                selected_theme--;
+                if (selected_theme < 0)
+                    selected_theme = 0;
+            }
         }
         // Quick moving
         else if (kDown & KEY_LEFT) 
         {
-            selected_theme = 0;
+            if (splash_mode) selected_splash = 0;
+            else selected_theme = 0;
         }
         else if (kDown & KEY_RIGHT)
         {
-            selected_theme = theme_count-1;
+            if (splash_mode) selected_splash = splash_count - 1;
+            else selected_theme = theme_count-1;
         }
 
         if (kDown & KEY_START)

@@ -24,17 +24,18 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef DRAW_H
-#define DRAW_H
+#ifndef SPLASHES_H
+#define SPLASHES_H
 
-#include "themes.h"
-#include "splashes.h"
+#include "common.h"
 
-void init_screens(void);
-void exit_screens(void);
+typedef struct{
+    u16 name[0x106];
+    u16 top_path[0x106];
+    u16 bottom_path[0x106];
+} Splash_s;
 
-void draw_theme_install(bool shuffle_install);
-void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode);
-void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
+Result get_splashes(Splash_s** splashes_list, int *splash_count);
+void splash_install(Splash_s splash_to_install);
 
 #endif

@@ -69,7 +69,8 @@ static Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork
     #undef TRY
 }
 
-static int vertical_scroll = 0;
+static int theme_vertical_scroll = 0;
+static int splash_vertical_scroll = 0;
 
 void draw_base_interface(void)
 {
@@ -138,6 +139,9 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         utf16_to_utf32((u32*)description, current_theme.desc, 0x80);
         pp2d_draw_wtext(20, 65, 0.5, 0.5, COLOR_WHITE, description);
         
+        pp2d_draw_wtext_center(GFX_TOP, 150, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Theme    \uE004 Switch to Splashes");
+        pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE001 Queue Shuffle    \uE046 Install shuffle");
+        pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE003 Preview Theme");
 
         pp2d_draw_on(GFX_BOTTOM);
 
@@ -147,23 +151,24 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
             if (theme_count <= THEMES_PER_SCREEN)
                 break;
 
-            if (vertical_scroll > selected_theme)
-                vertical_scroll--;
+            if (theme_vertical_scroll > selected_theme)
+                theme_vertical_scroll--;
 
             if ((i < selected_theme) && \
-               ((selected_theme - vertical_scroll) >= THEMES_PER_SCREEN) && \
-               (vertical_scroll != ( - THEMES_PER_SCREEN)))
-                vertical_scroll++;
+               ((selected_theme - theme_vertical_scroll) >= THEMES_PER_SCREEN) && \
+               (theme_vertical_scroll != ( - THEMES_PER_SCREEN)))
+                theme_vertical_scroll++;
         }
         //----------------------------------------------------------------
         
         // Show arrows if there are themes out of bounds
         //----------------------------------------------------------------
-        pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
-        pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
-        //----------------------------------------------------------------
+        if (theme_vertical_scroll > 0)
+            pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
+        if (theme_vertical_scroll + THEMES_PER_SCREEN < theme_count)
+            pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
         
-        for (int i = vertical_scroll; i < (THEMES_PER_SCREEN + vertical_scroll); i++)
+        for (int i = theme_vertical_scroll; i < (THEMES_PER_SCREEN + theme_vertical_scroll); i++)
         {
             if (i >= theme_count)
                 break;
@@ -172,22 +177,85 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
             wchar_t name[0x80] = {0};
             utf16_to_utf32((u32*)name, current_theme.name, 0x80);
             
-            int vertical_offset = 48 * (i-vertical_scroll);
-            u32 front_color = COLOR_WHITE;
+            int vertical_offset = 48 * (i-theme_vertical_scroll);
+            u32 font_color = COLOR_WHITE;
             
             if (i == selected_theme)
             {
-                front_color = COLOR_BLACK;
+                font_color = COLOR_BLACK;
                 pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
             }
-            pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, front_color, name);
+            pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
             if (current_theme.has_icon)
                 pp2d_draw_texture(current_theme.icon_id, 0, 24 + vertical_offset);
             
             if (current_theme.in_shuffle)
-                pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, front_color);
+                pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, font_color);
         }
     }
     
+    pp2d_end_draw();
+}
+
+void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode)
+{
+    if (splashes_list == NULL)
+    {
+        pp2d_begin_draw(GFX_TOP);
+        pp2d_draw_text_center(GFX_TOP, 100, 1, 1, COLOR_WHITE, "FAILURE");
+        pp2d_end_draw();
+        return;
+    }
+
+    Splash_s current_splash = splashes_list[selected_splash];
+
+    if (preview_mode)
+    {
+        // TODO: Splash Previews
+    } else {
+        draw_base_interface();
+        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Splash mode");
+
+        pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Splash    \uE004 Switch to Themes");
+
+        pp2d_draw_on(GFX_BOTTOM);
+        for (int i = 0; i < splash_count; i++) {
+            if (splash_count <= THEMES_PER_SCREEN)
+                break;
+
+            if (splash_vertical_scroll > selected_splash)
+                splash_vertical_scroll--;
+
+            if ((i < selected_splash) && \
+               ((selected_splash - splash_vertical_scroll) >= THEMES_PER_SCREEN) && \
+               (splash_vertical_scroll != ( - THEMES_PER_SCREEN)))
+                splash_vertical_scroll++;
+        }
+
+        if (splash_vertical_scroll > 0)
+            pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
+        if (splash_vertical_scroll + THEMES_PER_SCREEN < splash_count)
+            pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
+
+        for (int i = splash_vertical_scroll; i < (THEMES_PER_SCREEN + splash_vertical_scroll); i++)
+        {
+            if (i >= splash_count)
+                break;
+            
+            current_splash = splashes_list[i];
+            wchar_t name[0x106] = {0};
+            utf16_to_utf32((u32*)name, current_splash.name, 0x106);
+            
+            int vertical_offset = 48 * (i-splash_vertical_scroll);
+            u32 font_color = COLOR_WHITE;
+            
+            if (i == selected_splash)
+            {
+                font_color = COLOR_BLACK;
+                pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
+            }
+            pp2d_draw_wtext(15, 40 + vertical_offset, 0.55, 0.55, font_color, name);
+        }
+    }
     pp2d_end_draw();
 }

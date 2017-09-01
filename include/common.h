@@ -33,7 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define THEMES_PATH "/Themes/"
+#define THEMES_PATH 	"/Themes/"
+#define SPLASHES_PATH	"/Splashes/"
 
 static const int THEMES_PER_SCREEN = 4;
 
