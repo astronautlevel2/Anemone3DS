@@ -72,6 +72,7 @@ int main(void)
     bool splash_mode = false;
     int selected_splash = 0;
     int selected_theme = 0;
+    int previously_selected = 0;
     int shuffle_theme_count = 0;
     bool preview_mode = false;
     
@@ -104,11 +105,10 @@ int main(void)
         {
             if (!preview_mode)
             {
-                load_theme_preview(current_theme);
-                if (current_theme->has_preview)
-                {
-                    preview_mode = true;
-                }
+                if (!current_theme->has_preview)
+                    load_theme_preview(current_theme);
+                
+                preview_mode = current_theme->has_preview;
             }
             else
                 preview_mode = false;
@@ -209,6 +209,12 @@ int main(void)
         {
             if (splash_mode) selected_splash = splash_count - 1;
             else selected_theme = theme_count-1;
+        }
+        
+        if (!splash_mode && selected_theme != previously_selected)
+        {
+            current_theme->has_preview = false;
+            previously_selected = selected_theme;
         }
     }
     

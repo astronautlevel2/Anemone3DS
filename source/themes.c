@@ -80,6 +80,7 @@ void load_theme_preview(Theme_s *theme)
         
         theme->has_preview = true;
         pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+        theme->preview_offset = (width-400)/2;
     }
     
     free(image);
