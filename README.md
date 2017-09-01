@@ -2,7 +2,10 @@
 A Theme Manager for the Nintendo3DS, written in C
 
 # Dependencies
-This depends on zlib. Get it from portlibs.
+ * zlib, which can be retrieved from the 3ds_portlibs
+ * makerom and bannertool, which can be retrieved from SteveIce10's buildtools repo. These must be added to your PATH
+ * 3dstool, which can be retrieved from its release page. This must be added to your PATH.
+ * pp2d, which is included in the repo if you do a git clone --recursive.
 
 # License
 This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additional terms 7b and 7c apply to this project.
