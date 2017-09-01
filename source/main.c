@@ -179,11 +179,11 @@ int main(void)
             {
                 selected_splash++;
                 if (selected_splash >= splash_count)
-                    selected_splash = splash_count-1;
+                    selected_splash = 0;
             } else {
                 selected_theme++;
                 if (selected_theme >= theme_count)
-                    selected_theme = theme_count-1;
+                    selected_theme = 0;
             }
         }
         else if (kDown & KEY_UP)
@@ -192,23 +192,35 @@ int main(void)
             {
                 selected_splash--;
                 if (selected_splash < 0)
-                    selected_splash = 0;
+                    selected_splash = splash_count - 1;
             } else {
                 selected_theme--;
                 if (selected_theme < 0)
-                    selected_theme = 0;
+                    selected_theme = theme_count - 1;
             }
         }
         // Quick moving
         else if (kDown & KEY_LEFT) 
         {
-            if (splash_mode) selected_splash = 0;
-            else selected_theme = 0;
+            if (splash_mode) 
+            {
+                selected_splash -= 4;
+                if (selected_splash < 0) selected_splash = 0;
+            } else {
+                selected_theme -= 4;
+                if (selected_theme < 0) selected_theme = 0;
+            }
         }
         else if (kDown & KEY_RIGHT)
         {
-            if (splash_mode) selected_splash = splash_count - 1;
-            else selected_theme = theme_count-1;
+            if (splash_mode) 
+            {
+                selected_splash += 4;
+                if (selected_splash >= splash_count) selected_splash = splash_count-1;
+            } else {
+                selected_theme += 4;
+                if (selected_theme >= theme_count) selected_theme = theme_count-1;
+            }
         }
         
         if (!splash_mode && selected_theme != previously_selected)
