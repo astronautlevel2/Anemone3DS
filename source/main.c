@@ -65,8 +65,8 @@ int main(void)
     if (R_FAILED(res))
     {
         //don't need to worry about possible textures (icons, previews), that's freed by pp2d itself
-        free(themes_list);
-        themes_list = NULL;
+        free(splashes_list);
+        splashes_list = NULL;
     }
 
     bool splash_mode = false;
