@@ -3,7 +3,7 @@ BasicInfo:
   CompanyCode             : "00"
   ProductCode             : "CTR-P-ANEM"
   ContentType             : Application
-  Logo                    : Nintendo # Nintendo / Licensed / Distributed / iQue / iQueForSystem
+  Logo                    : Homebrew # Nintendo / Licensed / Distributed / iQue / iQueForSystem
 
 TitleInfo:
   UniqueId                : 0xAFEN
