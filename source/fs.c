@@ -24,10 +24,17 @@
 *         reasonable ways as different from the original version.
 */
 
+#include <strings.h>
+
 #include "fs.h"
 #include "unicode.h"
 
 #include "minizip/unzip.h"
+
+int filename_compare(unzFile file, const char *current_filename, const char *filename)
+{
+    return strcasecmp(current_filename, filename);
+}
 
 Result open_archives(void)
 {
@@ -122,7 +129,7 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
     if (zip_handle == NULL) return 0;
     u32 file_size = 0;
 
-    int status = unzLocateFile(zip_handle, file_name, 0);
+    int status = unzLocateFile(zip_handle, file_name, filename_compare);
     if (status == UNZ_OK)
     {
         unz_file_info *file_info = malloc(sizeof(unz_file_info));
