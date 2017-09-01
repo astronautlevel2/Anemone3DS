@@ -26,7 +26,7 @@
 
 #include "unicode.h"
 
-ssize_t strulen(u16 *input, ssize_t max_len)
+ssize_t strulen(const u16 *input, ssize_t max_len)
 {
     for (int i = 0; i < max_len; i++) if (input[i] == 0) return i;
     return max_len;
@@ -47,7 +47,7 @@ void printu(u16 *input)
     ssize_t in_len = strulen(input, 0x106);
     ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
     wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
-    utf16_to_utf32(buf, input, buf_len);
+    utf16_to_utf32((u32*)buf, input, buf_len);
     printf("%ls\n", buf);
     free(buf);
 }

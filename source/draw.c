@@ -94,7 +94,7 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
     {
         if (current_theme.has_preview)
         {
-            pp2d_draw_texture_part(current_theme.preview_id, 0, 0, 6, 0, 400, 240);
+            pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 6, 0, 400, 240);
         }
     }
     else
@@ -119,7 +119,7 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
         if (current_theme.has_preview)
         {
             //skip the weird 6 pixels to the left
-            pp2d_texture_select_part(current_theme.preview_id, 220, 35, 6, 0, 400, 480);
+            pp2d_texture_select_part(TEXTURE_PREVIEW, 220, 35, 6, 0, 400, 480);
             pp2d_texture_scale(0.4, 0.4);
             pp2d_texture_draw();
         }
@@ -131,7 +131,7 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
     {
         if (current_theme.has_preview)
         {
-            pp2d_draw_texture_part(current_theme.preview_id, 0, 0, 46, 240, 320, 240);
+            pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 46, 240, 320, 240);
         }
     }
     else
