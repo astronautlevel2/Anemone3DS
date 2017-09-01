@@ -125,7 +125,8 @@ int main(void)
         // Actions
         else if (kDown & KEY_X)
         {
-            // install_bgm(current_theme);
+            draw_theme_install(BGM_INSTALL);
+            bgm_install(*current_theme);
         }
         else if (kDown & KEY_A)
         {
@@ -135,7 +136,7 @@ int main(void)
                 splash_install(*current_splash);
                 svcSleepThread(5e8);
             } else {
-                draw_theme_install(false);
+                draw_theme_install(SINGLE_INSTALL);
                 single_install(*current_theme);
             }
         }
@@ -168,7 +169,7 @@ int main(void)
             } else {
                 if (shuffle_theme_count > 0)
                 {
-                    draw_theme_install(true);
+                    draw_theme_install(SHUFFLE_INSTALL);
                     shuffle_install(themes_list, theme_count);
                 }
             }

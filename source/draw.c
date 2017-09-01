@@ -94,10 +94,23 @@ void draw_base_interface(void)
     pp2d_draw_on(GFX_TOP);
 }
 
-void draw_theme_install(bool shuffle_install)
+void draw_theme_install(int install_type)
 {
     draw_base_interface();
-    pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a %s theme...", !shuffle_install ? "single" : "shuffle");
+    switch(install_type) 
+    {
+        case 0:
+            pp2d_draw_text(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a single theme...");
+            break;
+        case 1:
+            pp2d_draw_text(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a shuffle theme...");
+            break;
+        case 2:
+            pp2d_draw_text(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing BGM...");
+            break;
+        default:
+            break;
+    }
     pp2d_end_draw();
 }
 
@@ -139,9 +152,12 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         utf16_to_utf32((u32*)description, current_theme.desc, 0x80);
         pp2d_draw_wtext(20, 65, 0.5, 0.5, COLOR_WHITE, description);
         
-        pp2d_draw_wtext_center(GFX_TOP, 150, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Theme    \uE004 Switch to Splashes");
-        pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE001 Queue Shuffle    \uE046 Install Shuffle");
-        pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE003 Preview Theme");
+        pp2d_draw_wtext(20, 150, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Theme");
+        pp2d_draw_wtext(200, 150, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Splashes");
+        pp2d_draw_wtext(20, 180, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Theme");
+        pp2d_draw_wtext(200, 180, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
+        pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
+        pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
 
         pp2d_draw_on(GFX_BOTTOM);
 

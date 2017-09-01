@@ -189,6 +189,75 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
     return res;
 }
 
+Result bgm_install(Theme_s bgm_to_install)
+{
+    char *savedata_buf;
+    char *thememanage_buf;
+    char *music;
+    u32 music_size = 0;
+    u32 savedata_size;
+
+    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    savedata_buf[0x141b] = 0;
+    memset(&savedata_buf[0x13b8], 0, 8);
+    savedata_buf[0x13bd] = 3;
+    savedata_buf[0x13b8] = 0xff;
+    u32 size = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
+    free(savedata_buf);
+
+    if (bgm_to_install.is_zip) // Same as above but this time with bgm
+    {
+        music_size = zip_file_to_buf("bgm.bcstm", bgm_to_install.path, &music);
+    } else {
+        u16 path[0x106] = {0};
+        memcpy(path, bgm_to_install.path, 0x106 * sizeof(u16));
+        struacat(path, "/bgm.bcstm");
+        music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &music);
+    }
+
+    if (music_size == 0)
+    {
+        free(music);
+        music = calloc(1, 3371008);
+    } else if (music_size > 3371008) {
+        free(music);
+        puts("musicrip");
+        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+    }
+
+    size = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+    free(music);
+
+    if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
+
+    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
+    thememanage_buf[0x00] = 1;
+    thememanage_buf[0x01] = 0;
+    thememanage_buf[0x02] = 0;
+    thememanage_buf[0x03] = 0;
+    thememanage_buf[0x04] = 0;
+    thememanage_buf[0x05] = 0;
+    thememanage_buf[0x06] = 0;
+    thememanage_buf[0x07] = 0;
+
+    u32 *music_size_location = (u32*)(&thememanage_buf[0xC]);
+    *music_size_location = music_size;
+
+    thememanage_buf[0x10] = 0xFF;
+    thememanage_buf[0x14] = 0x01;
+    thememanage_buf[0x18] = 0xFF;
+    thememanage_buf[0x1D] = 0x02;
+
+    memset(&thememanage_buf[0x338], 0, 4);
+    memset(&thememanage_buf[0x340], 0, 4);
+    memset(&thememanage_buf[0x360], 0, 4);
+    memset(&thememanage_buf[0x368], 0, 4);
+    size = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
+    free(thememanage_buf);
+
+    return 0;
+}
+
 // Install a single theme
 Result single_install(Theme_s theme_to_install)
 {
@@ -200,8 +269,6 @@ Result single_install(Theme_s theme_to_install)
     u32 music_size;
     u32 savedata_size;
 
-    printf("Writing SaveData.dat...\n");
-
     savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
     savedata_buf[0x141b] = 0;
     memset(&savedata_buf[0x13b8], 0, 8);
@@ -211,7 +278,6 @@ Result single_install(Theme_s theme_to_install)
     free(savedata_buf);
 
     // Open body cache file. Test if theme is zipped
-    printf("Writing BodyCache.bin...\n");
     if (theme_to_install.is_zip)
     {
         body_size = zip_file_to_buf("body_LZ.bin", theme_to_install.path, &body);
@@ -236,7 +302,6 @@ Result single_install(Theme_s theme_to_install)
 
     if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
 
-    printf("Writing BgmCache.bin...\n");
     if (theme_to_install.is_zip) // Same as above but this time with bgm
     {
         music_size = zip_file_to_buf("bgm.bcstm", theme_to_install.path, &music);
@@ -262,7 +327,6 @@ Result single_install(Theme_s theme_to_install)
 
     if (size == 0) return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
 
-    printf("Writing ThemeManage.bin...\n");
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
     thememanage_buf[0x01] = 0;
@@ -289,8 +353,6 @@ Result single_install(Theme_s theme_to_install)
     memset(&thememanage_buf[0x368], 0, 4);
     size = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
-
-    printf("Done!\n");
 
     return 0;
 }

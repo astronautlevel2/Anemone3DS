@@ -50,5 +50,6 @@ void load_theme_preview(Theme_s *theme);
 Result get_themes(Theme_s **themes_list, int *theme_count);
 Result single_install(Theme_s theme);
 Result shuffle_install(Theme_s *themes_list, int theme_count);
+Result bgm_install(Theme_s bgm_to_install);
 
 #endif
