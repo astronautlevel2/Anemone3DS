@@ -83,6 +83,14 @@ int main(void)
         if (!splash_mode) draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
         else draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
         
+        if (kDown & KEY_START)
+        {
+            exit_screens();
+            exit_services();
+            PTMSYSM_RebootAsync(0);
+            ptmSysmExit();
+        }
+        
         if (themes_list == NULL && !splash_mode)
             continue;
         
@@ -201,14 +209,6 @@ int main(void)
         {
             if (splash_mode) selected_splash = splash_count - 1;
             else selected_theme = theme_count-1;
-        }
-
-        if (kDown & KEY_START)
-        {
-            exit_screens();
-            exit_services();
-            PTMSYSM_RebootAsync(0);
-            ptmSysmExit();
         }
     }
     
