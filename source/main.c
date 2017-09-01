@@ -131,7 +131,9 @@ int main(void)
         {
             if (splash_mode)
             {
+                draw_splash_install();
                 splash_install(*current_splash);
+                svcSleepThread(5e8);
             } else {
                 draw_theme_install(false);
                 single_install(*current_theme);

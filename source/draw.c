@@ -140,7 +140,7 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         pp2d_draw_wtext(20, 65, 0.5, 0.5, COLOR_WHITE, description);
         
         pp2d_draw_wtext_center(GFX_TOP, 150, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Theme    \uE004 Switch to Splashes");
-        pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE001 Queue Shuffle    \uE046 Install shuffle");
+        pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE001 Queue Shuffle    \uE046 Install Shuffle");
         pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE003 Preview Theme");
 
         pp2d_draw_on(GFX_BOTTOM);
@@ -194,6 +194,13 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         }
     }
     
+    pp2d_end_draw();
+}
+
+void draw_splash_install(void)
+{
+    draw_base_interface();
+    pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
     pp2d_end_draw();
 }
 

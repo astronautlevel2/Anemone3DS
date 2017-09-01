@@ -93,6 +93,7 @@ void splash_install(Splash_s splash_to_install)
     u32 size = file_to_buf(fsMakePath(PATH_UTF16, splash_to_install.top_path), ArchiveSD, &screen_buf);
     if (size)
     {
+        remake_file("/luma/splash.bin", ArchiveSD, size);
         buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
         free(screen_buf);
     }
@@ -100,6 +101,7 @@ void splash_install(Splash_s splash_to_install)
     size = file_to_buf(fsMakePath(PATH_UTF16, splash_to_install.bottom_path), ArchiveSD, &screen_buf);
     if (size)
     {
+        remake_file("/luma/splashbottom.bin", ArchiveSD, size);
         buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
         free(screen_buf);
     }
