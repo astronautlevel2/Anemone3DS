@@ -58,6 +58,7 @@ int main(void)
     }
     
     int selected_theme = 0;
+    int previously_selected = ~selected_theme; //make sure it loads the preview the first time
     bool preview_mode = false;
     
     while(aptMainLoop())
@@ -129,6 +130,15 @@ int main(void)
         else if (kDown & KEY_RIGHT)
         {
             selected_theme = theme_count-1;
+        }
+        
+        //if the selected theme changed, load the preview
+        if (selected_theme != previously_selected)
+        {
+            current_theme->has_preview = false; //will be freed anyway
+            current_theme = &themes_list[selected_theme]; //update current_theme
+            load_theme_preview(current_theme);
+            previously_selected = selected_theme;
         }
     }
     

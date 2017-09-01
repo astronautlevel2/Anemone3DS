@@ -31,19 +31,74 @@
 #include "pp2d/pp2d/pp2d.h"
 #include "pp2d/pp2d/lodepng.h"
 
-static void parse_smdh(Theme_s *theme, u16 *path, ssize_t textureID)
+void load_theme_preview(Theme_s *theme)
+{
+    //free the previously loaded preview. wont do anything if there wasnt one
+    pp2d_free_texture(TEXTURE_PREVIEW);
+    
+    char *preview_buffer = NULL;
+    u64 size = 0;
+    if (!(theme->is_zip))
+    {
+        u16 path_to_preview[0x106] = {0};
+        strucat(path_to_preview, theme->path);
+        struacat(path_to_preview, "/preview.png");
+        size = file_to_buf(fsMakePath(PATH_UTF16, path_to_preview), ArchiveSD, &preview_buffer);    
+    } else {
+        size = zip_file_to_buf("preview.png", theme->path, &preview_buffer);
+    }
+
+    if (!size)
+    {
+        free(preview_buffer);
+        return;
+    }
+    
+    u8 * image = NULL;
+    unsigned int width = 0, height = 0;
+    
+    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
+    if (result == 0) // no error
+    {
+        for (u32 i = 0; i < width; i++)
+        {
+            for (u32 j = 0; j < height; j++)
+            {
+                u32 p = (i + j*width) * 4;
+
+                u8 r = *(u8*)(image + p);
+                u8 g = *(u8*)(image + p + 1);
+                u8 b = *(u8*)(image + p + 2);
+                u8 a = *(u8*)(image + p + 3);
+
+                *(image + p) = a;
+                *(image + p + 1) = b;
+                *(image + p + 2) = g;
+                *(image + p + 3) = r;
+            }
+        }
+        
+        theme->has_preview = true;
+        pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+    }
+    
+    free(image);
+    free(preview_buffer);
+}
+
+static void parse_smdh(Theme_s *theme, ssize_t textureID)
 {
     char *info_buffer = NULL;
     u64 size = 0;
     if (!(theme->is_zip))
     {
         u16 path_to_smdh[0x106] = {0};
-        strucat(path_to_smdh, path);
+        strucat(path_to_smdh, theme->path);
         struacat(path_to_smdh, "/info.smdh");
         
         size = file_to_buf(fsMakePath(PATH_UTF16, path_to_smdh), ArchiveSD, &info_buffer);    
     } else {
-        size = zip_file_to_buf("info.smdh", path, &info_buffer);
+        size = zip_file_to_buf("info.smdh", theme->path, &info_buffer);
     }
 
     if (!size)
@@ -87,59 +142,6 @@ static void parse_smdh(Theme_s *theme, u16 *path, ssize_t textureID)
     free(info_buffer);
 }
 
-static void load_preview(Theme_s *theme, u16 *path, ssize_t textureID)
-{
-    char *preview_buffer = NULL;
-    u64 size = 0;
-    if (!(theme->is_zip))
-    {
-        u16 path_to_preview[0x106] = {0};
-        strucat(path_to_preview, path);
-        struacat(path_to_preview, "/preview.png");
-        size = file_to_buf(fsMakePath(PATH_UTF16, path_to_preview), ArchiveSD, &preview_buffer);    
-    } else {
-        size = zip_file_to_buf("preview.png", path, &preview_buffer);
-    }
-
-    if (!size)
-    {
-        free(preview_buffer);
-        return;
-    }
-    
-    u8 * image = NULL;
-    unsigned int width = 0, height = 0;
-    
-    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
-    if (result == 0) // no error
-    {
-        for (u32 i = 0; i < width; i++)
-        {
-            for (u32 j = 0; j < height; j++)
-            {
-                u32 p = (i + j*width) * 4;
-
-                u8 r = *(u8*)(image + p);
-                u8 g = *(u8*)(image + p + 1);
-                u8 b = *(u8*)(image + p + 2);
-                u8 a = *(u8*)(image + p + 3);
-
-                *(image + p) = a;
-                *(image + p + 1) = b;
-                *(image + p + 2) = g;
-                *(image + p + 3) = r;
-            }
-        }
-        
-        theme->has_preview = true;
-        pp2d_load_texture_memory(textureID, image, (u32)width, (u32)height);
-        theme->preview_id = textureID;
-    }
-    
-    free(image);
-    free(preview_buffer);
-}
-
 Result get_themes(Theme_s **themes_list, int *theme_count)
 {
     Result res = 0;
@@ -177,9 +179,8 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
         memcpy(current_theme->path, theme_path, 0x106 * sizeof(u16));
         current_theme->is_zip = !strcmp(entry.shortExt, "ZIP");
         
-        ssize_t textureID = MAX_TEXTURE + (*theme_count * 2);
-        parse_smdh(current_theme, theme_path, textureID);
-        load_preview(current_theme, theme_path, textureID+1);
+        ssize_t iconID = TEXTURE_PREVIEW + *theme_count;
+        parse_smdh(current_theme, iconID);
     }
     
     FSDIR_Close(dir_handle);

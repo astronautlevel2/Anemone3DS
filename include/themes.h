@@ -38,14 +38,14 @@ typedef struct {
     ssize_t icon_id;
     
     bool has_preview;
-    ssize_t preview_id;
     
-    u16 path[262];
+    u16 path[0x106];
     bool is_zip;
     
     bool in_shuffle;
 } Theme_s;
 
+void load_theme_preview(Theme_s *theme);
 Result get_themes(Theme_s **themes_list, int *theme_count);
 Result single_install(Theme_s theme);
 Result shuffle_install(Theme_s *themes_list, int theme_count);
