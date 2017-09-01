@@ -51,6 +51,10 @@ Result open_archives(void)
     CFGU_SecureInfoGetRegion(&regionCode);
     switch(regionCode)
     {
+        case 0:
+            archive1 = 0x000002cc;
+            archive2 = 0x00000082;
+            break;
         case 1:
             archive1 = 0x000002cd;
             archive2 = 0x0000008f;
@@ -58,10 +62,6 @@ Result open_archives(void)
         case 2:
             archive1 = 0x000002ce;
             archive2 = 0x00000098;
-            break;
-        case 3:
-            archive1 = 0x000002cc;
-            archive2 = 0x00000082;
             break;
         default:
             archive1 = 0x00;

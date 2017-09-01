@@ -91,7 +91,11 @@ int main(void)
             PTMSYSM_RebootAsync(0);
             ptmSysmExit();
         }
-        
+        else if (kDown & KEY_L)
+        {
+            splash_mode = !splash_mode;
+        }
+
         if (themes_list == NULL && !splash_mode)
             continue;
         
@@ -119,10 +123,6 @@ int main(void)
             continue;
         
         // Actions
-        else if (kDown & KEY_L)
-        {
-            splash_mode = !splash_mode;
-        }
         else if (kDown & KEY_X)
         {
             // install_bgm(current_theme);
