@@ -77,12 +77,33 @@ static int vertical_scroll = 0;
 // static int previous_selected = 0;
 // static int horizontal_scroll_change = 1;
 
-void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode)
+void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP);
+    pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+        
+    pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
+    pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
+    pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
+
+    u8 battery_val = 0;
+    MCUHWC_GetBatteryLevel(&battery_val);
+    pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
+
+    pp2d_draw_on(GFX_BOTTOM);
+    pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
+    pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
+    pp2d_draw_on(GFX_TOP);
+}
+void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode)
+{
     
     if (themes_list == NULL)
     {
+        pp2d_begin_draw(GFX_TOP);
         pp2d_draw_text_center(GFX_TOP, 100, 1, 1, COLOR_WHITE, "FAILURE");
         pp2d_end_draw();
         return;
@@ -94,70 +115,21 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
     {
         if (current_theme.has_preview)
         {
+            pp2d_begin_draw(GFX_TOP);
             pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 6, 0, 400, 240);
-        }
-    }
-    else
-    {
-        pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
-        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Theme mode");
-        wchar_t title[0x80] = {0};
-        utf16_to_utf32((u32*)title, current_theme.name, 0x80);
-        pp2d_draw_wtext(20, 30, 0.7, 0.7, COLOR_WHITE, title);
-        
-        time_t t = time(NULL);
-        struct tm tm = *localtime(&t);
-        
-        pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
-        pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
-        pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
-        
-        u8 battery_val = 0;
-        MCUHWC_GetBatteryLevel(&battery_val);
-        pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
-
-        if (current_theme.has_preview)
-        {
-            //skip the weird 6 pixels to the left
-            pp2d_texture_select_part(TEXTURE_PREVIEW, 220, 35, 6, 0, 400, 480);
-            pp2d_texture_scale(0.4, 0.4);
-            pp2d_texture_draw();
-        }
-    }
-    
-    pp2d_draw_on(GFX_BOTTOM);
-    
-    if (preview_mode)
-    {
-        if (current_theme.has_preview)
-        {
+            pp2d_draw_on(GFX_BOTTOM);
             pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 46, 240, 320, 240);
         }
     }
     else
     {
-        /*
-        // Scroll the theme name if it's too large
-        //----------------------------------------------------------------
-        if (previous_selected != selected_theme) {
-            previous_selected = selected_theme;
-            frames_count = 0;
-            horizontal_scroll = 0;
-            horizontal_scroll_change = 1;
-        }
+        draw_base_interface();
+        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Theme mode");
+        wchar_t title[0x80] = {0};
+        utf16_to_utf32((u32*)title, current_theme.name, 0x80);
+        pp2d_draw_wtext(20, 30, 0.7, 0.7, COLOR_WHITE, title);
 
-        frames_count = (frames_count+1) % FRAMES_FOR_TEXT_SCROLL;
-
-        if (frames_count == 0 && (config.entries[selectedEntry].name.size() > MENU_WIDTH))
-            horizontal_scroll += horizontal_scroll_change;
-
-        if (horizontal_scroll == (config.entries[selected_theme].name.size() - MENU_WIDTH))
-            horizontal_scroll_change = -1;
-
-        if (horizontal_scroll == 0)
-            horizontal_scroll_change = 1;
-        //----------------------------------------------------------------
-        */
+        pp2d_draw_on(GFX_BOTTOM);
 
         // Scroll the menu up or down if the selected theme is out of its bounds
         //----------------------------------------------------------------
@@ -179,14 +151,6 @@ void draw_interface(Theme_s * themes_list, int theme_count, int selected_theme, 
         //----------------------------------------------------------------
         pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
         pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
-        if (vertical_scroll > 0)
-        {
-            pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
-        }
-        if (theme_count - vertical_scroll > THEMES_PER_SCREEN)
-        {
-            pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
-        }
         //----------------------------------------------------------------
         
         for (int i = vertical_scroll; i < (THEMES_PER_SCREEN + vertical_scroll); i++)

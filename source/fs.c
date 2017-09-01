@@ -31,7 +31,7 @@
 
 #include "minizip/unzip.h"
 
-int filename_compare(unzFile file, const char *current_filename, const char *filename)
+int filename_compare(__attribute__((unused)) unzFile file, const char *current_filename, const char *filename)
 {
     return strcasecmp(current_filename, filename);
 }

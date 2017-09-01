@@ -60,7 +60,6 @@ int main(void)
     
     int selected_theme = 0;
     int shuffle_theme_count = 0;
-    int previously_selected = ~selected_theme; //make sure it loads the preview the first time
     bool preview_mode = false;
     
     while(aptMainLoop())
@@ -68,8 +67,7 @@ int main(void)
         hidScanInput();
         u32 kDown = hidKeysDown();
         
-        draw_interface(themes_list, theme_count, selected_theme, preview_mode);
-        
+        draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
         
         if (themes_list == NULL)
             continue;
@@ -80,8 +78,11 @@ int main(void)
         {
             if (!preview_mode)
             {
+                load_theme_preview(current_theme);
                 if (current_theme->has_preview)
+                {
                     preview_mode = true;
+                }
             }
             else
                 preview_mode = false;
@@ -151,15 +152,6 @@ int main(void)
             exit_services();
             PTMSYSM_RebootAsync(0);
             ptmSysmExit();
-        }
-        
-        //if the selected theme changed, load the preview
-        if (selected_theme != previously_selected)
-        {
-            current_theme->has_preview = false; //will be freed anyway
-            current_theme = &themes_list[selected_theme]; //update current_theme
-            load_theme_preview(current_theme);
-            previously_selected = selected_theme;
         }
     }
     
