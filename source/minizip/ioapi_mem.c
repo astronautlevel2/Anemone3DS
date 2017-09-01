@@ -18,6 +18,13 @@
    with.
 */
 
+//taken and adapted from https://stackoverflow.com/a/13492589
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+
+// turn off the specific warning. Can also use "-Wall"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,3 +197,6 @@ void fill_memory_filefunc (pzlib_filefunc_def, ourmem)
     pzlib_filefunc_def->zerror_file = ferror_mem_func;
     pzlib_filefunc_def->opaque = ourmem;
 }
+
+// turn the warnings back on
+#pragma GCC diagnostic pop

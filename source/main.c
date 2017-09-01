@@ -51,9 +51,16 @@ int main(void)
     int theme_count = 0;
     Theme_s * themes_list = NULL;
     Result res = get_themes(&themes_list, &theme_count);
+    if (R_FAILED(res))
+    {
+        //don't need to worry about possible textures (icons, previews), that's freed by pp2d itself
+        free(themes_list);
+        themes_list = NULL;
+    }
     
     int selected_theme = 0;
     int shuffle_theme_count = 0;
+    int previously_selected = ~selected_theme; //make sure it loads the preview the first time
     bool preview_mode = false;
     
     while(aptMainLoop())
@@ -144,6 +151,15 @@ int main(void)
             exit_services();
             PTMSYSM_RebootAsync(0);
             ptmSysmExit();
+        }
+        
+        //if the selected theme changed, load the preview
+        if (selected_theme != previously_selected)
+        {
+            current_theme->has_preview = false; //will be freed anyway
+            current_theme = &themes_list[selected_theme]; //update current_theme
+            load_theme_preview(current_theme);
+            previously_selected = selected_theme;
         }
     }
     

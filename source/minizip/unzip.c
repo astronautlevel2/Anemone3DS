@@ -21,6 +21,14 @@
    access functions to crctables and pkeys
 */
 
+//taken and adapted from https://stackoverflow.com/a/13492589
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+
+// turn off the specific warning. Can also use "-Wall"
+#pragma GCC diagnostic ignored "-Wtype-limits"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1949,3 +1957,6 @@ extern int ZEXPORT unzeof(unzFile file)
         return 1;
     return 0;
 }
+
+// turn the warnings back on
+#pragma GCC diagnostic pop
