@@ -99,6 +99,7 @@ int main(void)
         }
         else if (kDown & KEY_A)
         {
+            draw_theme_install(false);
             single_install(*current_theme);
         }
         
@@ -120,7 +121,10 @@ int main(void)
         else if (kDown & KEY_SELECT)
         {
             if (shuffle_theme_count > 0)
+            {
+                draw_theme_install(true);
                 shuffle_install(themes_list, theme_count);
+            }
         }
 
         // Movement in the UI

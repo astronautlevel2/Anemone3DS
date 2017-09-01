@@ -33,5 +33,6 @@ void init_screens(void);
 void exit_screens(void);
 
 void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode);
+void draw_theme_install(bool shuffle_install);
 
 #endif

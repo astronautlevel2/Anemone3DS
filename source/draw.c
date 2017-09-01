@@ -71,12 +71,6 @@ static Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork
 
 static int vertical_scroll = 0;
 
-// static const int FRAMES_FOR_TEXT_SCROLL = 40;
-// static int frames_count = 0;
-// static int horizontal_scroll = 0;
-// static int previous_selected = 0;
-// static int horizontal_scroll_change = 1;
-
 void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP);
@@ -98,6 +92,14 @@ void draw_base_interface(void)
     pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
     pp2d_draw_on(GFX_TOP);
 }
+
+void draw_theme_install(bool shuffle_install)
+{
+    draw_base_interface();
+    pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a %s theme...", !shuffle_install ? "single" : "shuffle");
+    pp2d_end_draw();
+}
+
 void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode)
 {
     
