@@ -124,18 +124,19 @@ int main(void)
         // Actions
         else if (kDown & KEY_X)
         {
-			if (splash_mode) {
-				splash_delete();
-			} else {
-				draw_theme_install(BGM_INSTALL);
-				bgm_install(*current_theme);
-			}
+            if (splash_mode) {
+                draw_splash_install(UNINSTALL);
+                splash_delete();
+            } else {
+                draw_theme_install(BGM_INSTALL);
+                bgm_install(*current_theme);
+            }
         }
         else if (kDown & KEY_A)
         {
             if (splash_mode)
             {
-                draw_splash_install();
+                draw_splash_install(SINGLE_INSTALL);
                 splash_install(*current_splash);
                 svcSleepThread(5e8);
             } else {

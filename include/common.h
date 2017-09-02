@@ -35,9 +35,11 @@
 
 #define THEMES_PATH 	"/Themes/"
 #define SPLASHES_PATH	"/Splashes/"
-#define SINGLE_INSTALL	0
-#define SHUFFLE_INSTALL	1
+
+#define SINGLE_INSTALL 	0
+#define SHUFFLE_INSTALL 1
 #define BGM_INSTALL		2
+#define UNINSTALL		3
 
 static const int THEMES_PER_SCREEN = 4;
 

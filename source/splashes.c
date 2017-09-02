@@ -88,8 +88,8 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
 }
 void splash_delete() 
 {
-	remove("/luma/splash.bin");
-	remove("/luma/splashbottom.bin");
+    remove("/luma/splash.bin");
+    remove("/luma/splashbottom.bin");
 }
 void splash_install(Splash_s splash_to_install)
 {

@@ -209,10 +209,20 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
     pp2d_end_draw();
 }
 
-void draw_splash_install(void)
+void draw_splash_install(int install_type)
 {
     draw_base_interface();
-    pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+    switch (install_type)
+    {
+        case SINGLE_INSTALL:
+            pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+            break;
+        case UNINSTALL:
+            pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
+            break;
+        default: 
+            break;
+    }
     pp2d_end_draw();
 }
 
