@@ -124,8 +124,12 @@ int main(void)
         // Actions
         else if (kDown & KEY_X)
         {
-            draw_theme_install(BGM_INSTALL);
-            bgm_install(*current_theme);
+			if (splash_mode) {
+				splash_delete();
+			} else {
+				draw_theme_install(BGM_INSTALL);
+				bgm_install(*current_theme);
+			}
         }
         else if (kDown & KEY_A)
         {
