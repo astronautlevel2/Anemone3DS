@@ -4,7 +4,7 @@ A Theme and Splashscreen Manager for the Nintendo3DS, written in C
 
 # Dependencies
  * zlib, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs)
- * [makerom and bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
+ * [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
  * [pp2d](https://github.com/BernardoGiordano/pp2d), which is included in the repo if you do a git clone --recursive.
 
 # License
