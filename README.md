@@ -26,5 +26,5 @@ Special thanks go to these people who, while not directly contributing, helped i
  * all the people who helped keep me going and motivated me to work. This includes, but is definitely not limited to:
  
    + The members of the [Nintendo Homebrew Discord](https://discord.gg/C29hYvh)
-   + The members of the Secret Shack Service Discord
+   + The members of the Secret Shack Service Discord
    + The members of the [ThemePlaza Discord](https://discord.gg/2hUQwXz)
