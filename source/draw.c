@@ -47,21 +47,17 @@ void init_screens(void)
     
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_3, "romfs:/battery3.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_4, "romfs:/battery4.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_5, "romfs:/battery5.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_CHARGE, "romfs:/charging.png");
 }
 
 void exit_screens(void)
 {
     pp2d_exit();
-}
-
-static Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork of lpp-3ds
-{
-    u32 *cmdbuf = getThreadCommandBuffer();
-    cmdbuf[0] = 0x50000;
-    svcSendSyncRequest(mcuhwc_handle);
-    *out = (u8) cmdbuf[2];
-    svcCloseHandle(mcuhwc_handle);
-    return cmdbuf[1];
 }
 
 static int theme_vertical_scroll = 0;
@@ -79,12 +75,14 @@ void draw_base_interface(void)
     pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
     pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
 
-    if (mcuhwc_on)
-    {
-        u8 battery_val = 0;
-        MCUHWC_GetBatteryLevel(&battery_val);
-        pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
-    }
+    u8 battery_charging;
+    PTMU_GetBatteryChargeState(&battery_charging);
+    u8 battery_status;
+    PTMU_GetBatteryLevel(&battery_status);
+    pp2d_draw_texture(2 + battery_status, 357, 2);
+    
+    if (battery_charging)
+        pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
 
     pp2d_draw_on(GFX_BOTTOM);
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);

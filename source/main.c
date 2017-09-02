@@ -33,12 +33,8 @@
 int init_services(void)
 {
     cfguInit();
+    ptmuInit();
     open_archives();
-    if (R_FAILED(srvGetServiceHandle(&mcuhwc_handle, "mcu::HWC")))
-    {
-        mcuhwc_on = false;
-        ptmuInit();
-    } else mcuhwc_on = true;
     return 0;
 }
 
@@ -46,8 +42,7 @@ int exit_services(void)
 {
     close_archives();
     cfguExit();
-    if (mcuhwc_on) svcCloseHandle(mcuhwc_handle);
-    else ptmuExit();
+    ptmuExit();
     return 0;
 }
 
@@ -93,14 +88,7 @@ int main(void)
         
         if (kDown & KEY_START)
         {
-            if(!envIsHomebrew()) 
-            {
-                srvPublishToSubscriber(0x202, 0);
-            } 
-            else 
-            {
-                break;
-            }
+            APT_HardwareResetAsync();
         }
         else if (kDown & KEY_L)
         {
@@ -243,8 +231,4 @@ int main(void)
             previously_selected = selected_theme;
         }
     }
-    
-    free(themes_list);
-    exit_services();
-    return 0;
 }
