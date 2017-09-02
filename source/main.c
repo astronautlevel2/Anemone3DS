@@ -28,12 +28,13 @@
 #include "themes.h"
 #include "splashes.h"
 #include "draw.h"
+#include "common.h"
 
 int init_services(void)
 {
     cfguInit();
+    ptmuInit();
     open_archives();
-    ptmSysmInit();
     return 0;
 }
 
@@ -41,6 +42,7 @@ int exit_services(void)
 {
     close_archives();
     cfguExit();
+    ptmuExit();
     return 0;
 }
 
@@ -86,17 +88,7 @@ int main(void)
         
         if (kDown & KEY_START)
         {
-            if(!envIsHomebrew()) 
-            {
-                srvPublishToSubscriber(0x202, 0);
-            } 
-            else 
-            {
-                exit_screens();
-                exit_services();
-                PTMSYSM_RebootAsync(0);
-                ptmSysmExit();
-            }
+            APT_HardwareResetAsync();
         }
         else if (kDown & KEY_L)
         {
@@ -132,18 +124,19 @@ int main(void)
         // Actions
         else if (kDown & KEY_X)
         {
-			if (splash_mode) {
-				splash_delete();
-			} else {
-				draw_theme_install(BGM_INSTALL);
-				bgm_install(*current_theme);
-			}
+            if (splash_mode) {
+                draw_splash_install(UNINSTALL);
+                splash_delete();
+            } else {
+                draw_theme_install(BGM_INSTALL);
+                bgm_install(*current_theme);
+            }
         }
         else if (kDown & KEY_A)
         {
             if (splash_mode)
             {
-                draw_splash_install();
+                draw_splash_install(SINGLE_INSTALL);
                 splash_install(*current_splash);
                 svcSleepThread(5e8);
             } else {
@@ -243,8 +236,4 @@ int main(void)
             previously_selected = selected_theme;
         }
     }
-    
-    free(themes_list);
-        
-    return 0;
 }

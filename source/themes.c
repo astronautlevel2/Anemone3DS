@@ -87,7 +87,7 @@ void load_theme_preview(Theme_s *theme)
     free(preview_buffer);
 }
 
-static void parse_smdh(Theme_s *theme, ssize_t textureID)
+static void parse_smdh(Theme_s *theme, ssize_t textureID, u16 *dir_name)
 {
     char *info_buffer = NULL;
     u64 size = 0;
@@ -105,6 +105,9 @@ static void parse_smdh(Theme_s *theme, ssize_t textureID)
     if (!size)
     {
         free(info_buffer);
+        memcpy(theme->name, dir_name, 0x106);
+        utf8_to_utf16(theme->desc, (u8*)"No description", 0x106);
+        utf8_to_utf16(theme->author, (u8*)"Unknown author", 0x106);
         return;
     }
 
@@ -181,7 +184,7 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
         current_theme->is_zip = !strcmp(entry.shortExt, "ZIP");
         
         ssize_t iconID = TEXTURE_PREVIEW + *theme_count;
-        parse_smdh(current_theme, iconID);
+        parse_smdh(current_theme, iconID, entry.name);
     }
     
     FSDIR_Close(dir_handle);
