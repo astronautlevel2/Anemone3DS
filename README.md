@@ -24,9 +24,6 @@ Special thanks go to these people who, while not directly contributing, helped i
  * the folks on #dev of Nintendo Homebrew, who helped with unicode shenanigans (especially [Stary2001](https://github.com/Stary2001), [Fenrir](https://github.com/FenrirWolf), and DanielKO).
  * the maintainers for all used libraries, including ctrulib, zlib, citro3d, pp2d and minizip.
  * all the people who helped keep me going and motivated me to work. This includes, but is definitely not limited to:
- 
-   - The members of the [Nintendo Homebrew Discord](https://discord.gg/C29hYvh)
-   
-   - The members of the __Secret Shack Service Discord__
-   
-   - The members of the [ThemePlaza Discord](https://discord.gg/2hUQwXz)
+   + The members of the [Nintendo Homebrew Discord](https://discord.gg/C29hYvh)
+   + The members of the __Secret Shack Service Discord__
+   + The members of the [ThemePlaza Discord](https://discord.gg/2hUQwXz)
