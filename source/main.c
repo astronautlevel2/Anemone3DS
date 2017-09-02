@@ -86,10 +86,17 @@ int main(void)
         
         if (kDown & KEY_START)
         {
-            exit_screens();
-            exit_services();
-            PTMSYSM_RebootAsync(0);
-            ptmSysmExit();
+            if(!envIsHomebrew()) 
+            {
+                srvPublishToSubscriber(0x202, 0);
+            } 
+            else 
+            {
+                exit_screens();
+                exit_services();
+                PTMSYSM_RebootAsync(0);
+                ptmSysmExit();
+            }
         }
         else if (kDown & KEY_L)
         {
