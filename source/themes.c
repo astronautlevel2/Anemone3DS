@@ -105,9 +105,12 @@ static void parse_smdh(Theme_s *theme, ssize_t textureID, u16 *dir_name)
     if (!size)
     {
         free(info_buffer);
-        memcpy(theme->name, dir_name, 0x106);
-        utf8_to_utf16(theme->desc, (u8*)"No description", 0x106);
-        utf8_to_utf16(theme->author, (u8*)"Unknown author", 0x106);
+        memset(theme->name, 0, 0x80);
+        memset(theme->desc, 0, 0x100);
+        memset(theme->author, 0, 0x80);
+        memcpy(theme->name, dir_name, 0x80);
+        utf8_to_utf16(theme->desc, (u8*)"No description", 0x100);
+        utf8_to_utf16(theme->author, (u8*)"Unknown author", 0x80);
         return;
     }
 

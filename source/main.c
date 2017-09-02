@@ -50,7 +50,6 @@ int main(void)
 {
     init_services();
     init_screens();
-
     
     int theme_count = 0;
     Theme_s * themes_list = NULL;
