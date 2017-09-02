@@ -95,7 +95,7 @@ int main(void)
                 exit_screens();
                 exit_services();
                 PTMSYSM_RebootAsync(0);
-                //ptmSysmExit();
+                ptmSysmExit();
             }
         }
         else if (kDown & KEY_L)
