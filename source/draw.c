@@ -56,17 +56,12 @@ void exit_screens(void)
 
 static Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork of lpp-3ds
 {
-    #define TRY(expr) if(R_FAILED(res = (expr))) { svcCloseHandle(mcuhwcHandle); return res; }
-    Result res;
-    Handle mcuhwcHandle;
-    TRY(srvGetServiceHandle(&mcuhwcHandle, "mcu::HWC"));
     u32 *cmdbuf = getThreadCommandBuffer();
     cmdbuf[0] = 0x50000;
-    TRY(svcSendSyncRequest(mcuhwcHandle));
+    svcSendSyncRequest(mcuhwc_handle);
     *out = (u8) cmdbuf[2];
-    svcCloseHandle(mcuhwcHandle);
+    svcCloseHandle(mcuhwc_handle);
     return cmdbuf[1];
-    #undef TRY
 }
 
 static int theme_vertical_scroll = 0;
@@ -84,9 +79,12 @@ void draw_base_interface(void)
     pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
     pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
 
-    u8 battery_val = 0;
-    MCUHWC_GetBatteryLevel(&battery_val);
-    pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
+    if (mcuhwc_on)
+    {
+        u8 battery_val = 0;
+        MCUHWC_GetBatteryLevel(&battery_val);
+        pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
+    }
 
     pp2d_draw_on(GFX_BOTTOM);
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);

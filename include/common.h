@@ -41,6 +41,9 @@
 
 static const int THEMES_PER_SCREEN = 4;
 
+Handle mcuhwc_handle;
+bool mcuhwc_on;
+
 enum TextureID {
     TEXTURE_FONT_RESERVED = 0, //used by pp2d for the font
     TEXTURE_ARROW,

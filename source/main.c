@@ -28,12 +28,17 @@
 #include "themes.h"
 #include "splashes.h"
 #include "draw.h"
+#include "common.h"
 
 int init_services(void)
 {
     cfguInit();
     open_archives();
-    ptmSysmInit();
+    if (R_FAILED(srvGetServiceHandle(&mcuhwc_handle, "mcu::HWC")))
+    {
+        mcuhwc_on = false;
+        ptmuInit();
+    } else mcuhwc_on = true;
     return 0;
 }
 
@@ -41,6 +46,8 @@ int exit_services(void)
 {
     close_archives();
     cfguExit();
+    if (mcuhwc_on) svcCloseHandle(mcuhwc_handle);
+    else ptmuExit();
     return 0;
 }
 
@@ -88,8 +95,7 @@ int main(void)
         {
             exit_screens();
             exit_services();
-            PTMSYSM_RebootAsync(0);
-            ptmSysmExit();
+            APT_HardwareResetAsync();
         }
         else if (kDown & KEY_L)
         {
