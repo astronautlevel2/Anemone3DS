@@ -93,9 +93,14 @@ int main(void)
         
         if (kDown & KEY_START)
         {
-            exit_screens();
-            exit_services();
-            APT_HardwareResetAsync();
+            if(!envIsHomebrew()) 
+            {
+                srvPublishToSubscriber(0x202, 0);
+            } 
+            else 
+            {
+                break;
+            }
         }
         else if (kDown & KEY_L)
         {
@@ -240,6 +245,6 @@ int main(void)
     }
     
     free(themes_list);
-        
+    exit_services();
     return 0;
 }
