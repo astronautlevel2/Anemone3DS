@@ -54,6 +54,7 @@ enum TextureID {
     TEXTURE_BATTERY_5,
     TEXTURE_BATTERY_CHARGE,
     TEXTURE_PREVIEW,
+    TEXTURE_QR,
 };
 
 #endif

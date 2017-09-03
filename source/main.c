@@ -29,6 +29,7 @@
 #include "splashes.h"
 #include "draw.h"
 #include "common.h"
+#include "camera.h"
 
 int init_services(void)
 {
@@ -94,8 +95,15 @@ int main(void)
         hidScanInput();
         u32 kDown = hidKeysDown();
         
-        if (!splash_mode) draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
-        else draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
+        if (qr_mode) 
+        {
+            take_picture();
+        } else if (!splash_mode)
+        {
+            draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
+        } else {
+            draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
+        }
         
         if (kDown & KEY_START)
         {
@@ -108,6 +116,10 @@ int main(void)
         else if (kDown & KEY_L)
         {
             splash_mode = !splash_mode;
+        } else if (kDown & KEY_R)
+        {
+            init_qr();
+            continue;
         }
 
         if (themes_list == NULL && !splash_mode)

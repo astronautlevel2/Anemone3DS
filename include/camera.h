@@ -24,19 +24,18 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef DRAW_H
-#define DRAW_H
+#ifndef CAMERA_H
+#define CAMERA_H
 
-#include "themes.h"
-#include "splashes.h"
+#include "common.h"
 
-void init_screens(void);
-void exit_screens(void);
+struct quirc* context;
+u16 buf[400 * 240];
+Handle cam_handle;
+u32 transfer_size;
+bool qr_mode;
 
-void draw_base_interface(void);
-void draw_theme_install(int install_type);
-void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode);
-void draw_splash_install(int install_type);
-void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
+void init_qr(void);
+void take_picture(void);
 
 #endif
