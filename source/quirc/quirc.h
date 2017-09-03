@@ -19,10 +19,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct quirc;
 
 /* Obtain the library version string. */
@@ -121,7 +117,7 @@ struct quirc_code {
 	 * is a bitmask giving the actual values of cells. If the cell
 	 * at (x, y) is black, then the following bit is set:
 	 *
-	 *     cell_bitmap[i >> 3] & (1 << (i & 7))
+	 *     cell_bitmap[i << 3] & (1 << (i & 7))
 	 *
 	 * where i = (y * size) + x.
 	 */
@@ -165,9 +161,5 @@ void quirc_extract(const struct quirc *q, int index,
 /* Decode a QR-code, returning the payload data. */
 quirc_decode_error_t quirc_decode(const struct quirc_code *code,
 				  struct quirc_data *data);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

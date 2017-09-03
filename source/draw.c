@@ -27,6 +27,7 @@
 #include "draw.h"
 
 #include "pp2d/pp2d/pp2d.h"
+#include "quirc/quirc.h"
 
 #include <time.h>
 
@@ -83,6 +84,33 @@ void draw_qr(void)
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
     free(rgba8_buf);
     pp2d_end_draw();
+
+    int w;
+    int h;
+
+    u8 *image = (u8*) quirc_begin(context, &w, &h);
+
+    for (ssize_t x = 0; x < w; x++)
+    {
+        for (ssize_t y = 0; y < h; y++)
+        {
+            u16 px = buf[y * 400 + x];
+            image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
+        }
+    }
+
+    quirc_end(context);
+
+    if (quirc_count(context) > 0)
+    {
+        struct quirc_code code;
+        struct quirc_data data;
+        quirc_extract(context, 0, &code);
+        if (!quirc_decode(&code, &data))
+        {
+            qr_mode = false;
+        }
+    }
 }
 
 void draw_base_interface(void)

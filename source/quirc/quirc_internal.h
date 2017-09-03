@@ -77,7 +77,6 @@ struct quirc_grid {
 struct quirc {
 	uint8_t			*image;
 	quirc_pixel_t		*pixels;
-	int			*row_average; /* used by threshold() */
 	int			w;
 	int			h;
 
@@ -99,9 +98,9 @@ struct quirc {
 #define QUIRC_MAX_ALIGNMENT   7
 
 struct quirc_rs_params {
-	int             bs; /* Small block size */
-	int             dw; /* Small data words */
-	int		ns; /* Number of small blocks */
+	int             bs; /* Block size */
+	int             dw; /* Data words */
+	int             ce; /* Correctable errors */
 };
 
 struct quirc_version_info {
