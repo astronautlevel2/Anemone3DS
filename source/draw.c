@@ -72,6 +72,12 @@ void draw_qr(void)
     for (int i = 0; i < 240 * 400; i++)
     {
         rgba8_buf[i] = RGB565_TO_RGBA8(buf[i]);
+        u8 *byte_pointer = (u8*)&rgba8_buf[i];
+        u8 r = *(byte_pointer+3);
+        u8 b = *(byte_pointer+2);
+        u8 g = *(byte_pointer+1);
+        u8 a = *(byte_pointer);
+        rgba8_buf[i] = RGBA8(r, g, b, a);
     }
     pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
