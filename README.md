@@ -1,12 +1,15 @@
 ![# Anemone3DS](https://github.com/astronautlevel2/Anemone3DS/blob/master/meta/banner.png)
 
-A Theme and Splashscreen Manager for the Nintendo3DS, written in C
+A Theme and Splashscreen Manager for the Nintendo3DS, written in C.
 
 # Dependencies
  * zlib, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs)
  * [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
  * [pp2d](https://github.com/BernardoGiordano/pp2d), which is included in the repo if you do a git clone --recursive.
-
+# Building
+First of all, make sure devkitPRO is properly installed and added to the PATH.
+After that, open the directory you want to clone the repo into, and type: `git clone https://github.com/astronautlevel2/Anemone3DS/ --recursive`.
+Instructions for installing zlib can be found on the [3ds_portlibs repo](https://github.com/devkitPro/3ds_portlibs) (its easy, just run `make` and `make install-zlib`). After also adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directoy and run `make`. All built files will be in `/out/`.
 # License
 This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additional terms 7b and 7c apply to this project.
 
@@ -19,7 +22,7 @@ The following people contributed to Anemone3DS in some way. Without these people
 
 Special thanks go to these people who, while not directly contributing, helped immensely:
  * [Rinnegatamante](https://github.com/Rinnegatamante), whose code served as reference on theme installation.
- * [BernardoGiordano](https://github.com/BernardoGiordano) for making pp2d, and being super responsive to feature requests and just general help
+ * [BernardoGiordano](https://github.com/BernardoGiordano) for making pp2d, and being super responsive to feature requests and just general help.
  * [yellows8](https://github.com/yellows8) for his home menu extdump tool, which was invaluable in debugging.
  * the folks on #dev of Nintendo Homebrew, who helped with unicode shenanigans (especially [Stary2001](https://github.com/Stary2001), [Fenrir](https://github.com/FenrirWolf), and DanielKO).
  * the maintainers for all used libraries, including ctrulib, zlib, citro3d, pp2d and minizip.

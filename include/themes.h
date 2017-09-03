@@ -34,7 +34,7 @@ typedef struct {
     u16 desc[0x80];
     u16 author[0x40];
     
-    bool has_icon;
+    u32 placeholder_color;
     ssize_t icon_id;
     
     bool has_preview;
