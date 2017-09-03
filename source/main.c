@@ -35,7 +35,19 @@ int init_services(void)
     cfguInit();
     ptmuInit();
     open_archives();
-    return 0;
+    bool homebrew = true;
+    if (!envIsHomebrew())
+    {
+        homebrew = false;
+    } else {
+        s64 out;
+        svcGetSystemInfo(&out, 0x10000, 0);
+        if (out)
+        {
+            homebrew = false;
+        }
+    }
+    return homebrew;
 }
 
 int exit_services(void)
@@ -48,7 +60,7 @@ int exit_services(void)
 
 int main(void)
 {
-    init_services();
+    bool homebrew = init_services();
     init_screens();
     
     int theme_count = 0;
@@ -87,7 +99,11 @@ int main(void)
         
         if (kDown & KEY_START)
         {
-            APT_HardwareResetAsync();
+            if (homebrew)
+                APT_HardwareResetAsync();
+            else {
+                srvPublishToSubscriber(0x202, 0);
+            }
         }
         else if (kDown & KEY_L)
         {
@@ -235,4 +251,8 @@ int main(void)
             previously_selected = selected_theme;
         }
     }
+    exit_screens();
+    exit_services();
+
+    return 0;
 }
