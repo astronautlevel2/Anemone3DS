@@ -63,6 +63,22 @@ void exit_screens(void)
 static int theme_vertical_scroll = 0;
 static int splash_vertical_scroll = 0;
 
+void draw_qr(void)
+{
+    pp2d_begin_draw(GFX_TOP);
+    pp2d_free_texture(TEXTURE_QR);
+    svcWaitSynchronization(cam_handle, U64_MAX);
+    u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
+    for (int i = 0; i < 240 * 400; i++)
+    {
+        rgba8_buf[i] = RGB565_TO_RGBA8(buf[i]);
+    }
+    pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
+    pp2d_draw_texture(TEXTURE_QR, 0, 0);
+    free(rgba8_buf);
+    pp2d_end_draw();
+}
+
 void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP);
@@ -198,8 +214,10 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
                 pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
             }
             pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
-            if (current_theme.has_icon)
+            if (!current_theme.placeholder_color)
                 pp2d_draw_texture(current_theme.icon_id, 0, 24 + vertical_offset);
+            else
+                pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_theme.placeholder_color);
             
             if (current_theme.in_shuffle)
                 pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, font_color);

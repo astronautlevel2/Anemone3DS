@@ -30,6 +30,7 @@
 #include "draw.h"
 #include "common.h"
 #include "camera.h"
+#include <time.h>
 
 int init_services(void)
 {
@@ -61,8 +62,10 @@ int exit_services(void)
 
 int main(void)
 {
+    srand(time(NULL));
     bool homebrew = init_services();
     init_screens();
+    init_qr();
     
     int theme_count = 0;
     Theme_s * themes_list = NULL;
@@ -97,7 +100,7 @@ int main(void)
         
         if (qr_mode) 
         {
-            take_picture();
+            draw_qr();
         } else if (!splash_mode)
         {
             draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
@@ -118,7 +121,7 @@ int main(void)
             splash_mode = !splash_mode;
         } else if (kDown & KEY_R)
         {
-            init_qr();
+            qr_mode = !qr_mode;
             continue;
         }
 

@@ -32,8 +32,6 @@
 
 void init_qr(void)
 {
-	qr_mode = true;
-
 	camInit();
 	CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
 	CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
@@ -51,6 +49,8 @@ void init_qr(void)
 	CAMU_SetReceiving(&cam_handle, buf, PORT_CAM1, 400 * 240 * 2, transfer_size);
 	CAMU_StartCapture(PORT_CAM1);
 
+	buf = malloc(sizeof(u16) * 400 * 240);
+
 	context = quirc_new();
 	quirc_resize(context, 400, 240);
 }
@@ -60,19 +60,5 @@ void exit_qr(void)
 	CAMU_Activate(SELECT_NONE);
 	camExit();
 	quirc_destroy(context);
-}
-
-void take_picture(void)
-{
-	pp2d_begin_draw(GFX_TOP);
-	pp2d_free_texture(TEXTURE_QR);
-	// svcWaitSynchronization(cam_handle, U64_MAX);
-	u32 rgba8_buf[240 * 400];
-	for (int i = 0; i < 240 * 400; i++)
-	{
-		rgba8_buf[i] = RGB565_TO_RGBA8(buf[i]);
-	}
-	pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
-	pp2d_draw_texture(TEXTURE_QR, 0, 0);
-	pp2d_end_draw();
+	free(buf);
 }

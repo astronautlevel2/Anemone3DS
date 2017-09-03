@@ -29,11 +29,13 @@
 
 #include "themes.h"
 #include "splashes.h"
+#include "camera.h"
 
 void init_screens(void);
 void exit_screens(void);
 
 void draw_base_interface(void);
+void draw_qr(void);
 void draw_theme_install(int install_type);
 void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode);
 void draw_splash_install(int install_type);
