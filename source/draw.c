@@ -47,26 +47,17 @@ void init_screens(void)
     
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_3, "romfs:/battery3.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_4, "romfs:/battery4.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_5, "romfs:/battery5.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_CHARGE, "romfs:/charging.png");
 }
 
 void exit_screens(void)
 {
     pp2d_exit();
-}
-
-static Result MCUHWC_GetBatteryLevel(u8 *out) // Code taken from daedreth's fork of lpp-3ds
-{
-    #define TRY(expr) if(R_FAILED(res = (expr))) { svcCloseHandle(mcuhwcHandle); return res; }
-    Result res;
-    Handle mcuhwcHandle;
-    TRY(srvGetServiceHandle(&mcuhwcHandle, "mcu::HWC"));
-    u32 *cmdbuf = getThreadCommandBuffer();
-    cmdbuf[0] = 0x50000;
-    TRY(svcSendSyncRequest(mcuhwcHandle));
-    *out = (u8) cmdbuf[2];
-    svcCloseHandle(mcuhwcHandle);
-    return cmdbuf[1];
-    #undef TRY
 }
 
 static int theme_vertical_scroll = 0;
@@ -84,9 +75,14 @@ void draw_base_interface(void)
     pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
     pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
 
-    u8 battery_val = 0;
-    MCUHWC_GetBatteryLevel(&battery_val);
-    pp2d_draw_textf(350, 2, 0.6, 0.6, COLOR_WHITE, "%i%%", battery_val);
+    u8 battery_charging;
+    PTMU_GetBatteryChargeState(&battery_charging);
+    u8 battery_status;
+    PTMU_GetBatteryLevel(&battery_status);
+    pp2d_draw_texture(2 + battery_status, 357, 2);
+    
+    if (battery_charging)
+        pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
 
     pp2d_draw_on(GFX_BOTTOM);
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
@@ -213,10 +209,20 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
     pp2d_end_draw();
 }
 
-void draw_splash_install(void)
+void draw_splash_install(int install_type)
 {
     draw_base_interface();
-    pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+    switch (install_type)
+    {
+        case SINGLE_INSTALL:
+            pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+            break;
+        case UNINSTALL:
+            pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
+            break;
+        default: 
+            break;
+    }
     pp2d_end_draw();
 }
 
@@ -239,8 +245,8 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
         draw_base_interface();
         pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Splash mode");
 
-        pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Splash    \uE004 Switch to Themes");
-
+        pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Splash    \uE004 Switch to Themes");
+		pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE002 Delete current Splash");
         pp2d_draw_on(GFX_BOTTOM);
         for (int i = 0; i < splash_count; i++) {
             if (splash_count <= THEMES_PER_SCREEN)
