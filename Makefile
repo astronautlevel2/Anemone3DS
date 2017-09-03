@@ -18,7 +18,7 @@ APP_AUTHOR          :=	astronautlevel and daedreth
 TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
 OUTDIR              :=	out
 BUILD               :=	build
-SOURCES             :=	source source/pp2d/pp2d source/minizip
+SOURCES             :=	source source/pp2d/pp2d source/minizip source/quirc
 INCLUDES            :=	include
 ROMFS               :=	romfs
 

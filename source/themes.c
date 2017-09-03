@@ -27,6 +27,7 @@
 #include "themes.h"
 #include "unicode.h"
 #include "fs.h"
+#include <time.h>
 
 #include "pp2d/pp2d/pp2d.h"
 #include "pp2d/pp2d/lodepng.h"
@@ -111,6 +112,7 @@ static void parse_smdh(Theme_s *theme, ssize_t textureID, u16 *dir_name)
         memcpy(theme->name, dir_name, 0x80);
         utf8_to_utf16(theme->desc, (u8*)"No description", 0x100);
         utf8_to_utf16(theme->author, (u8*)"Unknown author", 0x80);
+        theme->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
         return;
     }
 
@@ -140,7 +142,6 @@ static void parse_smdh(Theme_s *theme, ssize_t textureID, u16 *dir_name)
         }
     }
     
-    theme->has_icon = true;
     pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
     theme->icon_id = textureID;
     

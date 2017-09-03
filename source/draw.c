@@ -27,6 +27,7 @@
 #include "draw.h"
 
 #include "pp2d/pp2d/pp2d.h"
+#include "quirc/quirc.h"
 
 #include <time.h>
 
@@ -62,6 +63,55 @@ void exit_screens(void)
 
 static int theme_vertical_scroll = 0;
 static int splash_vertical_scroll = 0;
+
+void draw_qr(void)
+{
+    pp2d_begin_draw(GFX_TOP);
+    pp2d_free_texture(TEXTURE_QR);
+    take_picture();
+    u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
+    for (int i = 0; i < 240 * 400; i++)
+    {
+        rgba8_buf[i] = RGB565_TO_RGBA8(buf[i]);
+        u8 *byte_pointer = (u8*)&rgba8_buf[i];
+        u8 r = *(byte_pointer+3);
+        u8 b = *(byte_pointer+2);
+        u8 g = *(byte_pointer+1);
+        u8 a = *(byte_pointer);
+        rgba8_buf[i] = RGBA8(r, g, b, a);
+    }
+    pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
+    pp2d_draw_texture(TEXTURE_QR, 0, 0);
+    free(rgba8_buf);
+    pp2d_end_draw();
+
+    int w;
+    int h;
+
+    u8 *image = (u8*) quirc_begin(context, &w, &h);
+
+    for (ssize_t x = 0; x < w; x++)
+    {
+        for (ssize_t y = 0; y < h; y++)
+        {
+            u16 px = buf[y * 400 + x];
+            image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
+        }
+    }
+
+    quirc_end(context);
+
+    if (quirc_count(context) > 0)
+    {
+        struct quirc_code code;
+        struct quirc_data data;
+        quirc_extract(context, 0, &code);
+        if (!quirc_decode(&code, &data))
+        {
+            qr_mode = false;
+        }
+    }
+}
 
 void draw_base_interface(void)
 {
@@ -198,8 +248,10 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
                 pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
             }
             pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
-            if (current_theme.has_icon)
+            if (!current_theme.placeholder_color)
                 pp2d_draw_texture(current_theme.icon_id, 0, 24 + vertical_offset);
+            else
+                pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_theme.placeholder_color);
             
             if (current_theme.in_shuffle)
                 pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, font_color);

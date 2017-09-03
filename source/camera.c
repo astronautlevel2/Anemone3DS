@@ -24,37 +24,50 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#include "camera.h"
 
-#include <3ds.h>
+#include "quirc/quirc.h"
+#include "pp2d/pp2d/pp2d.h"
+#include "draw.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+void init_qr(void)
+{
+	camInit();
+	CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
+	CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
 
-#define THEMES_PATH 	"/Themes/"
-#define SPLASHES_PATH	"/Splashes/"
+	CAMU_SetNoiseFilter(SELECT_OUT1, true);
+	CAMU_SetAutoExposure(SELECT_OUT1, true);
+	CAMU_SetAutoWhiteBalance(SELECT_OUT1, true);
 
-#define SINGLE_INSTALL 	0
-#define SHUFFLE_INSTALL 1
-#define BGM_INSTALL		2
-#define UNINSTALL		3
+	CAMU_SetTrimming(PORT_CAM1, false);
 
-static const int THEMES_PER_SCREEN = 4;
+	buf = malloc(sizeof(u16) * 400 * 240);
 
-enum TextureID {
-    TEXTURE_FONT_RESERVED = 0, //used by pp2d for the font
-    TEXTURE_ARROW,
-    TEXTURE_SHUFFLE,
-    TEXTURE_BATTERY_1,
-    TEXTURE_BATTERY_2,
-    TEXTURE_BATTERY_3,
-    TEXTURE_BATTERY_4,
-    TEXTURE_BATTERY_5,
-    TEXTURE_BATTERY_CHARGE,
-    TEXTURE_QR,
-    TEXTURE_PREVIEW,
-};
+	context = quirc_new();
+	quirc_resize(context, 400, 240);
+}
 
-#endif
+void exit_qr(void)
+{
+	CAMU_Activate(SELECT_NONE);
+	camExit();
+	quirc_destroy(context);
+	free(buf);
+}
+
+void take_picture(void)
+{
+	u32 transfer_size;
+	Handle cam_handle = 0;
+	CAMU_GetMaxBytes(&transfer_size, 400, 240);
+	CAMU_SetTransferBytes(PORT_CAM1, transfer_size, 400, 240);
+	CAMU_Activate(SELECT_OUT1);
+	CAMU_ClearBuffer(PORT_CAM1);
+	CAMU_StartCapture(PORT_CAM1);
+	CAMU_SetReceiving(&cam_handle, buf, PORT_CAM1, 400 * 240 * 2, transfer_size);
+	svcWaitSynchronization(cam_handle, U64_MAX);
+	CAMU_StopCapture(PORT_CAM1);
+	svcCloseHandle(cam_handle);
+	CAMU_Activate(PORT_NONE);
+}
