@@ -32,6 +32,8 @@
 #include "camera.h"
 #include <time.h>
 
+int __stacksize__ = 64 * 1024;
+
 int init_services(void)
 {
     cfguInit();
