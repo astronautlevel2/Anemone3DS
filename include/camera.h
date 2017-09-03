@@ -31,11 +31,10 @@
 
 struct quirc* context;
 u16 *buf;
-Handle cam_handle;
-u32 transfer_size;
 bool qr_mode;
 
 void init_qr(void);
 void exit_qr(void);
+void take_picture(void);
 
 #endif
