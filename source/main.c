@@ -125,10 +125,14 @@ int main(void)
             splash_mode = !splash_mode;
         } else if (kDown & KEY_R)
         {
-            qr_mode = !qr_mode;
-            if (qr_mode) init_qr();
-            else exit_qr();
-            continue;
+			if (splash_mode || preview_mode) {
+				continue;
+			} else {
+				qr_mode = !qr_mode;
+				if (qr_mode) init_qr();
+				else exit_qr();
+				continue;
+			}
         }
 
         if (qr_mode) continue;
