@@ -397,6 +397,7 @@ Result shuffle_install(Theme_s *themes_list, int theme_count)
         if (themes_list[i].in_shuffle)
         {
             shuffle_themes[count++] = &themes_list[i];
+            themes_list[i].in_shuffle = false;
         }
     }
     for (int i = 0; i < count; i++)

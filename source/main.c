@@ -212,6 +212,7 @@ int main(void)
                 {
                     draw_theme_install(SHUFFLE_INSTALL);
                     shuffle_install(themes_list, theme_count);
+                    shuffle_theme_count = 0;
                 }
             }
         }
