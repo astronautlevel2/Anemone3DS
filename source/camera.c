@@ -34,16 +34,16 @@
 void init_qr(void)
 {
 	camInit();
-	CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
-	CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
+	CAMU_SetSize(SELECT_OUT1_OUT2, SIZE_CTR_TOP_LCD, CONTEXT_A);
+	CAMU_SetOutputFormat(SELECT_OUT1_OUT2, OUTPUT_RGB_565, CONTEXT_A);
 
-	CAMU_SetNoiseFilter(SELECT_OUT1, true);
-	CAMU_SetAutoExposure(SELECT_OUT1, true);
-	CAMU_SetAutoWhiteBalance(SELECT_OUT1, true);
+	CAMU_SetNoiseFilter(SELECT_OUT1_OUT2, true);
+	CAMU_SetAutoExposure(SELECT_OUT1_OUT2, true);
+	CAMU_SetAutoWhiteBalance(SELECT_OUT1_OUT2, true);
 
 	CAMU_SetTrimming(PORT_CAM1, false);
 
-	buf = malloc(sizeof(u16) * 400 * 240);
+	buf = malloc(sizeof(u16) * 400 * 240 * 2);
 
 	context = quirc_new();
 	quirc_resize(context, 400, 240);
@@ -62,13 +62,14 @@ void take_picture(void)
 	u32 transfer_size;
 	Handle cam_handle = 0;
 	CAMU_GetMaxBytes(&transfer_size, 400, 240);
-	CAMU_SetTransferBytes(PORT_CAM1, transfer_size, 400, 240);
-	CAMU_Activate(SELECT_OUT1);
-	CAMU_ClearBuffer(PORT_CAM1);
-	CAMU_StartCapture(PORT_CAM1);
+	CAMU_SetTransferBytes(PORT_BOTH, transfer_size, 400, 240);
+	CAMU_Activate(SELECT_OUT1_OUT2);
+	CAMU_ClearBuffer(PORT_BOTH);
+	CAMU_SynchronizeVsyncTiming(SELECT_OUT1, SELECT_OUT2);
+	CAMU_StartCapture(PORT_BOTH);
 	CAMU_SetReceiving(&cam_handle, buf, PORT_CAM1, 400 * 240 * 2, transfer_size);
 	svcWaitSynchronization(cam_handle, U64_MAX);
-	CAMU_StopCapture(PORT_CAM1);
+	CAMU_StopCapture(PORT_BOTH);
 	svcCloseHandle(cam_handle);
 	CAMU_Activate(PORT_NONE);
 }
