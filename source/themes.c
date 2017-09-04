@@ -393,7 +393,7 @@ Result shuffle_install(Theme_s *themes_list, int theme_count)
     u32 bgm_sizes[10] = {0};
     for (int i = 0; i < theme_count; i++)
     {
-        if (count > 9) return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
+        if (count > 10) return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
         if (themes_list[i].in_shuffle)
         {
             shuffle_themes[count++] = &themes_list[i];

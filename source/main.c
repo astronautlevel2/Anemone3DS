@@ -199,6 +199,7 @@ int main(void)
                         current_theme->in_shuffle = false;
                     } 
                 }
+                draw_shuffle_selection(shuffle_theme_count);
             }
         }
 

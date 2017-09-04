@@ -115,6 +115,11 @@ void draw_qr(void)
     }
 }
 
+void draw_shuffle_selection(int shuffled_theme_count)
+{
+    pp2d_draw_text(36, 2, 0.6, 0.6, COLOR_WHITE, "%d/10", shuffled_theme_count);
+}
+
 void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP);
