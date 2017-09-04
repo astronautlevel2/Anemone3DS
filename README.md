@@ -3,9 +3,9 @@
 A Theme and Splashscreen Manager for the Nintendo3DS, written in C.
 
 # Dependencies
- * zlib, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs)
+ * zlib, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs).
  * [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
- * [pp2d](https://github.com/BernardoGiordano/pp2d), which is included in the repo if you do a git clone --recursive.
+ * [pp2d](https://github.com/BernardoGiordano/pp2d) and [quirc](https://github.com/dlbeer/quirc), which are included in the repo if you do a git clone --recursive.
 # Building
 First of all, make sure devkitPRO is properly installed and added to the PATH.
 After that, open the directory you want to clone the repo into, and type: `git clone https://github.com/astronautlevel2/Anemone3DS/ --recursive`.
@@ -25,7 +25,7 @@ Special thanks go to these people who, while not directly contributing, helped i
  * [BernardoGiordano](https://github.com/BernardoGiordano) for making pp2d, and being super responsive to feature requests and just general help.
  * [yellows8](https://github.com/yellows8) for his home menu extdump tool, which was invaluable in debugging.
  * the folks on #dev of Nintendo Homebrew, who helped with unicode shenanigans (especially [Stary2001](https://github.com/Stary2001), [Fenrir](https://github.com/FenrirWolf), and DanielKO).
- * the maintainers for all used libraries, including ctrulib, zlib, citro3d, pp2d and minizip.
+ * the maintainers for all used libraries, including ctrulib, zlib, citro3d, pp2d, quirc and minizip.
  * all the people who helped keep me going and motivated me to work. This includes, but is definitely not limited to:
  
    + The members of the [Nintendo Homebrew Discord](https://discord.gg/C29hYvh)
