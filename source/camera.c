@@ -29,6 +29,7 @@
 #include "quirc/quirc.h"
 #include "draw.h"
 #include "fs.h"
+#include "themes.h"
 
 void init_qr(void)
 {
@@ -186,6 +187,10 @@ Result http_get(char *url, char *path)
 	strcat(path_to_file, filename);
 	remake_file(path_to_file, ArchiveSD, size);
 	buf_to_file(size, path_to_file, ArchiveSD, (char*)buf);
+
+	add_theme(&themes_list, &theme_count, path_to_file, filename);
+
+	exit_qr();
 
 	return 0;
 }
