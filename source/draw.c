@@ -148,13 +148,13 @@ void draw_theme_install(int install_type)
     switch(install_type) 
     {
         case 0:
-            pp2d_draw_text(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a single theme...");
+            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
             break;
         case 1:
-            pp2d_draw_text(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a shuffle theme...");
+            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_WHITE, "Installing a shuffle theme...");
             break;
         case 2:
-            pp2d_draw_text(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing BGM...");
+            pp2d_draw_text(120, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM...");
             break;
         default:
             break;
@@ -162,7 +162,7 @@ void draw_theme_install(int install_type)
     pp2d_end_draw();
 }
 
-void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode)
+void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode, int shuffle_theme_count)
 {
     
     if (themes_list == NULL)
@@ -208,6 +208,8 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
 		pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
         pp2d_draw_on(GFX_BOTTOM);
+
+        pp2d_draw_textf(7, 3, 0.6, 0.6, COLOR_WHITE, "Selected: %i/10", shuffle_theme_count);
 
         // Scroll the menu up or down if the selected theme is out of its bounds
         //----------------------------------------------------------------
@@ -269,10 +271,10 @@ void draw_splash_install(int install_type)
     switch (install_type)
     {
         case SINGLE_INSTALL:
-            pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+            pp2d_draw_textf(130, 110, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
             break;
         case UNINSTALL:
-            pp2d_draw_textf(20, 30, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
+            pp2d_draw_textf(130, 110, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
             break;
         default: 
             break;

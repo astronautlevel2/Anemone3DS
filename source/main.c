@@ -107,7 +107,7 @@ int main(void)
             draw_qr();
         } else if (!splash_mode)
         {
-            draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode);
+            draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode, shuffle_theme_count);
         } else {
             draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
         }
