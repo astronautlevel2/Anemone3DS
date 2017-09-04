@@ -38,6 +38,7 @@ int init_services(void)
 {
     cfguInit();
     ptmuInit();
+    httpcInit(0);
     open_archives();
     bool homebrew = true;
     if (!envIsHomebrew())
@@ -59,6 +60,7 @@ int exit_services(void)
     close_archives();
     cfguExit();
     ptmuExit();
+    httpcExit();
     return 0;
 }
 
@@ -67,10 +69,9 @@ int main(void)
     srand(time(NULL));
     bool homebrew = init_services();
     init_screens();
-    init_qr();
     
-    int theme_count = 0;
-    Theme_s * themes_list = NULL;
+    themes_list = NULL;
+    theme_count = 0;
     Result res = get_themes(&themes_list, &theme_count);
     if (R_FAILED(res))
     {
@@ -124,8 +125,12 @@ int main(void)
         } else if (kDown & KEY_R)
         {
             qr_mode = !qr_mode;
+            if (qr_mode) init_qr();
+            else exit_qr();
             continue;
         }
+
+        if (qr_mode) continue;
 
         if (themes_list == NULL && !splash_mode)
             continue;

@@ -196,6 +196,27 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
     return res;
 }
 
+void add_theme(Theme_s **themes_list, int *theme_count, char *path, char *filename)
+{
+    *theme_count += 1;
+    *themes_list = realloc(*themes_list, (*theme_count) * sizeof(Theme_s));
+
+    Theme_s *current_theme = &(*themes_list)[*theme_count - 1];
+    memset(current_theme, 0, sizeof(Theme_s));
+
+    u16 theme_path[0x106] = {0};
+    utf8_to_utf16(theme_path, (u8*)path, 0x106);
+
+    u16 ufilename[0x106] = {0};
+    utf8_to_utf16(ufilename, (u8*)filename, 0x106);
+
+    memcpy(current_theme->path, theme_path, 0x106 * sizeof(u16));
+    current_theme->is_zip = true;
+
+    ssize_t iconID = TEXTURE_PREVIEW + *theme_count;
+    parse_smdh(current_theme, iconID, ufilename);
+}
+
 Result bgm_install(Theme_s bgm_to_install)
 {
     char *savedata_buf;

@@ -109,6 +109,8 @@ void draw_qr(void)
         if (!quirc_decode(&code, &data))
         {
             qr_mode = false;
+
+            http_get((char*)data.payload, "/Themes/");
         }
     }
 }
