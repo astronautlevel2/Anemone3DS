@@ -75,8 +75,8 @@ void draw_qr(void)
         rgba8_buf[i] = RGB565_TO_RGBA8(buf[i]);
         u8 *byte_pointer = (u8*)&rgba8_buf[i];
         u8 r = *(byte_pointer+3);
-        u8 b = *(byte_pointer+2);
-        u8 g = *(byte_pointer+1);
+        u8 g = *(byte_pointer+2);
+        u8 b = *(byte_pointer+1);
         u8 a = *(byte_pointer);
         rgba8_buf[i] = RGBA8(r, g, b, a);
     }
