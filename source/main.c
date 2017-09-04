@@ -193,7 +193,7 @@ int main(void)
             {
 
             } else {
-                if (shuffle_theme_count <= 10)
+                if (shuffle_theme_count < 10)
                 {
                     if (current_theme->in_shuffle) shuffle_theme_count--;
                     else shuffle_theme_count++;
