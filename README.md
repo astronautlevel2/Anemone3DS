@@ -9,7 +9,7 @@ A Theme and Splashscreen Manager for the Nintendo3DS, written in C.
 # Building
 First of all, make sure devkitPRO is properly installed and added to the PATH.
 After that, open the directory you want to clone the repo into, and type: `git clone https://github.com/astronautlevel2/Anemone3DS/ --recursive`.
-Instructions for installing zlib can be found on the [3ds_portlibs repo](https://github.com/devkitPro/3ds_portlibs) (its easy, just run `make` and `make install-zlib`). After also adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directoy and run `make`. All built files will be in `/out/`.
+Instructions for installing zlib can be found on the [3ds_portlibs repo](https://github.com/devkitPro/3ds_portlibs) (its easy, just run `make` and `make install-zlib`). After also adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built files will be in `/out/`.
 # License
 This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additional terms 7b and 7c apply to this project.
 
