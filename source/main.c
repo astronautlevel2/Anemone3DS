@@ -38,6 +38,7 @@ int init_services(void)
 {
     cfguInit();
     ptmuInit();
+    httpcInit(0);
     open_archives();
     bool homebrew = true;
     if (!envIsHomebrew())
@@ -59,6 +60,7 @@ int exit_services(void)
     close_archives();
     cfguExit();
     ptmuExit();
+    httpcExit();
     return 0;
 }
 
