@@ -206,7 +206,7 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         pp2d_draw_wtext(200, 180, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
         pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
         pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
-
+		pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
         pp2d_draw_on(GFX_BOTTOM);
 
         // Scroll the menu up or down if the selected theme is out of its bounds
