@@ -125,7 +125,7 @@ int main(void)
             splash_mode = !splash_mode;
         } else if (kDown & KEY_R)
         {
-			if (splash_mode) {
+			if (splash_mode || preview_mode) {
 				continue;
 			} else {
 				qr_mode = !qr_mode;
