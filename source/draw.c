@@ -139,6 +139,7 @@ void draw_base_interface(void)
     pp2d_draw_on(GFX_BOTTOM);
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
     pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
+    pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
     pp2d_draw_on(GFX_TOP);
 }
 
