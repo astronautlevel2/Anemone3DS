@@ -6,6 +6,7 @@ A Theme and Splashscreen Manager for the Nintendo3DS, written in C.
  * zlib, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs).
  * [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
  * [pp2d](https://github.com/BernardoGiordano/pp2d), which is included in the repo if you do a git clone --recursive.
+ * Git needs to be on your PATH, if building in a non-*nix environment.
 # Building
 First of all, make sure devkitPRO is properly installed and added to the PATH.
 After that, open the directory you want to clone the repo into, and type: `git clone https://github.com/astronautlevel2/Anemone3DS/ --recursive`.
