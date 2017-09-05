@@ -40,5 +40,5 @@ void draw_theme_install(int install_type);
 void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode, int shuffle_theme_count);
 void draw_splash_install(int install_type);
 void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
-void throw_error(char* error);
+void throw_error(char* error, int error_type);
 #endif
