@@ -122,17 +122,17 @@ int main(void)
         }
         else if (kDown & KEY_L)
         {
-			splash_mode = !splash_mode;
+            splash_mode = !splash_mode;
         } else if (kDown & KEY_R)
         {
-			if (splash_mode || preview_mode) {
-				continue;
-			} else {
-				qr_mode = !qr_mode;
-				if (qr_mode) init_qr();
-				else exit_qr();
-				continue;
-			}
+            if (splash_mode || preview_mode) {
+                continue;
+            } else {
+                qr_mode = !qr_mode;
+                if (qr_mode) init_qr();
+                else exit_qr();
+                continue;
+            }
         }
 
         if (qr_mode) continue;
@@ -291,7 +291,7 @@ int main(void)
         else if (kHeld & KEY_CPAD_DOWN)
         {
             svcSleepThread(100000000);
-			
+            
             if (splash_mode)
             {
                 selected_splash++;
