@@ -37,6 +37,7 @@ enum Colors {
     COLOR_WHITE = RGBA8(255, 255, 255, 255),
     COLOR_CURSOR = RGBA8(200, 200, 200, 255),
     COLOR_BLACK = RGBA8(0, 0, 0, 255),
+	COLOR_RED = RGBA8(200, 0, 0, 255)
 };
 
 void init_screens(void)
@@ -142,7 +143,11 @@ void draw_base_interface(void)
     pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
     pp2d_draw_on(GFX_TOP);
 }
-
+void throw_error(char* error) {
+	draw_base_interface();
+	pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_WHITE, error);
+	pp2d_end_draw();
+}
 void draw_theme_install(int install_type)
 {
     draw_base_interface();

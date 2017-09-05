@@ -122,7 +122,7 @@ int main(void)
         }
         else if (kDown & KEY_L)
         {
-            splash_mode = !splash_mode;
+			throw_error("TEST");
         } else if (kDown & KEY_R)
         {
 			if (splash_mode || preview_mode) {
