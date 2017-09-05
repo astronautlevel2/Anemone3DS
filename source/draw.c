@@ -37,6 +37,8 @@ enum Colors {
     COLOR_WHITE = RGBA8(255, 255, 255, 255),
     COLOR_CURSOR = RGBA8(200, 200, 200, 255),
     COLOR_BLACK = RGBA8(0, 0, 0, 255),
+    COLOR_RED = RGBA8(200, 0, 0, 255),
+    COLOR_YELLOW = RGBA8(239, 220, 11, 255),
 };
 
 void init_screens(void)
@@ -142,7 +144,18 @@ void draw_base_interface(void)
     pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
     pp2d_draw_on(GFX_TOP);
 }
-
+void throw_error(char* error, int error_type) {
+    draw_base_interface();
+    switch (error_type) {
+        case ERROR:
+            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_RED, error);
+            break;
+        case WARNING:
+            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_YELLOW, error);
+            break;
+    }
+    pp2d_end_draw();
+}
 void draw_theme_install(int install_type)
 {
     draw_base_interface();
@@ -207,7 +220,7 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         pp2d_draw_wtext(200, 180, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
         pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
         pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
-		pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
+        pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
         pp2d_draw_on(GFX_BOTTOM);
 
         pp2d_draw_textf(7, 3, 0.6, 0.6, COLOR_WHITE, "Selected: %i/10", shuffle_theme_count);
@@ -303,7 +316,7 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
         pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Splash mode");
 
         pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Splash    \uE004 Switch to Themes");
-		pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE002 Delete current Splash");
+        pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE002 Delete current Splash");
         pp2d_draw_on(GFX_BOTTOM);
         for (int i = 0; i < splash_count; i++) {
             if (splash_count <= THEMES_PER_SCREEN)
