@@ -149,13 +149,13 @@ void draw_theme_install(int install_type)
     switch(install_type) 
     {
         case 0:
-            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
             break;
         case 1:
-            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_WHITE, "Installing a shuffle theme...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a shuffle theme...");
             break;
         case 2:
-            pp2d_draw_text(120, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM...");
             break;
         default:
             break;
@@ -192,14 +192,14 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Theme mode");
         wchar_t title[0x40] = {0};
         utf16_to_utf32((u32*)title, current_theme.name, 0x40);
-        pp2d_draw_wtext(20, 30, 0.7, 0.7, COLOR_WHITE, title);
+        pp2d_draw_wtext_wrap(20, 30, 0.7, 0.7, COLOR_WHITE, 380, title);
         wchar_t author[0x40] = {0};
         utf16_to_utf32((u32*)author, current_theme.author, 0x40);
         pp2d_draw_text(20, 50, 0.5, 0.5, COLOR_WHITE, "By: ");
-        pp2d_draw_wtext(44, 50, 0.5, 0.5, COLOR_WHITE, author);
-        wchar_t description[0x80] = {0};
-        utf16_to_utf32((u32*)description, current_theme.desc, 0x80);
-        pp2d_draw_wtext(20, 65, 0.5, 0.5, COLOR_WHITE, description);
+        pp2d_draw_wtext_wrap(44, 50, 0.5, 0.5, COLOR_WHITE, 380, author);
+        wchar_t description[0xa6] = {0};
+        utf16_to_utf32((u32*)description, current_theme.desc, 0xb0);
+        pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
         
         pp2d_draw_wtext(20, 150, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Theme");
         pp2d_draw_wtext(200, 150, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Splashes");
@@ -272,10 +272,10 @@ void draw_splash_install(int install_type)
     switch (install_type)
     {
         case SINGLE_INSTALL:
-            pp2d_draw_textf(130, 110, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+            pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
             break;
         case UNINSTALL:
-            pp2d_draw_textf(130, 110, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
+            pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
             break;
         default: 
             break;
