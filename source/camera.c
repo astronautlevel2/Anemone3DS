@@ -158,9 +158,9 @@ Result http_get(char *url, char *path)
     filename = strtok(NULL, "\"");
 
     char *illegal_characters = "\"?;:/\\+";
-    for (ssize_t i = 0; i < strlen(filename); i++)
+    for (size_t i = 0; i < strlen(filename); i++)
     {
-        for (ssize_t n = 0; n < strlen(illegal_characters); n++)
+        for (size_t n = 0; n < strlen(illegal_characters); n++)
         {
             if (filename[i] == illegal_characters[n]) 
             {
