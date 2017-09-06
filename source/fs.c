@@ -151,17 +151,16 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
     }
 }
 
-u32 buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
+Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
 {
     Handle handle;
-    u32 bytes = 0;
     Result res = FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE, 0);
     if (R_FAILED(res)) return res;
-    res = FSFILE_Write(handle, &bytes, 0, buf, size, FS_WRITE_FLUSH);
+    res = FSFILE_Write(handle, NULL, 0, buf, size, FS_WRITE_FLUSH);
     if (R_FAILED(res)) return res;
     res = FSFILE_Close(handle);
     if (R_FAILED(res)) return res;
-    return bytes;
+    return 0;
 }
 
 void remake_file(char *path, FS_Archive archive, u32 size)
