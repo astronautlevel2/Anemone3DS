@@ -96,7 +96,7 @@ Result http_get(char *url, char *path)
         ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
         ret = httpcAddRequestHeaderField(&context, "User-Agent", "Anemone3DS/1.1.0");
         ret = httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-
+		draw_theme_install(DOWNLOADING);
         ret = httpcBeginRequest(&context);
         if (ret != 0)
         {

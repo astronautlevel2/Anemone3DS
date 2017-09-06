@@ -170,6 +170,9 @@ void draw_theme_install(int install_type)
         case 2:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM...");
             break;
+		case 3:
+			pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
+			break;
         default:
             break;
     }
