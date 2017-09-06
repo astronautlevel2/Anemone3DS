@@ -247,7 +247,6 @@ Result bgm_install(Theme_s bgm_to_install)
 
     if (music_size == 0)
     {
-        free(music);
         music = calloc(1, 3371008);
     } else if (music_size > 3371008) {
         free(music);
@@ -255,7 +254,7 @@ Result bgm_install(Theme_s bgm_to_install)
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
 
-    result = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+    result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
     if (!R_SUCCEEDED(result)) return result;
@@ -348,7 +347,6 @@ Result single_install(Theme_s theme_to_install)
 
     if (music_size == 0)
     {
-        free(music);
         music = calloc(1, 3371008);
     } else if (music_size > 3371008) {
         free(music);
@@ -356,7 +354,7 @@ Result single_install(Theme_s theme_to_install)
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
 
-    result = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+    result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
     if (!R_SUCCEEDED(result)) return result;
