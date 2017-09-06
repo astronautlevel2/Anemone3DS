@@ -68,14 +68,14 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
         u32 bytes = file_to_buf(fsMakePath(PATH_UTF16, top_path), ArchiveSD, &temp_buf);
         if (!bytes)
         {
-            memset(top_path, 0, 0x106);
+            memset(top_path, 0, 0x106 * sizeof(u16));
         }
         free(temp_buf);
         temp_buf = NULL;
         bytes = file_to_buf(fsMakePath(PATH_UTF16, bottom_path), ArchiveSD, &temp_buf);
         if (!bytes)
         {
-            memset(bottom_path, 0, 0x106);
+            memset(bottom_path, 0, 0x106 * sizeof(u16));
         }
         free(temp_buf);
         memcpy(current_splash->name, entry.name, 0x106);
