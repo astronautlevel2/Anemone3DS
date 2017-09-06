@@ -38,7 +38,7 @@ int filename_compare(__attribute__((unused)) unzFile file, const char *current_f
 
 Result open_archives(void)
 {
-
+	romfsInit();
     u8 regionCode;
     u32 archive1;
     u32 archive2;
@@ -85,7 +85,6 @@ Result open_archives(void)
     retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
     if(R_FAILED(retValue)) return retValue;
     
-    romfsInit();
     return 0;
 }
 
