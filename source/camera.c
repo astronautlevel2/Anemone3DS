@@ -31,19 +31,34 @@
 #include "fs.h"
 #include "themes.h"
 
+u32 transfer_size;
+
+Handle events[2] = {0};
+
 void init_qr(void)
 {
     camInit();
     CAMU_SetSize(SELECT_OUT1_OUT2, SIZE_CTR_TOP_LCD, CONTEXT_A);
     CAMU_SetOutputFormat(SELECT_OUT1_OUT2, OUTPUT_RGB_565, CONTEXT_A);
+    CAMU_SetFrameRate(SELECT_OUT1_OUT2, FRAME_RATE_30);
 
     CAMU_SetNoiseFilter(SELECT_OUT1_OUT2, true);
     CAMU_SetAutoExposure(SELECT_OUT1_OUT2, true);
     CAMU_SetAutoWhiteBalance(SELECT_OUT1_OUT2, true);
 
-    CAMU_SetTrimming(PORT_CAM1, false);
+    CAMU_Activate(SELECT_OUT1_OUT2);
+    CAMU_GetBufferErrorInterruptEvent(&events[1], PORT_BOTH);
 
+    CAMU_SetTrimming(PORT_BOTH, false);
+
+    CAMU_GetMaxBytes(&transfer_size, 400, 240);
+    CAMU_SetTransferBytes(PORT_BOTH, transfer_size, 400, 240);
+    CAMU_SynchronizeVsyncTiming(SELECT_OUT1, SELECT_OUT2);
+    CAMU_ClearBuffer(PORT_BOTH);
     buf = malloc(sizeof(u16) * 400 * 240 * 2);
+    CAMU_SetReceiving(&events[0], buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
+    CAMU_StartCapture(PORT_BOTH);
+    
 
     context = quirc_new();
     quirc_resize(context, 400, 240);
@@ -51,6 +66,8 @@ void init_qr(void)
 
 void exit_qr(void)
 {
+    CAMU_Activate(PORT_NONE);
+    CAMU_StopCapture(PORT_BOTH);
     CAMU_Activate(SELECT_NONE);
     camExit();
     quirc_destroy(context);
@@ -59,19 +76,22 @@ void exit_qr(void)
 
 void take_picture(void)
 {
-    u32 transfer_size;
-    Handle cam_handle = 0;
-    CAMU_GetMaxBytes(&transfer_size, 400, 240);
-    CAMU_SetTransferBytes(PORT_BOTH, transfer_size, 400, 240);
-    CAMU_Activate(SELECT_OUT1_OUT2);
-    CAMU_ClearBuffer(PORT_BOTH);
-    CAMU_SynchronizeVsyncTiming(SELECT_OUT1, SELECT_OUT2);
-    CAMU_StartCapture(PORT_BOTH);
-    CAMU_SetReceiving(&cam_handle, buf, PORT_CAM1, 400 * 240 * 2, transfer_size);
-    svcWaitSynchronization(cam_handle, U64_MAX);
-    CAMU_StopCapture(PORT_BOTH);
-    svcCloseHandle(cam_handle);
-    CAMU_Activate(PORT_NONE);
+    s32 index;
+    svcWaitSynchronizationN(&index, events, 2, false, U64_MAX);
+    if (index == 0)
+    {
+        svcCloseHandle(events[0]);
+        events[0] = 0;
+
+        CAMU_SetReceiving(&events[0], buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
+    } else if (index == 1)
+    {
+        svcCloseHandle(events[1]);
+        events[1] = 0;
+        CAMU_ClearBuffer(PORT_BOTH);
+        CAMU_SetReceiving(&events[0], buf,  PORT_CAM1, 240 * 400 * 2, transfer_size);
+        CAMU_StartCapture(PORT_BOTH);
+    }
 }
 
 /*
