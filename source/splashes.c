@@ -107,7 +107,7 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
         if (R_FAILED(res) || entries_read == 0) 
             break;
 
-        if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) || strcmp(entry.shortExt, "ZIP"))
+        if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(entry.shortExt, "ZIP"))
             continue;
 
         *splash_count += entries_read;

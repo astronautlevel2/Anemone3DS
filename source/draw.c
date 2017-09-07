@@ -73,9 +73,9 @@ void draw_themext_error(void)
 
 void draw_qr(void)
 {
+    take_picture();
     pp2d_begin_draw(GFX_TOP);
     pp2d_free_texture(TEXTURE_QR);
-    take_picture();
     u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
     for (int i = 0; i < 240 * 400; i++)
     {
