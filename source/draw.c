@@ -25,11 +25,13 @@
 */
 
 #include "draw.h"
+#include "common.h"
 
 #include "pp2d/pp2d/pp2d.h"
 #include "quirc/quirc.h"
 
 #include <time.h>
+
 
 enum Colors {
     COLOR_BACKGROUND = ABGR8(255, 32, 28, 35), //silver-y black
@@ -150,13 +152,36 @@ void draw_base_interface(void)
     pp2d_draw_on(GFX_TOP);
 }
 void throw_error(char* error, int error_type) {
-    draw_base_interface();
+
     switch (error_type) {
         case ERROR:
-            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_RED, error);
-            break;
-        case WARNING:
-            pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_YELLOW, error);
+			while (1)
+			{
+				hidScanInput();
+				u32 kDown = hidKeysDown();
+				draw_base_interface();
+				pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_RED, error);
+				pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to shut down.");
+				pp2d_end_draw();
+				if (kDown & KEY_A) {
+					if (homebrew)
+						APT_HardwareResetAsync();
+					else {
+						srvPublishToSubscriber(0x202, 0);
+					}
+				}
+			}
+        case WARNING:		
+			while (1)
+				{
+					hidScanInput();
+					u32 kDown = hidKeysDown();
+					draw_base_interface();
+					pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_YELLOW, error);
+					pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to continue.");
+					pp2d_end_draw();
+					if (kDown & KEY_A) break;
+				}
             break;
     }
     pp2d_end_draw();
