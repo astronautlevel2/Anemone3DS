@@ -30,9 +30,15 @@
 #include "common.h"
 
 typedef struct{
-    u16 name[0x106];
-    u16 top_path[0x106];
-    u16 bottom_path[0x106];
+    u16 name[0x40];
+    u16 desc[0x80];
+    u16 author[0x40];
+
+    u32 placeholder_color;
+    ssize_t icon_id;
+
+    u16 path[0x106];
+    bool is_zip;
 } Splash_s;
 
 Result get_splashes(Splash_s** splashes_list, int *splash_count);

@@ -33,13 +33,14 @@
 #include <time.h>
 
 int __stacksize__ = 64 * 1024;
+Result archive_result;
 
 int init_services(void)
 {
     cfguInit();
     ptmuInit();
     httpcInit(0);
-    open_archives();
+    archive_result = open_archives();
     bool homebrew = true;
     if (!envIsHomebrew())
     {
@@ -123,7 +124,15 @@ int main(void)
         else if (kDown & KEY_L)
         {
             splash_mode = !splash_mode;
-        } else if (kDown & KEY_R)
+        }
+        
+        if (R_FAILED(archive_result) && !splash_mode)
+        {
+            draw_themext_error();
+            continue;
+        }
+        
+        if (kDown & KEY_R)
         {
             if (splash_mode || preview_mode) {
                 continue;

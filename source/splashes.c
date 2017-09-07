@@ -26,6 +26,70 @@
 #include "splashes.h"
 #include "unicode.h"
 #include "fs.h"
+#include "themes.h"
+#include "pp2d/pp2d/pp2d.h"
+
+static void parse_smdh(Splash_s *splash, ssize_t textureID, u16 *splash_name)
+{
+    char *info_buffer = NULL;
+    u64 size = 0;
+    if (!(splash->is_zip))
+    {
+        u16 path_to_smdh[0x106] = {0};
+        strucat(path_to_smdh, splash->path);
+        struacat(path_to_smdh, "/info.smdh");
+        
+        size = file_to_buf(fsMakePath(PATH_UTF16, path_to_smdh), ArchiveSD, &info_buffer);    
+    } else {
+        size = zip_file_to_buf("info.smdh", splash->path, &info_buffer);
+    }
+
+    if (!size)
+    {
+        free(info_buffer);
+        memset(splash->name, 0, 0x80);
+        memset(splash->desc, 0, 0x100);
+        memset(splash->author, 0, 0x80);
+        memcpy(splash->name, splash_name, 0x80);
+        utf8_to_utf16(splash->desc, (u8*)"No description", 0x100);
+        utf8_to_utf16(splash->author, (u8*)"Unknown author", 0x80);
+        splash->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
+        return;
+    }
+
+    memcpy(splash->name, info_buffer + 0x08, 0x80);
+    memcpy(splash->desc, info_buffer + 0x88, 0x100);
+    memcpy(splash->author, info_buffer + 0x188, 0x80);
+    
+    u16 *icon_data = malloc(0x1200);
+    memcpy(icon_data, info_buffer + 0x24C0, 0x1200);
+    
+    const u32 width = 48, height = 48;
+    u32 *image = malloc(width*height*sizeof(u32));
+
+    for (u32 x = 0; x < width; x++)
+    {
+        for (u32 y = 0; y < height; y++)
+        {
+            unsigned int dest_pixel = (x + y*width);
+            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
+            
+            u8 r = ((icon_data[source_pixel] >> 11) & 0b11111) << 3;
+            u8 g = ((icon_data[source_pixel] >> 5) & 0b111111) << 2;
+            u8 b = (icon_data[source_pixel] & 0b11111) << 3;
+            u8 a = 0xFF;
+            
+            image[dest_pixel] = (r << 24) | (g << 16) | (b << 8) | a;
+        }
+    }
+    
+    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
+    splash->icon_id = textureID;
+    
+    free(image);
+    free(icon_data);
+    free(info_buffer);
+}
 
 Result get_splashes(Splash_s** splashes_list, int *splash_count)
 {
@@ -43,7 +107,7 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
         if (R_FAILED(res) || entries_read == 0) 
             break;
 
-        if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY))
+        if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) || strcmp(entry.shortExt, "ZIP"))
             continue;
 
         *splash_count += entries_read;
@@ -54,33 +118,18 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
         Splash_s *current_splash = &(*splashes_list)[*splash_count-1];
         memset(current_splash, 0, sizeof(Splash_s));
 
-        u16 splash_path[0x106] = {0};
+        u16 splash_path[0x106]= {0};
         struacat(splash_path, SPLASHES_PATH);
         strucat(splash_path, entry.name);
-        u16 top_path[0x106] = {0};
-        memcpy(top_path, splash_path, 0x106);
-        struacat(top_path, "/splash.bin");
-        u16 bottom_path[0x106] = {0};
-        memcpy(bottom_path, splash_path, 0x106);
-        struacat(bottom_path, "/splashbottom.bin");
 
-        char *temp_buf = NULL;
-        u32 bytes = file_to_buf(fsMakePath(PATH_UTF16, top_path), ArchiveSD, &temp_buf);
-        if (!bytes)
-        {
-            memset(top_path, 0, 0x106 * sizeof(u16));
-        }
-        free(temp_buf);
-        temp_buf = NULL;
-        bytes = file_to_buf(fsMakePath(PATH_UTF16, bottom_path), ArchiveSD, &temp_buf);
-        if (!bytes)
-        {
-            memset(bottom_path, 0, 0x106 * sizeof(u16));
-        }
-        free(temp_buf);
-        memcpy(current_splash->name, entry.name, 0x106);
-        memcpy(current_splash->top_path, top_path, 0x106);
-        memcpy(current_splash->bottom_path, bottom_path, 0x106);
+        char pathchar[0x106] = {0};
+        utf16_to_utf8((u8*) pathchar, splash_path, 0x106);
+
+        memcpy(current_splash->path, splash_path, 0x106 * sizeof(u16));
+        current_splash->is_zip = !strcmp(entry.shortExt, "ZIP");
+
+        ssize_t iconID = TEXTURE_PREVIEW + theme_count + *splash_count;
+        parse_smdh(current_splash, iconID, entry.name);
     }
     FSDIR_Close(dir_handle);
 
@@ -93,20 +142,49 @@ void splash_delete()
 }
 void splash_install(Splash_s splash_to_install)
 {
-    char *screen_buf;
-    u32 size = file_to_buf(fsMakePath(PATH_UTF16, splash_to_install.top_path), ArchiveSD, &screen_buf);
-    if (size)
+    char *screen_buf = NULL;
+    u32 size = 0;
+    if (splash_to_install.is_zip)
     {
-        remake_file("/luma/splash.bin", ArchiveSD, size);
-        buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
-        free(screen_buf);
-    }
+        size = zip_file_to_buf("splash.bin", splash_to_install.path, &screen_buf);
+        if (size)
+        {
+            buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
+            free(screen_buf);
+            screen_buf = NULL;
+            size = 0;
+        }
 
-    size = file_to_buf(fsMakePath(PATH_UTF16, splash_to_install.bottom_path), ArchiveSD, &screen_buf);
-    if (size)
-    {
-        remake_file("/luma/splashbottom.bin", ArchiveSD, size);
-        buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
-        free(screen_buf);
+        size = zip_file_to_buf("splashbottom.bin", splash_to_install.path, &screen_buf);
+        if (size)
+        {
+            buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
+            free(screen_buf);
+            screen_buf = NULL;
+            size = 0;
+        }
+    } else {
+        u16 path[0x106] = {0};
+        memcpy(path, splash_to_install.path, 0x106 * sizeof(u16));
+        struacat(path, "/splash.bin");
+        size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &screen_buf);
+        if (size)
+        {
+            buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
+            free(screen_buf);
+            screen_buf = NULL;
+            size = 0;
+        }
+
+        memcpy(path, splash_to_install.path, 0x106 * sizeof(u16));
+        struacat(path, "/splashbottom.bin");
+        size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &screen_buf);
+        if (size)
+        {
+            buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
+            free(screen_buf);
+            screen_buf = NULL;
+            size = 0;
+        }
     }
 }

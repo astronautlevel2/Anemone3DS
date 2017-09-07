@@ -84,7 +84,12 @@ Result open_archives(void)
     theme.data = themePath;
     retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
     if(R_FAILED(retValue)) return retValue;
-    
+
+    Handle test_handle;
+    retValue = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0);
+    if(R_FAILED(retValue)) return retValue;
+    FSFILE_Close(test_handle);
+
     return 0;
 }
 

@@ -66,6 +66,11 @@ void exit_screens(void)
 static int theme_vertical_scroll = 0;
 static int splash_vertical_scroll = 0;
 
+void draw_themext_error(void)
+{
+    throw_error("Theme extdata does not exist\nSet a default theme from the home menu", ERROR);
+}
+
 void draw_qr(void)
 {
     pp2d_begin_draw(GFX_TOP);
