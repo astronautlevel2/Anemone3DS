@@ -155,7 +155,7 @@ void throw_error(char* error, int error_type) {
 
     switch (error_type) {
         case ERROR:
-			while (1)
+			while (aptMainLoop())
 			{
 				hidScanInput();
 				u32 kDown = hidKeysDown();
@@ -172,7 +172,7 @@ void throw_error(char* error, int error_type) {
 				}
 			}
         case WARNING:		
-			while (1)
+			while (aptMainLoop())
 				{
 					hidScanInput();
 					u32 kDown = hidKeysDown();
