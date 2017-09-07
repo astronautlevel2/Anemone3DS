@@ -322,6 +322,16 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
     } else {
         draw_base_interface();
         pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Splash mode");
+        wchar_t title[0x40] = {0};
+        utf16_to_utf32((u32*)title, current_splash.name, 0x40);
+        pp2d_draw_wtext_wrap(20, 30, 0.7, 0.7, COLOR_WHITE, 380, title);
+        wchar_t author[0x40] = {0};
+        utf16_to_utf32((u32*)author, current_splash.author, 0x40);
+        pp2d_draw_text(20, 50, 0.5, 0.5, COLOR_WHITE, "By: ");
+        pp2d_draw_wtext_wrap(44, 50, 0.5, 0.5, COLOR_WHITE, 380, author);
+        wchar_t description[0xa6] = {0};
+        utf16_to_utf32((u32*)description, current_splash.desc, 0xb0);
+        pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
 
         pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Splash    \uE004 Switch to Themes");
         pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE002 Delete current Splash");
@@ -361,7 +371,12 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
                 font_color = COLOR_BLACK;
                 pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
             }
-            pp2d_draw_wtext(15, 40 + vertical_offset, 0.55, 0.55, font_color, name);
+            pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
+
+            if (!current_splash.placeholder_color)
+                pp2d_draw_texture(current_splash.icon_id, 0, 24 + vertical_offset);
+            else
+                pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_splash.placeholder_color);
         }
     }
     pp2d_end_draw();
