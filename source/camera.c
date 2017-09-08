@@ -206,7 +206,7 @@ Result http_get(char *url, char *path)
     remake_file(path_to_file, ArchiveSD, size);
     buf_to_file(size, path_to_file, ArchiveSD, (char*)buf);
 
-    add_theme(&themes_list, &theme_count, path_to_file, filename);
+    get_themes(&themes_list, &theme_count);
 
     exit_qr();
 

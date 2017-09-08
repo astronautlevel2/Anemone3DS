@@ -194,6 +194,9 @@ int main(void)
                 draw_theme_install(SINGLE_INSTALL);
                 single_install(*current_theme);
             }
+            //these two are here just so I don't forget how to implement them - HM
+            //del_theme(current_theme->path);
+            //get_themes(&themes_list, &theme_count);
         }
         
         else if (kDown & KEY_B)
