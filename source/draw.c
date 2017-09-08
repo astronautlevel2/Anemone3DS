@@ -155,33 +155,33 @@ void throw_error(char* error, int error_type) {
 
     switch (error_type) {
         case ERROR:
-			while (aptMainLoop())
-			{
-				hidScanInput();
-				u32 kDown = hidKeysDown();
-				draw_base_interface();
-				pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_RED, error);
-				pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to shut down.");
-				pp2d_end_draw();
-				if (kDown & KEY_A) {
-					if (homebrew)
-						APT_HardwareResetAsync();
-					else {
-						srvPublishToSubscriber(0x202, 0);
-					}
-				}
-			}
-        case WARNING:		
-			while (aptMainLoop())
-				{
-					hidScanInput();
-					u32 kDown = hidKeysDown();
-					draw_base_interface();
-					pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_YELLOW, error);
-					pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to continue.");
-					pp2d_end_draw();
-					if (kDown & KEY_A) break;
-				}
+            while (aptMainLoop())
+            {
+                hidScanInput();
+                u32 kDown = hidKeysDown();
+                draw_base_interface();
+                pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_RED, error);
+                pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to shut down.");
+                pp2d_end_draw();
+                if (kDown & KEY_A) {
+                    if (envIsHomebrew())
+                        APT_HardwareResetAsync();
+                    else {
+                        srvPublishToSubscriber(0x202, 0);
+                    }
+                }
+            }
+        case WARNING:       
+            while (aptMainLoop())
+                {
+                    hidScanInput();
+                    u32 kDown = hidKeysDown();
+                    draw_base_interface();
+                    pp2d_draw_text(70, 120, 0.8, 0.8, COLOR_YELLOW, error);
+                    pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to continue.");
+                    pp2d_end_draw();
+                    if (kDown & KEY_A) break;
+                }
             break;
     }
     pp2d_end_draw();
@@ -200,9 +200,9 @@ void draw_theme_install(int install_type)
         case 2:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM...");
             break;
-		case 3:
-			pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
-			break;
+        case 3:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
+            break;
         default:
             break;
     }
