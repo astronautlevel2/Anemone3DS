@@ -164,7 +164,7 @@ void throw_error(char* error, int error_type) {
                 pp2d_draw_wtext(70, 150, 0.8, 0.8, COLOR_WHITE, L"Press \uE000 to shut down.");
                 pp2d_end_draw();
                 if (kDown & KEY_A) {
-                    if (envIsHomebrew())
+                    if (homebrew)
                         APT_HardwareResetAsync();
                     else {
                         srvPublishToSubscriber(0x202, 0);
