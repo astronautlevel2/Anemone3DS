@@ -46,6 +46,8 @@
 #define WARNING         1
 static const int THEMES_PER_SCREEN = 4;
 
+bool homebrew;
+
 enum TextureID {
     TEXTURE_FONT_RESERVED = 0, //used by pp2d for the font
     TEXTURE_ARROW,
