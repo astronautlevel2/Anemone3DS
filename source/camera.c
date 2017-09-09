@@ -110,8 +110,6 @@ void take_picture(void)
     CAMU_SetReceiving(&event, buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
     svcWaitSynchronization(event, U64_MAX);
     svcCloseHandle(event);
-    CAMU_StopCapture(PORT_BOTH);
-    CAMU_Activate(SELECT_NONE);
     pp2d_begin_draw(GFX_TOP);
     u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
     if (rgba8_buf == NULL) return;
@@ -122,14 +120,28 @@ void take_picture(void)
     pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
     pp2d_draw_rectangle(0, 216, 400, 24, RGBA8(55, 122, 168, 255));
-    pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Hold \uE005 To Quit");
+    pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
+    pp2d_draw_rectangle(0, 0, 400, 24, RGBA8(55, 122, 168, 255));
+    pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE004 To Scan");
     pp2d_end_draw();
     free(rgba8_buf);
     pp2d_free_texture(TEXTURE_QR);
-    scan_qr(buf);
+    hidScanInput();
+    u32 kDown = hidKeysDown();
+    if (kDown & KEY_L)
+    {
+        CAMU_StopCapture(PORT_BOTH);
+        CAMU_Activate(SELECT_NONE);
+        scan_qr(buf);
+        CAMU_Activate(SELECT_OUT1_OUT2);
+        CAMU_StartCapture(PORT_BOTH);
+    }
+    if (kDown & KEY_R)
+    {
+        exit_qr();
+        qr_mode = false;
+    }
     free(buf);
-    CAMU_Activate(SELECT_OUT1_OUT2);
-    CAMU_StartCapture(PORT_BOTH);
 }
 
 /*
