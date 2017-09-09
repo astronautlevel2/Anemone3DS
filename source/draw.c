@@ -310,6 +310,9 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
 
         pp2d_draw_wtext_center(GFX_TOP, 180, 0.7, 0.7, COLOR_WHITE, L"\uE000 Install Splash    \uE004 Switch to Themes");
         pp2d_draw_wtext_center(GFX_TOP, 210, 0.7, 0.7, COLOR_WHITE, L"\uE002 Delete current Splash");
+        pp2d_draw_wtext_center(GFX_TOP, 150, 0.7, 0.7, COLOR_WHITE, L"\uE003 Preview Theme     \uE005 Scan QRCode");
+        pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"");
+
         pp2d_draw_on(GFX_BOTTOM);
         for (int i = 0; i < splash_count; i++) {
             if (splash_count <= THEMES_PER_SCREEN)
