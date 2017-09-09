@@ -80,8 +80,8 @@ int main(void)
         free(themes_list);
         themes_list = NULL;
     }
-    int splash_count = 0;
-    Splash_s *splashes_list = NULL;
+    splash_count = 0;
+    splashes_list = NULL;
     res = get_splashes(&splashes_list, &splash_count);
     if (R_FAILED(res))
     {
@@ -90,7 +90,7 @@ int main(void)
         splashes_list = NULL;
     }
 
-    bool splash_mode = false;
+    splash_mode = false;
     int selected_splash = 0;
     int selected_theme = 0;
     int previously_selected = 0;
@@ -134,7 +134,7 @@ int main(void)
         
         if (kDown & KEY_R)
         {
-            if (splash_mode || preview_mode) {
+            if (preview_mode) {
                 continue;
             } else {
                 qr_mode = !qr_mode;

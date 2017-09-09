@@ -99,6 +99,13 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
     if (R_FAILED(res))
         return res;
 
+    if (*splashes_list != NULL)
+    {
+        free(*splashes_list);
+        *splashes_list = NULL;
+        *splash_count = 0;
+    }
+
     u32 entries_read = 1;
     while (entries_read)
     {

@@ -98,7 +98,7 @@ void scan_qr(u16 *buf)
         {
             qr_mode = false;
 
-            http_get((char*)data.payload, "/Themes/");
+            http_get((char*)data.payload, splash_mode ? "/Splashes/" : "/Themes/");
         }
     }
 }
@@ -257,7 +257,8 @@ Result http_get(char *url, char *path)
     remake_file(path_to_file, ArchiveSD, size);
     buf_to_file(size, path_to_file, ArchiveSD, (char*)buf);
 
-    get_themes(&themes_list, &theme_count);
+    if (splash_mode) get_splashes(&splashes_list, &splash_count);
+    else get_themes(&themes_list, &theme_count);
 
     exit_qr();
 

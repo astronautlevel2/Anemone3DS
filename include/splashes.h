@@ -41,6 +41,9 @@ typedef struct{
     bool is_zip;
 } Splash_s;
 
+Splash_s *splashes_list;
+int splash_count;
+
 Result get_splashes(Splash_s** splashes_list, int *splash_count);
 void splash_install(Splash_s splash_to_install);
 void splash_delete();
