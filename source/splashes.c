@@ -197,11 +197,13 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
 
     return res;
 }
+
 void splash_delete() 
 {
     remove("/luma/splash.bin");
     remove("/luma/splashbottom.bin");
 }
+
 void splash_install(Splash_s splash_to_install)
 {
     char *screen_buf = NULL;
@@ -211,6 +213,7 @@ void splash_install(Splash_s splash_to_install)
         size = zip_file_to_buf("splash.bin", splash_to_install.path, &screen_buf);
         if (size)
         {
+            remake_file("/luma/splash.bin", ArchiveSD, sizeof(screen_buf));
             buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
             free(screen_buf);
             screen_buf = NULL;
@@ -220,6 +223,7 @@ void splash_install(Splash_s splash_to_install)
         size = zip_file_to_buf("splashbottom.bin", splash_to_install.path, &screen_buf);
         if (size)
         {
+            remake_file("/luma/splashbottom.bin", ArchiveSD, sizeof(screen_buf));
             buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
             free(screen_buf);
             screen_buf = NULL;
