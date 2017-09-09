@@ -121,6 +121,8 @@ void take_picture(void)
     }
     pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
+    pp2d_draw_rectangle(0, 216, 400, 24, RGBA8(55, 122, 168, 255));
+    pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Hold \uE005 To Quit");
     pp2d_end_draw();
     free(rgba8_buf);
     pp2d_free_texture(TEXTURE_QR);

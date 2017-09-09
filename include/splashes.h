@@ -47,4 +47,6 @@ int splash_count;
 Result get_splashes(Splash_s** splashes_list, int *splash_count);
 void splash_install(Splash_s splash_to_install);
 void splash_delete();
+void load_splash_preview(Splash_s *splash);
+
 #endif

@@ -159,10 +159,16 @@ int main(void)
         {
             if (!preview_mode)
             {
-                if (!current_theme->has_preview)
-                    load_theme_preview(current_theme);
-                
-                preview_mode = current_theme->has_preview;
+                if (!splash_mode)
+                {
+                    if (!current_theme->has_preview)
+                        load_theme_preview(current_theme);
+                    
+                    preview_mode = current_theme->has_preview;
+                } else {
+                    load_splash_preview(current_splash);
+                    preview_mode = true;
+                }
             }
             else
                 preview_mode = false;

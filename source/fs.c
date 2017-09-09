@@ -115,7 +115,7 @@ u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 
     u64 size;
     FSFILE_GetSize(file, &size);
-    *buf = malloc(size);
+    *buf = calloc(1, size);
     FSFILE_Read(file, NULL, 0, *buf, size);
     FSFILE_Close(file);
     return size;
@@ -139,7 +139,7 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
         unz_file_info *file_info = malloc(sizeof(unz_file_info));
         unzGetCurrentFileInfo(zip_handle, file_info, NULL, 0, NULL, 0, NULL, 0);
         file_size = file_info->uncompressed_size;
-        *buf = malloc(file_size);
+        *buf = calloc(1, file_size);
         unzOpenCurrentFile(zip_handle);
         unzReadCurrentFile(zip_handle, *buf, file_size);
         unzCloseCurrentFile(zip_handle);

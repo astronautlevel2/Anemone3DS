@@ -29,6 +29,61 @@
 #include "themes.h"
 #include "pp2d/pp2d/pp2d.h"
 
+void load_splash_preview(Splash_s *splash)
+{
+    //free the previously loaded preview. wont do anything if there wasnt one
+    pp2d_free_texture(TEXTURE_PREVIEW);
+    
+    char *preview_buffer = NULL;
+    u64 size = 0;
+    if (!(splash->is_zip))
+    {
+        u16 path_to_preview[0x106] = {0};
+        strucat(path_to_preview, splash->path);
+        struacat(path_to_preview, "/preview.png");
+        size = file_to_buf(fsMakePath(PATH_UTF16, path_to_preview), ArchiveSD, &preview_buffer);    
+    } else {
+        size = zip_file_to_buf("preview.png", splash->path, &preview_buffer);
+    }
+
+    if (!size)
+    {
+        free(preview_buffer);
+        return;
+    }
+    
+    u8 * image = NULL;
+    unsigned int width = 0, height = 0;
+    
+    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
+    if (result == 0) // no error
+    {
+        for (u32 i = 0; i < width; i++)
+        {
+            for (u32 j = 0; j < height; j++)
+            {
+                u32 p = (i + j*width) * 4;
+
+                u8 r = *(u8*)(image + p);
+                u8 g = *(u8*)(image + p + 1);
+                u8 b = *(u8*)(image + p + 2);
+                u8 a = *(u8*)(image + p + 3);
+
+                *(image + p) = a;
+                *(image + p + 1) = b;
+                *(image + p + 2) = g;
+                *(image + p + 3) = r;
+            }
+        }
+        
+        pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+    }
+    
+    free(image);
+    free(preview_buffer);
+}
+
+
 static void parse_smdh(Splash_s *splash, ssize_t textureID, u16 *splash_name)
 {
     char *info_buffer = NULL;

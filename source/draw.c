@@ -287,12 +287,13 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
         pp2d_end_draw();
         return;
     }
-
     Splash_s current_splash = splashes_list[selected_splash];
-
     if (preview_mode)
     {
-        // TODO: Splash Previews
+        pp2d_begin_draw(GFX_TOP);
+        pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 0, 0, 400, 240);
+        pp2d_draw_on(GFX_BOTTOM);
+        pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 40, 240, 320, 240);
     } else {
         draw_base_interface();
         pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Splash mode");
