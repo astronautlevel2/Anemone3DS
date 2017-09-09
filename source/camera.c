@@ -30,9 +30,11 @@
 #include "draw.h"
 #include "fs.h"
 #include "themes.h"
+#include "pp2d/pp2d/pp2d.h"
 
 u32 transfer_size;
 Handle event;
+struct quirc* context;
 
 void init_qr(void)
 {
@@ -46,8 +48,6 @@ void init_qr(void)
     CAMU_SetAutoWhiteBalance(SELECT_OUT1_OUT2, true);
     CAMU_SetTrimming(PORT_CAM1, false);
     CAMU_SetTrimming(PORT_CAM2, false);
-
-    buf = malloc(sizeof(u16) * 400 * 240 * 2);
 
     CAMU_GetMaxBytes(&transfer_size, 400, 240);
     CAMU_SetTransferBytes(PORT_BOTH, transfer_size, 400, 240);
@@ -69,14 +69,65 @@ void exit_qr(void)
     CAMU_Activate(SELECT_NONE);
     camExit();
     quirc_destroy(context);
-    free(buf);
+}
+
+void scan_qr(u16 *buf)
+{
+    int w;
+    int h;
+
+    u8 *image = (u8*) quirc_begin(context, &w, &h);
+
+    for (ssize_t x = 0; x < w; x++)
+    {
+        for (ssize_t y = 0; y < h; y++)
+        {
+            u16 px = buf[y * 400 + x];
+            image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
+        }
+    }
+
+    quirc_end(context);
+
+    if (quirc_count(context) > 0)
+    {
+        struct quirc_code code;
+        struct quirc_data data;
+        quirc_extract(context, 0, &code);
+        if (!quirc_decode(&code, &data))
+        {
+            qr_mode = false;
+
+            http_get((char*)data.payload, "/Themes/");
+        }
+    }
 }
 
 void take_picture(void)
 {
+    u16 *buf = malloc(sizeof(u16) * 400 * 240 * 4);
+    if (buf == NULL) return;
     CAMU_SetReceiving(&event, buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
     svcWaitSynchronization(event, U64_MAX);
     svcCloseHandle(event);
+    CAMU_StopCapture(PORT_BOTH);
+    CAMU_Activate(SELECT_NONE);
+    pp2d_begin_draw(GFX_TOP);
+    u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
+    if (rgba8_buf == NULL) return;
+    for (int i = 0; i < 240 * 400; i++)
+    {
+        rgba8_buf[i] = RGB565_TO_ABGR8(buf[i]);
+    }
+    pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
+    pp2d_draw_texture(TEXTURE_QR, 0, 0);
+    pp2d_end_draw();
+    free(rgba8_buf);
+    pp2d_free_texture(TEXTURE_QR);
+    scan_qr(buf);
+    free(buf);
+    CAMU_Activate(SELECT_OUT1_OUT2);
+    CAMU_StartCapture(PORT_BOTH);
 }
 
 /*

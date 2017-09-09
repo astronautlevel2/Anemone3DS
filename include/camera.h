@@ -29,8 +29,6 @@
 
 #include "common.h"
 
-struct quirc* context;
-u16 *buf;
 bool qr_mode;
 
 void init_qr(void);

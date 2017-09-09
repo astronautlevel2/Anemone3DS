@@ -73,57 +73,6 @@ void draw_themext_error(void)
     throw_error("Theme extdata does not exist\nSet a default theme from the home menu", ERROR);
 }
 
-void draw_qr(void)
-{
-    take_picture();
-    pp2d_begin_draw(GFX_TOP);
-    pp2d_free_texture(TEXTURE_QR);
-    u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
-    for (int i = 0; i < 240 * 400; i++)
-    {
-        rgba8_buf[i] = RGB565_TO_RGBA8(buf[i]);
-        u8 *byte_pointer = (u8*)&rgba8_buf[i];
-        u8 r = *(byte_pointer+3);
-        u8 g = *(byte_pointer+2);
-        u8 b = *(byte_pointer+1);
-        u8 a = *(byte_pointer);
-        rgba8_buf[i] = RGBA8(r, g, b, a);
-    }
-    pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
-    pp2d_draw_texture(TEXTURE_QR, 0, 0);
-    free(rgba8_buf);
-    pp2d_end_draw();
-
-    int w;
-    int h;
-
-    u8 *image = (u8*) quirc_begin(context, &w, &h);
-
-    for (ssize_t x = 0; x < w; x++)
-    {
-        for (ssize_t y = 0; y < h; y++)
-        {
-            u16 px = buf[y * 400 + x];
-            image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
-        }
-    }
-
-    quirc_end(context);
-
-    if (quirc_count(context) > 0)
-    {
-        struct quirc_code code;
-        struct quirc_data data;
-        quirc_extract(context, 0, &code);
-        if (!quirc_decode(&code, &data))
-        {
-            qr_mode = false;
-
-            http_get((char*)data.payload, "/Themes/");
-        }
-    }
-}
-
 void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP);

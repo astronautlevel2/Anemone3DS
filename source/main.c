@@ -105,7 +105,7 @@ int main(void)
         
         if (qr_mode) 
         {
-            draw_qr();
+            take_picture();
         } else if (!splash_mode)
         {
             draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode, shuffle_theme_count);
