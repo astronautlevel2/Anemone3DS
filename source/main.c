@@ -41,7 +41,7 @@ int init_services(void)
     ptmuInit();
     httpcInit(0);
     archive_result = open_archives();
-    bool homebrew = true;
+    homebrew = true;
     if (!envIsHomebrew())
     {
         homebrew = false;
