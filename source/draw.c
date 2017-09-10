@@ -284,8 +284,10 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
 {
     if (splashes_list == NULL)
     {
-        pp2d_begin_draw(GFX_TOP);
-        pp2d_draw_text_center(GFX_TOP, 100, 1, 1, COLOR_WHITE, "NO SPLASHES FOUND");
+        draw_base_interface();
+        pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, COLOR_YELLOW, "No splashes found!");
+        pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_YELLOW, "Press \uE005 to download from QR");
+        pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, "Or \uE045 to quit");
         pp2d_end_draw();
         return;
     }
