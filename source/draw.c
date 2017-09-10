@@ -163,8 +163,10 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
     
     if (themes_list == NULL)
     {
-        pp2d_begin_draw(GFX_TOP);
-        pp2d_draw_text_center(GFX_TOP, 100, 1, 1, COLOR_WHITE, "NO THEMES FOUND");
+        draw_base_interface();
+        pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, COLOR_YELLOW, "No themes found!");
+        pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_YELLOW, "Press \uE005 to download from QR");
+        pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, "Or \uE045 to quit");
         pp2d_end_draw();
         return;
     }
