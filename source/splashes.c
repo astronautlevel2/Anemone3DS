@@ -28,6 +28,7 @@
 #include "fs.h"
 #include "themes.h"
 #include "pp2d/pp2d/pp2d.h"
+#include "draw.h"
 
 void load_splash_preview(Splash_s *splash)
 {
@@ -236,6 +237,7 @@ void splash_install(Splash_s splash_to_install)
         size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &screen_buf);
         if (size)
         {
+            remake_file("/luma/splash.bin", ArchiveSD, sizeof(screen_buf));
             buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
             free(screen_buf);
             screen_buf = NULL;
@@ -247,10 +249,22 @@ void splash_install(Splash_s splash_to_install)
         size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &screen_buf);
         if (size)
         {
+            remake_file("/luma/splashbottom.bin", ArchiveSD, sizeof(screen_buf));
             buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
             free(screen_buf);
             screen_buf = NULL;
             size = 0;
+        }
+    }
+
+    char *config_buf;
+    size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/config.bin"), ArchiveSD, &config_buf);
+    if (size)
+    {
+        if (config_buf[0xC] == 0)
+        {
+            free(config_buf);
+            throw_error("WARNING: Splashes are disabled in Luma Config", WARNING);
         }
     }
 }
