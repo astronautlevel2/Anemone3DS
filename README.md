@@ -1,6 +1,7 @@
 ![# Anemone3DS](https://github.com/astronautlevel2/Anemone3DS/blob/master/meta/banner.png)
 
-A Theme and Splashscreen Manager for the Nintendo3DS, written in C.
+A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.\
+To-do list here: https://trello.com/b/F1YSa1VK
 
 # Dependencies
  * zlib, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs).
