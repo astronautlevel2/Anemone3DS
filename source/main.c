@@ -39,6 +39,7 @@ int init_services(void)
 {
     cfguInit();
     ptmuInit();
+    acInit();
     httpcInit(0);
     archive_result = open_archives();
     homebrew = true;
@@ -62,6 +63,7 @@ int exit_services(void)
     cfguExit();
     ptmuExit();
     httpcExit();
+    acExit();
     return 0;
 }
 
@@ -137,10 +139,18 @@ int main(void)
             if (preview_mode) {
                 continue;
             } else {
-                qr_mode = !qr_mode;
-                if (qr_mode) init_qr();
-                else exit_qr();
-                continue;
+                u32 out;
+                ACU_GetWifiStatus(&out);
+                if (out)
+                {
+                    qr_mode = !qr_mode;
+                    if (qr_mode) init_qr();
+                    else exit_qr();
+                    continue;
+                } else {
+                    throw_error("Please connect to Wi-Fi before scanning QR", WARNING);
+                    continue;
+                }
             }
         }
 
