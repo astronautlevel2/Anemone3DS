@@ -96,7 +96,7 @@ int main(void)
     int selected_splash = 0;
     int selected_theme = 0;
     int previously_selected = 0;
-    int shuffle_theme_count = 0;
+    shuffle_theme_count = 0;
     bool preview_mode = false;
     
     while(aptMainLoop())
@@ -210,7 +210,11 @@ int main(void)
                 draw_theme_install(SINGLE_INSTALL);
                 single_install(*current_theme);
             }
-            //these two are here just so I don't forget how to implement them - HM
+            //these are here just so I don't forget how to implement them - HM
+            //if (current_theme->in_shuffle) {
+            //  shuffle_theme_count--;
+            //  current_theme->in_shuffle = false;
+            //}
             //del_theme(current_theme->path);
             //get_themes(&themes_list, &theme_count);
         }

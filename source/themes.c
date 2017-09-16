@@ -152,6 +152,7 @@ static void parse_smdh(Theme_s *theme, ssize_t textureID, u16 *dir_name)
 
 Result get_themes(Theme_s **themes_list, int *theme_count)
 {
+    shuffle_theme_count = 0;
     Result res = 0;
     Handle dir_handle;
     res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, THEMES_PATH));
