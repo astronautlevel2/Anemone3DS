@@ -118,7 +118,7 @@ int main(void)
             draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
         } else if (mode == MENU_MODE)
         {
-            draw_menu(entries, menu_count, selected_entry);
+            draw_menu(entries, menu_count, selected_entry, last_mode, themes_list, splashes_list, selected_theme, selected_splash);
         }
         
         if (kDown & KEY_START)
@@ -219,7 +219,7 @@ int main(void)
                 single_install(*current_theme);
             } else if (mode == MENU_MODE)
             {
-                call_menu(entries, selected_entry);
+                call_menu(entries, menu_count, selected_entry, last_mode, themes_list, splashes_list, selected_theme, selected_splash);
             }
         }
         
@@ -270,6 +270,10 @@ int main(void)
                 selected_theme++;
                 if (selected_theme >= theme_count)
                     selected_theme = 0;
+            } else if (mode == MENU_MODE) {
+                selected_entry++;
+                if (selected_entry >= menu_count)
+                    selected_entry = 0;
             }
         }
         else if (kDown & KEY_UP)
@@ -283,6 +287,10 @@ int main(void)
                 selected_theme--;
                 if (selected_theme < 0)
                     selected_theme = theme_count - 1;
+            } else if (mode == MENU_MODE) {
+                selected_entry--;
+                if (selected_entry < 0)
+                    selected_entry = menu_count - 1;
             }
         }
         // Quick moving

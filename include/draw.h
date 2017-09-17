@@ -34,6 +34,7 @@
 typedef struct {
 	char *name;
 	size_t id;
+	enum Mode mode;
 } menu_entry;
 
 void init_screens(void);
@@ -47,7 +48,7 @@ void draw_splash_install(int install_type);
 void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
 void throw_error(char* error, int error_type);
 int init_menu(menu_entry **entries);
-void draw_menu(menu_entry *entries, int menu_count, int menu_selected);
-void call_menu(menu_entry *entries, int menu_selected);
+void draw_menu(menu_entry *entries, int menu_count, int menu_selected, enum Mode last_mode, Theme_s *themes, Splash_s *splashes, int selected_theme, int selected_splash);
+void call_menu(menu_entry *entries, int menu_count, int menu_selected, enum Mode last_mode, Theme_s *themes, Splash_s *splashes, int selected_theme, int selected_splash);
 
 #endif
