@@ -31,6 +31,11 @@
 #include "splashes.h"
 #include "camera.h"
 
+typedef struct {
+	char *name;
+	size_t id;
+} menu_entry;
+
 void init_screens(void);
 void exit_screens(void);
 
@@ -41,4 +46,8 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
 void draw_splash_install(int install_type);
 void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
 void throw_error(char* error, int error_type);
+int init_menu(menu_entry **entries);
+void draw_menu(menu_entry *entries, int menu_count, int menu_selected);
+void call_menu(menu_entry *entries, int menu_selected);
+
 #endif

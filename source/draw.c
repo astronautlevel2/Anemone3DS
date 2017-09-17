@@ -363,3 +363,68 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
     }
     pp2d_end_draw();
 }
+
+int init_menu(menu_entry **entries)
+{
+    int menu_count = 1;
+    *entries = malloc(sizeof(menu_entry) * menu_count);
+    *entries[0] = (menu_entry) {"Quit", 1};
+    return menu_count;
+}
+
+void draw_menu(menu_entry *entries, int menu_count, int menu_selected)
+{
+    draw_base_interface();
+    pp2d_draw_on(GFX_BOTTOM);
+    int vertical_scroll = 0;
+
+    for (int i = 0; i < theme_count; i++) {
+    if (theme_count <= THEMES_PER_SCREEN)
+        break;
+
+    if (vertical_scroll > menu_selected)
+        vertical_scroll--;
+
+    if ((i < menu_selected) && \
+       ((menu_selected - vertical_scroll) >= THEMES_PER_SCREEN) && \
+       (vertical_scroll != ( - THEMES_PER_SCREEN)))
+        vertical_scroll++;
+    }
+
+    if (vertical_scroll > 0)
+        pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
+    if (vertical_scroll + THEMES_PER_SCREEN < menu_count)
+        pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
+
+    for (int i = vertical_scroll; i < (THEMES_PER_SCREEN + vertical_scroll); i++)
+    {
+        if (i >= menu_count)
+            break;
+        
+        menu_entry current_entry = entries[i];
+        
+        int vertical_offset = 48 * (i-vertical_scroll);
+        u32 font_color = COLOR_WHITE;
+        
+        if (i == menu_selected)
+        {
+            font_color = COLOR_BLACK;
+            pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
+        }
+        pp2d_draw_text_center(GFX_BOTTOM, 40 + vertical_offset, 0.55, 0.55, font_color, current_entry.name);
+    }
+    pp2d_end_draw();
+}
+
+void call_menu(menu_entry *entries, int menu_selected)
+{
+    switch (entries[menu_selected].id)
+    {
+        case 1:
+            if (homebrew)
+                APT_HardwareResetAsync();
+            else
+                srvPublishToSubscriber(0x202, 0);
+            break;
+    }
+}

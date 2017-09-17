@@ -42,7 +42,7 @@ int init_services(void)
     acInit();
     httpcInit(0);
     archive_result = open_archives();
-    homebrew = true;
+    bool homebrew = true;
     if (!envIsHomebrew())
     {
         homebrew = false;
@@ -70,7 +70,8 @@ int exit_services(void)
 int main(void)
 {
     srand(time(NULL));
-    bool homebrew = init_services();
+    homebrew = init_services();
+    enum Mode last_mode = THEME_MODE;
     init_screens();
     
     themes_list = NULL;
@@ -91,10 +92,12 @@ int main(void)
         free(splashes_list);
         splashes_list = NULL;
     }
-
-    splash_mode = false;
+    menu_entry *entries = NULL;
+    int menu_count = init_menu(&entries);
+    mode = THEME_MODE; 
     int selected_splash = 0;
     int selected_theme = 0;
+    int selected_entry = 0;
     int previously_selected = 0;
     int shuffle_theme_count = 0;
     bool preview_mode = false;
@@ -108,27 +111,32 @@ int main(void)
         if (qr_mode) 
         {
             take_picture();
-        } else if (!splash_mode)
+        } else if (mode == THEME_MODE)
         {
             draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode, shuffle_theme_count);
-        } else {
+        } else if (mode == SPLASH_MODE) {
             draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
+        } else if (mode == MENU_MODE)
+        {
+            draw_menu(entries, menu_count, selected_entry);
         }
         
         if (kDown & KEY_START)
         {
-            if (homebrew)
-                APT_HardwareResetAsync();
-            else {
-                srvPublishToSubscriber(0x202, 0);
+            if (mode != MENU_MODE)
+            {
+                last_mode = mode;
+                mode = MENU_MODE;
             }
+            else
+                mode = last_mode;
         }
         else if (kDown & KEY_L)
         {
-            splash_mode = !splash_mode;
+            mode = (mode == SPLASH_MODE) ? (THEME_MODE) : (SPLASH_MODE);
         }
         
-        if (R_FAILED(archive_result) && !splash_mode)
+        if (R_FAILED(archive_result) && mode == THEME_MODE)
         {
             draw_themext_error();
             continue;
@@ -156,10 +164,10 @@ int main(void)
 
         if (qr_mode) continue;
 
-        if (themes_list == NULL && !splash_mode)
+        if (themes_list == NULL && mode == THEME_MODE)
             continue;
         
-        if (splashes_list == NULL && splash_mode)
+        if (splashes_list == NULL && mode == SPLASH_MODE)
             continue;
 
         Theme_s * current_theme = &themes_list[selected_theme];
@@ -169,13 +177,13 @@ int main(void)
         {
             if (!preview_mode)
             {
-                if (!splash_mode)
+                if (mode == THEME_MODE)
                 {
                     if (!current_theme->has_preview)
                         load_theme_preview(current_theme);
                     
                     preview_mode = current_theme->has_preview;
-                } else {
+                } else if (mode == SPLASH_MODE) {
                     load_splash_preview(current_splash);
                     preview_mode = true;
                 }
@@ -191,36 +199,36 @@ int main(void)
         // Actions
         else if (kDown & KEY_X)
         {
-            if (splash_mode) {
+            if (mode == SPLASH_MODE) {
                 draw_splash_install(UNINSTALL);
                 splash_delete();
-            } else {
+            } else if (mode == THEME_MODE) {
                 draw_theme_install(BGM_INSTALL);
                 bgm_install(*current_theme);
             }
         }
         else if (kDown & KEY_A)
         {
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
                 draw_splash_install(SINGLE_INSTALL);
                 splash_install(*current_splash);
                 svcSleepThread(5e8);
-            } else {
+            } else if (mode == THEME_MODE) {
                 draw_theme_install(SINGLE_INSTALL);
                 single_install(*current_theme);
+            } else if (mode == MENU_MODE)
+            {
+                call_menu(entries, selected_entry);
             }
-            //these two are here just so I don't forget how to implement them - HM
-            //del_theme(current_theme->path);
-            //get_themes(&themes_list, &theme_count);
         }
         
         else if (kDown & KEY_B)
         {
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
 
-            } else {
+            } else if (mode == THEME_MODE) {
                 if (shuffle_theme_count < 10)
                 {
                     if (current_theme->in_shuffle) shuffle_theme_count--;
@@ -237,10 +245,10 @@ int main(void)
 
         else if (kDown & KEY_SELECT)
         {
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
 
-            } else {
+            } else if (mode == THEME_MODE) {
                 if (shuffle_theme_count > 0)
                 {
                     draw_theme_install(SHUFFLE_INSTALL);
@@ -253,12 +261,12 @@ int main(void)
         // Movement in the UI
         else if (kDown & KEY_DOWN) 
         {
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
                 selected_splash++;
                 if (selected_splash >= splash_count)
                     selected_splash = 0;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme++;
                 if (selected_theme >= theme_count)
                     selected_theme = 0;
@@ -266,12 +274,12 @@ int main(void)
         }
         else if (kDown & KEY_UP)
         {
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
                 selected_splash--;
                 if (selected_splash < 0)
                     selected_splash = splash_count - 1;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme--;
                 if (selected_theme < 0)
                     selected_theme = theme_count - 1;
@@ -280,22 +288,22 @@ int main(void)
         // Quick moving
         else if (kDown & KEY_LEFT) 
         {
-            if (splash_mode) 
+            if (mode == SPLASH_MODE)
             {
                 selected_splash -= 4;
                 if (selected_splash < 0) selected_splash = 0;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme -= 4;
                 if (selected_theme < 0) selected_theme = 0;
             }
         }
         else if (kDown & KEY_RIGHT)
         {
-            if (splash_mode) 
+            if (mode == SPLASH_MODE)
             {
                 selected_splash += 4;
                 if (selected_splash >= splash_count) selected_splash = splash_count-1;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme += 4;
                 if (selected_theme >= theme_count) selected_theme = theme_count-1;
             }
@@ -305,12 +313,12 @@ int main(void)
         {
             svcSleepThread(100000000);
 
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
                 selected_splash--;
                 if (selected_splash < 0)
                     selected_splash = splash_count - 1;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme--;
                 if (selected_theme < 0)
                     selected_theme = theme_count - 1;
@@ -320,12 +328,12 @@ int main(void)
         {
             svcSleepThread(100000000);
             
-            if (splash_mode)
+            if (mode == SPLASH_MODE)
             {
                 selected_splash++;
                 if (selected_splash >= splash_count)
                     selected_splash = 0;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme++;
                 if (selected_theme >= theme_count)
                     selected_theme = 0;
@@ -335,11 +343,11 @@ int main(void)
         {
             svcSleepThread(100000000);
 
-            if (splash_mode) 
+            if (mode == SPLASH_MODE)
             {
                 selected_splash -= 4;
                 if (selected_splash < 0) selected_splash = 0;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme -= 4;
                 if (selected_theme < 0) selected_theme = 0;
             }
@@ -348,17 +356,17 @@ int main(void)
         {
             svcSleepThread(100000000);
             
-            if (splash_mode) 
+            if (mode == SPLASH_MODE)
             {
                 selected_splash += 4;
                 if (selected_splash >= splash_count) selected_splash = splash_count-1;
-            } else {
+            } else if (mode == THEME_MODE) {
                 selected_theme += 4;
                 if (selected_theme >= theme_count) selected_theme = theme_count-1;
             }
         }
         
-        if (!splash_mode && selected_theme != previously_selected)
+        if (mode == THEME_MODE && selected_theme != previously_selected)
         {
             current_theme->has_preview = false;
             previously_selected = selected_theme;

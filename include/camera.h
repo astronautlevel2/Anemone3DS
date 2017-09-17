@@ -34,6 +34,6 @@ bool qr_mode;
 void init_qr(void);
 void exit_qr(void);
 void take_picture(void);
-Result http_get(char *url, char *path);
+Result http_get(char *url, u8 **data);
 
 #endif

@@ -97,8 +97,10 @@ void scan_qr(u16 *buf)
         if (!quirc_decode(&code, &data))
         {
             qr_mode = false;
+            exit_qr();
 
-            http_get((char*)data.payload, splash_mode ? "/Splashes/" : "/Themes/");
+            u8 *download;
+            http_get((char*)data.payload, &download);
         }
     }
 }
@@ -148,7 +150,7 @@ void take_picture(void)
 Putting this in camera because I'm too lazy to make a network.c
 This'll probably get refactored later
 */
-Result http_get(char *url, char *path)
+Result http_get(char *url, u8 **data)
 {
     Result ret;
     httpcContext context;
@@ -157,7 +159,6 @@ Result http_get(char *url, char *path)
     u32 content_size = 0;
     u32 read_size = 0;
     u32 size = 0;
-    u8 *buf;
     u8 *last_buf;
 
     do {
@@ -206,8 +207,8 @@ Result http_get(char *url, char *path)
         return ret;
     }
 
-    buf = malloc(0x1000);
-    if (buf == NULL)
+    *data = malloc(0x1000);
+    if (*data == NULL)
     {
         httpcCloseContext(&context);
         free(new_url);
@@ -220,7 +221,7 @@ Result http_get(char *url, char *path)
     {
         free(content_disposition);
         free(new_url);
-        free(buf);
+        free(*data);
     }
 
     char *filename;
@@ -240,14 +241,14 @@ Result http_get(char *url, char *path)
     }
 
     do {
-        ret = httpcDownloadData(&context, buf + size, 0x1000, &read_size);
+        ret = httpcDownloadData(&context, (*data) + size, 0x1000, &read_size);
         size += read_size;
 
         if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
         {
-            last_buf = buf;
-            buf = realloc(buf, size + 0x1000);
-            if (buf == NULL)
+            last_buf = *data;
+            *data = realloc(data, size + 0x1000);
+            if (data == NULL)
             {
                 httpcCloseContext(&context);
                 free(last_buf);
@@ -256,25 +257,14 @@ Result http_get(char *url, char *path)
         }
     } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
 
-    last_buf = buf;
-    buf = realloc(buf, size);
-    if (buf == NULL)
+    last_buf = *data;
+    *data = realloc(*data, size);
+    if (*data == NULL)
     {
         httpcCloseContext(&context);
         free(last_buf);
         return -1;
     }
-
-    char path_to_file[0x106] = {0};
-    strcpy(path_to_file, path);
-    strcat(path_to_file, filename);
-    remake_file(path_to_file, ArchiveSD, size);
-    buf_to_file(size, path_to_file, ArchiveSD, (char*)buf);
-
-    if (splash_mode) get_splashes(&splashes_list, &splash_count);
-    else get_themes(&themes_list, &theme_count);
-
-    exit_qr();
 
     return 0;
 }
