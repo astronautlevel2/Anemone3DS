@@ -99,7 +99,7 @@ int main(void)
     int selected_theme = 0;
     int selected_entry = 0;
     int previously_selected = 0;
-    int shuffle_theme_count = 0;
+    shuffle_theme_count = 0;
     bool preview_mode = false;
     
     while(aptMainLoop())
