@@ -240,7 +240,10 @@ int main(void)
                         current_theme->in_shuffle = false;
                     } 
                 }
-            }
+			}
+			else if (mode == MENU_MODE) {
+				mode = last_mode;
+			}
         }
 
         else if (kDown & KEY_SELECT)
