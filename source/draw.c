@@ -58,6 +58,7 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_BATTERY_4, "romfs:/battery4.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_5, "romfs:/battery5.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_CHARGE, "romfs:/charging.png");
+    pp2d_load_texture_png(TEXTURE_QR_CODE, "romfs:/qr.png");
 }
 
 void exit_screens(void)
@@ -76,20 +77,21 @@ void draw_themext_error(void)
 void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP);
-    pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
+    pp2d_draw_rectangle(0, 0, 400, 24, COLOR_ACCENT);
+    pp2d_draw_rectangle(0, 192, 400, 48, COLOR_ACCENT);
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
         
-    pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
-    pp2d_draw_text(28, 2, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
-    pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
+    pp2d_draw_textf(11, 5, 0.5, 0.5, COLOR_WHITE, "%.2i", tm.tm_hour);
+    pp2d_draw_text(30, 5, 0.5, 0.5, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
+    pp2d_draw_textf(37, 5, 0.5, 0.5, COLOR_WHITE, "%.2i", tm.tm_min);
 
     u8 battery_charging;
     PTMU_GetBatteryChargeState(&battery_charging);
     u8 battery_status;
     PTMU_GetBatteryLevel(&battery_status);
-    pp2d_draw_texture(2 + battery_status, 357, 2);
+    pp2d_draw_texture(2 + battery_status, 357, 3);
     
     if (battery_charging)
         pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
@@ -189,25 +191,37 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
     else
     {
         draw_base_interface();
-        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Theme mode");
+        pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Themes");
         wchar_t title[0x40] = {0};
         utf16_to_utf32((u32*)title, current_theme.name, 0x40);
-        pp2d_draw_wtext_wrap(20, 30, 0.7, 0.7, COLOR_WHITE, 380, title);
+        pp2d_draw_wtext_wrap(20, 32, 0.8, 0.8, COLOR_WHITE, 380, title);
         wchar_t author[0x40] = {0};
         utf16_to_utf32((u32*)author, current_theme.author, 0x40);
-        pp2d_draw_text(20, 50, 0.5, 0.5, COLOR_WHITE, "By: ");
-        pp2d_draw_wtext_wrap(44, 50, 0.5, 0.5, COLOR_WHITE, 380, author);
+        pp2d_draw_text(20, 54, 0.4, 0.4, COLOR_WHITE, "By: ");
+        pp2d_draw_wtext_wrap(40, 54, 0.4, 0.4, COLOR_WHITE, 380, author);
         wchar_t description[0xa6] = {0};
         utf16_to_utf32((u32*)description, current_theme.desc, 0xb0);
-        pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
+        pp2d_draw_wtext_wrap(20, 73, 0.5, 0.5, COLOR_WHITE, 376, description);
+
+        pp2d_draw_wtext(288, 5, 0.5, 0.5, COLOR_WHITE, L"\uE005");
+        pp2d_draw_texture(TEXTURE_QR_CODE, 303, 5);
+
+        if (shuffle_theme_count == 0) {
+            pp2d_draw_wtext_center(GFX_TOP, 202, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install    \uE001 Queue shuffle    \uE003 Preview theme");
+        } else
+        {
+            //18 spaces
+            pp2d_draw_wtext_center(GFX_TOP, 202, 0.6, 0.6, COLOR_WHITE, L"                  \uE001 Queue shuffle    \uE003 Preview theme");
+            pp2d_draw_wtext(25, 202, 0.6, 0.6, COLOR_WHITE, L"\uE000");
+            pp2d_draw_text(35, 199, 0.6, 0.6, COLOR_WHITE, "Shuffle\n install");
+        }
 
 
-
-
-        
         pp2d_draw_on(GFX_BOTTOM);
 
         pp2d_draw_textf(7, 3, 0.6, 0.6, COLOR_WHITE, "Selected: %i/10", shuffle_theme_count);
+        pp2d_draw_wtext(190, 3, 0.6, 0.6, COLOR_WHITE, L"\uE004 Splashes");
+        pp2d_draw_wtext(180, 219, 0.6, 0.6, COLOR_WHITE, L"\uE046 Delete theme");
 
         // Scroll the menu up or down if the selected theme is out of its bounds
         //----------------------------------------------------------------
