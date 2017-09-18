@@ -200,14 +200,11 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         wchar_t description[0xa6] = {0};
         utf16_to_utf32((u32*)description, current_theme.desc, 0xb0);
         pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
+
+
+
+
         
-        pp2d_draw_wtext(20, 150, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Theme");
-        pp2d_draw_wtext(200, 150, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Splashes");
-        pp2d_draw_wtext(20, 180, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Theme");
-        pp2d_draw_wtext(200, 180, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
-        pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
-        pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
-        pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
         pp2d_draw_on(GFX_BOTTOM);
 
         pp2d_draw_textf(7, 3, 0.6, 0.6, COLOR_WHITE, "Selected: %i/10", shuffle_theme_count);
