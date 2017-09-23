@@ -156,7 +156,7 @@ int main(void)
                     else exit_qr();
                     continue;
                 } else {
-                    throw_error("Please connect to Wi-Fi before scanning QR", WARNING);
+                    throw_error("Please connect to Wi-Fi before scanning a QR", WARNING);
                     continue;
                 }
             }
