@@ -187,14 +187,14 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
     {
         draw_base_interface();
         pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, "Theme mode");
-        wchar_t title[0x40] = {0};
+        wchar_t title[0x41] = {0};
         utf16_to_utf32((u32*)title, current_theme.name, 0x40);
         pp2d_draw_wtext_wrap(20, 30, 0.7, 0.7, COLOR_WHITE, 380, title);
-        wchar_t author[0x40] = {0};
+        wchar_t author[0x41] = {0};
         utf16_to_utf32((u32*)author, current_theme.author, 0x40);
         pp2d_draw_text(20, 50, 0.5, 0.5, COLOR_WHITE, "By: ");
         pp2d_draw_wtext_wrap(44, 50, 0.5, 0.5, COLOR_WHITE, 380, author);
-        wchar_t description[0x80] = {0};
+        wchar_t description[0x81] = {0};
         utf16_to_utf32((u32*)description, current_theme.desc, 0x80);
         pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
         
