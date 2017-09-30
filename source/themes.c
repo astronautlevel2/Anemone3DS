@@ -58,7 +58,7 @@ void load_theme_preview(Theme_s *theme)
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
 	
-    if (R_SUCCEEDED(lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size))) // no error
+    if ((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error
     {
         for (u32 i = 0; i < width; i++)
         {

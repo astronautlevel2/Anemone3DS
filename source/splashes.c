@@ -56,7 +56,7 @@ void load_splash_preview(Splash_s *splash)
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
 	
-    if (R_SUCCEEDED(lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size))) // no error
+    if ((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error
     {
         for (u32 i = 0; i < width; i++)
         {
@@ -150,7 +150,7 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
 {
     Result res = 0;
     Handle dir_handle;
-	
+
     if (R_FAILED(res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, SPLASHES_PATH))))
         return res;
 
