@@ -57,9 +57,8 @@ void load_theme_preview(Theme_s *theme)
     
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
-    
-    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
-    if (result == 0) // no error
+	
+    if (R_SUCCEEDED(lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size))) // no error
     {
         for (u32 i = 0; i < width; i++)
         {
@@ -155,8 +154,8 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
     shuffle_theme_count = 0;
     Result res = 0;
     Handle dir_handle;
-    res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, THEMES_PATH));
-    if (R_FAILED(res))
+	
+    if (R_FAILED(res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, THEMES_PATH))))
         return res;
     
     if (*themes_list != NULL) //used for QR reading and also for theme deletion
@@ -171,8 +170,8 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
     while (entries_read)
     {
         FS_DirectoryEntry entry = {0};
-        res = FSDIR_Read(dir_handle, &entries_read, 1, &entry);
-        if (R_FAILED(res) || entries_read == 0)
+		
+        if (R_FAILED(res = FSDIR_Read(dir_handle, &entries_read, 1, &entry)) || entries_read == 0)
             break;
         
         if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(entry.shortExt, "ZIP"))
@@ -208,8 +207,9 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
 void del_theme(u16 *path)
 {
     Handle dir_handle;
-    Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_UTF16, path));
-    if (R_SUCCEEDED(res))
+    Result res = 0;
+	
+    if (R_SUCCEEDED(res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_UTF16, path))))
     {
         FSDIR_Close(dir_handle);
         FSUSER_DeleteDirectoryRecursively(ArchiveSD, fsMakePath(PATH_UTF16, path));
@@ -235,7 +235,7 @@ Result bgm_install(Theme_s bgm_to_install)
     Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     if (bgm_to_install.is_zip) // Same as above but this time with bgm
     {
@@ -259,7 +259,7 @@ Result bgm_install(Theme_s bgm_to_install)
     result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
@@ -286,7 +286,7 @@ Result bgm_install(Theme_s bgm_to_install)
     result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     return 0;
 }
@@ -310,7 +310,7 @@ Result single_install(Theme_s theme_to_install)
     Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     // Open body cache file. Test if theme is zipped
     if (theme_to_install.is_zip)
@@ -335,7 +335,7 @@ Result single_install(Theme_s theme_to_install)
     result = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
     free(body);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     if (theme_to_install.is_zip) // Same as above but this time with bgm
     {
@@ -359,7 +359,7 @@ Result single_install(Theme_s theme_to_install)
     result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
@@ -388,7 +388,7 @@ Result single_install(Theme_s theme_to_install)
     result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     return 0;
 }
@@ -438,7 +438,7 @@ Result shuffle_install(Theme_s *themes_list, int theme_count)
     Result result = buf_to_file(size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     remake_file("/BodyCache_rd.bin", ArchiveThemeExt, 0x150000 * 10); // Enough space for 10 theme files
     Handle body_cache_handle;
@@ -539,7 +539,7 @@ Result shuffle_install(Theme_s *themes_list, int theme_count)
     result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
-    if (!R_SUCCEEDED(result)) return result;
+    if (R_FAILED(result)) return result;
 
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS);
 }
