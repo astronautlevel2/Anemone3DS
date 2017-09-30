@@ -194,8 +194,8 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         utf16_to_utf32((u32*)author, current_theme.author, 0x40);
         pp2d_draw_text(20, 50, 0.5, 0.5, COLOR_WHITE, "By: ");
         pp2d_draw_wtext_wrap(44, 50, 0.5, 0.5, COLOR_WHITE, 380, author);
-        wchar_t description[0xa6] = {0};
-        utf16_to_utf32((u32*)description, current_theme.desc, 0xb0);
+        wchar_t description[0x80] = {0};
+        utf16_to_utf32((u32*)description, current_theme.desc, 0x80);
         pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
         
         pp2d_draw_wtext(20, 150, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Theme");
