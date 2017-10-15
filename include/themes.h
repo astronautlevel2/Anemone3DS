@@ -51,6 +51,7 @@ int theme_count;
 
 void load_theme_preview(Theme_s *theme);
 Result get_themes(Theme_s **themes_list, int *theme_count);
+int themecmp(const void* a, const void* b);
 void del_theme(u16 *path);
 Result single_install(Theme_s theme);
 Result shuffle_install(Theme_s *themes_list, int theme_count);

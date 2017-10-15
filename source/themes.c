@@ -201,8 +201,18 @@ Result get_themes(Theme_s **themes_list, int *theme_count)
     }
     
     FSDIR_Close(dir_handle);
+
+    qsort(*themes_list, (long)*theme_count, sizeof(Theme_s), themecmp); //alphabet sort
     
     return res;
+}
+
+int themecmp(const void* a, const void* b) //essentially a memcmp alias, so that it can be used properly with qsort
+{
+    Theme_s *theme_a = (Theme_s *)a;
+    Theme_s *theme_b = (Theme_s *)b;
+
+    return memcmp(theme_a, theme_b, 0x40*sizeof(u16));
 }
 
 void del_theme(u16 *path)
