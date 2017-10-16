@@ -221,13 +221,21 @@ Result http_get(char *url, char *path)
         free(content_disposition);
         free(new_url);
         free(buf);
+        return ret;
     }
 
     char *filename;
     filename = strtok(content_disposition, "\"");
-    filename = strtok(NULL, "\"");
+    //filename = strtok(NULL, "\"");
 
     char *illegal_characters = "\"?;:/\\+";
+	if(!filename)
+    {
+        free(content_disposition);
+        free(new_url);
+        free(buf);
+        return ret;
+    }
     for (size_t i = 0; i < strlen(filename); i++)
     {
         for (size_t n = 0; n < strlen(illegal_characters); n++)
@@ -250,6 +258,8 @@ Result http_get(char *url, char *path)
             if (buf == NULL)
             {
                 httpcCloseContext(&context);
+                free(content_disposition);
+                free(new_url);
                 free(last_buf);
                 return ret;
             }
@@ -261,6 +271,8 @@ Result http_get(char *url, char *path)
     if (buf == NULL)
     {
         httpcCloseContext(&context);
+        free(content_disposition);
+        free(new_url);
         free(last_buf);
         return -1;
     }
@@ -275,6 +287,10 @@ Result http_get(char *url, char *path)
     else get_themes(&themes_list, &theme_count);
 
     exit_qr();
+
+    free(content_disposition);
+    free(new_url);
+    free(buf);
 
     return 0;
 }
