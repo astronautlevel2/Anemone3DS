@@ -229,7 +229,7 @@ Result http_get(char *url, char *path)
     //filename = strtok(NULL, "\"");
 
     char *illegal_characters = "\"?;:/\\+";
-	if(!filename)
+    if(!filename)
     {
         free(content_disposition);
         free(new_url);
