@@ -226,7 +226,7 @@ Result http_get(char *url, char *path)
 
     char *filename;
     filename = strtok(content_disposition, "\"");
-    //filename = strtok(NULL, "\"");
+    filename = strtok(NULL, "\"");
 
     char *illegal_characters = "\"?;:/\\+";
     if(!filename)
@@ -234,7 +234,7 @@ Result http_get(char *url, char *path)
         free(content_disposition);
         free(new_url);
         free(buf);
-        return ret;
+        return -1;
     }
     for (size_t i = 0; i < strlen(filename); i++)
     {
