@@ -234,6 +234,9 @@ Result http_get(char *url, char *path)
         free(content_disposition);
         free(new_url);
         free(buf);
+        char error[29] = {0};
+        sprintf(error, "Target is not a valid %s", splash_mode ? "splash" : "theme");
+        throw_error(error, WARNING);
         return -1;
     }
     for (size_t i = 0; i < strlen(filename); i++)
