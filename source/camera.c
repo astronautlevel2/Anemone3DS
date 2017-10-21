@@ -110,7 +110,7 @@ void take_picture(void)
     CAMU_SetReceiving(&event, buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
     svcWaitSynchronization(event, U64_MAX);
     svcCloseHandle(event);
-    pp2d_begin_draw(GFX_TOP);
+    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
     u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
     if (rgba8_buf == NULL) return;
     for (int i = 0; i < 240 * 400; i++)

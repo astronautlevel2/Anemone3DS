@@ -75,7 +75,7 @@ void draw_themext_error(void)
 
 void draw_base_interface(void)
 {
-    pp2d_begin_draw(GFX_TOP);
+    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
     pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
 
     time_t t = time(NULL);
@@ -94,11 +94,11 @@ void draw_base_interface(void)
     if (battery_charging)
         pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
 
-    pp2d_draw_on(GFX_BOTTOM);
+    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
     pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
     pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
-    pp2d_draw_on(GFX_TOP);
+    pp2d_draw_on(GFX_TOP, GFX_LEFT);
 }
 void throw_error(char* error, int error_type) {
 
@@ -177,9 +177,9 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
     {
         if (current_theme.has_preview)
         {
-            pp2d_begin_draw(GFX_TOP);
+            pp2d_begin_draw(GFX_TOP, GFX_LEFT);
             pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, current_theme.preview_offset, 0, 400, 240);
-            pp2d_draw_on(GFX_BOTTOM);
+            pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
             pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 40+current_theme.preview_offset, 240, 320, 240);
         }
     }
@@ -205,7 +205,7 @@ void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_t
         pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
         pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
         pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
-        pp2d_draw_on(GFX_BOTTOM);
+        pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
         pp2d_draw_textf(7, 3, 0.6, 0.6, COLOR_WHITE, "Selected: %i/10", shuffle_theme_count);
 
@@ -294,9 +294,9 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
     Splash_s current_splash = splashes_list[selected_splash];
     if (preview_mode)
     {
-        pp2d_begin_draw(GFX_TOP);
+        pp2d_begin_draw(GFX_TOP, GFX_LEFT);
         pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 0, 0, 400, 240);
-        pp2d_draw_on(GFX_BOTTOM);
+        pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
         pp2d_draw_texture_part(TEXTURE_PREVIEW, 0, 0, 40, 240, 320, 240);
     } else {
         draw_base_interface();
@@ -317,7 +317,7 @@ void draw_splash_interface(Splash_s *splashes_list, int splash_count, int select
         pp2d_draw_wtext_center(GFX_TOP, 150, 0.7, 0.7, COLOR_WHITE, L"\uE003 Preview Splash     \uE005 Scan QRCode");
         pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"");
 
-        pp2d_draw_on(GFX_BOTTOM);
+        pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
         for (int i = 0; i < splash_count; i++) {
             if (splash_count <= THEMES_PER_SCREEN)
                 break;
