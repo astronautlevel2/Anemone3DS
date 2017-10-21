@@ -55,9 +55,8 @@ void load_splash_preview(Splash_s *splash)
     
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
-    
-    int result = lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size);
-    if (result == 0) // no error
+     
+    if ((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error 
     {
         for (u32 i = 0; i < width; i++)
         {
@@ -151,8 +150,8 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
 {
     Result res = 0;
     Handle dir_handle;
-    res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, SPLASHES_PATH));
-    if (R_FAILED(res))
+ 
+    if (R_FAILED(res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, SPLASHES_PATH)))) 
         return res;
 
     if (*splashes_list != NULL)
@@ -166,8 +165,7 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
     while (entries_read)
     {
         FS_DirectoryEntry entry = {0};
-        res = FSDIR_Read(dir_handle, &entries_read, 1, &entry);
-        if (R_FAILED(res) || entries_read == 0) 
+        if (R_FAILED(res = FSDIR_Read(dir_handle, &entries_read, 1, &entry)) || entries_read == 0)
             break;
 
         if (!(entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(entry.shortExt, "ZIP"))

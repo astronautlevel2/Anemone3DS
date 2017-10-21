@@ -25,29 +25,29 @@
 */
 
 #include <strings.h>
-
+ 
 #include "fs.h"
 #include "unicode.h"
-
+ 
 #include "minizip/unzip.h"
-
+ 
 int filename_compare(__attribute__((unused)) unzFile file, const char *current_filename, const char *filename)
 {
     return strcasecmp(current_filename, filename);
 }
-
+ 
 Result open_archives(void)
 {
-	romfsInit();
+    romfsInit();
     u8 regionCode;
     u32 archive1;
     u32 archive2;
-
-    Result retValue;
-
+ 
+    Result res = 0;
+ 
     FS_Path home;
     FS_Path theme;
-
+ 
     CFGU_SecureInfoGetRegion(&regionCode);
     switch(regionCode)
     {
@@ -67,56 +67,48 @@ Result open_archives(void)
             archive1 = 0x00;
             archive2 = 0x00;
     }
-
-
-    retValue = FSUSER_OpenArchive(&ArchiveSD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
-    if(R_FAILED(retValue)) return retValue;
+ 
+    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveSD, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, "")))) return res;
 
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"), FS_ATTRIBUTE_DIRECTORY);
-
+ 
     u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
     home.type = PATH_BINARY;
     home.size = 0xC;
     home.data = homeMenuPath;
-    retValue = FSUSER_OpenArchive(&ArchiveHomeExt, ARCHIVE_EXTDATA, home);  
-    if(R_FAILED(retValue)) return retValue;
-
+    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveHomeExt, ARCHIVE_EXTDATA, home))) return res;
+ 
     u32 themePath[3] = {MEDIATYPE_SD, archive1, 0};
     theme.type = PATH_BINARY;
     theme.size = 0xC;
     theme.data = themePath;
-    retValue = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme);    
-    if(R_FAILED(retValue)) return retValue;
-
+    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
+ 
     Handle test_handle;
-    retValue = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0);
-    if(R_FAILED(retValue)) return retValue;
+    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0))) return res;
     FSFILE_Close(test_handle);
-
+ 
     return 0;
 }
 
 Result close_archives(void)
 {
-    Result retValue;
-
-    retValue = FSUSER_CloseArchive(ArchiveSD);
-    if(R_FAILED(retValue)) return retValue;
-    retValue = FSUSER_CloseArchive(ArchiveHomeExt);
-    if(R_FAILED(retValue)) return retValue;
-    retValue = FSUSER_CloseArchive(ArchiveThemeExt);
-    if(R_FAILED(retValue)) return retValue;
+    Result res;
+ 
+    if(R_FAILED(res = FSUSER_CloseArchive(ArchiveSD))) return res;
+    if(R_FAILED(res = FSUSER_CloseArchive(ArchiveHomeExt))) return res;
+    if(R_FAILED(res = FSUSER_CloseArchive(ArchiveThemeExt))) return res;
     
     return 0;
 }
-
+ 
 u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 {
     Handle file;
-    Result res = FSUSER_OpenFile(&file, archive, path, FS_OPEN_READ, 0);
-    if (R_FAILED(res)) return 0;
-
+    Result res = 0;
+    if (R_FAILED(res = FSUSER_OpenFile(&file, archive, path, FS_OPEN_READ, 0))) return 0;
+ 
     u64 size;
     FSFILE_GetSize(file, &size);
     *buf = calloc(1, size);
@@ -128,15 +120,15 @@ u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
     ssize_t len = strulen(zip_path, 0x106);
-
+ 
     u8 *path = calloc(sizeof(u8), len * 4);
     utf16_to_utf8(path, zip_path, len * 4);
-
+ 
     unzFile zip_handle = unzOpen((char*)path);
-
+ 
     if (zip_handle == NULL) return 0;
     u32 file_size = 0;
-
+ 
     int status = unzLocateFile(zip_handle, file_name, filename_compare);
     if (status == UNZ_OK)
     {
@@ -148,7 +140,7 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
         unzReadCurrentFile(zip_handle, *buf, file_size);
         unzCloseCurrentFile(zip_handle);
         unzClose(zip_handle);
-
+ 
         free(path);
         free(file_info);
         return file_size;
@@ -162,15 +154,13 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
 {
     Handle handle;
-    Result res = FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE, 0);
-    if (R_FAILED(res)) return res;
-    res = FSFILE_Write(handle, NULL, 0, buf, size, FS_WRITE_FLUSH);
-    if (R_FAILED(res)) return res;
-    res = FSFILE_Close(handle);
-    if (R_FAILED(res)) return res;
+    Result res = 0;
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE, 0))) return res;
+    if (R_FAILED(res = FSFILE_Write(handle, NULL, 0, buf, size, FS_WRITE_FLUSH))) return res;
+    if (R_FAILED(res = FSFILE_Close(handle))) return res;
     return 0;
 }
-
+ 
 void remake_file(char *path, FS_Archive archive, u32 size)
 {
     Handle handle;
