@@ -29,10 +29,10 @@
 
 #include "common.h"
 
-typedef struct{
-    u16 name[0x40];
-    u16 desc[0x80];
-    u16 author[0x40];
+typedef struct {
+    u16 name[0x41];
+    u16 desc[0x81];
+    u16 author[0x41];
 
     u32 placeholder_color;
     ssize_t icon_id;
@@ -45,6 +45,7 @@ Splash_s *splashes_list;
 int splash_count;
 
 Result get_splashes(Splash_s** splashes_list, int *splash_count);
+int splashcmp(const void* a, const void* b);
 void splash_install(Splash_s splash_to_install);
 void splash_delete();
 void load_splash_preview(Splash_s *splash);

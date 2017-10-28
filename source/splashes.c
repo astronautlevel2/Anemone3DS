@@ -192,9 +192,20 @@ Result get_splashes(Splash_s** splashes_list, int *splash_count)
         ssize_t iconID = TEXTURE_PREVIEW + theme_count + *splash_count;
         parse_smdh(current_splash, iconID, entry.name);
     }
+
     FSDIR_Close(dir_handle);
 
+    qsort(*splashes_list, (long)*splash_count, sizeof(Splash_s), splashcmp);
+
     return res;
+}
+
+int splashcmp(const void* a, const void* b) //essentially a memcmp alias, so that it can be used properly with qsort
+{
+    Splash_s *splash_a = (Splash_s *)a;
+    Splash_s *splash_b = (Splash_s *)b;
+
+    return memcmp(splash_a, splash_b, 0x40*sizeof(u16));
 }
 
 void splash_delete() 
