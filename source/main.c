@@ -130,7 +130,7 @@ int main(void)
         
         if (R_FAILED(archive_result) && !splash_mode)
         {
-            draw_themext_error();
+			throw_error("Theme extdata does not exist\nSet a default theme from the home menu", ERROR);
             continue;
         }
         
@@ -250,7 +250,10 @@ int main(void)
                     draw_theme_install(SHUFFLE_INSTALL);
                     shuffle_install(themes_list, theme_count);
                     shuffle_theme_count = 0;
-                }
+				}
+				else {
+					throw_error("You dont have any Shuffle selected.", WARNING);
+				}
             }
         }
 
