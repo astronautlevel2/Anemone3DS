@@ -152,8 +152,7 @@ int main(void)
             }
             continue;
         }
-
-        if(!qr_mode && kDown & KEY_Y)
+        else if(!qr_mode && kDown & KEY_Y)
         {
             if(!preview_mode)
             {
@@ -164,6 +163,21 @@ int main(void)
                 preview_mode = false;
             }
             continue;
+        }
+        else if(qr_mode && kDown & KEY_L)
+        {
+            CAMU_StopCapture(PORT_BOTH);
+            CAMU_Activate(SELECT_NONE);
+            qr_mode = !scan_qr(current_mode);
+            CAMU_Activate(SELECT_OUT1_OUT2);
+            CAMU_StartCapture(PORT_BOTH);
+
+            if(!qr_mode)
+            {
+                free(current_list->entries);
+                memset(current_list, 0, sizeof(Entry_List_s));
+                load_entries(main_paths[current_mode], current_list);
+            }
         }
 
         if(qr_mode || preview_mode)

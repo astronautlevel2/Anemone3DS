@@ -34,6 +34,7 @@ bool qr_mode;
 void init_qr(void);
 void exit_qr(void);
 void take_picture(void);
-Result http_get(char *url, char *path);
+bool scan_qr(EntryMode current_mode);
+Result http_get(char *url, const char *path);
 
 #endif
