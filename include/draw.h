@@ -27,18 +27,35 @@
 #ifndef DRAW_H
 #define DRAW_H
 
-#include "themes.h"
-#include "splashes.h"
+#include "loading.h"
 #include "camera.h"
+
+typedef enum {
+    INSTALL_SPLASH,
+    INSTALL_SPLASH_DELETE,
+
+    INSTALL_SINGLE,
+    INSTALL_SHUFFLE,
+    INSTALL_BGM,
+
+    INSTALL_DOWNLOAD,
+} InstallType;
+
+typedef enum {
+    ERROR_LEVEL_ERROR,
+    ERROR_LEVEL_WARNING,
+} ErrorLevel;
 
 void init_screens(void);
 void exit_screens(void);
 
 void draw_themext_error(void);
-void draw_base_interface(void);
-void draw_theme_install(int install_type);
-void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode, int shuffle_theme_count);
-void draw_splash_install(int install_type);
-void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
-void throw_error(char* error, int error_type);
+void throw_error(char* error, ErrorLevel level);
+
+void draw_preview(int preview_offset);
+
+void draw_install(InstallType type);
+
+void draw_interface(Entry_List_s* list, EntryMode current_mode);
+
 #endif

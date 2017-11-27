@@ -27,10 +27,11 @@
 #include "camera.h"
 
 #include "quirc/quirc.h"
+#include "pp2d/pp2d/pp2d.h"
+
 #include "draw.h"
 #include "fs.h"
-#include "themes.h"
-#include "pp2d/pp2d/pp2d.h"
+#include "loading.h"
 
 u32 transfer_size;
 Handle event;
@@ -98,7 +99,7 @@ void scan_qr(u16 *buf)
         {
             qr_mode = false;
 
-            http_get((char*)data.payload, splash_mode ? "/Splashes/" : "/Themes/");
+            // http_get((char*)data.payload, splash_mode ? "/Splashes/" : "/Themes/");
         }
     }
 }
@@ -150,6 +151,7 @@ This'll probably get refactored later
 */
 Result http_get(char *url, char *path)
 {
+	/*
     Result ret;
     httpcContext context;
     char *new_url = NULL;
@@ -294,6 +296,6 @@ Result http_get(char *url, char *path)
     free(content_disposition);
     free(new_url);
     free(buf);
-
+	*/
     return 0;
 }

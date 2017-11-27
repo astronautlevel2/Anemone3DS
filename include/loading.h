@@ -24,42 +24,42 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef LOADING_H
+#define LOADING_H
 
-#include <3ds.h>
+#include "common.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+typedef struct {
+    u16 name[0x41];
+    u16 desc[0x81];
+    u16 author[0x41];
 
-#define ENTRIES_PER_SCREEN 4
+    u32 placeholder_color;
+    ssize_t icon_id;
 
-typedef enum {
-    MODE_THEMES = 0,
-    MODE_SPLASHES,
+    u16 path[0x106];
+    bool is_zip;
+    bool has_preview;
 
-    MODE_AMOUNT,
-} EntryMode;
+    bool in_shuffle;
+} Entry_s;
 
-extern const char * main_paths[MODE_AMOUNT];
+typedef struct {
+    Entry_s * entries;
+    int entries_count;
+	
+	int scroll;
+    int selected_entry;
+	
+	int shuffle_count;
+} Entry_List_s;
 
-enum TextureID {
-    TEXTURE_FONT_RESERVED = 0, // used by pp2d for the font
-    TEXTURE_ARROW,
-    TEXTURE_SHUFFLE,
-    TEXTURE_BATTERY_1,
-    TEXTURE_BATTERY_2,
-    TEXTURE_BATTERY_3,
-    TEXTURE_BATTERY_4,
-    TEXTURE_BATTERY_5,
-    TEXTURE_BATTERY_CHARGE,
-    TEXTURE_QR,
-    TEXTURE_PREVIEW,
+#include "themes.h"
+#include "splashes.h"
 
-    TEXTURE_ICON, // always the last
-};
-
-void exit_function(void);
+Result load_entries(const char * loading_path, Entry_List_s * list);
+void sort_list(Entry_List_s * list);
+bool load_preview(Entry_s entry, int * preview_offset);
+u64 load_data(char * filename, Entry_s entry, char ** buf);
 
 #endif
