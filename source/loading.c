@@ -47,6 +47,8 @@ u64 load_data(char * filename, Entry_s entry, char ** buf)
 
 static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fallback_name)
 {
+    pp2d_free_texture(textureID);
+
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", *entry, &info_buffer);
 
@@ -87,6 +89,19 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
     free(image);
 
     entry->icon_id = textureID;
+}
+
+static int compare_entries(const void * a, const void * b)
+{
+    Entry_s *entry_a = (Entry_s *)a;
+    Entry_s *entry_b = (Entry_s *)b;
+
+    return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
+}
+
+static void sort_list(Entry_List_s * list)
+{
+    qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
 }
 
 Result load_entries(const char * loading_path, Entry_List_s * list)
@@ -130,19 +145,6 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
     sort_list(list);
 
     return res;
-}
-
-static int compare_entries(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
-}
-
-void sort_list(Entry_List_s * list)
-{
-    qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
 }
 
 bool load_preview(Entry_s entry, int * preview_offset)

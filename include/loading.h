@@ -58,7 +58,6 @@ typedef struct {
 #include "splashes.h"
 
 Result load_entries(const char * loading_path, Entry_List_s * list);
-void sort_list(Entry_List_s * list);
 bool load_preview(Entry_s entry, int * preview_offset);
 u64 load_data(char * filename, Entry_s entry, char ** buf);
 
