@@ -31,17 +31,17 @@
 
 u64 load_data(char * filename, Entry_s entry, char ** buf)
 {
-	if(entry.is_zip)
-	{
-		return zip_file_to_buf(filename+1, entry.path, buf); //the first character will always be '/' because of the other case
-	}
-	else
+    if(entry.is_zip)
     {
-		u16 path[0x106] = {0};
-		strucat(path, entry.path);
-		struacat(path, filename);
-		
-		return file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, buf);    
+        return zip_file_to_buf(filename+1, entry.path, buf); //the first character will always be '/' because of the other case
+    }
+    else
+    {
+        u16 path[0x106] = {0};
+        strucat(path, entry.path);
+        struacat(path, filename);
+
+        return file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, buf);
     }
 }
 
@@ -49,7 +49,7 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
 {
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", *entry, &info_buffer);
-	
+
     if(!size)
     {
         free(info_buffer);
@@ -63,11 +63,11 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
     memcpy(entry->name, info_buffer + 0x08, 0x80);
     memcpy(entry->desc, info_buffer + 0x88, 0x100);
     memcpy(entry->author, info_buffer + 0x188, 0x80);
-    
+
     u16 *icon_data = malloc(0x1200);
     memcpy(icon_data, info_buffer + 0x24C0, 0x1200);
     free(info_buffer);
-	
+
     const u32 width = 48, height = 48;
     u32 *image = malloc(width*height*sizeof(u32));
 
@@ -77,15 +77,15 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
         {
             unsigned int dest_pixel = (x + y*width);
             unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
-            
-			image[dest_pixel] = RGB565_TO_ABGR8(icon_data[source_pixel]);
+
+            image[dest_pixel] = RGB565_TO_ABGR8(icon_data[source_pixel]);
         }
     }
-    
-	free(icon_data);
+
+    free(icon_data);
     pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
-	free(image);
-	
+    free(image);
+
     entry->icon_id = textureID;
 }
 
@@ -95,7 +95,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
     Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, loading_path));
     if(R_FAILED(res))
         return res;
-	
+
     u32 entries_read = 1;
 
     while(entries_read)
@@ -104,31 +104,31 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
         res = FSDIR_Read(dir_handle, &entries_read, 1, &dir_entry);
         if(R_FAILED(res) || entries_read == 0)
             break;
-        
+
         if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP"))
             continue;
-        
-		list->entries_count++;
+
+        list->entries_count++;
         list->entries = realloc(list->entries, list->entries_count * sizeof(Entry_s));
         if(list->entries == NULL)
             break;
-        
+
         Entry_s * current_entry = &(list->entries[list->entries_count-1]);
         memset(current_entry, 0, sizeof(Entry_s));
-        
+
         struacat(current_entry->path, loading_path);
         strucat(current_entry->path, dir_entry.name);
-        
+
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-        
+
         ssize_t iconID = TEXTURE_ICON + list->entries_count;
         parse_smdh(current_entry, iconID, dir_entry.name);
     }
-    
+
     FSDIR_Close(dir_handle);
 
     sort_list(list);
-    
+
     return res;
 }
 
@@ -152,7 +152,7 @@ bool load_preview(Entry_s entry, int * preview_offset)
 
     char *preview_buffer = NULL;
     u64 size = load_data("/preview.png", entry, &preview_buffer);
-	
+
     if(!size)
     {
         free(preview_buffer);
@@ -178,7 +178,7 @@ bool load_preview(Entry_s entry, int * preview_offset)
 
     free(image);
     free(preview_buffer);
-	
-	*preview_offset = (width-400)/2;
-	return true;
+
+    *preview_offset = (width-400)/2;
+    return true;
 }

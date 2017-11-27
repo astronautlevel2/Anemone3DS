@@ -99,7 +99,7 @@ Result close_archives(void)
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveSD))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveHomeExt))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveThemeExt))) return res;
-    
+
     return 0;
 }
  

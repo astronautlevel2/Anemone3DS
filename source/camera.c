@@ -151,7 +151,7 @@ This'll probably get refactored later
 */
 Result http_get(char *url, char *path)
 {
-	/*
+    /*
     Result ret;
     httpcContext context;
     char *new_url = NULL;
@@ -168,7 +168,7 @@ Result http_get(char *url, char *path)
         ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
         ret = httpcAddRequestHeaderField(&context, "User-Agent", "Anemone3DS/1.1.0");
         ret = httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-		draw_theme_install(DOWNLOADING);
+        draw_theme_install(DOWNLOADING);
         ret = httpcBeginRequest(&context);
         if (ret != 0)
         {
@@ -296,6 +296,6 @@ Result http_get(char *url, char *path)
     free(content_disposition);
     free(new_url);
     free(buf);
-	*/
+    */
     return 0;
 }

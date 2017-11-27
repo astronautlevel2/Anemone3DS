@@ -47,11 +47,11 @@ typedef struct {
 typedef struct {
     Entry_s * entries;
     int entries_count;
-	
-	int scroll;
+
+    int scroll;
     int selected_entry;
-	
-	int shuffle_count;
+
+    int shuffle_count;
 } Entry_List_s;
 
 #include "themes.h"
