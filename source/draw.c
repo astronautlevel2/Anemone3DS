@@ -88,6 +88,7 @@ static void draw_base_interface(void)
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
     pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
     pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
+
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
 }
 
@@ -177,7 +178,6 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
         };
         pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, mode_switch_string[current_mode]);
         pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, COLOR_YELLOW, "Or \uE045 to quit");
-        pp2d_end_draw();
         return;
     }
 
@@ -281,7 +281,5 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
         if(current_entry.in_shuffle)
             pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, font_color);
     }
-
-    pp2d_end_draw();
 }
 

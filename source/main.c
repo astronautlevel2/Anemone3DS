@@ -29,6 +29,7 @@
 #include "draw.h"
 #include "camera.h"
 #include <time.h>
+#include "pp2d/pp2d/pp2d.h"
 
 static bool homebrew = false;
 int __stacksize__ = 64 * 1024;
@@ -118,6 +119,7 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else draw_interface(current_list, current_mode);
+        pp2d_end_draw();
 
         if(kDown & KEY_START) break;
         else if(kDown & KEY_L)

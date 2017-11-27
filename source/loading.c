@@ -159,6 +159,7 @@ bool load_preview(Entry_s entry, int * preview_offset)
         return false;
     }
 
+    bool ret = false;
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
 
@@ -174,11 +175,12 @@ bool load_preview(Entry_s entry, int * preview_offset)
         }
 
         pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+        *preview_offset = (width-400)/2;
+        ret = true;
     }
 
     free(image);
     free(preview_buffer);
 
-    *preview_offset = (width-400)/2;
-    return true;
+    return ret;
 }
