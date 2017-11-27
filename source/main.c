@@ -93,10 +93,10 @@ int main(void)
     init_services();
     init_screens();
 
-    Entry_List_s * lists[MODE_AMOUNT] = {0};
+    Entry_List_s lists[MODE_AMOUNT] = {0};
 
     for(int i = 0; i < MODE_AMOUNT; i++)
-        load_entries(main_paths[i], lists[i]);
+        load_entries(main_paths[i], &lists[i]);
 
     EntryMode current_mode = MODE_THEMES;
 
@@ -111,7 +111,7 @@ int main(void)
         u32 kDown = hidKeysDown();
         u32 kHeld = hidKeysHeld();
 
-        Entry_List_s * current_list = lists[current_mode];
+        Entry_List_s * current_list = &lists[current_mode];
         int selected_entry = current_list->selected_entry;
         Entry_s * current_entry = &current_list->entries[selected_entry];
 
