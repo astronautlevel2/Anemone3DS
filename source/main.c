@@ -113,8 +113,6 @@ int main(void)
         u32 kHeld = hidKeysHeld();
 
         Entry_List_s * current_list = &lists[current_mode];
-        int selected_entry = current_list->selected_entry;
-        Entry_s * current_entry = &current_list->entries[selected_entry];
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
@@ -126,6 +124,7 @@ int main(void)
         {
             current_mode++;
             current_mode %= MODE_AMOUNT;
+            continue;
         }
 
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
@@ -156,7 +155,7 @@ int main(void)
         {
             if(!preview_mode)
             {
-                preview_mode = load_preview(*current_entry, &preview_offset);
+                preview_mode = load_preview(*current_list, &preview_offset);
             }
             else 
             {
@@ -178,10 +177,14 @@ int main(void)
                 memset(current_list, 0, sizeof(Entry_List_s));
                 load_entries(main_paths[current_mode], current_list);
             }
+            continue;
         }
 
-        if(qr_mode || preview_mode)
+        if(qr_mode || preview_mode || current_list->entries == NULL)
             continue;
+
+        int selected_entry = current_list->selected_entry;
+        Entry_s * current_entry = &current_list->entries[selected_entry];
 
         // Actions
         if(kDown & KEY_X)

@@ -147,8 +147,17 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
     return res;
 }
 
-bool load_preview(Entry_s entry, int * preview_offset)
+static u16 previous_path[0x106] = {0};
+
+bool load_preview(Entry_List_s list, int * preview_offset)
 {
+    if(list.entries == NULL) return false;
+
+    Entry_s entry = list.entries[list.selected_entry];
+
+    if(!memcmp(&previous_path, &entry.path, 0x106*sizeof(u16))) return true;
+    else memcpy(&previous_path, &entry.path, 0x106*sizeof(u16));
+
     // free the previously loaded preview. wont do anything if there wasnt one
     pp2d_free_texture(TEXTURE_PREVIEW);
 

@@ -164,7 +164,7 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
 {
     draw_base_interface();
 
-    if(list == NULL)
+    if(list->entries == NULL)
     {
         const char* mode_found_string[] = {
             "No themes found",
