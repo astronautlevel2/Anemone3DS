@@ -35,6 +35,13 @@
 
 #define ENTRIES_PER_SCREEN 4
 
+#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
+#define POS() DEBUG("%s (line %d)...\n", __func__, __LINE__)
+
+#define DEBUGPOS(...) \
+        POS(); \
+        DEBUG(__VA_ARGS__)
+
 typedef enum {
     MODE_THEMES = 0,
     MODE_SPLASHES,

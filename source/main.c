@@ -42,6 +42,7 @@ const char * main_paths[MODE_AMOUNT] = {
 
 void init_services(void)
 {
+    consoleDebugInit(debugDevice_SVC);
     cfguInit();
     ptmuInit();
     acInit();
