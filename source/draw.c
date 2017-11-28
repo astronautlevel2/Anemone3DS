@@ -149,10 +149,10 @@ void draw_install(InstallType type)
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
             break;
         case INSTALL_SPLASH:
-            pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_WHITE, "Installing a splash...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a splash...");
             break;
         case INSTALL_SPLASH_DELETE:
-            pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_WHITE, "Uninstalling a splash...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Uninstalling a splash...");
             break;
         default:
             break;
