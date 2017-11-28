@@ -113,7 +113,7 @@ bool scan_qr(EntryMode current_mode)
 
 void take_picture(void)
 {
-    pp2d_free_texture(TEXTURE_QR);
+    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
     free(camera_buf);
 
     camera_buf = malloc(sizeof(u16) * 400 * 240 * 4);
@@ -129,10 +129,10 @@ void take_picture(void)
     {
         rgba8_buf[i] = RGB565_TO_ABGR8(camera_buf[i]);
     }
+    pp2d_free_texture(TEXTURE_QR);
     pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
     free(rgba8_buf);
 
-    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
     pp2d_draw_rectangle(0, 216, 400, 24, RGBA8(55, 122, 168, 255));
     pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");

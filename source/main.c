@@ -120,12 +120,6 @@ int main(void)
         pp2d_end_draw();
 
         if(kDown & KEY_START) break;
-        else if(kDown & KEY_L)
-        {
-            current_mode++;
-            current_mode %= MODE_AMOUNT;
-            continue;
-        }
 
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
@@ -177,6 +171,13 @@ int main(void)
                 memset(current_list, 0, sizeof(Entry_List_s));
                 load_entries(main_paths[current_mode], current_list);
             }
+            continue;
+        }
+
+        if(kDown & KEY_L)
+        {
+            current_mode++;
+            current_mode %= MODE_AMOUNT;
             continue;
         }
 

@@ -79,7 +79,7 @@ static void draw_base_interface(void)
     PTMU_GetBatteryChargeState(&battery_charging);
     u8 battery_status;
     PTMU_GetBatteryLevel(&battery_status);
-    pp2d_draw_texture(2 + battery_status, 357, 2);
+    pp2d_draw_texture(TEXTURE_BATTERY_1 + battery_status, 357, 2);
 
     if(battery_charging)
         pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
