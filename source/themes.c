@@ -58,7 +58,7 @@ Result bgm_install(Entry_s bgm_to_install)
     Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     if(bgm_to_install.is_zip) // Same as above but this time with bgm
     {
@@ -82,7 +82,7 @@ Result bgm_install(Entry_s bgm_to_install)
     result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
@@ -109,7 +109,7 @@ Result bgm_install(Entry_s bgm_to_install)
     result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     return 0;
 }
@@ -117,15 +117,16 @@ Result bgm_install(Entry_s bgm_to_install)
 // Install a single theme
 Result theme_install(Entry_s theme)
 {
-    char *body;
-    char *music;
-    char *savedata_buf;
-    char *thememanage_buf;
-    u32 body_size;
-    u32 music_size;
-    u32 savedata_size;
+    char *body = NULL;
+    char *music = NULL;
+    char *savedata_buf = NULL;
+    char *thememanage_buf = NULL;
+    u32 body_size = 0;
+    u32 music_size = 0;
+    u32 savedata_size = 0;
 
     savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    DEBUGPOS("savedata: %p, %lx\n", savedata_buf, savedata_size);
     savedata_buf[0x141b] = 0;
     memset(&savedata_buf[0x13b8], 0, 8);
     savedata_buf[0x13bd] = 3;
@@ -133,7 +134,7 @@ Result theme_install(Entry_s theme)
     Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     // Open body cache file. Test if theme is zipped
     if(theme.is_zip)
@@ -151,14 +152,14 @@ Result theme_install(Entry_s theme)
     if(body_size == 0)
     {
         free(body);
-        puts("bodyrip");
+        DEBUGPOS("bodyrip");
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
     }
 
     result = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
     free(body);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     if(theme.is_zip) // Same as above but this time with bgm
     {
@@ -175,14 +176,14 @@ Result theme_install(Entry_s theme)
         music = calloc(1, 3371008);
     } else if(music_size > 3371008) {
         free(music);
-        puts("musicrip");
+        DEBUGPOS("musicrip");
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
 
     result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     thememanage_buf[0x00] = 1;
@@ -211,7 +212,7 @@ Result theme_install(Entry_s theme)
     result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     return 0;
 }
@@ -261,7 +262,7 @@ Result shuffle_install(Entry_s* themes_list, int themes_count)
     Result result = buf_to_file(size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     remake_file("/BodyCache_rd.bin", ArchiveThemeExt, 0x150000 * 10); // Enough space for 10 theme files
     Handle body_cache_handle;
@@ -362,7 +363,7 @@ Result shuffle_install(Entry_s* themes_list, int themes_count)
     result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
 
-    if(!R_SUCCEEDED(result)) return result;
+    if(R_FAILED(result)) return result;
 
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS);
 }

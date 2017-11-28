@@ -156,7 +156,6 @@ Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
     Handle handle;
     Result res = 0;
     if (R_FAILED(res = FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE, 0))) return res;
-    if (R_FAILED(res = FSFILE_SetSize(handle, 0))) return res;
     if (R_FAILED(res = FSFILE_Write(handle, NULL, 0, buf, size, FS_WRITE_FLUSH))) return res;
     if (R_FAILED(res = FSFILE_Close(handle))) return res;
     return 0;
