@@ -164,6 +164,13 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
 {
     draw_base_interface();
 
+    const char* mode_string[] = {
+        "Theme mode",
+        "Splashes mode",
+    };
+
+    pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
+
     if(list->entries == NULL)
     {
         const char* mode_found_string[] = {
@@ -173,8 +180,8 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
         pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, COLOR_YELLOW, mode_found_string[current_mode]);
         pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_YELLOW, "Press \uE005 to download from QR");
         const char* mode_switch_string[] = {
-            "Or \uE003 to switch to splashes",
-            "Or \uE003 to switch to themes",
+            "Or \uE004 to switch to splashes",
+            "Or \uE004 to switch to themes",
         };
         pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, mode_switch_string[current_mode]);
         pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, COLOR_YELLOW, "Or \uE045 to quit");
@@ -183,13 +190,6 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
 
     int selected_entry = list->selected_entry;
     Entry_s current_entry = list->entries[selected_entry];
-
-    const char* mode_string[] = {
-        "Theme mode",
-        "Splashes mode",
-    };
-
-    pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
 
     wchar_t title[0x41] = {0};
     utf16_to_utf32((u32*)title, current_entry.name, 0x40);
