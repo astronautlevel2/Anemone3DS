@@ -220,15 +220,6 @@ int main(void)
                 default:
                     break;
             }
-            // /*
-            // these are here just so I don't forget how to implement them - HM
-            // if(current_theme->in_shuffle) {
-            // shuffle_theme_count--;
-            // current_theme->in_shuffle = false;
-            // }
-            // del_theme(current_theme->path);
-            // get_themes(&themes_list, &theme_count);
-            // */
         }
         else if(kDown & KEY_B)
         {
