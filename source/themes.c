@@ -131,7 +131,7 @@ Result theme_install(Entry_s theme)
     if(R_FAILED(result)) return result;
 
     // Open body cache file.
-    music_size = load_data("body_LZ.bin", theme, &body);
+    body_size = load_data("/body_LZ.bin", theme, &body);
 
     if(body_size == 0)
     {
