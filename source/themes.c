@@ -28,6 +28,8 @@
 #include "unicode.h"
 #include "fs.h"
 
+#define BGM_MAX_SIZE 3371008
+
 void delete_theme(Entry_s theme)
 {
     Handle dir_handle;
@@ -60,26 +62,18 @@ Result bgm_install(Entry_s bgm_to_install)
 
     if(R_FAILED(result)) return result;
 
-    if(bgm_to_install.is_zip) // Same as above but this time with bgm
-    {
-        music_size = zip_file_to_buf("bgm.bcstm", bgm_to_install.path, &music);
-    } else {
-        u16 path[0x106] = {0};
-        memcpy(path, bgm_to_install.path, 0x106 * sizeof(u16));
-        struacat(path, "/bgm.bcstm");
-        music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &music);
-    }
+    music_size = load_data("/bgm.bcstm", bgm_to_install, &music);
 
     if(music_size == 0)
     {
-        music = calloc(1, 3371008);
-    } else if(music_size > 3371008) {
+        music = calloc(1, BGM_MAX_SIZE);
+    } else if(music_size > BGM_MAX_SIZE) {
         free(music);
         puts("musicrip");
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
 
-    result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+    result = buf_to_file(music_size == 0 ? BGM_MAX_SIZE : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
     if(R_FAILED(result)) return result;
@@ -136,18 +130,8 @@ Result theme_install(Entry_s theme)
 
     if(R_FAILED(result)) return result;
 
-    // Open body cache file. Test if theme is zipped
-    if(theme.is_zip)
-    {
-        body_size = zip_file_to_buf("body_LZ.bin", theme.path, &body);
-    }
-    else
-    {
-        u16 path[0x106] = {0};
-        memcpy(path, theme.path, 0x106 * sizeof(u16));
-        struacat(path, "/body_lz.bin");
-        body_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &body);
-    }
+    // Open body cache file.
+    music_size = load_data("body_LZ.bin", theme, &body);
 
     if(body_size == 0)
     {
@@ -161,26 +145,18 @@ Result theme_install(Entry_s theme)
 
     if(R_FAILED(result)) return result;
 
-    if(theme.is_zip) // Same as above but this time with bgm
-    {
-        music_size = zip_file_to_buf("bgm.bcstm", theme.path, &music);
-    } else {
-        u16 path[0x106] = {0};
-        memcpy(path, theme.path, 0x106 * sizeof(u16));
-        struacat(path, "/bgm.bcstm");
-        music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &music);
-    }
+    music_size = load_data("/bgm.bcstm", theme, &music);
 
     if(music_size == 0)
     {
-        music = calloc(1, 3371008);
-    } else if(music_size > 3371008) {
+        music = calloc(1, BGM_MAX_SIZE);
+    } else if(music_size > BGM_MAX_SIZE) {
         free(music);
         DEBUGPOS("musicrip");
         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
     }
 
-    result = buf_to_file(music_size == 0 ? 3371008 : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+    result = buf_to_file(music_size == 0 ? BGM_MAX_SIZE : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
     free(music);
 
     if(R_FAILED(result)) return result;
@@ -267,28 +243,15 @@ Result shuffle_install(Entry_s* themes_list, int themes_count)
     remake_file("/BodyCache_rd.bin", ArchiveThemeExt, 0x150000 * 10); // Enough space for 10 theme files
     Handle body_cache_handle;
     FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < count; i++)
     {
-        if(count > i)
-        {
-            if(shuffle_themes[i]->is_zip)
-            {
-                char *body_buf;
-                u32 body_size = zip_file_to_buf("body_LZ.bin", shuffle_themes[i]->path, &body_buf);
-                body_sizes[i] = body_size;
-                FSFILE_Write(body_cache_handle, NULL, 0x150000 * i, body_buf, body_size, FS_WRITE_FLUSH);
-                free(body_buf);
-            } else {
-                u16 path[0x106] = {0};
-                strucat(path, shuffle_themes[i]->path);
-                struacat(path, "/body_LZ.bin");
-                char *body_buf;
-                u32 body_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &body_buf);
-                body_sizes[i] = body_size;
-                FSFILE_Write(body_cache_handle, NULL, 0x150000 * i, body_buf, body_size, FS_WRITE_FLUSH);
-                free(body_buf);
-            }
-        }
+        Entry_s * current_theme = shuffle_themes[i];
+        char * body_buf = NULL;
+        u32 body_size = load_data("/body_LZ.bin", *current_theme, &body_buf);
+
+        body_sizes[i] = body_size;
+        FSFILE_Write(body_cache_handle, NULL, 0x150000 * i, body_buf, body_size, FS_WRITE_FLUSH);
+        free(body_buf);
     }
 
     FSFILE_Close(body_cache_handle);
@@ -297,26 +260,17 @@ Result shuffle_install(Entry_s* themes_list, int themes_count)
     {
         char bgm_cache_path[17] = {0};
         sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", i);
-        remake_file(bgm_cache_path, ArchiveThemeExt, 3371008);
+        remake_file(bgm_cache_path, ArchiveThemeExt, BGM_MAX_SIZE);
         if(count > i)
         {
-            char *music_buf;
-            u32 music_size;
-
-            if(shuffle_themes[i]->is_zip)
-            {
-                music_size = zip_file_to_buf("bgm.bcstm", shuffle_themes[i]->path, &music_buf);
-            } else {
-                u16 path[0x106] = {0};
-                strucat(path, shuffle_themes[i]->path);
-                struacat(path, "/bgm.bcstm");
-                music_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &music_buf);
-            }
+            Entry_s * current_theme = shuffle_themes[i];
+            char *music_buf = NULL;
+            u32 music_size = music_size = load_data("/bgm.bcstm", *current_theme, &music_buf);
 
             if(!music_size)
             {
-                char *empty = calloc(1, 3371008);
-                buf_to_file(3371008, bgm_cache_path, ArchiveThemeExt, empty);
+                char *empty = calloc(1, BGM_MAX_SIZE);
+                buf_to_file(BGM_MAX_SIZE, bgm_cache_path, ArchiveThemeExt, empty);
                 bgm_sizes[i] = 0;
                 free(empty);
                 continue;
@@ -325,8 +279,8 @@ Result shuffle_install(Entry_s* themes_list, int themes_count)
             buf_to_file(music_size, bgm_cache_path, ArchiveThemeExt, music_buf);
             free(music_buf);
         } else {
-            char *empty = calloc(1, 3371008);
-            buf_to_file(3371008, bgm_cache_path, ArchiveThemeExt, empty);
+            char *empty = calloc(1, BGM_MAX_SIZE);
+            buf_to_file(BGM_MAX_SIZE, bgm_cache_path, ArchiveThemeExt, empty);
             bgm_sizes[i] = 0;
             free(empty);
         }

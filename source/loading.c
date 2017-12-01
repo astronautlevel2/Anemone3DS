@@ -29,7 +29,7 @@
 #include "fs.h"
 #include "unicode.h"
 
-u64 load_data(char * filename, Entry_s entry, char ** buf)
+u32 load_data(char * filename, Entry_s entry, char ** buf)
 {
     if(entry.is_zip)
     {

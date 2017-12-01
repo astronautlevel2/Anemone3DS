@@ -36,7 +36,7 @@ FS_Archive ArchiveThemeExt;
 Result open_archives(void);
 Result close_archives(void);
 
-u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf);
+u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf);
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf);
 
 Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf);
