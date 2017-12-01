@@ -160,7 +160,7 @@ Result http_get(char *url, const char *path)
         ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
         ret = httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
         ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-        ret = httpcAddRequestHeaderField(&context, "User-Agent", VERSION);
+        ret = httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
         ret = httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
         draw_install(INSTALL_DOWNLOAD);
 
