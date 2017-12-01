@@ -39,7 +39,6 @@ typedef struct {
 
     u16 path[0x106];
     bool is_zip;
-    bool has_preview;
 
     bool in_shuffle;
 } Entry_s;
