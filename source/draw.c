@@ -216,6 +216,11 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
             pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
             break;
         case MODE_SPLASHES:
+            pp2d_draw_wtext(20, 180, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Splash");
+            pp2d_draw_wtext(200, 150, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Themes");
+            pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Delete current Splash");
+            pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Splash");
+            pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
             break;
         default:
             break;
