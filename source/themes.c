@@ -27,6 +27,7 @@
 #include "themes.h"
 #include "unicode.h"
 #include "fs.h"
+#include "draw.h"
 
 #define BGM_MAX_SIZE 3371008
 

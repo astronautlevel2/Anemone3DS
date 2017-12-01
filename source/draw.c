@@ -25,9 +25,9 @@
 */
 
 #include "draw.h"
+#include "unicode.h"
 
 #include "pp2d/pp2d/pp2d.h"
-#include "quirc/quirc.h"
 
 #include <time.h>
 

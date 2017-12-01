@@ -26,10 +26,12 @@
 
 #include "fs.h"
 #include "loading.h"
+#include "themes.h"
+#include "splashes.h"
 #include "draw.h"
 #include "camera.h"
-#include <time.h>
 #include "pp2d/pp2d/pp2d.h"
+#include <time.h>
 
 static bool homebrew = false;
 int __stacksize__ = 64 * 1024;

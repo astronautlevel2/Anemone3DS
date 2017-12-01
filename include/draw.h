@@ -27,8 +27,8 @@
 #ifndef DRAW_H
 #define DRAW_H
 
+#include "common.h"
 #include "loading.h"
-#include "camera.h"
 
 typedef enum {
     INSTALL_SPLASH,

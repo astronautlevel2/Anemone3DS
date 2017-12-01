@@ -29,8 +29,6 @@
 
 #include "common.h"
 
-bool qr_mode;
-
 void init_qr(void);
 void exit_qr(void);
 void take_picture(void);
