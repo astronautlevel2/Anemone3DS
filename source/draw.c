@@ -75,9 +75,9 @@ static void draw_base_interface(void)
     pp2d_draw_text(28, 1, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
     pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
 
-    u8 battery_charging;
+    u8 battery_charging = 0;
     PTMU_GetBatteryChargeState(&battery_charging);
-    u8 battery_status;
+    u8 battery_status = 0;
     PTMU_GetBatteryLevel(&battery_status);
     pp2d_draw_texture(TEXTURE_BATTERY_1 + battery_status - 1, 357, 2);
 
@@ -204,23 +204,27 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
     utf16_to_utf32((u32*)description, current_entry.desc, 0x80);
     pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
 
+
     switch(current_mode)
     {
         case MODE_THEMES:
-            pp2d_draw_wtext(20, 150, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Theme");
-            pp2d_draw_wtext(200, 150, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Splashes");
-            pp2d_draw_wtext(20, 180, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Theme");
-            pp2d_draw_wtext(200, 180, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
-            pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
-            pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Theme");
-            pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
+            pp2d_draw_text_center(GFX_TOP, BUTTONS_Y_PREVIEW, 0.6, 0.6, COLOR_WHITE, "\uE003 Preview Theme");
+            pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Splashes");
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
+
+            pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Theme");
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
+
+            pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Themes");
             break;
         case MODE_SPLASHES:
-            pp2d_draw_wtext(20, 180, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Splash");
-            pp2d_draw_wtext(200, 150, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Themes");
-            pp2d_draw_wtext(20, 210, 0.6, 0.6, COLOR_WHITE, L"\uE002 Delete current Splash");
-            pp2d_draw_wtext(200, 210, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview Splash");
-            pp2d_draw_wtext(130, 120, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
+            pp2d_draw_text_center(GFX_TOP, BUTTONS_Y_PREVIEW, 0.6, 0.6, COLOR_WHITE, "\uE003 Preview Splash");
+            pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to Themes");
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QRCode");
+
+            pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install Splash");
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE001 Delete installed Splash");
             break;
         default:
             break;

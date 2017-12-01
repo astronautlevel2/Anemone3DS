@@ -200,8 +200,6 @@ int main(void)
                     bgm_install(*current_entry);
                     break;
                 case MODE_SPLASHES:
-                    draw_install(INSTALL_SPLASH_DELETE);
-                    splash_delete();
                     break;
                 default:
                     break;
@@ -232,6 +230,9 @@ int main(void)
                     else current_list->shuffle_count++;
                     current_entry->in_shuffle = !current_entry->in_shuffle;
                     break;
+                case MODE_SPLASHES:
+                    draw_install(INSTALL_SPLASH_DELETE);
+                    splash_delete();
                 default:
                     break;
             }

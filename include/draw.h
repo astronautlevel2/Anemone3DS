@@ -46,6 +46,20 @@ typedef enum {
     ERROR_LEVEL_WARNING,
 } ErrorLevel;
 
+#define BUTTONS_START_Y 140
+#define BUTTONS_STEP 25
+
+enum {
+    BUTTONS_Y_PREVIEW = BUTTONS_START_Y,
+
+    BUTTONS_Y_LINE_1 = BUTTONS_START_Y + BUTTONS_STEP*1,
+    BUTTONS_Y_LINE_2 = BUTTONS_START_Y + BUTTONS_STEP*2,
+    BUTTONS_Y_LINE_3 = BUTTONS_START_Y + BUTTONS_STEP*3,
+
+    BUTTONS_X_LEFT = 25,
+    BUTTONS_X_RIGHT = 195,
+} ButtonPos;
+
 void init_screens(void);
 void exit_screens(void);
 
