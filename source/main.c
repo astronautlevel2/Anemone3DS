@@ -126,11 +126,17 @@ int main(void)
 
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
-            throw_error("Theme extdata does not exist\nSet a default theme from the home menu", ERROR_LEVEL_ERROR);
+            throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
             continue;
         }
 
-        if(!preview_mode && kDown & KEY_R)
+        if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
+        {
+            current_mode++;
+            current_mode %= MODE_AMOUNT;
+            continue;
+        }
+        else if(!preview_mode && kDown & KEY_R) //toggle QR mode
         {
             u32 out;
             ACU_GetWifiStatus(&out);
@@ -148,7 +154,7 @@ int main(void)
             }
             continue;
         }
-        else if(!qr_mode && kDown & KEY_Y)
+        else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
         {
             if(!preview_mode)
             {
@@ -160,7 +166,7 @@ int main(void)
             }
             continue;
         }
-        else if(qr_mode && kDown & KEY_L)
+        else if(qr_mode && kDown & KEY_L) //scan a QR code while in QR mode
         {
             CAMU_StopCapture(PORT_BOTH);
             CAMU_Activate(SELECT_NONE);
@@ -174,13 +180,6 @@ int main(void)
                 memset(current_list, 0, sizeof(Entry_List_s));
                 load_entries(main_paths[current_mode], current_list);
             }
-            continue;
-        }
-
-        if(kDown & KEY_L)
-        {
-            current_mode++;
-            current_mode %= MODE_AMOUNT;
             continue;
         }
 
