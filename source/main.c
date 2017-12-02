@@ -25,354 +25,278 @@
 */
 
 #include "fs.h"
+#include "loading.h"
 #include "themes.h"
 #include "splashes.h"
 #include "draw.h"
-#include "common.h"
 #include "camera.h"
+#include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
+static bool homebrew = false;
 int __stacksize__ = 64 * 1024;
 Result archive_result;
 
-int init_services(void)
+const char * main_paths[MODE_AMOUNT] = {
+    "/Themes/",
+    "/Splashes/",
+};
+
+void init_services(void)
 {
+    consoleDebugInit(debugDevice_SVC);
     cfguInit();
     ptmuInit();
     acInit();
     httpcInit(0);
     archive_result = open_archives();
-    homebrew = true;
-    if (!envIsHomebrew())
+    if(envIsHomebrew())
     {
-        homebrew = false;
-    } else {
         s64 out;
         svcGetSystemInfo(&out, 0x10000, 0);
-        if (out)
-        {
-            homebrew = false;
-        }
+        homebrew = !out;
     }
-    return homebrew;
 }
 
-int exit_services(void)
+void exit_services(void)
 {
     close_archives();
     cfguExit();
     ptmuExit();
     httpcExit();
     acExit();
-    return 0;
+}
+
+void exit_function(void)
+{
+    if(homebrew)
+    {
+        APT_HardwareResetAsync();
+    }
+    else
+    {
+        srvPublishToSubscriber(0x202, 0);
+    }
+
+    exit_screens();
+    exit_services();
+}
+
+void change_selected(Entry_List_s * list, int change_value)
+{
+    list->selected_entry += change_value;
+    if(change_value < 0 && list->selected_entry < 0)
+        list->selected_entry = list->entries_count - 1;
+    else
+        list->selected_entry %= list->entries_count;
 }
 
 int main(void)
 {
     srand(time(NULL));
-    bool homebrew = init_services();
+    init_services();
     init_screens();
-    
-    themes_list = NULL;
-    theme_count = 0;
-    Result res = get_themes(&themes_list, &theme_count);
-    if (R_FAILED(res))
-    {
-        //don't need to worry about possible textures (icons, previews), that's freed by pp2d itself
-        free(themes_list);
-        themes_list = NULL;
-    }
-    splash_count = 0;
-    splashes_list = NULL;
-    res = get_splashes(&splashes_list, &splash_count);
-    if (R_FAILED(res))
-    {
-        //don't need to worry about possible textures (icons, previews), that's freed by pp2d itself
-        free(splashes_list);
-        splashes_list = NULL;
-    }
 
-    splash_mode = false;
-    int selected_splash = 0;
-    int selected_theme = 0;
-    int previously_selected = 0;
-    shuffle_theme_count = 0;
+    Entry_List_s lists[MODE_AMOUNT] = {0};
+
+    for(int i = 0; i < MODE_AMOUNT; i++)
+        load_entries(main_paths[i], &lists[i]);
+
+    EntryMode current_mode = MODE_THEMES;
+
     bool preview_mode = false;
-    
+    int preview_offset = 0;
+
+    bool qr_mode = false;
+
     while(aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
         u32 kHeld = hidKeysHeld();
-        
-        if (qr_mode) 
+
+        Entry_List_s * current_list = &lists[current_mode];
+
+        if(qr_mode) take_picture();
+        else if(preview_mode) draw_preview(preview_offset);
+        else draw_interface(current_list, current_mode);
+        pp2d_end_draw();
+
+        if(kDown & KEY_START) break;
+
+        if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
-            take_picture();
-        } else if (!splash_mode)
-        {
-            draw_theme_interface(themes_list, theme_count, selected_theme, preview_mode, shuffle_theme_count);
-        } else {
-            draw_splash_interface(splashes_list, splash_count, selected_splash, preview_mode);
-        }
-        
-        if (kDown & KEY_START)
-        {
-            if (homebrew)
-                APT_HardwareResetAsync();
-            else {
-                srvPublishToSubscriber(0x202, 0);
-            }
-        }
-        else if (kDown & KEY_L)
-        {
-            splash_mode = !splash_mode;
-        }
-        
-        if (R_FAILED(archive_result) && !splash_mode)
-        {
-			throw_error("Theme extdata does not exist\nSet a default theme from the home menu", ERROR);
+            throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
             continue;
         }
-        
-        if (kDown & KEY_R)
+
+        if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
         {
-            if (preview_mode) {
-                continue;
-            } else {
-                u32 out;
-                ACU_GetWifiStatus(&out);
-                if (out)
-                {
-                    qr_mode = !qr_mode;
-                    if (qr_mode) init_qr();
-                    else exit_qr();
-                    continue;
-                } else {
-                    throw_error("Please connect to Wi-Fi before scanning QR", WARNING);
-                    continue;
-                }
-            }
+            current_mode++;
+            current_mode %= MODE_AMOUNT;
+            continue;
         }
-
-        if (qr_mode) continue;
-
-        if (themes_list == NULL && !splash_mode)
-            continue;
-        
-        if (splashes_list == NULL && splash_mode)
-            continue;
-
-        Theme_s * current_theme = &themes_list[selected_theme];
-        Splash_s *current_splash = &splashes_list[selected_splash];
-        
-        if (kDown & KEY_Y)
+        else if(!preview_mode && kDown & KEY_R) //toggle QR mode
         {
-            if (!preview_mode)
+            u32 out;
+            ACU_GetWifiStatus(&out);
+            if(out)
             {
-                if (!splash_mode)
-                {
-                    if (!current_theme->has_preview)
-                        load_theme_preview(current_theme);
-                    
-                    preview_mode = current_theme->has_preview;
-                } else {
-                    load_splash_preview(current_splash);
-                    preview_mode = true;
-                }
+                qr_mode = !qr_mode;
+                if(qr_mode)
+                    init_qr();
+                else
+                    exit_qr();
             }
             else
-                preview_mode = false;
-        }
-
-        //don't allow anything while the preview is up
-        if (preview_mode)
+            {
+                throw_error("Please connect to Wi-Fi before scanning QR", ERROR_LEVEL_WARNING);
+            }
             continue;
-        
+        }
+        else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
+        {
+            if(!preview_mode)
+            {
+                preview_mode = load_preview(*current_list, &preview_offset);
+            }
+            else 
+            {
+                preview_mode = false;
+            }
+            continue;
+        }
+        else if(qr_mode && kDown & KEY_L) //scan a QR code while in QR mode
+        {
+            CAMU_StopCapture(PORT_BOTH);
+            CAMU_Activate(SELECT_NONE);
+            qr_mode = !scan_qr(current_mode);
+            CAMU_Activate(SELECT_OUT1_OUT2);
+            CAMU_StartCapture(PORT_BOTH);
+
+            if(!qr_mode)
+            {
+                free(current_list->entries);
+                memset(current_list, 0, sizeof(Entry_List_s));
+                load_entries(main_paths[current_mode], current_list);
+            }
+            continue;
+        }
+
+        if(qr_mode || preview_mode || current_list->entries == NULL)
+            continue;
+
+        int selected_entry = current_list->selected_entry;
+        Entry_s * current_entry = &current_list->entries[selected_entry];
+
         // Actions
-        else if (kDown & KEY_X)
+        if(kDown & KEY_X)
         {
-            if (splash_mode) {
-                draw_splash_install(UNINSTALL);
-                splash_delete();
-            } else {
-                draw_theme_install(BGM_INSTALL);
-                bgm_install(*current_theme);
+            switch(current_mode)
+            {
+                case MODE_THEMES:
+                    draw_install(INSTALL_BGM);
+                    bgm_install(*current_entry);
+                    break;
+                case MODE_SPLASHES:
+                    break;
+                default:
+                    break;
             }
         }
-        else if (kDown & KEY_A)
+        else if(kDown & KEY_A)
         {
-            if (splash_mode)
+            switch(current_mode)
             {
-                draw_splash_install(SINGLE_INSTALL);
-                splash_install(*current_splash);
-                svcSleepThread(5e8);
-            } else {
-                draw_theme_install(SINGLE_INSTALL);
-                single_install(*current_theme);
+                case MODE_THEMES:
+                    draw_install(INSTALL_SINGLE);
+                    theme_install(*current_entry);
+                    break;
+                case MODE_SPLASHES:
+                    draw_install(INSTALL_SPLASH);
+                    splash_install(*current_entry);
+                    break;
+                default:
+                    break;
             }
-            //these are here just so I don't forget how to implement them - HM
-            //if (current_theme->in_shuffle) {
-            //  shuffle_theme_count--;
-            //  current_theme->in_shuffle = false;
-            //}
-            //del_theme(current_theme->path);
-            //get_themes(&themes_list, &theme_count);
         }
-        
-        else if (kDown & KEY_B)
+        else if(kDown & KEY_B)
         {
-            if (splash_mode)
+            switch(current_mode)
             {
-
-            } else {
-                if (shuffle_theme_count < 10)
-                {
-                    if (current_theme->in_shuffle) shuffle_theme_count--;
-                    else shuffle_theme_count++;
-                    current_theme->in_shuffle = !(current_theme->in_shuffle);
-                } else {
-                    if (current_theme->in_shuffle) {
-                        shuffle_theme_count--;
-                        current_theme->in_shuffle = false;
-                    } 
-                }
+                case MODE_THEMES:
+                    if(current_entry->in_shuffle) current_list->shuffle_count--;
+                    else current_list->shuffle_count++;
+                    current_entry->in_shuffle = !current_entry->in_shuffle;
+                    break;
+                case MODE_SPLASHES:
+                    draw_install(INSTALL_SPLASH_DELETE);
+                    splash_delete();
+                default:
+                    break;
             }
         }
 
-        else if (kDown & KEY_SELECT)
+        else if(kDown & KEY_SELECT)
         {
-            if (splash_mode)
+            switch(current_mode)
             {
-
-            } else {
-                if (shuffle_theme_count > 0)
-                {
-                    draw_theme_install(SHUFFLE_INSTALL);
-                    shuffle_install(themes_list, theme_count);
-                    shuffle_theme_count = 0;
-				}
-				else {
-					throw_error("You dont have any Shuffle selected.", WARNING);
-				}
+                case MODE_THEMES:
+                    if(current_list->shuffle_count > 0)
+                    {
+                        draw_install(INSTALL_SHUFFLE);
+                        shuffle_install(current_list->entries, current_list->entries_count);
+                        current_list->shuffle_count = 0;
+                    }
+                    else
+                    {
+                        throw_error("You dont have any Shuffle selected.", ERROR_LEVEL_WARNING);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
         // Movement in the UI
-        else if (kDown & KEY_DOWN) 
+        else if(kDown & KEY_UP)
         {
-            if (splash_mode)
-            {
-                selected_splash++;
-                if (selected_splash >= splash_count)
-                    selected_splash = 0;
-            } else {
-                selected_theme++;
-                if (selected_theme >= theme_count)
-                    selected_theme = 0;
-            }
+            change_selected(current_list, -1);
         }
-        else if (kDown & KEY_UP)
+        else if(kDown & KEY_DOWN) 
         {
-            if (splash_mode)
-            {
-                selected_splash--;
-                if (selected_splash < 0)
-                    selected_splash = splash_count - 1;
-            } else {
-                selected_theme--;
-                if (selected_theme < 0)
-                    selected_theme = theme_count - 1;
-            }
+            change_selected(current_list, 1);
         }
         // Quick moving
-        else if (kDown & KEY_LEFT) 
+        else if(kDown & KEY_LEFT) 
         {
-            if (splash_mode) 
-            {
-                selected_splash -= 4;
-                if (selected_splash < 0) selected_splash = 0;
-            } else {
-                selected_theme -= 4;
-                if (selected_theme < 0) selected_theme = 0;
-            }
+            change_selected(current_list, -ENTRIES_PER_SCREEN);
         }
-        else if (kDown & KEY_RIGHT)
+        else if(kDown & KEY_RIGHT)
         {
-            if (splash_mode) 
-            {
-                selected_splash += 4;
-                if (selected_splash >= splash_count) selected_splash = splash_count-1;
-            } else {
-                selected_theme += 4;
-                if (selected_theme >= theme_count) selected_theme = theme_count-1;
-            }
+            change_selected(current_list, ENTRIES_PER_SCREEN);
         }
+
         // Fast scroll using circle pad
-        else if (kHeld & KEY_CPAD_UP)
+        else if(kHeld & KEY_CPAD_UP)
         {
-            svcSleepThread(100000000);
-
-            if (splash_mode)
-            {
-                selected_splash--;
-                if (selected_splash < 0)
-                    selected_splash = splash_count - 1;
-            } else {
-                selected_theme--;
-                if (selected_theme < 0)
-                    selected_theme = theme_count - 1;
-            }
+            change_selected(current_list, -1);
         }
-        else if (kHeld & KEY_CPAD_DOWN)
+        else if(kHeld & KEY_CPAD_DOWN)
         {
-            svcSleepThread(100000000);
-            
-            if (splash_mode)
-            {
-                selected_splash++;
-                if (selected_splash >= splash_count)
-                    selected_splash = 0;
-            } else {
-                selected_theme++;
-                if (selected_theme >= theme_count)
-                    selected_theme = 0;
-            }
+            change_selected(current_list, 1);
         }
-        else if (kDown & KEY_CPAD_LEFT) 
+        else if(kDown & KEY_CPAD_LEFT) 
         {
-            svcSleepThread(100000000);
-
-            if (splash_mode) 
-            {
-                selected_splash -= 4;
-                if (selected_splash < 0) selected_splash = 0;
-            } else {
-                selected_theme -= 4;
-                if (selected_theme < 0) selected_theme = 0;
-            }
+            change_selected(current_list, -ENTRIES_PER_SCREEN);
         }
-        else if (kDown & KEY_CPAD_RIGHT)
+        else if(kDown & KEY_CPAD_RIGHT)
         {
-            svcSleepThread(100000000);
-            
-            if (splash_mode) 
-            {
-                selected_splash += 4;
-                if (selected_splash >= splash_count) selected_splash = splash_count-1;
-            } else {
-                selected_theme += 4;
-                if (selected_theme >= theme_count) selected_theme = theme_count-1;
-            }
-        }
-        
-        if (!splash_mode && selected_theme != previously_selected)
-        {
-            current_theme->has_preview = false;
-            previously_selected = selected_theme;
+            change_selected(current_list, ENTRIES_PER_SCREEN);
         }
     }
-    exit_screens();
-    exit_services();
+
+    exit_function();
 
     return 0;
 }

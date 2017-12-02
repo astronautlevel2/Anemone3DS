@@ -27,14 +27,16 @@
 #include "camera.h"
 
 #include "quirc/quirc.h"
-#include "draw.h"
-#include "fs.h"
-#include "themes.h"
 #include "pp2d/pp2d/pp2d.h"
 
-u32 transfer_size;
-Handle event;
-struct quirc* context;
+#include "draw.h"
+#include "fs.h"
+#include "loading.h"
+
+static u32 transfer_size;
+static Handle event;
+static struct quirc* context;
+static u16 * camera_buf = NULL;
 
 void init_qr(void)
 {
@@ -69,10 +71,14 @@ void exit_qr(void)
     CAMU_Activate(SELECT_NONE);
     camExit();
     quirc_destroy(context);
+    free(camera_buf);
+    camera_buf = NULL;
 }
 
-void scan_qr(u16 *buf)
+bool scan_qr(EntryMode current_mode)
 {
+    if(camera_buf == NULL) return false;
+
     int w;
     int h;
 
@@ -82,7 +88,7 @@ void scan_qr(u16 *buf)
     {
         for (ssize_t y = 0; y < h; y++)
         {
-            u16 px = buf[y * 400 + x];
+            u16 px = camera_buf[y * 400 + x];
             image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
     }
@@ -96,59 +102,49 @@ void scan_qr(u16 *buf)
         quirc_extract(context, 0, &code);
         if (!quirc_decode(&code, &data))
         {
-            qr_mode = false;
-
-            http_get((char*)data.payload, splash_mode ? "/Splashes/" : "/Themes/");
+            http_get((char*)data.payload, main_paths[current_mode]);
+            exit_qr();
+            return true;
         }
     }
+
+    return false;
 }
 
 void take_picture(void)
 {
-    u16 *buf = malloc(sizeof(u16) * 400 * 240 * 4);
-    if (buf == NULL) return;
-    CAMU_SetReceiving(&event, buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
+    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
+    free(camera_buf);
+
+    camera_buf = malloc(sizeof(u16) * 400 * 240 * 4);
+    if (camera_buf == NULL) return;
+
+    CAMU_SetReceiving(&event, camera_buf, PORT_CAM1, 240 * 400 * 2, transfer_size);
     svcWaitSynchronization(event, U64_MAX);
     svcCloseHandle(event);
-    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
+
     u32 *rgba8_buf = malloc(240 * 400 * sizeof(u32));
     if (rgba8_buf == NULL) return;
     for (int i = 0; i < 240 * 400; i++)
     {
-        rgba8_buf[i] = RGB565_TO_ABGR8(buf[i]);
+        rgba8_buf[i] = RGB565_TO_ABGR8(camera_buf[i]);
     }
+    pp2d_free_texture(TEXTURE_QR);
     pp2d_load_texture_memory(TEXTURE_QR, rgba8_buf, 400, 240);
+    free(rgba8_buf);
+
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
     pp2d_draw_rectangle(0, 216, 400, 24, RGBA8(55, 122, 168, 255));
     pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
     pp2d_draw_rectangle(0, 0, 400, 24, RGBA8(55, 122, 168, 255));
     pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE004 To Scan");
-    pp2d_end_draw();
-    free(rgba8_buf);
-    pp2d_free_texture(TEXTURE_QR);
-    hidScanInput();
-    u32 kDown = hidKeysDown();
-    if (kDown & KEY_L)
-    {
-        CAMU_StopCapture(PORT_BOTH);
-        CAMU_Activate(SELECT_NONE);
-        scan_qr(buf);
-        CAMU_Activate(SELECT_OUT1_OUT2);
-        CAMU_StartCapture(PORT_BOTH);
-    }
-    if (kDown & KEY_R)
-    {
-        exit_qr();
-        qr_mode = false;
-    }
-    free(buf);
 }
 
 /*
 Putting this in camera because I'm too lazy to make a network.c
 This'll probably get refactored later
 */
-Result http_get(char *url, char *path)
+Result http_get(char *url, const char *path)
 {
     Result ret;
     httpcContext context;
@@ -164,9 +160,10 @@ Result http_get(char *url, char *path)
         ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
         ret = httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
         ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-        ret = httpcAddRequestHeaderField(&context, "User-Agent", "Anemone3DS/1.1.0");
+        ret = httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
         ret = httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-		draw_theme_install(DOWNLOADING);
+        draw_install(INSTALL_DOWNLOAD);
+
         ret = httpcBeginRequest(&context);
         if (ret != 0)
         {
@@ -234,9 +231,7 @@ Result http_get(char *url, char *path)
         free(content_disposition);
         free(new_url);
         free(buf);
-        char error[29] = {0};
-        sprintf(error, "Target is not a valid %s", splash_mode ? "splash" : "theme");
-        throw_error(error, WARNING);
+        throw_error("Target is not valid!", ERROR_LEVEL_WARNING);
         return -1;
     }
     for (size_t i = 0; i < strlen(filename); i++)
@@ -283,13 +278,12 @@ Result http_get(char *url, char *path)
     char path_to_file[0x106] = {0};
     strcpy(path_to_file, path);
     strcat(path_to_file, filename);
+    char * extension = strrchr(path_to_file, '.');
+    if (extension == NULL || strcmp(extension, ".zip"))
+        strcat(path_to_file, ".zip");
+
     remake_file(path_to_file, ArchiveSD, size);
     buf_to_file(size, path_to_file, ArchiveSD, (char*)buf);
-
-    if (splash_mode) get_splashes(&splashes_list, &splash_count);
-    else get_themes(&themes_list, &theme_count);
-
-    exit_qr();
 
     free(content_disposition);
     free(new_url);

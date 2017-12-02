@@ -33,25 +33,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define THEMES_PATH 	"/Themes/"
-#define SPLASHES_PATH	"/Splashes/"
+#define ENTRIES_PER_SCREEN 4
 
-#define SINGLE_INSTALL 	0
-#define SHUFFLE_INSTALL 1
-#define BGM_INSTALL		2
-#define UNINSTALL		3
-#define DOWNLOADING     3
+#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
+#define POS() DEBUG("%s (line %d)...\n", __func__, __LINE__)
 
-#define ERROR	        0
-#define WARNING         1
-static const int THEMES_PER_SCREEN = 4;
+#define DEBUGPOS(...) \
+        POS(); \
+        DEBUG(__VA_ARGS__)
 
-bool homebrew;
-bool splash_mode;
-int shuffle_theme_count;
+typedef enum {
+    MODE_THEMES = 0,
+    MODE_SPLASHES,
+
+    MODE_AMOUNT,
+} EntryMode;
+
+extern const char * main_paths[MODE_AMOUNT];
 
 enum TextureID {
-    TEXTURE_FONT_RESERVED = 0, //used by pp2d for the font
+    TEXTURE_FONT_RESERVED = 0, // used by pp2d for the font
     TEXTURE_ARROW,
     TEXTURE_SHUFFLE,
     TEXTURE_BATTERY_1,
@@ -62,6 +63,10 @@ enum TextureID {
     TEXTURE_BATTERY_CHARGE,
     TEXTURE_QR,
     TEXTURE_PREVIEW,
+
+    TEXTURE_ICON, // always the last
 };
+
+void exit_function(void);
 
 #endif

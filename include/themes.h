@@ -28,33 +28,12 @@
 #define THEMES_H
 
 #include "common.h"
+#include "loading.h"
 
-typedef struct {
-    u16 name[0x41];
-    u16 desc[0x81];
-    u16 author[0x41];
-    
-    u32 placeholder_color;
-    ssize_t icon_id;
-    
-    bool has_preview;
-    int preview_offset;
-    
-    u16 path[0x106];
-    bool is_zip;
-    
-    bool in_shuffle;
-} Theme_s;
+void delete_theme(Entry_s theme);
+Result theme_install(Entry_s theme);
 
-Theme_s * themes_list;
-int theme_count;
-
-void load_theme_preview(Theme_s *theme);
-Result get_themes(Theme_s **themes_list, int *theme_count);
-int themecmp(const void* a, const void* b);
-void del_theme(u16 *path);
-Result single_install(Theme_s theme);
-Result shuffle_install(Theme_s *themes_list, int theme_count);
-Result bgm_install(Theme_s bgm_to_install);
+Result shuffle_install(Entry_s* themes_list, int themes_count);
+Result bgm_install(Entry_s bgm_to_install);
 
 #endif

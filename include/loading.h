@@ -23,37 +23,38 @@
 *         or requiring that modified versions of such material be marked in
 *         reasonable ways as different from the original version.
 */
-#include "splashes.h"
-#include "unicode.h"
-#include "fs.h"
-#include "draw.h"
 
-void splash_delete(void) 
-{
-    remove("/luma/splash.bin");
-    remove("/luma/splashbottom.bin");
-}
+#ifndef LOADING_H
+#define LOADING_H
 
-void splash_install(Entry_s splash)
-{
-    char *screen_buf = NULL;
+#include "common.h"
 
-    u32 size = load_data("/splash.bin", splash, &screen_buf);
-    remake_file("/luma/splash.bin", ArchiveSD, size);
-    buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
+typedef struct {
+    u16 name[0x41];
+    u16 desc[0x81];
+    u16 author[0x41];
 
-    size = load_data("/splashbottom.bin", splash, &screen_buf);
-    remake_file("/luma/splashbottom.bin", ArchiveSD, size);
-    buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
+    u32 placeholder_color;
+    ssize_t icon_id;
 
-    char *config_buf;
-    size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/config.bin"), ArchiveSD, &config_buf);
-    if(size)
-    {
-        if(config_buf[0xC] == 0)
-        {
-            free(config_buf);
-            throw_error("WARNING: Splashes are disabled in Luma Config", ERROR_LEVEL_WARNING);
-        }
-    }
-}
+    u16 path[0x106];
+    bool is_zip;
+
+    bool in_shuffle;
+} Entry_s;
+
+typedef struct {
+    Entry_s * entries;
+    int entries_count;
+
+    int scroll;
+    int selected_entry;
+
+    int shuffle_count;
+} Entry_List_s;
+
+Result load_entries(const char * loading_path, Entry_List_s * list);
+bool load_preview(Entry_List_s list, int * preview_offset);
+u32 load_data(char * filename, Entry_s entry, char ** buf);
+
+#endif

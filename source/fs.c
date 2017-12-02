@@ -99,11 +99,11 @@ Result close_archives(void)
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveSD))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveHomeExt))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveThemeExt))) return res;
-    
+
     return 0;
 }
  
-u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
+u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 {
     Handle file;
     Result res = 0;
@@ -114,7 +114,7 @@ u64 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
     *buf = calloc(1, size);
     FSFILE_Read(file, NULL, 0, *buf, size);
     FSFILE_Close(file);
-    return size;
+    return (u32)size;
 }
 
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)

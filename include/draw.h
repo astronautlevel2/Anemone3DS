@@ -27,18 +27,49 @@
 #ifndef DRAW_H
 #define DRAW_H
 
-#include "themes.h"
-#include "splashes.h"
-#include "camera.h"
+#include "common.h"
+#include "loading.h"
+
+typedef enum {
+    INSTALL_SPLASH,
+    INSTALL_SPLASH_DELETE,
+
+    INSTALL_SINGLE,
+    INSTALL_SHUFFLE,
+    INSTALL_BGM,
+
+    INSTALL_DOWNLOAD,
+} InstallType;
+
+typedef enum {
+    ERROR_LEVEL_ERROR,
+    ERROR_LEVEL_WARNING,
+} ErrorLevel;
+
+#define BUTTONS_START_Y 140
+#define BUTTONS_STEP 25
+
+enum {
+    BUTTONS_Y_PREVIEW = BUTTONS_START_Y+5,
+
+    BUTTONS_Y_LINE_1 = BUTTONS_START_Y + BUTTONS_STEP*1,
+    BUTTONS_Y_LINE_2 = BUTTONS_START_Y + BUTTONS_STEP*2,
+    BUTTONS_Y_LINE_3 = BUTTONS_START_Y + BUTTONS_STEP*3,
+
+    BUTTONS_X_LEFT = 20,
+    BUTTONS_X_RIGHT = 200,
+} ButtonPos;
 
 void init_screens(void);
 void exit_screens(void);
 
 void draw_themext_error(void);
-void draw_base_interface(void);
-void draw_theme_install(int install_type);
-void draw_theme_interface(Theme_s * themes_list, int theme_count, int selected_theme, bool preview_mode, int shuffle_theme_count);
-void draw_splash_install(int install_type);
-void draw_splash_interface(Splash_s *splashes_list, int splash_count, int selected_splash, bool preview_mode);
-void throw_error(char* error, int error_type);
+void throw_error(char* error, ErrorLevel level);
+
+void draw_preview(int preview_offset);
+
+void draw_install(InstallType type);
+
+void draw_interface(Entry_List_s* list, EntryMode current_mode);
+
 #endif
