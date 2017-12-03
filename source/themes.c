@@ -75,13 +75,13 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
         for(int i = 0; i < themes.entries_count; i++)
         {
-            Entry_s current_theme = themes.entries[i];
+            Entry_s * current_theme = &themes.entries[i];
 
-            if(current_theme.in_shuffle)
+            if(current_theme->in_shuffle)
             {
                 if(installmode & THEME_INSTALL_BODY)
                 {
-                    body_size = load_data("/body_LZ.bin", current_theme, &body);
+                    body_size = load_data("/body_LZ.bin", *current_theme, &body);
                     if(body_size == 0)
                     {
                         free(body);
@@ -98,7 +98,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 {
                     char bgm_cache_path[26] = {0};
                     sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", shuffle_count);
-                    music_size = load_data("/bgm.bcstm", current_theme, &music);
+                    music_size = load_data("/bgm.bcstm", *current_theme, &music);
 
                     if(music_size > BGM_MAX_SIZE)
                     {
@@ -113,6 +113,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     free(music);
                 }
 
+                current_theme->in_shuffle = false;
                 shuffle_count++;
             }
         }
