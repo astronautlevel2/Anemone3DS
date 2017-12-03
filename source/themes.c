@@ -146,7 +146,6 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
             }
 
-            remake_file("/BodyCache.bin", ArchiveThemeExt, BODY_CACHE_SIZE);
             res = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
             free(body);
 
@@ -164,7 +163,6 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
             }
 
-            remake_file("/BgmCache.bin", ArchiveThemeExt, BGM_MAX_SIZE);
             res = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
             free(music);
             if(R_FAILED(res)) return res;
