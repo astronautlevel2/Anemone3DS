@@ -32,6 +32,7 @@
 
 void delete_theme(Entry_s theme);
 Result theme_install(Entry_s theme);
+Result no_bgm_install(Entry_s theme);
 
 Result shuffle_install(Entry_s* themes_list, int themes_count);
 Result bgm_install(Entry_s bgm_to_install);

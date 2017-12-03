@@ -194,6 +194,70 @@ Result theme_install(Entry_s theme)
     return 0;
 }
 
+Result no_bgm_install(Entry_s theme)
+{
+    char *body = NULL;
+    char *savedata_buf = NULL;
+    char *thememanage_buf = NULL;
+    u32 body_size = 0;
+    u32 savedata_size = 0;
+
+    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    DEBUGPOS("savedata: %p, %lx\n", savedata_buf, savedata_size);
+    savedata_buf[0x141b] = 0;
+    memset(&savedata_buf[0x13b8], 0, 8);
+    savedata_buf[0x13bd] = 3;
+    savedata_buf[0x13b8] = 0xff;
+    Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
+    free(savedata_buf);
+
+    if(R_FAILED(result)) return result;
+
+    // Open body cache file.
+    body_size = load_data("/body_LZ.bin", theme, &body);
+
+    if(body_size == 0)
+    {
+        free(body);
+        DEBUGPOS("bodyrip");
+        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
+    }
+
+    result = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
+    free(body);
+
+    if(R_FAILED(result)) return result;
+
+    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
+    thememanage_buf[0x00] = 1;
+    thememanage_buf[0x01] = 0;
+    thememanage_buf[0x02] = 0;
+    thememanage_buf[0x03] = 0;
+    thememanage_buf[0x04] = 0;
+    thememanage_buf[0x05] = 0;
+    thememanage_buf[0x06] = 0;
+    thememanage_buf[0x07] = 0;
+
+    u32 *body_size_location = (u32*)(&thememanage_buf[0x8]);
+    *body_size_location = body_size;
+
+    thememanage_buf[0x10] = 0xFF;
+    thememanage_buf[0x14] = 0x01;
+    thememanage_buf[0x18] = 0xFF;
+    thememanage_buf[0x1D] = 0x02;
+
+    memset(&thememanage_buf[0x338], 0, 4);
+    memset(&thememanage_buf[0x340], 0, 4);
+    memset(&thememanage_buf[0x360], 0, 4);
+    memset(&thememanage_buf[0x368], 0, 4);
+    result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
+    free(thememanage_buf);
+
+    if(R_FAILED(result)) return result;
+
+    return 0;
+}
+
 Result shuffle_install(Entry_s* themes_list, int themes_count)
 {
     u8 count = 0;
