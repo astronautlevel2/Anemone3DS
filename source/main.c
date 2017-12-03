@@ -245,7 +245,7 @@ int main(void)
                     if(current_list->shuffle_count > 0)
                     {
                         draw_install(INSTALL_SHUFFLE);
-                        shuffle_install(current_list->entries, current_list->entries_count);
+                        shuffle_install(*current_list);
                         current_list->shuffle_count = 0;
                     }
                     else
