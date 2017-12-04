@@ -90,7 +90,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     }
 
                     shuffle_body_sizes[shuffle_count] = body_size;
-                    FSFILE_Write(body_cache_handle, NULL, MAX_SHUFFLE_THEMES * shuffle_count, body, body_size, FS_WRITE_FLUSH);
+                    FSFILE_Write(body_cache_handle, NULL, BODY_CACHE_SIZE * shuffle_count, body, body_size, FS_WRITE_FLUSH);
                     free(body);
                 }
 
