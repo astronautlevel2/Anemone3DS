@@ -63,6 +63,7 @@ enum TextureID {
     TEXTURE_BATTERY_CHARGE,
     TEXTURE_QR,
     TEXTURE_PREVIEW,
+    TEXTURE_SELECT_BUTTON, //Add the new select texture
 
     TEXTURE_ICON, // always the last
 };
