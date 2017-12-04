@@ -30,13 +30,13 @@
 #include "common.h"
 
 typedef struct {
-    u8 blah1[4 + 2 + 2];
+    u8 _padding1[4 + 2 + 2];
 
     u16 name[0x40];
     u16 desc[0x80];
     u16 author[0x40];
 
-    u8 blah2[0x2000 - 0x200 + 0x30 + 0x8];
+    u8 _padding2[0x2000 - 0x200 + 0x30 + 0x8];
     u16 small_icon[24*24];
 
     u16 big_icon[48*48];
