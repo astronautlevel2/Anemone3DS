@@ -69,6 +69,9 @@ void exit_services(void)
 
 void exit_function(void)
 {
+    exit_screens();
+    exit_services();
+
     if(homebrew)
     {
         APT_HardwareResetAsync();
@@ -77,9 +80,6 @@ void exit_function(void)
     {
         srvPublishToSubscriber(0x202, 0);
     }
-
-    exit_screens();
-    exit_services();
 }
 
 void change_selected(Entry_List_s * list, int change_value)
