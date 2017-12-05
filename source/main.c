@@ -245,8 +245,9 @@ int main(void)
                     if(current_list->shuffle_count > 0)
                     {
                         draw_install(INSTALL_SHUFFLE);
-                        shuffle_install(current_list->entries, current_list->entries_count);
-                        current_list->shuffle_count = 0;
+                        Result res = shuffle_install(*current_list);
+                        if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
+                        else current_list->shuffle_count = 0;
                     }
                     else
                     {

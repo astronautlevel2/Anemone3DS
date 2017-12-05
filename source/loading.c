@@ -51,6 +51,7 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
 
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", *entry, &info_buffer);
+    Icon_s * smdh = (Icon_s *)info_buffer;
 
     if(!size)
     {
@@ -62,13 +63,9 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
         return;
     }
 
-    memcpy(entry->name, info_buffer + 0x08, 0x80);
-    memcpy(entry->desc, info_buffer + 0x88, 0x100);
-    memcpy(entry->author, info_buffer + 0x188, 0x80);
-
-    u16 *icon_data = malloc(0x1200);
-    memcpy(icon_data, info_buffer + 0x24C0, 0x1200);
-    free(info_buffer);
+    memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
+    memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
+    memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
 
     const u32 width = 48, height = 48;
     u32 *image = malloc(width*height*sizeof(u32));
@@ -80,11 +77,11 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
             unsigned int dest_pixel = (x + y*width);
             unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
 
-            image[dest_pixel] = RGB565_TO_ABGR8(icon_data[source_pixel]);
+            image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
         }
     }
 
-    free(icon_data);
+    free(info_buffer);
     pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
     free(image);
 

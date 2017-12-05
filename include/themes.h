@@ -30,11 +30,51 @@
 #include "common.h"
 #include "loading.h"
 
+#define MAX_SHUFFLE_THEMES 10
+
+enum ThemeInstall {
+    THEME_INSTALL_SHUFFLE = BIT(0),
+    THEME_INSTALL_BODY = BIT(1),
+    THEME_INSTALL_BGM = BIT(2),
+};
+
+typedef struct {
+    u32 index;
+    u8 dlc_tid_low_bits;
+    u8 type;
+    u16 unk;
+} ThemeEntry_s;
+
+typedef struct {
+    u8 _padding1[0x13b8];
+    ThemeEntry_s theme_entry;
+    ThemeEntry_s shuffle_themes[MAX_SHUFFLE_THEMES];
+    u8 _padding2[0xb];
+    bool shuffle;
+} SaveData_dat_s;
+
+typedef struct {
+    u32 unk1;
+    u32 unk2;
+    u32 body_size;
+    u32 music_size;
+    u32 unk3;
+    u32 unk4;
+    u32 dlc_theme_content_index;
+    u32 use_theme_cache;
+
+    u8 _padding1[0x338 - 8*sizeof(u32)];
+
+    u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES];
+    u32 shuffle_music_sizes[MAX_SHUFFLE_THEMES];
+} ThemeManage_bin_s;
+
 void delete_theme(Entry_s theme);
+
 Result theme_install(Entry_s theme);
 Result no_bgm_install(Entry_s theme);
+Result bgm_install(Entry_s theme);
 
-Result shuffle_install(Entry_s* themes_list, int themes_count);
-Result bgm_install(Entry_s bgm_to_install);
+Result shuffle_install(Entry_List_s themes);
 
 #endif

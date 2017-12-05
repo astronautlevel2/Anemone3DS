@@ -29,7 +29,8 @@
 #include "fs.h"
 #include "draw.h"
 
-#define BGM_MAX_SIZE 3371008
+#define BODY_CACHE_SIZE 0x150000
+#define BGM_MAX_SIZE 0x337000
 
 void delete_theme(Entry_s theme)
 {
@@ -45,344 +46,223 @@ void delete_theme(Entry_s theme)
     }
 }
 
-Result bgm_install(Entry_s bgm_to_install)
+static Result install_theme_internal(Entry_List_s themes, int installmode)
 {
-    char *savedata_buf;
-    char *thememanage_buf;
-    char *music;
+    Result res = 0;
+    char* music = NULL;
     u32 music_size = 0;
-    u32 savedata_size;
+    u32 shuffle_music_sizes[MAX_SHUFFLE_THEMES] = {0};
+    char* body = NULL;
+    u32 body_size = 0;
+    u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES] = {0};
 
-    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
-    savedata_buf[0x141b] = 0;
-    memset(&savedata_buf[0x13b8], 0, 8);
-    savedata_buf[0x13bd] = 3;
-    savedata_buf[0x13b8] = 0xff;
-    Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
-    free(savedata_buf);
-
-    if(R_FAILED(result)) return result;
-
-    music_size = load_data("/bgm.bcstm", bgm_to_install, &music);
-
-    if(music_size == 0)
+    if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        music = calloc(1, BGM_MAX_SIZE);
-    } else if(music_size > BGM_MAX_SIZE) {
-        free(music);
-        puts("musicrip");
-        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+        if(themes.shuffle_count > MAX_SHUFFLE_THEMES)
+        {
+            DEBUG("too many themes selected for shuffle\n");
+            return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
+        }
+
+        int shuffle_count = 0;
+        Handle body_cache_handle;
+
+        if(installmode & THEME_INSTALL_BODY)
+        {
+            remake_file("/BodyCache_rd.bin", ArchiveThemeExt, BODY_CACHE_SIZE * MAX_SHUFFLE_THEMES);
+            FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
+        }
+
+        for(int i = 0; i < themes.entries_count; i++)
+        {
+            Entry_s * current_theme = &themes.entries[i];
+
+            if(current_theme->in_shuffle)
+            {
+                if(installmode & THEME_INSTALL_BODY)
+                {
+                    body_size = load_data("/body_LZ.bin", *current_theme, &body);
+                    if(body_size == 0)
+                    {
+                        free(body);
+                        DEBUG("body not found\n");
+                        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
+                    }
+
+                    shuffle_body_sizes[shuffle_count] = body_size;
+                    FSFILE_Write(body_cache_handle, NULL, BODY_CACHE_SIZE * shuffle_count, body, body_size, FS_WRITE_FLUSH);
+                    free(body);
+                }
+
+                if(installmode & THEME_INSTALL_BGM)
+                {
+                    char bgm_cache_path[26] = {0};
+                    sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", shuffle_count);
+                    music_size = load_data("/bgm.bcstm", *current_theme, &music);
+
+                    if(music_size > BGM_MAX_SIZE)
+                    {
+                        free(music);
+                        DEBUG("bgm too big\n");
+                        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+                    }
+
+                    shuffle_music_sizes[shuffle_count] = music_size;
+                    remake_file(bgm_cache_path, ArchiveThemeExt, BGM_MAX_SIZE);
+                    buf_to_file(music_size, bgm_cache_path, ArchiveThemeExt, music);
+                    free(music);
+                }
+
+                current_theme->in_shuffle = false;
+                shuffle_count++;
+            }
+        }
+
+        if(installmode & THEME_INSTALL_BGM)
+        {
+            for(int i = shuffle_count; i < MAX_SHUFFLE_THEMES; i++)
+            {
+                char bgm_cache_path[26] = {0};
+                sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", i);
+                remake_file(bgm_cache_path, ArchiveThemeExt, BGM_MAX_SIZE);
+            }
+        }
+
+        if(installmode & THEME_INSTALL_BODY)
+        {
+            FSFILE_Close(body_cache_handle);
+        }
+    }
+    else
+    {
+        Entry_s current_theme = themes.entries[themes.selected_entry];
+
+        if(installmode & THEME_INSTALL_BODY)
+        {
+            body_size = load_data("/body_LZ.bin", current_theme, &body);
+            if(body_size == 0)
+            {
+                free(body);
+                DEBUG("body not found\n");
+                return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
+            }
+
+            res = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
+            free(body);
+
+            if(R_FAILED(res)) return res;
+        }
+
+        if(installmode & THEME_INSTALL_BGM)
+        {
+            music_size = load_data("/bgm.bcstm", current_theme, &music);
+
+            if(music_size > BGM_MAX_SIZE)
+            {
+                free(music);
+                DEBUG("bgm too big\n");
+                return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+            }
+
+            res = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+            free(music);
+            if(R_FAILED(res)) return res;
+        }
     }
 
-    result = buf_to_file(music_size == 0 ? BGM_MAX_SIZE : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
-    free(music);
-
-    if(R_FAILED(result)) return result;
-
+     //----------------------------------------
+    char* thememanage_buf = NULL;
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
-    thememanage_buf[0x00] = 1;
-    thememanage_buf[0x01] = 0;
-    thememanage_buf[0x02] = 0;
-    thememanage_buf[0x03] = 0;
-    thememanage_buf[0x04] = 0;
-    thememanage_buf[0x05] = 0;
-    thememanage_buf[0x06] = 0;
-    thememanage_buf[0x07] = 0;
+    ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
 
-    u32 *music_size_location = (u32*)(&thememanage_buf[0xC]);
-    *music_size_location = music_size;
+    theme_manage->unk1 = 1;
+    theme_manage->unk2 = 0;
 
-    thememanage_buf[0x10] = 0xFF;
-    thememanage_buf[0x14] = 0x01;
-    thememanage_buf[0x18] = 0xFF;
-    thememanage_buf[0x1D] = 0x02;
+    if(installmode & THEME_INSTALL_SHUFFLE)
+    {
+        theme_manage->music_size = 0;
+        theme_manage->body_size = 0;
 
-    memset(&thememanage_buf[0x338], 0, 4);
-    memset(&thememanage_buf[0x340], 0, 4);
-    memset(&thememanage_buf[0x360], 0, 4);
-    memset(&thememanage_buf[0x368], 0, 4);
-    result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
+        for(int i = 0; i < MAX_SHUFFLE_THEMES; i++)
+        {
+            theme_manage->shuffle_body_sizes[i] = shuffle_body_sizes[i];
+            theme_manage->shuffle_music_sizes[i] = shuffle_music_sizes[i];
+        }
+    }
+    else
+    {
+        if(installmode & THEME_INSTALL_BGM)
+            theme_manage->music_size = music_size;
+        if(installmode & THEME_INSTALL_BODY)
+            theme_manage->body_size = body_size;
+    }
+
+    theme_manage->unk3 = 0xFF;
+    theme_manage->unk4 = 1;
+    theme_manage->dlc_theme_content_index = 0xFF;
+    theme_manage->use_theme_cache = 0x0200;
+
+    res = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
+    if(R_FAILED(res)) return res;
+    //----------------------------------------
 
-    if(R_FAILED(result)) return result;
+    //----------------------------------------
+    char* savedata_buf = NULL;
+    u32 savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    SaveData_dat_s* savedata = (SaveData_dat_s*)savedata_buf;
+
+    memset(&savedata->theme_entry, 0, sizeof(ThemeEntry_s));
+    savedata->theme_entry.type = 3;
+    savedata->theme_entry.index = 0xff;
+
+    savedata->shuffle = (installmode & THEME_INSTALL_SHUFFLE);
+    if(installmode & THEME_INSTALL_SHUFFLE)
+    {
+        memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s)*MAX_SHUFFLE_THEMES);
+        for(int i = 0; i < themes.shuffle_count; i++)
+        {
+            savedata->shuffle_themes[i].type = 3;
+            savedata->shuffle_themes[i].index = i;
+        }
+    }
+
+    res = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
+    free(savedata_buf);
+    if(R_FAILED(res)) return res;
+    //----------------------------------------
 
     return 0;
 }
 
-// Install a single theme
 Result theme_install(Entry_s theme)
 {
-    char *body = NULL;
-    char *music = NULL;
-    char *savedata_buf = NULL;
-    char *thememanage_buf = NULL;
-    u32 body_size = 0;
-    u32 music_size = 0;
-    u32 savedata_size = 0;
+    Entry_List_s list = {0};
+    list.entries_count = 1;
+    list.entries = &theme;
+    list.selected_entry = 0;
+    return install_theme_internal(list, THEME_INSTALL_BODY | THEME_INSTALL_BGM);
+}
 
-    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
-    DEBUGPOS("savedata: %p, %lx\n", savedata_buf, savedata_size);
-    savedata_buf[0x141b] = 0;
-    memset(&savedata_buf[0x13b8], 0, 8);
-    savedata_buf[0x13bd] = 3;
-    savedata_buf[0x13b8] = 0xff;
-    Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
-    free(savedata_buf);
-
-    if(R_FAILED(result)) return result;
-
-    // Open body cache file.
-    body_size = load_data("/body_LZ.bin", theme, &body);
-
-    if(body_size == 0)
-    {
-        free(body);
-        DEBUGPOS("bodyrip");
-        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
-    }
-
-    result = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
-    free(body);
-
-    if(R_FAILED(result)) return result;
-
-    music_size = load_data("/bgm.bcstm", theme, &music);
-
-    if(music_size == 0)
-    {
-        music = calloc(1, BGM_MAX_SIZE);
-    } else if(music_size > BGM_MAX_SIZE) {
-        free(music);
-        DEBUGPOS("musicrip");
-        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
-    }
-
-    result = buf_to_file(music_size == 0 ? BGM_MAX_SIZE : music_size, "/BgmCache.bin", ArchiveThemeExt, music);
-    free(music);
-
-    if(R_FAILED(result)) return result;
-
-    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
-    thememanage_buf[0x00] = 1;
-    thememanage_buf[0x01] = 0;
-    thememanage_buf[0x02] = 0;
-    thememanage_buf[0x03] = 0;
-    thememanage_buf[0x04] = 0;
-    thememanage_buf[0x05] = 0;
-    thememanage_buf[0x06] = 0;
-    thememanage_buf[0x07] = 0;
-
-    u32 *body_size_location = (u32*)(&thememanage_buf[0x8]);
-    u32 *music_size_location = (u32*)(&thememanage_buf[0xC]);
-    *body_size_location = body_size;
-    *music_size_location = music_size;
-
-    thememanage_buf[0x10] = 0xFF;
-    thememanage_buf[0x14] = 0x01;
-    thememanage_buf[0x18] = 0xFF;
-    thememanage_buf[0x1D] = 0x02;
-
-    memset(&thememanage_buf[0x338], 0, 4);
-    memset(&thememanage_buf[0x340], 0, 4);
-    memset(&thememanage_buf[0x360], 0, 4);
-    memset(&thememanage_buf[0x368], 0, 4);
-    result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
-    free(thememanage_buf);
-
-    if(R_FAILED(result)) return result;
-
-    return 0;
+Result bgm_install(Entry_s theme)
+{
+    Entry_List_s list = {0};
+    list.entries_count = 1;
+    list.entries = &theme;
+    list.selected_entry = 0;
+    return install_theme_internal(list, THEME_INSTALL_BGM);
 }
 
 Result no_bgm_install(Entry_s theme)
 {
-    char *body = NULL;
-    char *savedata_buf = NULL;
-    char *thememanage_buf = NULL;
-    u32 body_size = 0;
-    u32 savedata_size = 0;
-
-    savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
-    DEBUGPOS("savedata: %p, %lx\n", savedata_buf, savedata_size);
-    savedata_buf[0x141b] = 0;
-    memset(&savedata_buf[0x13b8], 0, 8);
-    savedata_buf[0x13bd] = 3;
-    savedata_buf[0x13b8] = 0xff;
-    Result result = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
-    free(savedata_buf);
-
-    if(R_FAILED(result)) return result;
-
-    // Open body cache file.
-    body_size = load_data("/body_LZ.bin", theme, &body);
-
-    if(body_size == 0)
-    {
-        free(body);
-        DEBUGPOS("bodyrip");
-        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
-    }
-
-    result = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
-    free(body);
-
-    if(R_FAILED(result)) return result;
-
-    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
-    thememanage_buf[0x00] = 1;
-    thememanage_buf[0x01] = 0;
-    thememanage_buf[0x02] = 0;
-    thememanage_buf[0x03] = 0;
-    thememanage_buf[0x04] = 0;
-    thememanage_buf[0x05] = 0;
-    thememanage_buf[0x06] = 0;
-    thememanage_buf[0x07] = 0;
-
-    u32 *body_size_location = (u32*)(&thememanage_buf[0x8]);
-    *body_size_location = body_size;
-
-    thememanage_buf[0x10] = 0xFF;
-    thememanage_buf[0x14] = 0x01;
-    thememanage_buf[0x18] = 0xFF;
-    thememanage_buf[0x1D] = 0x02;
-
-    memset(&thememanage_buf[0x338], 0, 4);
-    memset(&thememanage_buf[0x340], 0, 4);
-    memset(&thememanage_buf[0x360], 0, 4);
-    memset(&thememanage_buf[0x368], 0, 4);
-    result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
-    free(thememanage_buf);
-
-    if(R_FAILED(result)) return result;
-
-    return 0;
+    Entry_List_s list = {0};
+    list.entries_count = 1;
+    list.entries = &theme;
+    list.selected_entry = 0;
+    return install_theme_internal(list, THEME_INSTALL_BODY);
 }
 
-Result shuffle_install(Entry_s* themes_list, int themes_count)
+Result shuffle_install(Entry_List_s themes)
 {
-    u8 count = 0;
-    Entry_s *shuffle_themes[10] = {0};
-    u32 body_sizes[10] = {0};
-    u32 bgm_sizes[10] = {0};
-    for (int i = 0; i < themes_count; i++)
-    {
-        if (count > 10) return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
-        if (themes_list[i].in_shuffle)
-        {
-            shuffle_themes[count++] = &themes_list[i];
-            themes_list[i].in_shuffle = false;
-        }
-    }
-    for (int i = 0; i < count; i++)
-    {
-        printu(shuffle_themes[i]->name);
-    }
-
-    char *savedata_buf;
-    u32 size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
-    if (size == 0)
-    {
-        return MAKERESULT(RL_USAGE, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
-    }
-
-    savedata_buf[0x141b] = 1;
-    memset(&savedata_buf[0x13b8], 0, 8);
-    savedata_buf[0x13bd] = 3;
-    savedata_buf[0x13b8] = 0xff;
-
-    for(int i = 0; i < 10; i++)
-    {
-        memset(&savedata_buf[0x13c0 + 0x8 * i], 0, 8); // clear any existing theme structure. 8 is the length of the theme structure, so 8 * i is the pos of the current one
-        if(count > i) // if we are still installing themes...
-        {
-            savedata_buf[0x13c0 + (8 * i)] = i; // index
-            savedata_buf[0x13c0 + (8 * i) + 5] = 3; // persistence (?)
-        }
-    }
-
-    Result result = buf_to_file(size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
-    free(savedata_buf);
-
-    if(R_FAILED(result)) return result;
-
-    remake_file("/BodyCache_rd.bin", ArchiveThemeExt, 0x150000 * 10); // Enough space for 10 theme files
-    Handle body_cache_handle;
-    FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
-    for(int i = 0; i < count; i++)
-    {
-        Entry_s * current_theme = shuffle_themes[i];
-        char * body_buf = NULL;
-        u32 body_size = load_data("/body_LZ.bin", *current_theme, &body_buf);
-
-        body_sizes[i] = body_size;
-        FSFILE_Write(body_cache_handle, NULL, 0x150000 * i, body_buf, body_size, FS_WRITE_FLUSH);
-        free(body_buf);
-    }
-
-    FSFILE_Close(body_cache_handle);
-
-    for(int i = 0; i < 10; i++)
-    {
-        char bgm_cache_path[17] = {0};
-        sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", i);
-        remake_file(bgm_cache_path, ArchiveThemeExt, BGM_MAX_SIZE);
-        if(count > i)
-        {
-            Entry_s * current_theme = shuffle_themes[i];
-            char *music_buf = NULL;
-            u32 music_size = music_size = load_data("/bgm.bcstm", *current_theme, &music_buf);
-
-            if(!music_size)
-            {
-                char *empty = calloc(1, BGM_MAX_SIZE);
-                buf_to_file(BGM_MAX_SIZE, bgm_cache_path, ArchiveThemeExt, empty);
-                bgm_sizes[i] = 0;
-                free(empty);
-                continue;
-            }
-            bgm_sizes[i] = music_size;
-            buf_to_file(music_size, bgm_cache_path, ArchiveThemeExt, music_buf);
-            free(music_buf);
-        } else {
-            char *empty = calloc(1, BGM_MAX_SIZE);
-            buf_to_file(BGM_MAX_SIZE, bgm_cache_path, ArchiveThemeExt, empty);
-            bgm_sizes[i] = 0;
-            free(empty);
-        }
-    }
-
-    char *thememanage_buf;
-    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
-    thememanage_buf[0x00] = 1; // Unknown, normally 0x1 with size of 4
-    thememanage_buf[0x01] = 0;
-    thememanage_buf[0x02] = 0;
-    thememanage_buf[0x03] = 0;
-    thememanage_buf[0x04] = 0; // Unknown, normally 0 with size of 4
-    thememanage_buf[0x05] = 0;
-    thememanage_buf[0x06] = 0;
-    thememanage_buf[0x07] = 0;
-    thememanage_buf[0x10] = 0xFF; // Unknown
-    thememanage_buf[0x14] = 0x01; // Unkown
-    thememanage_buf[0x18] = 0xFF; // DLC theme index - 0xFF indicates no DLC theme
-    thememanage_buf[0x1D] = 0x02; // Unknown, usually 0x200 to indicate theme-cache is being used
-
-    u32 *bodysizeloc = (u32*) (&thememanage_buf[0x08]); // Set non-shuffle theme sizes to 0
-    u32 *bgmsizeloc = (u32*) (&thememanage_buf[0x0C]);
-    *bodysizeloc = (u32) 0;
-    *bgmsizeloc = (u32) 0;
-
-    for(int i = 0; i < 10; i++)
-    {
-        bodysizeloc = (u32*) (&thememanage_buf[0x338 + (4 * i)]); // body size info for shuffle themes starts at 0x338 and is 4 bytes for each theme
-        bgmsizeloc = (u32*) (&thememanage_buf[0x360 + (4 * i)]); // same thing for bgm but starting at 0x360
-        *bodysizeloc = body_sizes[i]; // We don't need to check if we've already installed all the themes because all sizes initialized to 0
-        *bgmsizeloc = bgm_sizes[i];
-    }
-
-    result = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
-    free(thememanage_buf);
-
-    if(R_FAILED(result)) return result;
-
-    return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_COMMON, RD_SUCCESS);
+    return install_theme_internal(themes, THEME_INSTALL_SHUFFLE | THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
