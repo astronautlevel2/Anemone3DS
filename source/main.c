@@ -242,16 +242,20 @@ int main(void)
             switch(current_mode)
             {
                 case MODE_THEMES:
-                    if(current_list->shuffle_count > 0)
+                    if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
+                    {
+                        throw_error("You have too many Shuffle seleted.", ERROR_LEVEL_WARNING);
+                    }
+                    else if(current_list->shuffle_count == 0)
+                    {
+                        throw_error("You dont have any Shuffle selected.", ERROR_LEVEL_WARNING);
+                    }
+                    else
                     {
                         draw_install(INSTALL_SHUFFLE);
                         Result res = shuffle_install(*current_list);
                         if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
                         else current_list->shuffle_count = 0;
-                    }
-                    else
-                    {
-                        throw_error("You dont have any Shuffle selected.", ERROR_LEVEL_WARNING);
                     }
                     break;
                 default:
