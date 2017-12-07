@@ -28,6 +28,7 @@
 #include "pp2d/pp2d/pp2d.h"
 #include "fs.h"
 #include "unicode.h"
+#include "draw.h"
 
 u32 load_data(char * filename, Entry_s entry, char ** buf)
 {
@@ -153,10 +154,6 @@ bool load_preview(Entry_List_s list, int * preview_offset)
     Entry_s entry = list.entries[list.selected_entry];
 
     if(!memcmp(&previous_path, &entry.path, 0x106*sizeof(u16))) return true;
-    else memcpy(&previous_path, &entry.path, 0x106*sizeof(u16));
-
-    // free the previously loaded preview. wont do anything if there wasnt one
-    pp2d_free_texture(TEXTURE_PREVIEW);
 
     char *preview_buffer = NULL;
     u64 size = load_data("/preview.png", entry, &preview_buffer);
@@ -164,8 +161,13 @@ bool load_preview(Entry_List_s list, int * preview_offset)
     if(!size)
     {
         free(preview_buffer);
+        throw_error("No preview found.", ERROR_LEVEL_WARNING);
         return false;
     }
+
+    // free the previously loaded preview. wont do anything if there wasnt one
+    pp2d_free_texture(TEXTURE_PREVIEW);
+    memcpy(&previous_path, &entry.path, 0x106*sizeof(u16));
 
     bool ret = false;
     u8 * image = NULL;
