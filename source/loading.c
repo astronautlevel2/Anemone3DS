@@ -134,7 +134,8 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
 
-        ssize_t iconID = TEXTURE_ICON + list->entries_count;
+        ssize_t iconID = list->icon_id_start + list->entries_count - 1;
+        DEBUG("id: %u\n", iconID);
         parse_smdh(current_entry, iconID, dir_entry.name);
     }
 
