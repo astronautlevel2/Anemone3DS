@@ -77,7 +77,7 @@ static void draw_base_interface(void)
 
     u8 battery_charging = 0;
     PTMU_GetBatteryChargeState(&battery_charging);
-    u8 battery_status = 0;
+    u8 battery_status = 1;
     PTMU_GetBatteryLevel(&battery_status);
     pp2d_draw_texture(TEXTURE_BATTERY_1 + battery_status - 1, 357, 2);
 
@@ -140,7 +140,7 @@ void draw_install(InstallType type)
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
             break;
         case INSTALL_SHUFFLE:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a shuffle theme...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing shuffle themes...");
             break;
         case INSTALL_BGM:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM...");
@@ -152,7 +152,7 @@ void draw_install(InstallType type)
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a splash...");
             break;
         case INSTALL_SPLASH_DELETE:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Uninstalling a splash...");
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Deleting installed splash...");
             break;
         default:
             break;
