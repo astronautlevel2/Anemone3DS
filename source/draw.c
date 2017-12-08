@@ -56,6 +56,7 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_BATTERY_4, "romfs:/battery4.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_5, "romfs:/battery5.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_CHARGE, "romfs:/charging.png");
+    pp2d_load_texture_png(TEXTURE_SELECT_BUTTON, "romfs:/select.png"); //Load new select PNG
 }
 
 void exit_screens(void)
@@ -108,7 +109,7 @@ void throw_error(char* error, ErrorLevel level)
                 if(kDown & KEY_A) exit_function();
             }
             break;
-        case ERROR_LEVEL_WARNING:   
+        case ERROR_LEVEL_WARNING:
             while(aptMainLoop())
             {
                 hidScanInput();
@@ -134,7 +135,7 @@ void draw_preview(int preview_offset)
 void draw_install(InstallType type)
 {
     draw_base_interface();
-    switch(type) 
+    switch(type)
     {
         case INSTALL_SINGLE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
@@ -216,7 +217,8 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
             pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue Shuffle");
 
             pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE002 Install BGM");
-            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE046 Install Shuffle Themes");
+            pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT -38, BUTTONS_Y_LINE_3 + 3); //Draw select in place of old minus
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"Install Shuffle Themes");
             break;
         case MODE_SPLASHES:
             pp2d_draw_text_center(GFX_TOP, BUTTONS_Y_PREVIEW, 0.6, 0.6, COLOR_WHITE, "\uE003 Preview Splash");
@@ -291,4 +293,3 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
             pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, font_color);
     }
 }
-
