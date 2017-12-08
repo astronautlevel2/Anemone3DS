@@ -60,6 +60,8 @@ typedef struct {
     Entry_s * entries;
     int entries_count;
 
+    ssize_t icon_id_start;
+
     int scroll;
     int selected_entry;
 

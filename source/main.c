@@ -91,6 +91,34 @@ void change_selected(Entry_List_s * list, int change_value)
         list->selected_entry %= list->entries_count;
 }
 
+void load_lists(Entry_List_s * lists)
+{
+    DEBUG("origin: %u\n", TEXTURE_ICON);
+
+    ssize_t last_icon_id = TEXTURE_ICON;
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        Entry_List_s * current_list = &lists[i];
+        last_icon_id += current_list->entries_count;
+        free(current_list->entries);
+        memset(current_list, 0, sizeof(Entry_List_s));
+    }
+    pp2d_free_texture(last_icon_id);
+
+    DEBUG("max: %u\n", last_icon_id);
+
+    ssize_t icon_id_start = TEXTURE_ICON;
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        Entry_List_s * current_list = &lists[i];
+        current_list->icon_id_start = icon_id_start;
+        load_entries(main_paths[i], current_list);
+        icon_id_start += current_list->entries_count;
+    }
+
+    DEBUG("end: %u\n", icon_id_start);
+}
+
 int main(void)
 {
     srand(time(NULL));
@@ -98,9 +126,7 @@ int main(void)
     init_screens();
 
     Entry_List_s lists[MODE_AMOUNT] = {0};
-
-    for(int i = 0; i < MODE_AMOUNT; i++)
-        load_entries(main_paths[i], &lists[i]);
+    load_lists(lists);
 
     EntryMode current_mode = MODE_THEMES;
 
@@ -175,11 +201,7 @@ int main(void)
             CAMU_StartCapture(PORT_BOTH);
 
             if(!qr_mode)
-            {
-                free(current_list->entries);
-                memset(current_list, 0, sizeof(Entry_List_s));
-                load_entries(main_paths[current_mode], current_list);
-            }
+                load_lists(lists);
             continue;
         }
 
@@ -232,6 +254,7 @@ int main(void)
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH_DELETE);
                     splash_delete();
+                    break;
                 default:
                     break;
             }
