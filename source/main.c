@@ -33,6 +33,8 @@
 #include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
+#define FASTSCROLL_WAIT 1e8
+
 static bool homebrew = false;
 int __stacksize__ = 64 * 1024;
 Result archive_result;
@@ -309,18 +311,22 @@ int main(void)
         else if(kHeld & KEY_CPAD_UP)
         {
             change_selected(current_list, -1);
+            svcSleepThread(FASTSCROLL_WAIT);
         }
         else if(kHeld & KEY_CPAD_DOWN)
         {
             change_selected(current_list, 1);
+            svcSleepThread(FASTSCROLL_WAIT);
         }
-        else if(kDown & KEY_CPAD_LEFT) 
+        else if(kHeld & KEY_CPAD_LEFT)
         {
             change_selected(current_list, -ENTRIES_PER_SCREEN);
+            svcSleepThread(FASTSCROLL_WAIT);
         }
-        else if(kDown & KEY_CPAD_RIGHT)
+        else if(kHeld & KEY_CPAD_RIGHT)
         {
             change_selected(current_list, ENTRIES_PER_SCREEN);
+            svcSleepThread(FASTSCROLL_WAIT);
         }
     }
 
