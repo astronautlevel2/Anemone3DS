@@ -30,6 +30,14 @@
 #include "unicode.h"
 #include "draw.h"
 
+void delete_entry(Entry_s entry)
+{
+    if(entry.is_zip)
+        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_UTF16, entry.path));
+    else
+        FSUSER_DeleteDirectoryRecursively(ArchiveSD, fsMakePath(PATH_UTF16, entry.path));
+}
+
 u32 load_data(char * filename, Entry_s entry, char ** buf)
 {
     if(entry.is_zip)

@@ -68,6 +68,7 @@ typedef struct {
     int shuffle_count;
 } Entry_List_s;
 
+void delete_entry(Entry_s entry);
 Result load_entries(const char * loading_path, Entry_List_s * list);
 bool load_preview(Entry_List_s list, int * preview_offset);
 u32 load_data(char * filename, Entry_s entry, char ** buf);
