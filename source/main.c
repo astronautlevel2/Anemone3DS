@@ -239,11 +239,11 @@ int main(void)
                 {
                     if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
                     {
-                        throw_error("You have too many Shuffle selected.", ERROR_LEVEL_WARNING);
+                        throw_error("You have too many themes selected.", ERROR_LEVEL_WARNING);
                     }
                     else if(current_list->shuffle_count == 0)
                     {
-                        throw_error("You dont have any Shuffle selected.", ERROR_LEVEL_WARNING);
+                        throw_error("You dont have any themes selected.", ERROR_LEVEL_WARNING);
                     }
                     else
                     {
