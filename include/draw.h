@@ -37,8 +37,10 @@ typedef enum {
     INSTALL_SINGLE,
     INSTALL_SHUFFLE,
     INSTALL_BGM,
+    INSTALL_NO_BGM,
 
     INSTALL_DOWNLOAD,
+    INSTALL_ENTRY_DELETE,
 } InstallType;
 
 typedef enum {
@@ -46,15 +48,17 @@ typedef enum {
     ERROR_LEVEL_WARNING,
 } ErrorLevel;
 
-#define BUTTONS_START_Y 140
-#define BUTTONS_STEP 25
+#define BUTTONS_START_Y 130
+#define BUTTONS_STEP 22
 
 enum {
-    BUTTONS_Y_PREVIEW = BUTTONS_START_Y+5,
-
     BUTTONS_Y_LINE_1 = BUTTONS_START_Y + BUTTONS_STEP*1,
+
+    BUTTONS_Y_INFO = BUTTONS_Y_LINE_1+5,
+
     BUTTONS_Y_LINE_2 = BUTTONS_START_Y + BUTTONS_STEP*2,
     BUTTONS_Y_LINE_3 = BUTTONS_START_Y + BUTTONS_STEP*3,
+    BUTTONS_Y_LINE_4 = BUTTONS_START_Y + BUTTONS_STEP*4,
 
     BUTTONS_X_LEFT = 20,
     BUTTONS_X_RIGHT = 200,
@@ -70,6 +74,6 @@ void draw_preview(int preview_offset);
 
 void draw_install(InstallType type);
 
-void draw_interface(Entry_List_s* list, EntryMode current_mode);
+void draw_interface(Entry_List_s* list, EntryMode current_mode, bool install_mode);
 
 #endif
