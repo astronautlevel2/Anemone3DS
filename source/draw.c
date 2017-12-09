@@ -107,7 +107,7 @@ void throw_error(char* error, ErrorLevel level)
                 pp2d_draw_text_center(GFX_TOP, 120, 0.6, 0.6, COLOR_RED, error);
                 pp2d_draw_wtext_center(GFX_TOP, 150, 0.6, 0.6, COLOR_WHITE, L"Press \uE000 to shut down.");
                 pp2d_end_draw();
-                if(kDown & KEY_A) exit_function();
+                if(kDown & KEY_A) break;
             }
             break;
         case ERROR_LEVEL_WARNING:

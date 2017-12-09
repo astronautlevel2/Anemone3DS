@@ -140,6 +140,12 @@ int main(void)
 
     while(aptMainLoop())
     {
+        if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
+        {
+            throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
+            break;
+        }
+
         hidScanInput();
         u32 kDown = hidKeysDown();
         u32 kHeld = hidKeysHeld();
@@ -154,11 +160,6 @@ int main(void)
 
         if(kDown & KEY_START) break;
 
-        if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
-        {
-            throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
-            continue;
-        }
 
         if(!install_mode)
         {
