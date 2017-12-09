@@ -120,35 +120,39 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
     ssize_t len = strulen(zip_path, 0x106);
- 
-    u8 *path = calloc(sizeof(u8), len * 4);
-    utf16_to_utf8(path, zip_path, len * 4);
- 
-    unzFile zip_handle = unzOpen((char*)path);
- 
-    if (zip_handle == NULL) return 0;
-    u32 file_size = 0;
- 
-    int status = unzLocateFile(zip_handle, file_name, filename_compare);
-    if (status == UNZ_OK)
+    char *path = calloc(sizeof(char), len*sizeof(u16));
+    utf16_to_utf8((u8*)path, zip_path, len*sizeof(u16));
+
+    unzFile zip_handle = unzOpen(path);
+    free(path);
+
+    if(zip_handle == NULL)
     {
-        unz_file_info *file_info = malloc(sizeof(unz_file_info));
+        DEBUG("invalid zip being opened\n");
+        return 0;
+    }
+
+    u32 file_size = 0;
+    int status = unzLocateFile(zip_handle, file_name, filename_compare);
+
+    if(status == UNZ_OK)
+    {
+        unz_file_info *file_info = calloc(1, sizeof(unz_file_info));
         unzGetCurrentFileInfo(zip_handle, file_info, NULL, 0, NULL, 0, NULL, 0);
         file_size = file_info->uncompressed_size;
+        free(file_info);
         *buf = calloc(1, file_size);
         unzOpenCurrentFile(zip_handle);
         unzReadCurrentFile(zip_handle, *buf, file_size);
         unzCloseCurrentFile(zip_handle);
-        unzClose(zip_handle);
- 
-        free(path);
-        free(file_info);
-        return file_size;
-    } else {
-        free(path);
-        puts("fileziprip");
-        return 0;
     }
+    else if(status == UNZ_END_OF_LIST_OF_FILE)
+        DEBUG("file not found in zip\n");
+    else
+        DEBUG("other zip error\n");
+
+    unzClose(zip_handle);
+    return file_size;
 }
 
 Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
