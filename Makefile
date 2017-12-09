@@ -56,6 +56,9 @@ CFLAGS	:=	-g -Wall -Wextra -O2 -mword-relocations \
 revision := $(shell git describe --tags --match v[0-9]* --abbrev=8 | sed 's/-[0-9]*-g/-/')
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -D_GNU_SOURCE -DVERSION="\"$(revision)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(revision)\""
+ifneq ($(strip $(CITRA_MODE)),)
+	CFLAGS += -DCITRA_MODE
+endif
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
@@ -146,6 +149,9 @@ all: 3dsx cia
 3dsx: $(BUILD) $(OUTPUT).3dsx
 
 cia : $(BUILD) $(OUTPUT).cia
+
+citra: export CITRA_MODE = 1
+citra: 3dsx
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@mkdir -p $(OUTDIR)

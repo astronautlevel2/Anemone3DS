@@ -77,6 +77,7 @@ static void draw_base_interface(void)
     pp2d_draw_text(28, 1, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
     pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
 
+    #ifndef CITRA_MODE
     u8 battery_charging = 0;
     PTMU_GetBatteryChargeState(&battery_charging);
     u8 battery_status = 1;
@@ -85,6 +86,7 @@ static void draw_base_interface(void)
 
     if(battery_charging)
         pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
+    #endif
 
     pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
     pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
