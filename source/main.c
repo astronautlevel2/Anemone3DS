@@ -136,18 +136,20 @@ int main(void)
     int preview_offset = 0;
 
     bool qr_mode = false;
+    bool install_mode = false;
 
     while(aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
         u32 kHeld = hidKeysHeld();
+        u32 kUp = hidKeysUp();
 
         Entry_List_s * current_list = &lists[current_mode];
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
-        else draw_interface(current_list, current_mode);
+        else draw_interface(current_list, current_mode, install_mode);
         pp2d_end_draw();
 
         if(kDown & KEY_START) break;
@@ -158,53 +160,52 @@ int main(void)
             continue;
         }
 
-        if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
+        if(!install_mode)
         {
-            current_mode++;
-            current_mode %= MODE_AMOUNT;
-            continue;
-        }
-        else if(!preview_mode && kDown & KEY_R) //toggle QR mode
-        {
-            u32 out;
-            ACU_GetWifiStatus(&out);
-            if(out)
+            if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
             {
-                qr_mode = !qr_mode;
-                if(qr_mode)
-                    init_qr();
+                current_mode++;
+                current_mode %= MODE_AMOUNT;
+                continue;
+            }
+            else if(!preview_mode && kDown & KEY_R) //toggle QR mode
+            {
+                u32 out;
+                ACU_GetWifiStatus(&out);
+                if(out)
+                {
+                    qr_mode = !qr_mode;
+                    if(qr_mode)
+                        init_qr();
+                    else
+                        exit_qr();
+                }
                 else
-                    exit_qr();
+                {
+                    throw_error("Please connect to Wi-Fi before scanning QR", ERROR_LEVEL_WARNING);
+                }
+                continue;
             }
-            else
+            else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
             {
-                throw_error("Please connect to Wi-Fi before scanning QR", ERROR_LEVEL_WARNING);
+                if(!preview_mode)
+                    preview_mode = load_preview(*current_list, &preview_offset);
+                else
+                    preview_mode = false;
+                continue;
             }
-            continue;
-        }
-        else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
-        {
-            if(!preview_mode)
+            else if(qr_mode && kDown & KEY_L) //scan a QR code while in QR mode
             {
-                preview_mode = load_preview(*current_list, &preview_offset);
-            }
-            else 
-            {
-                preview_mode = false;
-            }
-            continue;
-        }
-        else if(qr_mode && kDown & KEY_L) //scan a QR code while in QR mode
-        {
-            CAMU_StopCapture(PORT_BOTH);
-            CAMU_Activate(SELECT_NONE);
-            qr_mode = !scan_qr(current_mode);
-            CAMU_Activate(SELECT_OUT1_OUT2);
-            CAMU_StartCapture(PORT_BOTH);
+                CAMU_StopCapture(PORT_BOTH);
+                CAMU_Activate(SELECT_NONE);
+                qr_mode = !scan_qr(current_mode);
+                CAMU_Activate(SELECT_OUT1_OUT2);
+                CAMU_StartCapture(PORT_BOTH);
 
-            if(!qr_mode)
-                load_lists(lists);
-            continue;
+                if(!qr_mode)
+                    load_lists(lists);
+                continue;
+            }
         }
 
         if(qr_mode || preview_mode || current_list->entries == NULL)
@@ -213,28 +214,57 @@ int main(void)
         int selected_entry = current_list->selected_entry;
         Entry_s * current_entry = &current_list->entries[selected_entry];
 
-        // Actions
-        if(kDown & KEY_X)
+        if(install_mode)
         {
-            switch(current_mode)
+            if(kUp & KEY_A)
+                install_mode = false;
+            if(!install_mode)
             {
-                case MODE_THEMES:
+                if((kDown | kHeld) & KEY_DLEFT)
+                {
                     draw_install(INSTALL_BGM);
                     bgm_install(*current_entry);
-                    break;
-                case MODE_SPLASHES:
-                    break;
-                default:
-                    break;
+                }
+                else if((kDown | kHeld) & KEY_DUP)
+                {
+                    draw_install(INSTALL_SINGLE);
+                    theme_install(*current_entry);
+                }
+                else if((kDown | kHeld) & KEY_DRIGHT)
+                {
+                    draw_install(INSTALL_NO_BGM);
+                    no_bgm_install(*current_entry);
+                }
+                else if((kDown | kHeld) & KEY_DDOWN)
+                {
+                    if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
+                    {
+                        throw_error("You have too many themes selected.", ERROR_LEVEL_WARNING);
+                    }
+                    else if(current_list->shuffle_count == 0)
+                    {
+                        throw_error("You dont have any themes selected.", ERROR_LEVEL_WARNING);
+                    }
+                    else
+                    {
+                        draw_install(INSTALL_SHUFFLE);
+                        Result res = shuffle_install(*current_list);
+                        if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
+                        else current_list->shuffle_count = 0;
+                    }
+                }
             }
+            continue;
         }
-        else if(kDown & KEY_A)
+
+        // Actions
+
+        if(kDown & KEY_A)
         {
             switch(current_mode)
             {
                 case MODE_THEMES:
-                    draw_install(INSTALL_SINGLE);
-                    theme_install(*current_entry);
+                    install_mode = true;
                     break;
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH);
@@ -261,31 +291,23 @@ int main(void)
                     break;
             }
         }
-
-        else if(kDown & KEY_SELECT)
+        else if(kDown & KEY_X)
         {
             switch(current_mode)
             {
                 case MODE_THEMES:
-                    if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
-                    {
-                        throw_error("You have too many Shuffle selected.", ERROR_LEVEL_WARNING);
-                    }
-                    else if(current_list->shuffle_count == 0)
-                    {
-                        throw_error("You dont have any Shuffle selected.", ERROR_LEVEL_WARNING);
-                    }
-                    else
-                    {
-                        draw_install(INSTALL_SHUFFLE);
-                        Result res = shuffle_install(*current_list);
-                        if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
-                        else current_list->shuffle_count = 0;
-                    }
+                    break;
+                case MODE_SPLASHES:
                     break;
                 default:
                     break;
             }
+        }
+        else if(kDown & KEY_SELECT)
+        {
+            draw_install(INSTALL_ENTRY_DELETE);
+            delete_entry(*current_entry);
+            load_lists(lists);
         }
 
         // Movement in the UI

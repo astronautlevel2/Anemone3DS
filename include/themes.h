@@ -69,8 +69,6 @@ typedef struct {
     u32 shuffle_music_sizes[MAX_SHUFFLE_THEMES];
 } ThemeManage_bin_s;
 
-void delete_theme(Entry_s theme);
-
 Result theme_install(Entry_s theme);
 Result no_bgm_install(Entry_s theme);
 Result bgm_install(Entry_s theme);

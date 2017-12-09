@@ -32,20 +32,6 @@
 #define BODY_CACHE_SIZE 0x150000
 #define BGM_MAX_SIZE 0x337000
 
-void delete_theme(Entry_s theme)
-{
-    Handle dir_handle;
-    Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_UTF16, theme.path));
-    if(R_SUCCEEDED(res))
-    {
-        FSDIR_Close(dir_handle);
-        FSUSER_DeleteDirectoryRecursively(ArchiveSD, fsMakePath(PATH_UTF16, theme.path));
-    } else 
-    {
-        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_UTF16, theme.path));
-    }
-}
-
 static Result install_theme_internal(Entry_List_s themes, int installmode)
 {
     Result res = 0;
