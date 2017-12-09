@@ -57,6 +57,7 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_BATTERY_5, "romfs:/battery5.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_CHARGE, "romfs:/charging.png");
     pp2d_load_texture_png(TEXTURE_SELECT_BUTTON, "romfs:/select.png");
+    pp2d_load_texture_png(TEXTURE_START_BUTTON, "romfs:/start.png");
 }
 
 void exit_screens(void)
@@ -250,7 +251,8 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode, bool install_mod
         pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, L"Delete from SD");
     }
 
-    pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, L"\uE045 Exit");
+    pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
+    pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, L"Exit");
 
     pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 

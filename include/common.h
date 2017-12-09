@@ -64,6 +64,7 @@ enum TextureID {
     TEXTURE_QR,
     TEXTURE_PREVIEW,
     TEXTURE_SELECT_BUTTON,
+    TEXTURE_START_BUTTON,
 
     TEXTURE_ICON, // always the last
 };
