@@ -140,11 +140,13 @@ int main(void)
 
     while(aptMainLoop())
     {
+        #ifndef CITRA_MODE
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
             throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
             break;
         }
+        #endif
 
         hidScanInput();
         u32 kDown = hidKeysDown();
