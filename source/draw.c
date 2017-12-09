@@ -196,7 +196,43 @@ void draw_install(InstallType type)
     pp2d_end_draw();
 }
 
-void draw_interface(Entry_List_s* list, EntryMode current_mode, bool install_mode)
+void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS], bool enable_start, bool enable_select)
+{
+    pp2d_draw_on(GFX_TOP, GFX_LEFT);
+
+    if(info_line != NULL)
+        pp2d_draw_text_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, COLOR_WHITE, info_line);
+
+    const int y_lines[BUTTONS_INFO_LINES-1] = {
+        BUTTONS_Y_LINE_1,
+        BUTTONS_Y_LINE_2,
+        BUTTONS_Y_LINE_3,
+    };
+
+    for(int i = 0; i < BUTTONS_INFO_LINES-1; i++)
+    {
+        if(buttons_instructions[i][0] != NULL)
+            pp2d_draw_wtext(BUTTONS_X_LEFT, y_lines[i], 0.6, 0.6, COLOR_WHITE, buttons_instructions[i][0]);
+        if(buttons_instructions[i][1] != NULL)
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, COLOR_WHITE, buttons_instructions[i][1]);
+    }
+
+    wchar_t * start_line = buttons_instructions[BUTTONS_INFO_LINES-1][0];
+    if(enable_start && start_line != NULL)
+    {
+        pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
+        pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, start_line);
+    }
+
+    wchar_t * select_line = buttons_instructions[BUTTONS_INFO_LINES-1][1];
+    if(enable_select && select_line != NULL)
+    {
+        pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, select_line);
+    }
+}
+
+void draw_interface(Entry_List_s* list, EntryMode current_mode)
 {
     draw_base_interface();
 
@@ -239,48 +275,6 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode, bool install_mod
     wchar_t description[0x81] = {0};
     utf16_to_utf32((u32*)description, current_entry.desc, 0x80);
     pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
-
-    if(install_mode)
-    {
-        pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE079 Normal install");
-        pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE07A Shuffle install");
-
-        pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE07B BGM-only install");
-        pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE07C No-BGM install");
-
-        pp2d_draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.55, 0.55, COLOR_WHITE, "Release \uE000 to cancel or hold \uE006 and release \uE000 to install");
-    }
-    else
-    {
-        switch(current_mode)
-        {
-            case MODE_THEMES:
-                pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE000 Hold to install");
-                pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE001 Queue shuffle theme");
-
-                pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview theme");
-
-                pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to splashes");
-                pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QR code");
-                break;
-            case MODE_SPLASHES:
-                pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE000 Install splash");
-                pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_1, 0.6, 0.6, COLOR_WHITE, L"\uE001 Delete installed splash");
-
-                pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_2, 0.6, 0.6, COLOR_WHITE, L"\uE003 Preview splash");
-
-                pp2d_draw_wtext(BUTTONS_X_LEFT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE004 Switch to themes");
-                pp2d_draw_wtext(BUTTONS_X_RIGHT, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE005 Scan QR code");
-                break;
-            default:
-                break;
-        }
-        pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
-        pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, L"Delete from SD");
-    }
-
-    pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
-    pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, L"Exit");
 
     pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 

@@ -157,7 +157,14 @@ int main(void)
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
-        else draw_interface(current_list, current_mode, install_mode);
+        else {
+            draw_interface(current_list, current_mode);
+            if(install_mode)
+                draw_instructions(install_info_line, install_instructions, true, false);
+            else
+                draw_instructions(NULL, normal_instructions[current_mode], true, true);
+        }
+
         pp2d_end_draw();
 
         if(kDown & KEY_START) break;

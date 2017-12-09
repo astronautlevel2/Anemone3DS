@@ -50,12 +50,13 @@ typedef enum {
 
 #define BUTTONS_START_Y 130
 #define BUTTONS_STEP 22
+#define BUTTONS_INFO_LINES 4
+#define BUTTONS_INFO_COLUNMNS 2
 
 enum {
+    BUTTONS_Y_INFO = BUTTONS_START_Y+5,
+
     BUTTONS_Y_LINE_1 = BUTTONS_START_Y + BUTTONS_STEP*1,
-
-    BUTTONS_Y_INFO = BUTTONS_Y_LINE_1+5,
-
     BUTTONS_Y_LINE_2 = BUTTONS_START_Y + BUTTONS_STEP*2,
     BUTTONS_Y_LINE_3 = BUTTONS_START_Y + BUTTONS_STEP*3,
     BUTTONS_Y_LINE_4 = BUTTONS_START_Y + BUTTONS_STEP*4,
@@ -74,6 +75,7 @@ void draw_preview(int preview_offset);
 
 void draw_install(InstallType type);
 
+void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS], bool enable_start, bool enable_select);
 void draw_interface(Entry_List_s* list, EntryMode current_mode, bool install_mode);
 
 #endif
