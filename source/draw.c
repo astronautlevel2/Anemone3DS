@@ -94,6 +94,32 @@ static void draw_base_interface(void)
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
 }
 
+static void draw_text_center(gfxScreen_t target, float y, float scaleX, float scaleY, u32 color, const char* text)
+{
+    char * _text = strdup(text);
+    float prevY = y;
+    int offset = 0;
+    while(true)
+    {
+        char *nline = strchr(_text+offset, '\n');
+        int nlinepos = 0;
+        if(nline != NULL)
+        {
+            nlinepos = nline-_text;
+            _text[nlinepos] = '\0';
+        }
+        pp2d_draw_text_center(target, prevY, scaleX, scaleY, color, _text+offset);
+        if(nline == NULL) break;
+        else
+        {
+            prevY += pp2d_get_text_height(_text+offset, scaleX, scaleY);
+            _text[nlinepos] = '\n';
+            offset = nlinepos+1;
+        }
+    }
+    free(_text);
+}
+
 void throw_error(char* error, ErrorLevel level)
 {
     switch(level)
@@ -104,7 +130,7 @@ void throw_error(char* error, ErrorLevel level)
                 hidScanInput();
                 u32 kDown = hidKeysDown();
                 draw_base_interface();
-                pp2d_draw_text_center(GFX_TOP, 120, 0.6, 0.6, COLOR_RED, error);
+                draw_text_center(GFX_TOP, 100, 0.6, 0.6, COLOR_RED, error);
                 pp2d_draw_wtext_center(GFX_TOP, 150, 0.6, 0.6, COLOR_WHITE, L"Press \uE000 to shut down.");
                 pp2d_end_draw();
                 if(kDown & KEY_A) break;
@@ -116,7 +142,7 @@ void throw_error(char* error, ErrorLevel level)
                 hidScanInput();
                 u32 kDown = hidKeysDown();
                 draw_base_interface();
-                pp2d_draw_text_center(GFX_TOP, 120, 0.6, 0.6, COLOR_YELLOW, error);
+                draw_text_center(GFX_TOP, 100, 0.6, 0.6, COLOR_YELLOW, error);
                 pp2d_draw_wtext_center(GFX_TOP, 150, 0.6, 0.6, COLOR_WHITE, L"Press \uE000 to continue.");
                 pp2d_end_draw();
                 if(kDown & KEY_A) break;
