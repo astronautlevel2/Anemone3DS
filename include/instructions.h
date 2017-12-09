@@ -29,14 +29,14 @@
 
 #include "draw.h"
 
-wchar_t * install_info_line = L"Release \uE000 to cancel or hold \uE006 and release \uE000 to install";
+const wchar_t * install_info_line = L"Release \uE000 to cancel or hold \uE006 and release \uE000 to install";
 
-wchar_t normal_instructions[MODE_AMOUNT][BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
+const wchar_t normal_instructions[MODE_AMOUNT][BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
     theme_instruction,
     splash_instruction,
 };
 
-wchar_t theme_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
+const wchar_t theme_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
     {
         L"\uE000 Hold to install",
         L"\uE001 Queue shuffle theme"
@@ -54,7 +54,7 @@ wchar_t theme_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
         L"Delete from SD"
     }
 };
-wchar_t splash_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
+const wchar_t splash_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
     {
         L"\uE000 Install splash",
         L"\uE001 Delete installed splash"
@@ -73,7 +73,7 @@ wchar_t splash_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
     }
 };
 
-wchar_t install_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
+const wchar_t install_instruction[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS] = {
     {
         L"\uE079 Normal install",
         L"\uE07A Shuffle install"

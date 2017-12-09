@@ -201,7 +201,7 @@ void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instru
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
 
     if(info_line != NULL)
-        pp2d_draw_text_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, COLOR_WHITE, info_line);
+        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, COLOR_WHITE, info_line);
 
     const int y_lines[BUTTONS_INFO_LINES-1] = {
         BUTTONS_Y_LINE_1,
@@ -217,14 +217,14 @@ void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instru
             pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, COLOR_WHITE, buttons_instructions[i][1]);
     }
 
-    wchar_t * start_line = buttons_instructions[BUTTONS_INFO_LINES-1][0];
+    const wchar_t * start_line = buttons_instructions[BUTTONS_INFO_LINES-1][0];
     if(enable_start && start_line != NULL)
     {
         pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
         pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, start_line);
     }
 
-    wchar_t * select_line = buttons_instructions[BUTTONS_INFO_LINES-1][1];
+    const wchar_t * select_line = buttons_instructions[BUTTONS_INFO_LINES-1][1];
     if(enable_select && select_line != NULL)
     {
         pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
