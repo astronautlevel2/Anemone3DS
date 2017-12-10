@@ -68,7 +68,7 @@ enum {
 
 typedef struct {
     const wchar_t * info_line;
-    u32 info_line_color;
+    Color info_line_color;
     const wchar_t * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 

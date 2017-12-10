@@ -30,7 +30,7 @@
 #define ABGR8(a, b, g, r) ((((a)&0xFF)<<0) | (((b)&0xFF)<<8) | (((g)&0xFF)<<16) | (((r)&0xFF)<<24))
 #define RGBA8(r, g, b, a) ((((r)&0xFF)<<0) | (((g)&0xFF)<<8) | (((b)&0xFF)<<16) | (((a)&0xFF)<<24))
 
-enum Colors {
+typedef enum {
     COLOR_BACKGROUND = ABGR8(255, 32, 28, 35), //silver-y black
     COLOR_ACCENT = RGBA8(55, 122, 168, 255),
     COLOR_WHITE = RGBA8(255, 255, 255, 255),
@@ -38,6 +38,6 @@ enum Colors {
     COLOR_BLACK = RGBA8(0, 0, 0, 255),
     COLOR_RED = RGBA8(200, 0, 0, 255),
     COLOR_YELLOW = RGBA8(239, 220, 11, 255),
-};
+} Color;
 
 #endif
