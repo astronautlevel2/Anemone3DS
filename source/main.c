@@ -316,9 +316,24 @@ int main(void)
         }
         else if(kDown & KEY_SELECT)
         {
-            draw_install(INSTALL_ENTRY_DELETE);
-            delete_entry(*current_entry);
-            load_lists(lists);
+            while(aptMainLoop())
+            {
+                hidScanInput();
+                u32 kDown = hidKeysDown();
+                draw_interface(current_list, current_mode);
+                pp2d_draw_on(GFX_TOP, GFX_LEFT);
+                draw_confirm("Are you sure you would like to delete this?");
+                pp2d_end_draw();
+                if(kDown & KEY_A)
+                {
+                    draw_install(INSTALL_ENTRY_DELETE);
+                    delete_entry(*current_entry);
+                    load_lists(lists);
+                    break;
+                }
+                else if(kDown & KEY_B)
+                    break;
+            }
         }
 
         // Movement in the UI

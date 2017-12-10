@@ -76,6 +76,7 @@ void exit_screens(void);
 void draw_themext_error(void);
 void throw_error(char* error, ErrorLevel level);
 
+void draw_confirm(char* conf_msg);
 void draw_preview(int preview_offset);
 
 void draw_install(InstallType type);
