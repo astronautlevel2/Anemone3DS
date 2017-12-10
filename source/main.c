@@ -30,6 +30,7 @@
 #include "splashes.h"
 #include "draw.h"
 #include "camera.h"
+#include "instructions.h"
 #include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
@@ -157,7 +158,14 @@ int main(void)
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
-        else draw_interface(current_list, current_mode, install_mode);
+        else {
+            draw_interface(current_list, current_mode);
+            if(install_mode)
+                draw_instructions(install_instructions);
+            else
+                draw_instructions(normal_instructions[current_mode]);
+        }
+
         pp2d_end_draw();
 
         if(kDown & KEY_START) break;
