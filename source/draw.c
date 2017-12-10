@@ -196,12 +196,12 @@ void draw_install(InstallType type)
     pp2d_end_draw();
 }
 
-void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS], bool enable_start, bool enable_select)
+void draw_instructions(Instructions_s instructions)
 {
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
 
-    if(info_line != NULL)
-        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, COLOR_WHITE, info_line);
+    if(instructions.info_line != NULL)
+        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, COLOR_WHITE, instructions.info_line);
 
     const int y_lines[BUTTONS_INFO_LINES-1] = {
         BUTTONS_Y_LINE_1,
@@ -211,21 +211,21 @@ void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instru
 
     for(int i = 0; i < BUTTONS_INFO_LINES-1; i++)
     {
-        if(buttons_instructions[i][0] != NULL)
-            pp2d_draw_wtext(BUTTONS_X_LEFT, y_lines[i], 0.6, 0.6, COLOR_WHITE, buttons_instructions[i][0]);
-        if(buttons_instructions[i][1] != NULL)
-            pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, COLOR_WHITE, buttons_instructions[i][1]);
+        if(instructions.instructions[i][0] != NULL)
+            pp2d_draw_wtext(BUTTONS_X_LEFT, y_lines[i], 0.6, 0.6, COLOR_WHITE, instructions.instructions[i][0]);
+        if(instructions.instructions[i][1] != NULL)
+            pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, COLOR_WHITE, instructions.instructions[i][1]);
     }
 
-    const wchar_t * start_line = buttons_instructions[BUTTONS_INFO_LINES-1][0];
-    if(enable_start && start_line != NULL)
+    const wchar_t * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
+    if(start_line != NULL)
     {
         pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
         pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, start_line);
     }
 
-    const wchar_t * select_line = buttons_instructions[BUTTONS_INFO_LINES-1][1];
-    if(enable_select && select_line != NULL)
+    const wchar_t * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
+    if(select_line != NULL)
     {
         pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
         pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, select_line);

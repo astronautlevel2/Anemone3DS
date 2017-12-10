@@ -65,6 +65,11 @@ enum {
     BUTTONS_X_RIGHT = 200,
 } ButtonPos;
 
+typedef struct {
+    const wchar_t * info_line;
+    const wchar_t * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
+} Instructions_s;
+
 void init_screens(void);
 void exit_screens(void);
 
@@ -75,7 +80,7 @@ void draw_preview(int preview_offset);
 
 void draw_install(InstallType type);
 
-void draw_instructions(const wchar_t * info_line, const wchar_t * buttons_instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS], bool enable_start, bool enable_select);
-void draw_interface(Entry_List_s* list, EntryMode current_mode, bool install_mode);
+void draw_instructions(Instructions_s instructions);
+void draw_interface(Entry_List_s* list, EntryMode current_mode);
 
 #endif
