@@ -29,6 +29,7 @@
 
 #include "common.h"
 #include "loading.h"
+#include "colors.h"
 
 typedef enum {
     INSTALL_SPLASH,
@@ -67,14 +68,15 @@ enum {
 
 typedef struct {
     const wchar_t * info_line;
+    Color info_line_color;
     const wchar_t * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 
 void init_screens(void);
 void exit_screens(void);
 
-void draw_themext_error(void);
 void throw_error(char* error, ErrorLevel level);
+bool draw_confirm(const char* conf_msg, Entry_List_s* list, EntryMode current_mode);
 
 void draw_preview(int preview_offset);
 

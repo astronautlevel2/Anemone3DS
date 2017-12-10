@@ -26,20 +26,11 @@
 
 #include "draw.h"
 #include "unicode.h"
+#include "colors.h"
 
 #include "pp2d/pp2d/pp2d.h"
 
 #include <time.h>
-
-enum Colors {
-    COLOR_BACKGROUND = ABGR8(255, 32, 28, 35), //silver-y black
-    COLOR_ACCENT = RGBA8(55, 122, 168, 255),
-    COLOR_WHITE = RGBA8(255, 255, 255, 255),
-    COLOR_CURSOR = RGBA8(200, 200, 200, 255),
-    COLOR_BLACK = RGBA8(0, 0, 0, 255),
-    COLOR_RED = RGBA8(200, 0, 0, 255),
-    COLOR_YELLOW = RGBA8(239, 220, 11, 255),
-};
 
 void init_screens(void)
 {
@@ -153,6 +144,25 @@ void throw_error(char* error, ErrorLevel level)
     }
 }
 
+bool draw_confirm(const char* conf_msg, Entry_List_s* list, EntryMode current_mode)
+{
+    while(aptMainLoop())
+    {
+        draw_interface(list, current_mode);
+        pp2d_draw_on(GFX_TOP, GFX_LEFT);
+        draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.7, 0.7, COLOR_YELLOW, conf_msg);
+        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE000 Yes   \uE001 No");
+        pp2d_end_draw();
+
+        hidScanInput();
+        u32 kDown = hidKeysDown();
+        if(kDown & KEY_A) return true;
+        if(kDown & KEY_B) return false;
+    }
+
+    return false;
+}
+
 void draw_preview(int preview_offset)
 {
     pp2d_begin_draw(GFX_TOP, GFX_LEFT);
@@ -201,7 +211,7 @@ void draw_instructions(Instructions_s instructions)
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
 
     if(instructions.info_line != NULL)
-        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, COLOR_WHITE, instructions.info_line);
+        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, instructions.info_line_color, instructions.info_line);
 
     const int y_lines[BUTTONS_INFO_LINES-1] = {
         BUTTONS_Y_LINE_1,
