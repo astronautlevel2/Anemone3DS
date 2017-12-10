@@ -28,6 +28,7 @@
 #define INSTRUCTIONS_H
 
 #include "draw.h"
+#include "colors.h"
 
 Instructions_s normal_instructions[MODE_AMOUNT] = {
     {
@@ -76,6 +77,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
 
 Instructions_s install_instructions = {
     .info_line = L"Release \uE000 to cancel or hold \uE006 and release \uE000 to install",
+    .info_line_color = COLOR_WHITE,
     .instructions = {
         {
             L"\uE079 Normal install",
