@@ -174,10 +174,6 @@ bool load_preview(Entry_List_s list, int * preview_offset)
         return false;
     }
 
-    // free the previously loaded preview. wont do anything if there wasnt one
-    pp2d_free_texture(TEXTURE_PREVIEW);
-    memcpy(&previous_path, &entry.path, 0x106*sizeof(u16));
-
     bool ret = false;
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
@@ -193,9 +189,19 @@ bool load_preview(Entry_List_s list, int * preview_offset)
             }
         }
 
+        // mark the new preview as loaded for optimisation
+        memcpy(&previous_path, &entry.path, 0x106*sizeof(u16));
+        // free the previously loaded preview. wont do anything if there wasnt one
+        pp2d_free_texture(TEXTURE_PREVIEW);
+
         pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+
         *preview_offset = (width-400)/2;
         ret = true;
+    }
+    else
+    {
+        throw_error("Corrupted/invalid preview.png", ERROR_LEVEL_WARNING);
     }
 
     free(image);
