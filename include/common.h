@@ -55,6 +55,7 @@ enum TextureID {
     TEXTURE_FONT_RESERVED = 0, // used by pp2d for the font
     TEXTURE_ARROW,
     TEXTURE_SHUFFLE,
+    TEXTURE_BATTERY_0,
     TEXTURE_BATTERY_1,
     TEXTURE_BATTERY_2,
     TEXTURE_BATTERY_3,

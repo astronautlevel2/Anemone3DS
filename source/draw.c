@@ -50,6 +50,7 @@ void init_screens(void)
 
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
+    pp2d_load_texture_png(TEXTURE_BATTERY_0, "romfs:/battery0.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_3, "romfs:/battery3.png");
@@ -80,9 +81,9 @@ static void draw_base_interface(void)
     #ifndef CITRA_MODE
     u8 battery_charging = 0;
     PTMU_GetBatteryChargeState(&battery_charging);
-    u8 battery_status = 1;
+    u8 battery_status = 0;
     PTMU_GetBatteryLevel(&battery_status);
-    pp2d_draw_texture(TEXTURE_BATTERY_1 + battery_status - 1, 357, 2);
+    pp2d_draw_texture(TEXTURE_BATTERY_0 + battery_status, 357, 2);
 
     if(battery_charging)
         pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
