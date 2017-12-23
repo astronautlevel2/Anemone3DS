@@ -298,21 +298,6 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
             break;
     }
 
-    // Scroll the menu up or down if the selected theme is out of its bounds
-    //----------------------------------------------------------------
-    for(int i = 0; i < list->entries_count; i++) {
-        if(list->entries_count <= ENTRIES_PER_SCREEN) break;
-
-        if(list->scroll > list->selected_entry)
-            list->scroll--;
-
-        if((i < list->selected_entry) && \
-          ((list->selected_entry - list->scroll) >= ENTRIES_PER_SCREEN) && \
-          (list->scroll != (i - ENTRIES_PER_SCREEN)))
-            list->scroll++;
-    }
-    //----------------------------------------------------------------
-
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
@@ -339,7 +324,7 @@ void draw_interface(Entry_List_s* list, EntryMode current_mode)
         }
         pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
         if(!current_entry.placeholder_color)
-            pp2d_draw_texture(current_entry.icon_id, 0, 24 + vertical_offset);
+            pp2d_draw_texture(visible_icons_ids[i - list->scroll], 0, 24 + vertical_offset);
         else
             pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_entry.placeholder_color);
 

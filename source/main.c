@@ -130,8 +130,16 @@ int main(void)
 
     Entry_List_s lists[MODE_AMOUNT] = {0};
     load_lists(lists);
+    static Entry_List_s * current_list = NULL;
+    static Thread_Arg_s arg;
+    arg.thread_argument = (void*)&current_list;
+    arg.exit = false;
 
     EntryMode current_mode = MODE_THEMES;
+
+    s32 prio = 0;
+    svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
+    Thread iconLoadingThread = threadCreate((ThreadFunc)load_icons, &arg, 4*1024, prio-1, -2, false);
 
     bool preview_mode = false;
     int preview_offset = 0;
@@ -154,7 +162,8 @@ int main(void)
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
 
-        Entry_List_s * current_list = &lists[current_mode];
+        current_list = &lists[current_mode];
+        svcSleepThread(1e6);
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
@@ -169,7 +178,6 @@ int main(void)
         pp2d_end_draw();
 
         if(kDown & KEY_START) break;
-
 
         if(!install_mode)
         {
@@ -254,7 +262,7 @@ int main(void)
                     }
                     else if(current_list->shuffle_count == 0)
                     {
-                        throw_error("You dont have any themes selected.", ERROR_LEVEL_WARNING);
+                        throw_error("You don't have any themes selected.", ERROR_LEVEL_WARNING);
                     }
                     else
                     {
@@ -368,6 +376,10 @@ int main(void)
             svcSleepThread(FASTSCROLL_WAIT);
         }
     }
+
+    arg.exit = true;
+    threadJoin(iconLoadingThread, U64_MAX);
+    threadFree(iconLoadingThread);
 
     exit_function();
 

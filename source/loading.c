@@ -54,10 +54,8 @@ u32 load_data(char * filename, Entry_s entry, char ** buf)
     }
 }
 
-static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fallback_name)
+static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
 {
-    pp2d_free_texture(textureID);
-
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", *entry, &info_buffer);
     Icon_s * smdh = (Icon_s *)info_buffer;
@@ -75,6 +73,17 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
     memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
     memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
     memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
+}
+
+static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
+{
+    pp2d_free_texture(textureID);
+
+    char *info_buffer = NULL;
+    u64 size = load_data("/info.smdh", entry, &info_buffer);
+    if(!size) return;
+
+    Icon_s * smdh = (Icon_s *)info_buffer;
 
     const u32 width = 48, height = 48;
     u32 *image = malloc(width*height*sizeof(u32));
@@ -93,8 +102,6 @@ static void parse_smdh(Entry_s * entry, const ssize_t textureID, const u16 * fal
     free(info_buffer);
     pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
     free(image);
-
-    entry->icon_id = textureID;
 }
 
 static int compare_entries(const void * a, const void * b)
@@ -142,9 +149,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
 
-        ssize_t iconID = list->icon_id_start + list->entries_count - 1;
-        DEBUG("id: %u\n", iconID);
-        parse_smdh(current_entry, iconID, dir_entry.name);
+        parse_smdh(current_entry, dir_entry.name);
     }
 
     FSDIR_Close(dir_handle);
@@ -154,15 +159,53 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
     return res;
 }
 
-static u16 previous_path[0x106] = {0};
+ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
+static int previous_scroll = -1;
+void load_icons(Thread_Arg_s * arg)
+{
+    while(aptMainLoop() && !arg->exit)
+    {
+        svcSleepThread(1e4);
+        Entry_List_s * current_list = *(Entry_List_s **)arg->thread_argument;
+        if(current_list == NULL || current_list->entries == NULL) continue;
 
+        // Scroll the menu up or down if the selected theme is out of its bounds
+        //----------------------------------------------------------------
+        for(int i = 0; i < current_list->entries_count; i++) {
+            if(current_list->entries_count <= ENTRIES_PER_SCREEN) break;
+
+            if(current_list->scroll > current_list->selected_entry)
+                current_list->scroll--;
+
+            if((i < current_list->selected_entry) && \
+              ((current_list->selected_entry - current_list->scroll) >= ENTRIES_PER_SCREEN) && \
+              (current_list->scroll != (i - ENTRIES_PER_SCREEN)))
+                current_list->scroll++;
+        }
+        //----------------------------------------------------------------
+
+        if(previous_scroll == current_list->scroll) continue;
+
+        for(int i = current_list->scroll; i < ENTRIES_PER_SCREEN+current_list->scroll; i++)
+        {
+            ssize_t id = TEXTURE_ICON+i-current_list->scroll;
+            Entry_s current_entry = current_list->entries[i];
+            load_smdh_icon(current_entry, id);
+            visible_icons_ids[i-current_list->scroll] = id;
+        }
+
+        previous_scroll = current_list->scroll;
+    }
+}
+
+static u16 previous_path_preview[0x106] = {0};
 bool load_preview(Entry_List_s list, int * preview_offset)
 {
     if(list.entries == NULL) return false;
 
     Entry_s entry = list.entries[list.selected_entry];
 
-    if(!memcmp(&previous_path, &entry.path, 0x106*sizeof(u16))) return true;
+    if(!memcmp(&previous_path_preview, &entry.path, 0x106*sizeof(u16))) return true;
 
     char *preview_buffer = NULL;
     u64 size = load_data("/preview.png", entry, &preview_buffer);
@@ -190,7 +233,7 @@ bool load_preview(Entry_List_s list, int * preview_offset)
         }
 
         // mark the new preview as loaded for optimisation
-        memcpy(&previous_path, &entry.path, 0x106*sizeof(u16));
+        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
         // free the previously loaded preview. wont do anything if there wasnt one
         pp2d_free_texture(TEXTURE_PREVIEW);
 
