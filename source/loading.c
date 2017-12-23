@@ -185,6 +185,8 @@ void load_icons(volatile Entry_List_s * current_list)
 
     for(int i = current_list->scroll; i < ENTRIES_PER_SCREEN+current_list->scroll; i++)
     {
+        if(i >= current_list->entries_count) break;
+
         ssize_t id = TEXTURE_ICON+i-current_list->scroll;
         Entry_s current_entry = current_list->entries[i];
         load_smdh_icon(current_entry, id);
