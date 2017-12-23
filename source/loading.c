@@ -161,6 +161,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
 ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static int previous_scroll = -1;
+static Entry_s * previous_entries_array = NULL;
 void load_icons(volatile Entry_List_s * current_list)
 {
     if(current_list == NULL || current_list->entries == NULL) return;
@@ -180,7 +181,7 @@ void load_icons(volatile Entry_List_s * current_list)
     }
     //----------------------------------------------------------------
 
-    if(previous_scroll == current_list->scroll) return;
+    if(previous_scroll == current_list->scroll && previous_entries_array == current_list->entries) return;
 
     for(int i = current_list->scroll; i < ENTRIES_PER_SCREEN+current_list->scroll; i++)
     {
@@ -191,6 +192,7 @@ void load_icons(volatile Entry_List_s * current_list)
     }
 
     previous_scroll = current_list->scroll;
+    previous_entries_array = current_list->entries;
 }
 
 void load_icons_thread(void * void_arg)
