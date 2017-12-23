@@ -163,7 +163,7 @@ ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static int previous_scroll = -1;
 void load_icons(Thread_Arg_s * arg)
 {
-    while(aptMainLoop() && !arg->exit)
+    do
     {
         svcSleepThread(1e4);
         Entry_List_s * current_list = *(Entry_List_s **)arg->thread_argument;
@@ -196,6 +196,7 @@ void load_icons(Thread_Arg_s * arg)
 
         previous_scroll = current_list->scroll;
     }
+    while(aptMainLoop() && !arg->exit);
 }
 
 static u16 previous_path_preview[0x106] = {0};
@@ -221,7 +222,7 @@ bool load_preview(Entry_List_s list, int * preview_offset)
     u8 * image = NULL;
     unsigned int width = 0, height = 0;
 
-    if((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error 
+    if((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error
     {
         for(u32 i = 0; i < width; i++)
         {

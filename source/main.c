@@ -96,8 +96,6 @@ void change_selected(Entry_List_s * list, int change_value)
 
 void load_lists(Entry_List_s * lists)
 {
-    DEBUG("origin: %u\n", TEXTURE_ICON);
-
     ssize_t last_icon_id = TEXTURE_ICON;
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
@@ -108,8 +106,6 @@ void load_lists(Entry_List_s * lists)
     }
     pp2d_free_texture(last_icon_id);
 
-    DEBUG("max: %u\n", last_icon_id);
-
     ssize_t icon_id_start = TEXTURE_ICON;
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
@@ -118,8 +114,6 @@ void load_lists(Entry_List_s * lists)
         load_entries(main_paths[i], current_list);
         icon_id_start += current_list->entries_count;
     }
-
-    DEBUG("end: %u\n", icon_id_start);
 }
 
 int main(void)
