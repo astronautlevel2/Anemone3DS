@@ -48,7 +48,6 @@ typedef struct {
     u16 author[0x41];
 
     u32 placeholder_color;
-    ssize_t icon_id;
 
     u16 path[0x106];
     bool is_zip;
