@@ -161,42 +161,49 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
 ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static int previous_scroll = -1;
-void load_icons(Thread_Arg_s * arg)
+void load_icons(volatile Entry_List_s * current_list)
 {
+    if(current_list == NULL || current_list->entries == NULL) return;
+
+    // Scroll the menu up or down if the selected theme is out of its bounds
+    //----------------------------------------------------------------
+    for(int i = 0; i < current_list->entries_count; i++) {
+        if(current_list->entries_count <= ENTRIES_PER_SCREEN) break;
+
+        if(current_list->scroll > current_list->selected_entry)
+            current_list->scroll--;
+
+        if((i < current_list->selected_entry) && \
+          ((current_list->selected_entry - current_list->scroll) >= ENTRIES_PER_SCREEN) && \
+          (current_list->scroll != (i - ENTRIES_PER_SCREEN)))
+            current_list->scroll++;
+    }
+    //----------------------------------------------------------------
+
+    if(previous_scroll == current_list->scroll) return;
+
+    for(int i = current_list->scroll; i < ENTRIES_PER_SCREEN+current_list->scroll; i++)
+    {
+        ssize_t id = TEXTURE_ICON+i-current_list->scroll;
+        Entry_s current_entry = current_list->entries[i];
+        load_smdh_icon(current_entry, id);
+        visible_icons_ids[i-current_list->scroll] = id;
+    }
+
+    previous_scroll = current_list->scroll;
+}
+
+void load_icons_thread(void * void_arg)
+{
+    Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
     do
     {
-        svcSleepThread(1e4);
-        Entry_List_s * current_list = *(Entry_List_s **)arg->thread_argument;
-        if(current_list == NULL || current_list->entries == NULL) continue;
-
-        // Scroll the menu up or down if the selected theme is out of its bounds
-        //----------------------------------------------------------------
-        for(int i = 0; i < current_list->entries_count; i++) {
-            if(current_list->entries_count <= ENTRIES_PER_SCREEN) break;
-
-            if(current_list->scroll > current_list->selected_entry)
-                current_list->scroll--;
-
-            if((i < current_list->selected_entry) && \
-              ((current_list->selected_entry - current_list->scroll) >= ENTRIES_PER_SCREEN) && \
-              (current_list->scroll != (i - ENTRIES_PER_SCREEN)))
-                current_list->scroll++;
-        }
-        //----------------------------------------------------------------
-
-        if(previous_scroll == current_list->scroll) continue;
-
-        for(int i = current_list->scroll; i < ENTRIES_PER_SCREEN+current_list->scroll; i++)
-        {
-            ssize_t id = TEXTURE_ICON+i-current_list->scroll;
-            Entry_s current_entry = current_list->entries[i];
-            load_smdh_icon(current_entry, id);
-            visible_icons_ids[i-current_list->scroll] = id;
-        }
-
-        previous_scroll = current_list->scroll;
+        svcWaitSynchronization(*arg->update_request, U64_MAX);
+        svcClearEvent(*arg->update_request);
+        volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_argument;
+        load_icons(current_list);
     }
-    while(aptMainLoop() && !arg->exit);
+    while(arg->run_thread);
 }
 
 static u16 previous_path_preview[0x106] = {0};

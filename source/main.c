@@ -127,13 +127,15 @@ int main(void)
     static Entry_List_s * current_list = NULL;
     static Thread_Arg_s arg;
     arg.thread_argument = (void*)&current_list;
-    arg.exit = false;
+
+    Handle update_icons_handle;
+    arg.update_request = &update_icons_handle;
+    arg.run_thread = true;
 
     EntryMode current_mode = MODE_THEMES;
 
-    s32 prio = 0;
-    svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
-    Thread iconLoadingThread = threadCreate((ThreadFunc)load_icons, &arg, 4*1024, prio-1, -2, false);
+    svcCreateEvent(&update_icons_handle, 0);
+    Thread iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x3f, -2, false);
 
     bool preview_mode = false;
     int preview_offset = 0;
@@ -157,6 +159,7 @@ int main(void)
         u32 kUp = hidKeysUp();
 
         current_list = &lists[current_mode];
+        svcSignalEvent(update_icons_handle);
         svcSleepThread(1e6);
 
         if(qr_mode) take_picture();
@@ -371,9 +374,10 @@ int main(void)
         }
     }
 
-    arg.exit = true;
+    arg.run_thread = false;
+    svcSignalEvent(update_icons_handle);
     threadJoin(iconLoadingThread, U64_MAX);
-    threadFree(iconLoadingThread);
+    svcCloseHandle(update_icons_handle);
 
     exit_function();
 
