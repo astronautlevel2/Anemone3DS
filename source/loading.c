@@ -299,7 +299,7 @@ void load_icons(Entry_List_s * current_list)
             int used_i = i;
             if(i < 0)
                 used_i = current_list->entries_count + i;
-            DEBUG("used_i: %i\n", used_i);
+
             current_entry = &current_list->entries[used_i];
             load_smdh_icon(*current_entry, id);
             above_icons_ids[i - starti] = id;
@@ -310,9 +310,11 @@ void load_icons(Entry_List_s * current_list)
         starti += ENTRIES_PER_SCREEN*2;
         for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
         {
-            if(i >= current_list->entries_count) break;
+            int used_i = i;
+            if(i >= current_list->entries_count)
+                used_i = i - current_list->entries_count;
 
-            current_entry = &current_list->entries[i];
+            current_entry = &current_list->entries[used_i];
             load_smdh_icon(*current_entry, id);
             under_icons_ids[i-starti] = id;
         }
