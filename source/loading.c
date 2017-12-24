@@ -79,10 +79,6 @@ static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
 {
     pp2d_free_texture(textureID);
 
-    wchar_t name[0x81] = {0};
-    utf16_to_utf32((u32*)name, entry.name, 0x80);
-    DEBUG("loading icon from theme %S, texid %i\n", name, textureID);
-
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", entry, &info_buffer);
     if(!size) return;
@@ -166,7 +162,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
 
 static ssize_t above_icons_ids[ENTRIES_PER_SCREEN] = {0};
 ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
-static ssize_t under_icon_ids[ENTRIES_PER_SCREEN] = {0};
+static ssize_t under_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static int previous_scroll = -1;
 static Entry_s * previous_entries_array = NULL;
 static EntryMode previous_mode = MODE_AMOUNT;
@@ -216,11 +212,11 @@ void load_icons(volatile Entry_List_s * current_list)
                 memcpy(temp, &visible_icons_ids[1], (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
                 memcpy(&FIRST(visible_icons_ids), temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
 
-                LAST(visible_icons_ids) = FIRST(under_icon_ids);
-                memcpy(temp, &under_icon_ids[1], (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
-                memcpy(&FIRST(under_icon_ids), temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
+                LAST(visible_icons_ids) = FIRST(under_icons_ids);
+                memcpy(temp, &under_icons_ids[1], (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
+                memcpy(&FIRST(under_icons_ids), temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
 
-                LAST(under_icon_ids) = id;
+                LAST(under_icons_ids) = id;
                 svcSleepThread(1e6);
                 offset = current_list->scroll + ENTRIES_PER_SCREEN*2 - 1;
                 DEBUG("offset: %i\n", offset);
@@ -233,11 +229,11 @@ void load_icons(volatile Entry_List_s * current_list)
                 break;
             case -1:
                 DEBUG("scrolled up\n");
-                id = LAST(under_icon_ids);
-                memcpy(temp, &FIRST(under_icon_ids), (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
-                memcpy(&under_icon_ids[1], temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
+                id = LAST(under_icons_ids);
+                memcpy(temp, &FIRST(under_icons_ids), (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
+                memcpy(&under_icons_ids[1], temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
 
-                FIRST(under_icon_ids) = LAST(visible_icons_ids);
+                FIRST(under_icons_ids) = LAST(visible_icons_ids);
                 memcpy(temp, &FIRST(visible_icons_ids), (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
                 memcpy(&visible_icons_ids[1], temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
 
@@ -303,14 +299,14 @@ void load_icons(volatile Entry_List_s * current_list)
             int used_i = i;
             if(i < 0)
                 used_i = current_list->entries_count + i;
-
+            DEBUG("used_i: %i\n", used_i);
             current_entry = &current_list->entries[used_i];
             load_smdh_icon(*current_entry, id);
-            above_icons_ids[used_i - starti] = id;
+            above_icons_ids[i - starti] = id;
         }
 
         DEBUG("under\n");
-        memset(under_icon_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+        memset(under_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
         starti += ENTRIES_PER_SCREEN*2;
         for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
         {
@@ -318,7 +314,7 @@ void load_icons(volatile Entry_List_s * current_list)
 
             current_entry = &current_list->entries[i];
             load_smdh_icon(*current_entry, id);
-            under_icon_ids[i-starti] = id;
+            under_icons_ids[i-starti] = id;
         }
     }
 
