@@ -205,6 +205,11 @@ void load_icons(Entry_List_s * current_list)
         current_list->scroll = 0;
     }
 
+    if(current_list->scroll < 0)
+        current_list->scroll = 0;
+    if(current_list->scroll > current_list->entries_count - ENTRIES_PER_SCREEN)
+        current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
+
     //----------------------------------------------------------------
 
     previous_selected = current_list->selected_entry;
@@ -224,7 +229,13 @@ void load_icons(Entry_List_s * current_list)
         ssize_t temp[ENTRIES_PER_SCREEN] = {0};
         int offset = 0;
 
-        switch(current_list->scroll - previous_scroll)
+        int delta = current_list->scroll - previous_scroll;
+        if(delta >= current_list->entries_count - ENTRIES_PER_SCREEN*2 && delta <= current_list->entries_count - ENTRIES_PER_SCREEN)
+            delta = -ENTRIES_PER_SCREEN;
+        else if(-delta >= current_list->entries_count - ENTRIES_PER_SCREEN*2 && -delta <= current_list->entries_count - ENTRIES_PER_SCREEN)
+            delta = ENTRIES_PER_SCREEN;
+
+        switch(delta)
         {
             case 1:
                 DEBUG("scrolled down\n");
@@ -311,8 +322,8 @@ void load_icons(Entry_List_s * current_list)
                 }
                 break;
                 break;
-    #undef FIRST
-    #undef LAST
+        #undef FIRST
+        #undef LAST
             default:
                 DEBUG("wot\n");
                 goto first_load;
@@ -322,11 +333,9 @@ void load_icons(Entry_List_s * current_list)
     else
     {
         first_load:
-        DEBUG("first load\n");
 
         previous_mode = current_list->mode;
 
-        DEBUG("visible\n");
         memset(visible_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
         for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
         {
@@ -338,9 +347,7 @@ void load_icons(Entry_List_s * current_list)
         }
 
         if(current_list->entries_count < ENTRIES_PER_SCREEN*3) return;
-        DEBUG("extended load\n");
 
-        DEBUG("above\n");
         memset(above_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
         starti -= ENTRIES_PER_SCREEN;
         for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
@@ -355,7 +362,6 @@ void load_icons(Entry_List_s * current_list)
             above_icons_ids[i - starti] = id;
         }
 
-        DEBUG("under\n");
         memset(under_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
         starti += ENTRIES_PER_SCREEN*2;
         for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
