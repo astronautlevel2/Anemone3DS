@@ -166,7 +166,7 @@ static ssize_t under_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static int previous_scroll = -1;
 static Entry_s * previous_entries_array = NULL;
 static EntryMode previous_mode = MODE_AMOUNT;
-void load_icons(volatile Entry_List_s * current_list)
+void load_icons(Entry_List_s * current_list)
 {
     if(current_list == NULL || current_list->entries == NULL) return;
 
@@ -330,7 +330,7 @@ void load_icons_thread(void * void_arg)
         svcWaitSynchronization(*arg->update_request, U64_MAX);
         svcClearEvent(*arg->update_request);
         volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_argument;
-        load_icons(current_list);
+        load_icons((Entry_List_s *)current_list);
     }
     while(arg->run_thread);
 }
