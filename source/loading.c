@@ -160,9 +160,12 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
     return res;
 }
 
-static ssize_t above_icons_ids[ENTRIES_PER_SCREEN] = {0};
-ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
-static ssize_t under_icons_ids[ENTRIES_PER_SCREEN] = {0};
+static ssize_t icons_ids[ENTRIES_PER_SCREEN*3] = {0};
+
+static ssize_t * above_icons_ids = &icons_ids[0];
+ssize_t * visible_icons_ids = &icons_ids[ENTRIES_PER_SCREEN];
+static ssize_t * under_icons_ids = &icons_ids[ENTRIES_PER_SCREEN*2];
+
 static int previous_scroll = -1;
 static int previous_selected = 0;
 static Entry_s * previous_entries_array = NULL;
@@ -176,32 +179,26 @@ void load_icons(Entry_List_s * current_list)
 
     if(current_list->selected_entry == previous_selected+1 && current_list->selected_entry == current_list->scroll+ENTRIES_PER_SCREEN)
     {
-        DEBUG("down\n");
         current_list->scroll++;
     }
     else if(current_list->selected_entry == previous_selected-1 && current_list->selected_entry == current_list->scroll-1)
     {
-        DEBUG("up\n");
         current_list->scroll--;
     }
     else if(current_list->selected_entry == previous_selected+ENTRIES_PER_SCREEN)
     {
-        DEBUG("down screen\n");
         current_list->scroll += ENTRIES_PER_SCREEN;
     }
     else if(current_list->selected_entry == previous_selected-ENTRIES_PER_SCREEN)
     {
-        DEBUG("up screen\n");
         current_list->scroll -= ENTRIES_PER_SCREEN;
     }
     else if(previous_scroll < ENTRIES_PER_SCREEN && current_list->selected_entry >= current_list->entries_count-ENTRIES_PER_SCREEN)
     {
-        DEBUG("end\n");
         current_list->scroll = current_list->entries_count-ENTRIES_PER_SCREEN;
     }
     else if(current_list->selected_entry <= ENTRIES_PER_SCREEN && previous_selected >= current_list->entries_count - ENTRIES_PER_SCREEN)
     {
-        DEBUG("top\n");
         current_list->scroll = 0;
     }
 
@@ -238,7 +235,6 @@ void load_icons(Entry_List_s * current_list)
         switch(delta)
         {
             case 1:
-                DEBUG("scrolled down\n");
                 id = FIRST(above_icons_ids);
                 memcpy(temp, &above_icons_ids[1], (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
                 memcpy(&FIRST(above_icons_ids), temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
@@ -261,7 +257,6 @@ void load_icons(Entry_List_s * current_list)
                 load_smdh_icon(*current_entry, id);
                 break;
             case -1:
-                DEBUG("scrolled up\n");
                 id = LAST(under_icons_ids);
                 memcpy(temp, &FIRST(under_icons_ids), (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
                 memcpy(&under_icons_ids[1], temp, (ENTRIES_PER_SCREEN-1)*sizeof(ssize_t));
@@ -284,7 +279,6 @@ void load_icons(Entry_List_s * current_list)
                 load_smdh_icon(*current_entry, id);
                 break;
             case ENTRIES_PER_SCREEN:
-                DEBUG("scrolled 1 screen down\n");
                 memcpy(temp, visible_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
                 memcpy(visible_icons_ids, under_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
                 memcpy(under_icons_ids, above_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
@@ -303,7 +297,6 @@ void load_icons(Entry_List_s * current_list)
                 }
                 break;
             case -ENTRIES_PER_SCREEN:
-                DEBUG("scrolled 1 screen up\n");
                 memcpy(temp, visible_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
                 memcpy(visible_icons_ids, above_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
                 memcpy(above_icons_ids, under_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
@@ -333,7 +326,7 @@ void load_icons(Entry_List_s * current_list)
     else
     {
         first_load:
-
+        DEBUG("load\n");
         previous_mode = current_list->mode;
 
         memset(visible_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));

@@ -31,7 +31,7 @@
 #include "loading.h"
 #include "colors.h"
 
-extern ssize_t visible_icons_ids[ENTRIES_PER_SCREEN];
+extern ssize_t * visible_icons_ids;
 
 typedef enum {
     INSTALL_SPLASH,
