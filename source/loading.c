@@ -189,6 +189,7 @@ void load_icons(Entry_List_s * current_list)
 
     ssize_t id = TEXTURE_ICON;
     Entry_s * current_entry = NULL;
+    int starti = current_list->scroll;
 
     if(previous_mode == current_list->mode)
     {
@@ -197,7 +198,7 @@ void load_icons(Entry_List_s * current_list)
         #define FIRST(arr) arr[0]
         #define LAST(arr) arr[ENTRIES_PER_SCREEN-1]
 
-        ssize_t temp[ENTRIES_PER_SCREEN-1] = {0};
+        ssize_t temp[ENTRIES_PER_SCREEN] = {0};
         int offset = 0;
 
         switch(current_list->scroll - previous_scroll)
@@ -219,10 +220,8 @@ void load_icons(Entry_List_s * current_list)
                 LAST(under_icons_ids) = id;
                 svcSleepThread(1e6);
                 offset = current_list->scroll + ENTRIES_PER_SCREEN*2 - 1;
-                DEBUG("offset: %i\n", offset);
                 if(offset >= current_list->entries_count)
                     offset = offset - current_list->entries_count;
-                DEBUG("offset: %i\n", offset);
 
                 current_entry = &current_list->entries[offset];
                 load_smdh_icon(*current_entry, id);
@@ -244,21 +243,50 @@ void load_icons(Entry_List_s * current_list)
                 FIRST(above_icons_ids) = id;
                 svcSleepThread(1e6);
                 offset = current_list->scroll - ENTRIES_PER_SCREEN;
-                DEBUG("offset: %i\n", offset);
                 if(offset < 0)
                     offset = current_list->entries_count + offset;
-                DEBUG("offset: %i\n", offset);
 
                 current_entry = &current_list->entries[offset];
                 load_smdh_icon(*current_entry, id);
                 break;
             case ENTRIES_PER_SCREEN:
                 DEBUG("scrolled 1 screen down\n");
-                goto first_load;
+                memcpy(temp, visible_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+                memcpy(visible_icons_ids, under_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+                memcpy(under_icons_ids, above_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+                memcpy(above_icons_ids, temp, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+
+                svcSleepThread(1e6);
+                starti += ENTRIES_PER_SCREEN;
+                for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++)
+                {
+                    offset = i;
+                    if(offset < 0)
+                        offset = offset - current_list->entries_count + offset;
+
+                    current_entry = &current_list->entries[offset];
+                    load_smdh_icon(*current_entry, under_icons_ids[i-starti]);
+                }
                 break;
             case -ENTRIES_PER_SCREEN:
                 DEBUG("scrolled 1 screen up\n");
-                goto first_load;
+                memcpy(temp, visible_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+                memcpy(visible_icons_ids, above_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+                memcpy(above_icons_ids, under_icons_ids, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+                memcpy(under_icons_ids, temp, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+
+                svcSleepThread(1e6);
+                starti -= ENTRIES_PER_SCREEN;
+                for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++)
+                {
+                    offset = i;
+                    if(offset >= current_list->entries_count)
+                        offset = offset - current_list->entries_count;
+
+                    current_entry = &current_list->entries[offset];
+                    load_smdh_icon(*current_entry, above_icons_ids[i-starti]);
+                }
+                break;
                 break;
     #undef FIRST
     #undef LAST
@@ -277,7 +305,6 @@ void load_icons(Entry_List_s * current_list)
 
         DEBUG("visible\n");
         memset(visible_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
-        int starti = current_list->scroll;
         for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
         {
             if(i >= current_list->entries_count) break;
