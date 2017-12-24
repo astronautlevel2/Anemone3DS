@@ -164,6 +164,7 @@ static ssize_t above_icons_ids[ENTRIES_PER_SCREEN] = {0};
 ssize_t visible_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static ssize_t under_icons_ids[ENTRIES_PER_SCREEN] = {0};
 static int previous_scroll = -1;
+static int previous_selected = 0;
 static Entry_s * previous_entries_array = NULL;
 static EntryMode previous_mode = MODE_AMOUNT;
 void load_icons(Entry_List_s * current_list)
@@ -172,19 +173,41 @@ void load_icons(Entry_List_s * current_list)
 
     // Scroll the menu up or down if the selected theme is out of its bounds
     //----------------------------------------------------------------
-    for(int i = 0; i < current_list->entries_count; i++) {
-        if(current_list->entries_count <= ENTRIES_PER_SCREEN) break;
 
-        if(current_list->scroll > current_list->selected_entry)
-            current_list->scroll--;
-
-        if((i < current_list->selected_entry) && \
-          ((current_list->selected_entry - current_list->scroll) >= ENTRIES_PER_SCREEN) && \
-          (current_list->scroll != (i - ENTRIES_PER_SCREEN)))
-            current_list->scroll++;
+    if(current_list->selected_entry == previous_selected+1 && current_list->selected_entry == current_list->scroll+ENTRIES_PER_SCREEN)
+    {
+        DEBUG("down\n");
+        current_list->scroll++;
     }
+    else if(current_list->selected_entry == previous_selected-1 && current_list->selected_entry == current_list->scroll-1)
+    {
+        DEBUG("up\n");
+        current_list->scroll--;
+    }
+    else if(current_list->selected_entry == previous_selected+ENTRIES_PER_SCREEN)
+    {
+        DEBUG("down screen\n");
+        current_list->scroll += ENTRIES_PER_SCREEN;
+    }
+    else if(current_list->selected_entry == previous_selected-ENTRIES_PER_SCREEN)
+    {
+        DEBUG("up screen\n");
+        current_list->scroll -= ENTRIES_PER_SCREEN;
+    }
+    else if(previous_scroll < ENTRIES_PER_SCREEN && current_list->selected_entry >= current_list->entries_count-ENTRIES_PER_SCREEN)
+    {
+        DEBUG("end\n");
+        current_list->scroll = current_list->entries_count-ENTRIES_PER_SCREEN;
+    }
+    else if(current_list->selected_entry <= ENTRIES_PER_SCREEN && previous_selected >= current_list->entries_count - ENTRIES_PER_SCREEN)
+    {
+        DEBUG("top\n");
+        current_list->scroll = 0;
+    }
+
     //----------------------------------------------------------------
 
+    previous_selected = current_list->selected_entry;
     if(previous_scroll == current_list->scroll && previous_entries_array == current_list->entries) return;
 
     ssize_t id = TEXTURE_ICON;

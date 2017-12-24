@@ -89,7 +89,7 @@ void change_selected(Entry_List_s * list, int change_value)
 {
     list->selected_entry += change_value;
     if(change_value < 0 && list->selected_entry < 0)
-        list->selected_entry = list->entries_count - 1;
+        list->selected_entry = list->entries_count + list->selected_entry;
     else
         list->selected_entry %= list->entries_count;
 }
