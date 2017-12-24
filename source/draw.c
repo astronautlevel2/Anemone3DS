@@ -145,11 +145,11 @@ void throw_error(char* error, ErrorLevel level)
     }
 }
 
-bool draw_confirm(const char* conf_msg, Entry_List_s* list, EntryMode current_mode)
+bool draw_confirm(const char* conf_msg, Entry_List_s* list)
 {
     while(aptMainLoop())
     {
-        draw_interface(list, current_mode);
+        draw_interface(list);
         pp2d_draw_on(GFX_TOP, GFX_LEFT);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.7, 0.7, COLOR_YELLOW, conf_msg);
         pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE000 Yes   \uE001 No");
@@ -243,9 +243,10 @@ void draw_instructions(Instructions_s instructions)
     }
 }
 
-void draw_interface(Entry_List_s* list, EntryMode current_mode)
+void draw_interface(Entry_List_s* list)
 {
     draw_base_interface();
+    EntryMode current_mode = list->mode;
 
     const char* mode_string[MODE_AMOUNT] = {
         "Theme mode",

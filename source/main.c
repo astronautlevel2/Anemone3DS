@@ -111,7 +111,7 @@ void load_lists(Entry_List_s * lists)
     {
         Entry_List_s * current_list = &lists[i];
         current_list->icon_id_start = icon_id_start;
-        load_entries(main_paths[i], current_list);
+        load_entries(main_paths[i], current_list, i);
         icon_id_start += current_list->entries_count;
     }
 }
@@ -165,7 +165,7 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else {
-            draw_interface(current_list, current_mode);
+            draw_interface(current_list);
             if(install_mode)
                 draw_instructions(install_instructions);
             else
@@ -300,7 +300,7 @@ int main(void)
                     current_entry->in_shuffle = !current_entry->in_shuffle;
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list, current_mode))
+                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -324,7 +324,7 @@ int main(void)
         }
         else if(kDown & KEY_SELECT)
         {
-            if(draw_confirm("Are you sure you would like to delete this?", current_list, current_mode))
+            if(draw_confirm("Are you sure you would like to delete this?", current_list))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(*current_entry);

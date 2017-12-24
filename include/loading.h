@@ -65,6 +65,8 @@ typedef struct {
     int selected_entry;
 
     int shuffle_count;
+
+    EntryMode mode;
 } Entry_List_s;
 
 typedef struct {
@@ -74,7 +76,7 @@ typedef struct {
 } Thread_Arg_s;
 
 void delete_entry(Entry_s entry);
-Result load_entries(const char * loading_path, Entry_List_s * list);
+Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mode);
 bool load_preview(Entry_List_s list, int * preview_offset);
 void load_icons_thread(void * void_arg);
 u32 load_data(char * filename, Entry_s entry, char ** buf);

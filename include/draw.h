@@ -78,13 +78,13 @@ void init_screens(void);
 void exit_screens(void);
 
 void throw_error(char* error, ErrorLevel level);
-bool draw_confirm(const char* conf_msg, Entry_List_s* list, EntryMode current_mode);
+bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
 void draw_preview(int preview_offset);
 
 void draw_install(InstallType type);
 
 void draw_instructions(Instructions_s instructions);
-void draw_interface(Entry_List_s* list, EntryMode current_mode);
+void draw_interface(Entry_List_s* list);
 
 #endif
