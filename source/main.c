@@ -159,12 +159,13 @@ int main(void)
         u32 kUp = hidKeysUp();
 
         current_list = &lists[current_mode];
-        svcSignalEvent(update_icons_handle);
-        svcSleepThread(1e6);
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else {
+            svcSignalEvent(update_icons_handle);
+            svcSleepThread(1e6);
+
             draw_interface(current_list);
             if(install_mode)
                 draw_instructions(install_instructions);
