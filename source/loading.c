@@ -301,9 +301,15 @@ void load_icons(Entry_List_s * current_list)
     #define LAST(arr) arr[ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT - 1]
 
     int starti = current_list->scroll;
+    int endi = starti + abs(delta);
 
-    DEBUG("delta: %i\n", delta);
-    for(int i = starti; i < starti+abs(delta); i++)
+    if(delta == -ENTRIES_PER_SCREEN)
+    {
+        endi -= abs(delta) + 1;
+        starti += abs(delta) - 1;
+    }
+
+    for(int i = starti; i != endi; i++)
     {
         ssize_t id = 0;
         if(delta > 0)
@@ -317,34 +323,30 @@ void load_icons(Entry_List_s * current_list)
             id = FIRST(((ssize_t *)current_list->icons_ids));
         }
 
-        DEBUG("id: %i", id);
-
         int offset = i;
-        DEBUG("offset: %i\n", offset);
 
         if(delta == 1)
         {
-            offset = offset + ENTRIES_PER_SCREEN*2 - 1;
+            offset += ENTRIES_PER_SCREEN*2 - 1;
         }
         else if(delta == -1)
         {
-            offset = offset - ENTRIES_PER_SCREEN;
+            offset -= ENTRIES_PER_SCREEN;
         }
         else if(delta == ENTRIES_PER_SCREEN)
         {
-            DEBUG("haha\n");
+            offset += ENTRIES_PER_SCREEN;
         }
         else if(delta == -ENTRIES_PER_SCREEN)
         {
-            DEBUG("bleh\n");
+            offset = offset - ENTRIES_PER_SCREEN;
+            i -= 2; //i-- twice to counter the i++, needed only for this case
         }
 
         if(offset < 0)
             offset = current_list->entries_count + offset;
         if(offset >= current_list->entries_count)
             offset = offset - current_list->entries_count;
-
-        DEBUG("offset: %i\n", offset);
 
         load_smdh_icon(current_list->entries[offset], id);
     }
