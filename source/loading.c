@@ -290,7 +290,9 @@ void load_icons(Entry_List_s * current_list)
                 {
                     offset = i;
                     if(offset < 0)
-                        offset = offset - current_list->entries_count + offset;
+                        offset = current_list->entries_count + offset;
+                    if(offset >= current_list->entries_count)
+                        offset = offset - current_list->entries_count;
 
                     current_entry = &current_list->entries[offset];
                     load_smdh_icon(*current_entry, under_icons_ids[i-starti]);
@@ -307,6 +309,8 @@ void load_icons(Entry_List_s * current_list)
                 for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++)
                 {
                     offset = i;
+                    if(offset < 0)
+                        offset = current_list->entries_count + offset;
                     if(offset >= current_list->entries_count)
                         offset = offset - current_list->entries_count;
 
