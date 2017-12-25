@@ -29,6 +29,14 @@
 
 #include "common.h"
 
+enum ICON_IDS_OFFSET {
+    ICONS_ABOVE = 0,
+    ICONS_VISIBLE,
+    ICONS_UNDER,
+
+    ICONS_OFFSET_AMOUNT,
+};
+
 typedef struct {
     u8 _padding1[4 + 2 + 2];
 
@@ -59,7 +67,13 @@ typedef struct {
     Entry_s * entries;
     int entries_count;
 
+    ssize_t texture_id_offset;
+    ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
+
+    int previous_scroll;
     int scroll;
+
+    int previous_selected;
     int selected_entry;
 
     int shuffle_count;
@@ -76,6 +90,7 @@ typedef struct {
 void delete_entry(Entry_s entry);
 Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mode);
 bool load_preview(Entry_List_s list, int * preview_offset);
+void load_icons_first(Entry_List_s * current_list);
 void load_icons_thread(void * void_arg);
 u32 load_data(char * filename, Entry_s entry, char ** buf);
 

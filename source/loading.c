@@ -160,6 +160,77 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
     return res;
 }
 
+static void small_load(Entry_List_s * current_list)
+{
+    DEBUG("small load\n");
+
+    ssize_t * icons_ids = (ssize_t *)current_list->icons_ids;
+    ssize_t id = current_list->texture_id_offset;
+    for(int i = 0; i < current_list->entries_count; i++, id++)
+    {
+        Entry_s current_entry = current_list->entries[i];
+        load_smdh_icon(current_entry, id);
+        icons_ids[i] = id;
+    }
+}
+
+static void first_load(Entry_List_s * current_list)
+{
+    DEBUG("first load\n");
+
+    ssize_t * above_icons_ids = current_list->icons_ids[ICONS_ABOVE];
+    ssize_t * visible_icons_ids = current_list->icons_ids[ICONS_VISIBLE];
+    ssize_t * under_icons_ids = current_list->icons_ids[ICONS_UNDER];
+
+    ssize_t id = current_list->texture_id_offset;
+    int starti = current_list->scroll;
+
+    memset(visible_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+    for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
+    {
+        if(i >= current_list->entries_count) break;
+
+        Entry_s current_entry = current_list->entries[i];
+        load_smdh_icon(current_entry, id);
+        visible_icons_ids[i-starti] = id;
+    }
+
+    memset(above_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+    starti -= ENTRIES_PER_SCREEN;
+    for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
+    {
+        if(i >= current_list->entries_count) break;
+        int used_i = i;
+        if(i < 0)
+            used_i = current_list->entries_count + i;
+
+        Entry_s current_entry = current_list->entries[used_i];
+        load_smdh_icon(current_entry, id);
+        above_icons_ids[i - starti] = id;
+    }
+
+    memset(under_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
+    starti += ENTRIES_PER_SCREEN*2;
+    for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
+    {
+        int used_i = i;
+        if(i >= current_list->entries_count)
+            used_i = i - current_list->entries_count;
+
+        Entry_s current_entry = current_list->entries[used_i];
+        load_smdh_icon(current_entry, id);
+        under_icons_ids[i-starti] = id;
+    }
+}
+
+void load_icons_first(Entry_List_s * current_list)
+{
+    if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+        small_load(current_list); // if the list is one that doesnt need swapping, load everything at once
+    else
+        first_load(current_list);
+}
+
 static void reverse(ssize_t a[], int sz) {
     int i, j;
     for (i = 0, j = sz; i < j; i++, j--) {
@@ -177,163 +248,121 @@ static void rotate(ssize_t array[], int size, int amt) {
     reverse(array, size-1);
 }
 
-static ssize_t icons_ids[ENTRIES_PER_SCREEN*3] = {0};
-
-static ssize_t * above_icons_ids = &icons_ids[0];
-ssize_t * visible_icons_ids = &icons_ids[ENTRIES_PER_SCREEN];
-static ssize_t * under_icons_ids = &icons_ids[ENTRIES_PER_SCREEN*2];
-
-static int previous_scroll = -1;
-static int previous_selected = 0;
-static Entry_s * previous_entries_array = NULL;
-static EntryMode previous_mode = MODE_AMOUNT;
 void load_icons(Entry_List_s * current_list)
 {
     if(current_list == NULL || current_list->entries == NULL) return;
 
     // Scroll the menu up or down if the selected theme is out of its bounds
     //----------------------------------------------------------------
+    if(current_list->entries_count > ENTRIES_PER_SCREEN)
+    {
+        if(current_list->selected_entry == current_list->previous_selected+1 && current_list->selected_entry == current_list->scroll+ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll++;
+        }
+        else if(current_list->selected_entry == current_list->previous_selected-1 && current_list->selected_entry == current_list->scroll-1)
+        {
+            current_list->scroll--;
+        }
+        else if(current_list->selected_entry == current_list->previous_selected+ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll += ENTRIES_PER_SCREEN;
+        }
+        else if(current_list->selected_entry == current_list->previous_selected-ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll -= ENTRIES_PER_SCREEN;
+        }
+        else if(current_list->previous_scroll < ENTRIES_PER_SCREEN && current_list->selected_entry >= current_list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
+        }
+        else if(current_list->selected_entry <= ENTRIES_PER_SCREEN && current_list->previous_selected >= current_list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll = 0;
+        }
 
-    if(current_list->selected_entry == previous_selected+1 && current_list->selected_entry == current_list->scroll+ENTRIES_PER_SCREEN)
-    {
-        current_list->scroll++;
+        if(current_list->scroll < 0)
+            current_list->scroll = 0;
+        if(current_list->scroll > current_list->entries_count - ENTRIES_PER_SCREEN)
+            current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
     }
-    else if(current_list->selected_entry == previous_selected-1 && current_list->selected_entry == current_list->scroll-1)
-    {
-        current_list->scroll--;
-    }
-    else if(current_list->selected_entry == previous_selected+ENTRIES_PER_SCREEN)
-    {
-        current_list->scroll += ENTRIES_PER_SCREEN;
-    }
-    else if(current_list->selected_entry == previous_selected-ENTRIES_PER_SCREEN)
-    {
-        current_list->scroll -= ENTRIES_PER_SCREEN;
-    }
-    else if(previous_scroll < ENTRIES_PER_SCREEN && current_list->selected_entry >= current_list->entries_count - ENTRIES_PER_SCREEN)
-    {
-        current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
-    }
-    else if(current_list->selected_entry <= ENTRIES_PER_SCREEN && previous_selected >= current_list->entries_count - ENTRIES_PER_SCREEN)
-    {
-        current_list->scroll = 0;
-    }
-
-
-    if(current_list->scroll < 0)
-        current_list->scroll = 0;
-    if(current_list->scroll > current_list->entries_count - ENTRIES_PER_SCREEN)
-        current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
-
     //----------------------------------------------------------------
 
-    previous_selected = current_list->selected_entry;
-    if(previous_scroll == current_list->scroll && previous_entries_array == current_list->entries) return;
+    if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
+        goto end; // return if the list is one that doesnt need swapping, or if nothing changed
 
-    ssize_t id = TEXTURE_ICON;
+    int delta = current_list->scroll - current_list->previous_scroll;
+    if(delta >= current_list->entries_count - ENTRIES_PER_SCREEN*2 && delta <= current_list->entries_count - ENTRIES_PER_SCREEN)
+        delta = -ENTRIES_PER_SCREEN;
+    else if(-delta >= current_list->entries_count - ENTRIES_PER_SCREEN*2 && -delta <= current_list->entries_count - ENTRIES_PER_SCREEN)
+        delta = ENTRIES_PER_SCREEN;
+
+    #define FIRST(arr) arr[0]
+    #define LAST(arr) arr[ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT - 1]
+
     int starti = current_list->scroll;
 
-    if(previous_mode == current_list->mode)
+    DEBUG("delta: %i\n", delta);
+    for(int i = starti; i < starti+abs(delta); i++)
     {
-        if(current_list->entries_count < ENTRIES_PER_SCREEN*3) goto first_load;
-
-        int delta = current_list->scroll - previous_scroll;
-        if(delta >= current_list->entries_count - ENTRIES_PER_SCREEN*2 && delta <= current_list->entries_count - ENTRIES_PER_SCREEN)
-            delta = -ENTRIES_PER_SCREEN;
-        else if(-delta >= current_list->entries_count - ENTRIES_PER_SCREEN*2 && -delta <= current_list->entries_count - ENTRIES_PER_SCREEN)
-            delta = ENTRIES_PER_SCREEN;
-
-        #define FIRST(arr) arr[0]
-        #define LAST(arr) arr[ENTRIES_PER_SCREEN - 1]
-
-        DEBUG("delta: %i\n", delta);
-        for(int i = starti; i < starti+abs(delta); i++)
+        ssize_t id = 0;
+        if(delta > 0)
         {
-            int offset = i;
-            int id = 0;
-
-            if(delta > 0)
-            {
-                rotate(icons_ids, ENTRIES_PER_SCREEN*3, -1);
-                offset = offset + ENTRIES_PER_SCREEN*2 - 1;
-                id = LAST(under_icons_ids);
-            }
-            if(delta < 0)
-            {
-                rotate(icons_ids, ENTRIES_PER_SCREEN*3, 1);
-                offset = offset - ENTRIES_PER_SCREEN;
-                id = FIRST(above_icons_ids);
-            }
-
-            if(offset < 0)
-                offset = current_list->entries_count + offset;
-            if(offset >= current_list->entries_count)
-                offset = offset - current_list->entries_count;
-
-            DEBUG("offset: %i\n", offset);
-            DEBUG("id: %i", id);
-
-            load_smdh_icon(current_list->entries[offset], id);
+            rotate((ssize_t *)current_list->icons_ids, 3*ENTRIES_PER_SCREEN, -1);
+            id = LAST(((ssize_t *)current_list->icons_ids));
+        }
+        else
+        {
+            rotate((ssize_t *)current_list->icons_ids, 3*ENTRIES_PER_SCREEN, 1);
+            id = FIRST(((ssize_t *)current_list->icons_ids));
         }
 
-        #undef FIRST
-        #undef LAST
+        DEBUG("id: %i", id);
 
-        DEBUG("icons_ids: ");
-        for(int i = 0; i < ENTRIES_PER_SCREEN*3; i++)
+        int offset = i;
+        DEBUG("offset: %i\n", offset);
+
+        if(delta == 1)
         {
-            DEBUG("%i", icons_ids[i]);
+            offset = offset + ENTRIES_PER_SCREEN*2 - 1;
         }
-        DEBUG("\n");
-    }
-    else
-    {
-        first_load:
-        DEBUG("load\n");
-        previous_mode = current_list->mode;
-
-        memset(visible_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
-        for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
+        else if(delta == -1)
         {
-            if(i >= current_list->entries_count) break;
-
-            Entry_s current_entry = current_list->entries[i];
-            load_smdh_icon(current_entry, id);
-            visible_icons_ids[i-starti] = id;
+            offset = offset - ENTRIES_PER_SCREEN;
+        }
+        else if(delta == ENTRIES_PER_SCREEN)
+        {
+            DEBUG("haha\n");
+        }
+        else if(delta == -ENTRIES_PER_SCREEN)
+        {
+            DEBUG("bleh\n");
         }
 
-        if(current_list->entries_count < ENTRIES_PER_SCREEN*3) return;
+        if(offset < 0)
+            offset = current_list->entries_count + offset;
+        if(offset >= current_list->entries_count)
+            offset = offset - current_list->entries_count;
 
-        memset(above_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
-        starti -= ENTRIES_PER_SCREEN;
-        for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
-        {
-            if(i >= current_list->entries_count) break;
-            int used_i = i;
-            if(i < 0)
-                used_i = current_list->entries_count + i;
+        DEBUG("offset: %i\n", offset);
 
-            Entry_s current_entry = current_list->entries[used_i];
-            load_smdh_icon(current_entry, id);
-            above_icons_ids[i - starti] = id;
-        }
-
-        memset(under_icons_ids, 0, ENTRIES_PER_SCREEN*sizeof(ssize_t));
-        starti += ENTRIES_PER_SCREEN*2;
-        for(int i = starti; i < starti+ENTRIES_PER_SCREEN; i++, id++)
-        {
-            int used_i = i;
-            if(i >= current_list->entries_count)
-                used_i = i - current_list->entries_count;
-
-            Entry_s current_entry = current_list->entries[used_i];
-            load_smdh_icon(current_entry, id);
-            under_icons_ids[i-starti] = id;
-        }
+        load_smdh_icon(current_list->entries[offset], id);
     }
 
-    previous_scroll = current_list->scroll;
-    previous_entries_array = current_list->entries;
+    #undef FIRST
+    #undef LAST
+
+    /*
+    DEBUG("icons_ids: ");
+    for(int i = 0; i < ICONS_OFFSET_AMOUNT; i++)
+        for(int j = 0; j < ENTRIES_PER_SCREEN; j++)
+            DEBUG("%i", current_list->icons_ids[i][j]);
+    DEBUG("\n");
+    */
+
+    end:
+    current_list->previous_scroll = current_list->scroll;
+    current_list->previous_selected = current_list->selected_entry;
 }
 
 void load_icons_thread(void * void_arg)

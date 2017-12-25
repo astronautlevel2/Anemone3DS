@@ -325,7 +325,14 @@ void draw_interface(Entry_List_s* list)
         }
         pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
         if(!current_entry.placeholder_color)
-            pp2d_draw_texture(visible_icons_ids[i - list->scroll], 0, 24 + vertical_offset);
+        {
+            ssize_t id = 0;
+            if(list->entries_count > ICONS_OFFSET_AMOUNT*ENTRIES_PER_SCREEN)
+                id = list->icons_ids[ICONS_VISIBLE][i - list->scroll];
+            else
+                id = ((size_t *)list->icons_ids)[i];
+            pp2d_draw_texture(id, 0, 24 + vertical_offset);
+        }
         else
             pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_entry.placeholder_color);
 

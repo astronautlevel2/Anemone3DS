@@ -96,10 +96,20 @@ void change_selected(Entry_List_s * list, int change_value)
 
 void load_lists(Entry_List_s * lists)
 {
+    ssize_t texture_id_offset = TEXTURE_ICON;
+
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * current_list = &lists[i];
+        free(current_list->entries);
+        memset(current_list, 0, sizeof(Entry_List_s));
         load_entries(main_paths[i], current_list, i);
+        DEBUG("total: %i\n", current_list->entries_count);
+
+        current_list->texture_id_offset = texture_id_offset;
+        load_icons_first(current_list);
+
+        texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
     }
 }
 
