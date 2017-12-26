@@ -137,9 +137,14 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
             continue;
 
         list->entries_count++;
-        list->entries = realloc(list->entries, list->entries_count * sizeof(Entry_s));
-        if(list->entries == NULL)
+        Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
+        if(new_list == NULL)
+        {
+            free(list->entries);
             break;
+        }
+        else
+            list->entries = new_list;
 
         Entry_s * current_entry = &(list->entries[list->entries_count-1]);
         memset(current_entry, 0, sizeof(Entry_s));
