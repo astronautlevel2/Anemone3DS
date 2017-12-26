@@ -51,7 +51,7 @@ const char * main_paths[MODE_AMOUNT] = {
     "/Splashes/",
 };
 
-void init_services(void)
+static void init_services(void)
 {
     consoleDebugInit(debugDevice_SVC);
     cfguInit();
@@ -67,13 +67,25 @@ void init_services(void)
     }
 }
 
-void exit_services(void)
+static void exit_services(void)
 {
     close_archives();
     cfguExit();
     ptmuExit();
     httpcExit();
     acExit();
+}
+
+static void exit_thread(void)
+{
+    if(arg.run_thread)
+    {
+        DEBUG("exiting thread\n");
+        arg.run_thread = false;
+        svcSignalEvent(update_icons_handle);
+        threadJoin(iconLoadingThread, U64_MAX);
+        threadFree(iconLoadingThread);
+    }
 }
 
 void exit_function(void)
@@ -85,12 +97,8 @@ void exit_function(void)
         current_list->entries = NULL;
     }
 
-    arg.run_thread = false;
-    svcSignalEvent(update_icons_handle);
-    threadJoin(iconLoadingThread, U64_MAX);
-    threadFree(iconLoadingThread);
+    exit_thread();
     svcCloseHandle(update_icons_handle);
-
     exit_screens();
     exit_services();
 
@@ -107,7 +115,46 @@ void exit_function(void)
     }
 }
 
-void change_selected(Entry_List_s * list, int change_value)
+static void handle_scrolling(Entry_List_s * list)
+{
+    // Scroll the menu up or down if the selected theme is out of its bounds
+    //----------------------------------------------------------------
+    if(list->entries_count > ENTRIES_PER_SCREEN)
+    {
+        if(list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+        }
+        else if(list->selected_entry <= ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            list->scroll = 0;
+        }
+        else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
+        {
+            list->scroll++;
+        }
+        else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
+        {
+            list->scroll--;
+        }
+        else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
+        {
+            list->scroll += ENTRIES_PER_SCREEN;
+        }
+        else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
+        {
+            list->scroll -= ENTRIES_PER_SCREEN;
+        }
+
+        if(list->scroll < 0)
+            list->scroll = 0;
+        if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+    }
+    //----------------------------------------------------------------
+}
+
+static void change_selected(Entry_List_s * list, int change_value)
 {
     list->selected_entry += change_value;
     if(change_value < 0 && list->selected_entry < 0)
@@ -116,10 +163,20 @@ void change_selected(Entry_List_s * list, int change_value)
         list->selected_entry %= list->entries_count;
 }
 
-void load_lists(Entry_List_s * lists)
+static void start_thread(void)
+{
+    if(arg.run_thread)
+    {
+        DEBUG("starting thread\n");
+        iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x3f, -2, false);
+    }
+}
+
+static void load_lists(Entry_List_s * lists)
 {
     ssize_t texture_id_offset = TEXTURE_ICON;
 
+    exit_thread();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         InstallType loading_screen = INSTALL_NONE;
@@ -134,6 +191,10 @@ void load_lists(Entry_List_s * lists)
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
         load_entries(main_paths[i], current_list, i);
+
+        if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+            arg.run_thread = true;
+
         DEBUG("total: %i\n", current_list->entries_count);
 
         current_list->texture_id_offset = texture_id_offset;
@@ -141,6 +202,7 @@ void load_lists(Entry_List_s * lists)
 
         texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
     }
+    start_thread();
 }
 
 int main(void)
@@ -149,16 +211,14 @@ int main(void)
     init_services();
     init_screens();
 
-    load_lists(lists);
     static Entry_List_s * current_list = NULL;
     arg.thread_argument = (void*)&current_list;
     arg.update_request = &update_icons_handle;
-    arg.run_thread = true;
+    svcCreateEvent(&update_icons_handle, 0);
+
+    load_lists(lists);
 
     EntryMode current_mode = MODE_THEMES;
-
-    svcCreateEvent(&update_icons_handle, 0);
-    iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x3f, -2, false);
 
     bool preview_mode = false;
     int preview_offset = 0;
@@ -186,8 +246,12 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else {
+            handle_scrolling(current_list);
             svcSignalEvent(update_icons_handle);
             svcSleepThread(1e6);
+
+            current_list->previous_scroll = current_list->scroll;
+            current_list->previous_selected = current_list->selected_entry;
 
             draw_interface(current_list);
             if(install_mode)
