@@ -32,6 +32,9 @@
 #include "colors.h"
 
 typedef enum {
+    INSTALL_LOADING_THEMES,
+    INSTALL_LOADING_SPLASHES,
+
     INSTALL_SPLASH,
     INSTALL_SPLASH_DELETE,
 
@@ -42,6 +45,8 @@ typedef enum {
 
     INSTALL_DOWNLOAD,
     INSTALL_ENTRY_DELETE,
+
+    INSTALL_NONE,
 } InstallType;
 
 typedef enum {

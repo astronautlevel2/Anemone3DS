@@ -177,6 +177,12 @@ void draw_install(InstallType type)
     draw_base_interface();
     switch(type)
     {
+        case INSTALL_LOADING_THEMES:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading themes, please wait...");
+            break;
+        case INSTALL_LOADING_SPLASHES:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading splashes, please wait...");
+            break;
         case INSTALL_SINGLE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
             break;

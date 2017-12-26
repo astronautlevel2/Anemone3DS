@@ -122,6 +122,14 @@ void load_lists(Entry_List_s * lists)
 
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
+        InstallType loading_screen = INSTALL_NONE;
+        if(i == MODE_THEMES)
+            loading_screen = INSTALL_LOADING_THEMES;
+        else if(i == MODE_SPLASHES)
+            loading_screen = INSTALL_LOADING_SPLASHES;
+
+        draw_install(loading_screen);
+
         Entry_List_s * current_list = &lists[i];
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
