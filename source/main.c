@@ -37,6 +37,7 @@
 #define FASTSCROLL_WAIT 1e8
 
 static bool homebrew = false;
+static bool installed_themes = false;
 static Thread_Arg_s arg = {0};
 static Handle update_icons_handle;
 static Thread iconLoadingThread;
@@ -93,13 +94,16 @@ void exit_function(void)
     exit_screens();
     exit_services();
 
-    if(homebrew)
+    if(installed_themes)
     {
-        APT_HardwareResetAsync();
-    }
-    else
-    {
-        srvPublishToSubscriber(0x202, 0);
+        if(homebrew)
+        {
+            APT_HardwareResetAsync();
+        }
+        else
+        {
+            srvPublishToSubscriber(0x202, 0);
+        }
     }
 }
 
@@ -252,16 +256,19 @@ int main(void)
                 {
                     draw_install(INSTALL_BGM);
                     bgm_install(*current_entry);
+                    installed_themes = true;
                 }
                 else if((kDown | kHeld) & KEY_DUP)
                 {
                     draw_install(INSTALL_SINGLE);
                     theme_install(*current_entry);
+                    installed_themes = true;
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
                     draw_install(INSTALL_NO_BGM);
                     no_bgm_install(*current_entry);
+                    installed_themes = true;
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
                 {
@@ -278,7 +285,11 @@ int main(void)
                         draw_install(INSTALL_SHUFFLE);
                         Result res = shuffle_install(*current_list);
                         if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
-                        else current_list->shuffle_count = 0;
+                        else
+                        {
+                            current_list->shuffle_count = 0;
+                            installed_themes = true;
+                        }
                     }
                 }
             }
