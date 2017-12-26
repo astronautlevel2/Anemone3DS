@@ -37,6 +37,11 @@
 #define FASTSCROLL_WAIT 1e8
 
 static bool homebrew = false;
+static Thread_Arg_s arg = {0};
+static Handle update_icons_handle;
+static Thread iconLoadingThread;
+static Entry_List_s lists[MODE_AMOUNT] = {0};
+
 int __stacksize__ = 64 * 1024;
 Result archive_result;
 
@@ -72,6 +77,19 @@ void exit_services(void)
 
 void exit_function(void)
 {
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        Entry_List_s * current_list = &lists[i];
+        free(current_list->entries);
+        current_list->entries = NULL;
+    }
+
+    arg.run_thread = false;
+    svcSignalEvent(update_icons_handle);
+    threadJoin(iconLoadingThread, U64_MAX);
+    threadFree(iconLoadingThread);
+    svcCloseHandle(update_icons_handle);
+
     exit_screens();
     exit_services();
 
@@ -119,20 +137,16 @@ int main(void)
     init_services();
     init_screens();
 
-    Entry_List_s lists[MODE_AMOUNT] = {0};
     load_lists(lists);
     static Entry_List_s * current_list = NULL;
-    static Thread_Arg_s arg;
     arg.thread_argument = (void*)&current_list;
-
-    Handle update_icons_handle;
     arg.update_request = &update_icons_handle;
     arg.run_thread = true;
 
     EntryMode current_mode = MODE_THEMES;
 
     svcCreateEvent(&update_icons_handle, 0);
-    Thread iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x3f, -2, false);
+    iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x3f, -2, false);
 
     bool preview_mode = false;
     int preview_offset = 0;
@@ -371,11 +385,6 @@ int main(void)
             svcSleepThread(FASTSCROLL_WAIT);
         }
     }
-
-    arg.run_thread = false;
-    svcSignalEvent(update_icons_handle);
-    threadJoin(iconLoadingThread, U64_MAX);
-    svcCloseHandle(update_icons_handle);
 
     exit_function();
 
