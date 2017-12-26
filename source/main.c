@@ -317,7 +317,7 @@ int main(void)
                 qr_mode = false;
                 continue;
             }
-            else if(preview_mode && kDown & KEY_B)
+            else if(preview_mode && kDown & (KEY_B | KEY_TOUCH))
             {
                 preview_mode = false;
                 continue;
@@ -478,6 +478,45 @@ int main(void)
         {
             change_selected(current_list, ENTRIES_PER_SCREEN);
             svcSleepThread(FASTSCROLL_WAIT);
+        }
+
+        // Movement using the touchscreen
+        if(kDown & KEY_TOUCH)
+        {
+            touchPosition touch = {0};
+            hidTouchRead(&touch);
+
+            u16 x = touch.px;
+            u16 y = touch.py;
+
+            u16 arrowStartX = 128+16+8;
+            u16 arrowEndX = arrowStartX+16;
+
+            #define BETWEEN(x, min, max) (x > min && x < max)
+
+            if(y < 24)
+            {
+                if(BETWEEN(x, arrowStartX, arrowEndX))
+                    change_selected(current_list, -ENTRIES_PER_SCREEN);
+            }
+            else if(y >= 216)
+            {
+                if(BETWEEN(x, arrowStartX, arrowEndX))
+                    change_selected(current_list, ENTRIES_PER_SCREEN);
+            }
+            else
+            {
+                for(unsigned int i = 0; i < ENTRIES_PER_SCREEN; i++)
+                {
+                    u16 miny = 24 + 48*i;
+                    u16 maxy = 24 + 48*(i+1);
+                    if(BETWEEN(y, miny, maxy))
+                    {
+                        current_list->selected_entry = current_list->scroll + i;
+                        break;
+                    }
+                }
+            }
         }
     }
 
