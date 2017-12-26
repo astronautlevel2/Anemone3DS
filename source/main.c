@@ -492,16 +492,16 @@ int main(void)
             u16 arrowStartX = 128+16+8;
             u16 arrowEndX = arrowStartX+16;
 
-            #define BETWEEN(x, min, max) (x > min && x < max)
+            #define BETWEEN(min, x, max) (min < x && x < max)
 
             if(y < 24)
             {
-                if(BETWEEN(x, arrowStartX, arrowEndX))
+                if(BETWEEN(arrowStartX, x,arrowEndX))
                     change_selected(current_list, -ENTRIES_PER_SCREEN);
             }
             else if(y >= 216)
             {
-                if(BETWEEN(x, arrowStartX, arrowEndX))
+                if(BETWEEN(arrowStartX, x, arrowEndX))
                     change_selected(current_list, ENTRIES_PER_SCREEN);
             }
             else
@@ -509,8 +509,8 @@ int main(void)
                 for(unsigned int i = 0; i < ENTRIES_PER_SCREEN; i++)
                 {
                     u16 miny = 24 + 48*i;
-                    u16 maxy = 24 + 48*(i+1);
-                    if(BETWEEN(y, miny, maxy))
+                    u16 maxy = miny + 48;
+                    if(BETWEEN(miny, y, maxy))
                     {
                         current_list->selected_entry = current_list->scroll + i;
                         break;
