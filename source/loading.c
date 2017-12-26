@@ -248,7 +248,7 @@ static void rotate(ssize_t array[], int size, int amt) {
     reverse(array, size-1);
 }
 
-void load_icons(Entry_List_s * current_list)
+static void load_icons(Entry_List_s * current_list)
 {
     if(current_list == NULL || current_list->entries == NULL) return;
 
@@ -256,7 +256,15 @@ void load_icons(Entry_List_s * current_list)
     //----------------------------------------------------------------
     if(current_list->entries_count > ENTRIES_PER_SCREEN)
     {
-        if(current_list->selected_entry == current_list->previous_selected+1 && current_list->selected_entry == current_list->scroll+ENTRIES_PER_SCREEN)
+        if(current_list->previous_scroll < ENTRIES_PER_SCREEN && current_list->selected_entry >= current_list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
+        }
+        else if(current_list->selected_entry <= ENTRIES_PER_SCREEN && current_list->previous_selected >= current_list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            current_list->scroll = 0;
+        }
+        else if(current_list->selected_entry == current_list->previous_selected+1 && current_list->selected_entry == current_list->scroll+ENTRIES_PER_SCREEN)
         {
             current_list->scroll++;
         }
@@ -264,21 +272,13 @@ void load_icons(Entry_List_s * current_list)
         {
             current_list->scroll--;
         }
-        else if(current_list->selected_entry == current_list->previous_selected+ENTRIES_PER_SCREEN)
+        else if(current_list->selected_entry == current_list->previous_selected+ENTRIES_PER_SCREEN || current_list->selected_entry >= current_list->scroll + ENTRIES_PER_SCREEN)
         {
             current_list->scroll += ENTRIES_PER_SCREEN;
         }
-        else if(current_list->selected_entry == current_list->previous_selected-ENTRIES_PER_SCREEN)
+        else if(current_list->selected_entry == current_list->previous_selected-ENTRIES_PER_SCREEN || current_list->selected_entry < current_list->scroll)
         {
             current_list->scroll -= ENTRIES_PER_SCREEN;
-        }
-        else if(current_list->previous_scroll < ENTRIES_PER_SCREEN && current_list->selected_entry >= current_list->entries_count - ENTRIES_PER_SCREEN)
-        {
-            current_list->scroll = current_list->entries_count - ENTRIES_PER_SCREEN;
-        }
-        else if(current_list->selected_entry <= ENTRIES_PER_SCREEN && current_list->previous_selected >= current_list->entries_count - ENTRIES_PER_SCREEN)
-        {
-            current_list->scroll = 0;
         }
 
         if(current_list->scroll < 0)
@@ -309,7 +309,11 @@ void load_icons(Entry_List_s * current_list)
         starti += abs(delta) - 1;
     }
 
-    for(int i = starti; i != endi; i++)
+    int ctr = 0;
+    Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
+    ssize_t * ids = calloc(abs(delta), sizeof(ssize_t));
+
+    for(int i = starti; i != endi; i++, ctr++)
     {
         ssize_t id = 0;
         if(delta > 0)
@@ -348,19 +352,16 @@ void load_icons(Entry_List_s * current_list)
         if(offset >= current_list->entries_count)
             offset = offset - current_list->entries_count;
 
-        load_smdh_icon(current_list->entries[offset], id);
+        entries[ctr] = &current_list->entries[offset];
+        ids[ctr] = id;
     }
+
+    svcSleepThread(1e6);
+    for(int i = 0; i < abs(delta); i++)
+        load_smdh_icon(*entries[i], ids[i]);
 
     #undef FIRST
     #undef LAST
-
-    /*
-    DEBUG("icons_ids: ");
-    for(int i = 0; i < ICONS_OFFSET_AMOUNT; i++)
-        for(int j = 0; j < ENTRIES_PER_SCREEN; j++)
-            DEBUG("%i", current_list->icons_ids[i][j]);
-    DEBUG("\n");
-    */
 
     end:
     current_list->previous_scroll = current_list->scroll;
