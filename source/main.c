@@ -497,11 +497,13 @@ int main(void)
             if(y < 24)
             {
                 if(BETWEEN(arrowStartX, x,arrowEndX))
+                if(BETWEEN(arrowStartX, x,arrowEndX) && current_list->scroll > 0)
                     change_selected(current_list, -ENTRIES_PER_SCREEN);
             }
             else if(y >= 216)
             {
                 if(BETWEEN(arrowStartX, x, arrowEndX))
+                if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
                     change_selected(current_list, ENTRIES_PER_SCREEN);
             }
             else
