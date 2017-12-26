@@ -243,6 +243,10 @@ int main(void)
 
         current_list = &lists[current_mode];
 
+        Instructions_s instructions = normal_instructions[current_mode];
+        if(install_mode)
+            instructions = install_instructions;
+
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else {
@@ -253,11 +257,7 @@ int main(void)
             current_list->previous_scroll = current_list->scroll;
             current_list->previous_selected = current_list->selected_entry;
 
-            draw_interface(current_list);
-            if(install_mode)
-                draw_instructions(install_instructions);
-            else
-                draw_instructions(normal_instructions[current_mode]);
+            draw_interface(current_list, instructions);
         }
 
         pp2d_end_draw();
@@ -395,7 +395,7 @@ int main(void)
                     current_entry->in_shuffle = !current_entry->in_shuffle;
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
+                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list, instructions))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -419,7 +419,7 @@ int main(void)
         }
         else if(kDown & KEY_SELECT)
         {
-            if(draw_confirm("Are you sure you would like to delete this?", current_list))
+            if(draw_confirm("Are you sure you would like to delete this?", current_list, instructions))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(*current_entry);

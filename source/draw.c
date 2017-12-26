@@ -145,11 +145,11 @@ void throw_error(char* error, ErrorLevel level)
     }
 }
 
-bool draw_confirm(const char* conf_msg, Entry_List_s* list)
+bool draw_confirm(const char* conf_msg, Entry_List_s* list, Instructions_s instructions)
 {
     while(aptMainLoop())
     {
-        draw_interface(list);
+        draw_interface(list, instructions);
         pp2d_draw_on(GFX_TOP, GFX_LEFT);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.7, 0.7, COLOR_YELLOW, conf_msg);
         pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE000 Yes   \uE001 No");
@@ -213,7 +213,7 @@ void draw_install(InstallType type)
     pp2d_end_draw();
 }
 
-void draw_instructions(Instructions_s instructions)
+static void draw_instructions(Instructions_s instructions)
 {
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
 
@@ -249,7 +249,7 @@ void draw_instructions(Instructions_s instructions)
     }
 }
 
-void draw_interface(Entry_List_s* list)
+void draw_interface(Entry_List_s* list, Instructions_s instructions)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
@@ -274,9 +274,15 @@ void draw_interface(Entry_List_s* list)
             "Or \uE004 to switch to themes",
         };
         pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, mode_switch_string[current_mode]);
-        pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, COLOR_YELLOW, "Or \uE045 to quit");
+        pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, COLOR_YELLOW, "Or        to quit");
+        pp2d_texture_select(TEXTURE_START_BUTTON, 162, 173);
+        pp2d_texture_blend(COLOR_YELLOW);
+        pp2d_texture_scale(1.25, 1.4);
+        pp2d_texture_draw();
         return;
     }
+
+    draw_instructions(instructions);
 
     int selected_entry = list->selected_entry;
     Entry_s current_entry = list->entries[selected_entry];
