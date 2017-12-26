@@ -311,6 +311,17 @@ int main(void)
                     load_lists(lists);
                 continue;
             }
+            else if(qr_mode && kDown & KEY_B)
+            {
+                exit_qr();
+                qr_mode = false;
+                continue;
+            }
+            else if(preview_mode && kDown & KEY_B)
+            {
+                preview_mode = false;
+                continue;
+            }
         }
 
         if(qr_mode || preview_mode || current_list->entries == NULL)
