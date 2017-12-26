@@ -121,11 +121,11 @@ static void handle_scrolling(Entry_List_s * list)
     //----------------------------------------------------------------
     if(list->entries_count > ENTRIES_PER_SCREEN)
     {
-        if(list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+        if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
         {
             list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
         }
-        else if(list->selected_entry <= ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
+        else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
         {
             list->scroll = 0;
         }
@@ -156,11 +156,12 @@ static void handle_scrolling(Entry_List_s * list)
 
 static void change_selected(Entry_List_s * list, int change_value)
 {
+    if(abs(change_value) >= list->entries_count) return;
+
     list->selected_entry += change_value;
-    if(change_value < 0 && list->selected_entry < 0)
-        list->selected_entry = list->entries_count + list->selected_entry;
-    else
-        list->selected_entry %= list->entries_count;
+    if(list->selected_entry < 0)
+        list->selected_entry += list->entries_count;
+    list->selected_entry %= list->entries_count;
 }
 
 static void start_thread(void)
