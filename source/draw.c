@@ -145,10 +145,11 @@ void throw_error(char* error, ErrorLevel level)
     }
 }
 
-bool draw_confirm(const char* conf_msg, Entry_List_s* list, Instructions_s instructions)
+bool draw_confirm(const char* conf_msg, Entry_List_s* list)
 {
     while(aptMainLoop())
     {
+		Instructions_s instructions = {0};
         draw_interface(list, instructions);
         pp2d_draw_on(GFX_TOP, GFX_LEFT);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.7, 0.7, COLOR_YELLOW, conf_msg);

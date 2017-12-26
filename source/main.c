@@ -395,7 +395,7 @@ int main(void)
                     current_entry->in_shuffle = !current_entry->in_shuffle;
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list, instructions))
+                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -419,7 +419,7 @@ int main(void)
         }
         else if(kDown & KEY_SELECT)
         {
-            if(draw_confirm("Are you sure you would like to delete this?", current_list, instructions))
+            if(draw_confirm("Are you sure you would like to delete this?", current_list))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(*current_entry);

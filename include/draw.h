@@ -81,7 +81,7 @@ void init_screens(void);
 void exit_screens(void);
 
 void throw_error(char* error, ErrorLevel level);
-bool draw_confirm(const char* conf_msg, Entry_List_s* list, Instructions_s instructions);
+bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
 void draw_preview(int preview_offset);
 
