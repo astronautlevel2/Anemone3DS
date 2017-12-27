@@ -33,7 +33,7 @@ BANNER_IMAGE        :=	meta/banner.png
 RSF_PATH            :=	meta/app.rsf
 
 # If left blank, makerom will use the default Homebrew logo
-LOGO                :=	
+LOGO                :=	meta/logo.bin
 
 
 # If left blank, makerom will use default values (0xff3ff and CTR-P-CTAP, respectively)
@@ -173,7 +173,7 @@ endif
 #---------------------------------------------------------------------------------
 MAKEROM		?=	makerom
 
-MAKEROM_ARGS		:=	-elf "$(OUTPUT).elf" -rsf "$(RSF_PATH)" -banner "$(BUILD)/banner.bnr" -icon "$(BUILD)/icon.icn" -DAPP_TITLE="$(APP_TITLE)" -DAPP_PRODUCT_CODE="$(PRODUCT_CODE)" -DAPP_UNIQUE_ID="$(UNIQUE_ID)"
+MAKEROM_ARGS		:=	-elf "$(OUTPUT).elf" -rsf "$(RSF_PATH)" -banner "$(BUILD)/banner.bnr" -icon "$(BUILD)/icon.icn" -logo "$(LOGO)" -DAPP_TITLE="$(APP_TITLE)" -DAPP_PRODUCT_CODE="$(PRODUCT_CODE)" -DAPP_UNIQUE_ID="$(UNIQUE_ID)"
 
 #ifneq ($(strip $(ROMFS)),)
 #	MAKEROM_ARGS	+=	 -romfs "$(BUILD)/romfs.bin"
