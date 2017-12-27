@@ -203,6 +203,12 @@ static void load_lists(Entry_List_s * lists)
             load_icons_first(current_list);
 
             texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
+
+            if(i == MODE_THEMES)
+                threadCreate(themes_check_installed, current_list, __stacksize__, 0x3f, -2, true);
+            else if(i == MODE_SPLASHES)
+                threadCreate(splash_check_installed, current_list, __stacksize__, 0x3f, -2, true);
+            svcSleepThread(1e8);
         }
     }
     start_thread();
@@ -341,20 +347,50 @@ int main(void)
                 if((kDown | kHeld) & KEY_DLEFT)
                 {
                     draw_install(INSTALL_BGM);
-                    bgm_install(*current_entry);
-                    installed_themes = true;
+                    if(R_SUCCEEDED(bgm_install(*current_entry)))
+                    {
+                        for(int i = 0; i < current_list->entries_count; i++)
+                        {
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme == current_entry)
+                                theme->installed = true;
+                            else
+                                theme->installed = false;
+                        }
+                        installed_themes = true;
+                    }
                 }
                 else if((kDown | kHeld) & KEY_DUP)
                 {
                     draw_install(INSTALL_SINGLE);
                     theme_install(*current_entry);
-                    installed_themes = true;
+                    {
+                        for(int i = 0; i < current_list->entries_count; i++)
+                        {
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme == current_entry)
+                                theme->installed = true;
+                            else
+                                theme->installed = false;
+                        }
+                        installed_themes = true;
+                    }
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
                     draw_install(INSTALL_NO_BGM);
                     no_bgm_install(*current_entry);
-                    installed_themes = true;
+                    {
+                        for(int i = 0; i < current_list->entries_count; i++)
+                        {
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme == current_entry)
+                                theme->installed = true;
+                            else
+                                theme->installed = false;
+                        }
+                        installed_themes = true;
+                    }
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
                 {
@@ -373,6 +409,16 @@ int main(void)
                         if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
                         else
                         {
+                            for(int i = 0; i < current_list->entries_count; i++)
+                            {
+                                Entry_s * theme = &current_list->entries[i];
+                                if(theme->in_shuffle)
+                                {
+                                    theme->in_shuffle = false;
+                                    theme->installed = true;
+                                }
+                                else theme->installed = false;
+                            }
                             current_list->shuffle_count = 0;
                             installed_themes = true;
                         }

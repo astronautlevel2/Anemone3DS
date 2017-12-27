@@ -75,4 +75,6 @@ Result bgm_install(Entry_s theme);
 
 Result shuffle_install(Entry_List_s themes);
 
+void themes_check_installed(void * void_arg);
+
 #endif

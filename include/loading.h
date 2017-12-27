@@ -61,6 +61,7 @@ typedef struct {
     bool is_zip;
 
     bool in_shuffle;
+    bool installed;
 } Entry_s;
 
 typedef struct {

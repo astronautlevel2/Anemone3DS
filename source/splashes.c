@@ -28,7 +28,7 @@
 #include "fs.h"
 #include "draw.h"
 
-void splash_delete(void) 
+void splash_delete(void)
 {
     remove("/luma/splash.bin");
     remove("/luma/splashbottom.bin");
@@ -56,4 +56,61 @@ void splash_install(Entry_s splash)
             throw_error("WARNING: Splashes are disabled in Luma Config", ERROR_LEVEL_WARNING);
         }
     }
+}
+
+void splash_check_installed(void * void_arg)
+{
+    Entry_List_s * list = (Entry_List_s *)void_arg;
+    if(list == NULL || list->entries == NULL) return;
+
+    #ifndef CITRA_MODE
+    char * top_buf = NULL;
+    u32 top_size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, &top_buf);
+    char * bottom_buf = NULL;
+    u32 bottom_size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, &bottom_buf);
+
+    if(!top_size && !bottom_size)
+    {
+        free(top_buf);
+        free(bottom_buf);
+        return;
+    }
+
+    #define HASH_SIZE_BYTES 256/8
+    u8 top_hash[HASH_SIZE_BYTES] = {0};
+    FSUSER_UpdateSha256Context(top_buf, top_size, top_hash);
+    free(top_buf);
+    top_buf = NULL;
+    u8 bottom_hash[HASH_SIZE_BYTES] = {0};
+    FSUSER_UpdateSha256Context(bottom_buf, bottom_size, bottom_hash);
+    free(bottom_buf);
+    bottom_buf = NULL;
+
+    for(int i = 0; i < list->entries_count; i++)
+    {
+        Entry_s * splash = &list->entries[i];
+        top_size = load_data("/splash.bin", *splash, &top_buf);
+        bottom_size = load_data("/splashbottom.bin", *splash, &bottom_buf);
+
+        if(!top_size && !bottom_size)
+        {
+            continue;
+        }
+
+        u8 splash_top_hash[HASH_SIZE_BYTES] = {0};
+        FSUSER_UpdateSha256Context(top_buf, top_size, splash_top_hash);
+        free(top_buf);
+        top_buf = NULL;
+        u8 splash_bottom_hash[HASH_SIZE_BYTES] = {0};
+        FSUSER_UpdateSha256Context(bottom_buf, bottom_size, splash_bottom_hash);
+        free(bottom_buf);
+        bottom_buf = NULL;
+
+        if(!memcmp(splash_bottom_hash, bottom_hash, HASH_SIZE_BYTES) && !memcmp(splash_top_hash, top_hash, HASH_SIZE_BYTES))
+        {
+            splash->installed = true;
+            break;
+        }
+    }
+    #endif
 }

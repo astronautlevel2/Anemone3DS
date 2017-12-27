@@ -41,6 +41,7 @@ void init_screens(void)
 
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
+    pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_0, "romfs:/battery0.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
@@ -350,6 +351,8 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
             pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_entry.placeholder_color);
 
         if(current_entry.in_shuffle)
-            pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 280, 32 + vertical_offset, font_color);
+            pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, 24 + vertical_offset, font_color);
+        if(current_entry.installed)
+            pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, 24 + 22 + vertical_offset, font_color);
     }
 }
