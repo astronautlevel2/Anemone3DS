@@ -169,7 +169,7 @@ static void start_thread(void)
     if(arg.run_thread)
     {
         DEBUG("starting thread\n");
-        iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x3f, -2, false);
+        iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x38, -2, false);
     }
 }
 
