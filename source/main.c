@@ -481,7 +481,7 @@ int main(void)
         }
 
         // Movement using the touchscreen
-        if(kDown & KEY_TOUCH)
+        if((kDown | kHeld) & KEY_TOUCH)
         {
             touchPosition touch = {0};
             hidTouchRead(&touch);
@@ -496,23 +496,25 @@ int main(void)
 
             if(y < 24)
             {
-                if(BETWEEN(arrowStartX, x,arrowEndX))
-                if(BETWEEN(arrowStartX, x,arrowEndX) && current_list->scroll > 0)
+                if((kDown & KEY_TOUCH) && BETWEEN(arrowStartX, x,arrowEndX) && current_list->scroll > 0)
+                {
                     change_selected(current_list, -ENTRIES_PER_SCREEN);
+                }
             }
             else if(y >= 216)
             {
-                if(BETWEEN(arrowStartX, x, arrowEndX))
-                if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
+                if((kDown & KEY_TOUCH) && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
+                {
                     change_selected(current_list, ENTRIES_PER_SCREEN);
+                }
             }
             else
             {
-                for(unsigned int i = 0; i < ENTRIES_PER_SCREEN; i++)
+                for(int i = 0; i < ENTRIES_PER_SCREEN; i++)
                 {
                     u16 miny = 24 + 48*i;
                     u16 maxy = miny + 48;
-                    if(BETWEEN(miny, y, maxy))
+                    if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
                     {
                         current_list->selected_entry = current_list->scroll + i;
                         break;
