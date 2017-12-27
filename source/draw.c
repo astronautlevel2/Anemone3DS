@@ -307,7 +307,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     switch(current_mode)
     {
         case MODE_THEMES:
-            pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 ? COLOR_WHITE : COLOR_RED, "Selected: %i/10", list->shuffle_count);
+            pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
             break;
         default:
             break;
@@ -355,4 +355,17 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         if(current_entry.installed)
             pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, 24 + 22 + vertical_offset, font_color);
     }
+
+    char entries_count_str[0x20] = {0};
+    sprintf(entries_count_str, "/%i", list->entries_count);
+    float x = 316;
+    x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
+    pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, entries_count_str);
+
+    char selected_entry_str[0x20] = {0};
+    sprintf(selected_entry_str, "%i", selected_entry + 1);
+    x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
+    pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, selected_entry_str);
+
+    pp2d_draw_text(176, 219, 0.6, 0.6, COLOR_WHITE, list->entries_count < 1000 ? "Selected:" : "Sel.:");
 }
