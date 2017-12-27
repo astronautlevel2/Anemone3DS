@@ -234,6 +234,8 @@ void load_icons_first(Entry_List_s * current_list)
 {
     if(current_list == NULL || current_list->entries == NULL) return;
 
+    draw_install(INSTALL_LOADING_ICONS);
+
     if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
         small_load(current_list); // if the list is one that doesnt need swapping, load everything at once
     else

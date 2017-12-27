@@ -115,6 +115,56 @@ void exit_function(void)
     }
 }
 
+static SwkbdCallbackResult jump_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
+{
+    int typed_value = atoi(text);
+    if(typed_value > *(int*)entries_count)
+    {
+        *ppMessage = "The new position has to be\nsmaller or equal to the\nnumber of entries!";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    else if(typed_value == 0)
+    {
+        *ppMessage = "The new position has to\nbe positive!";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+static void jump_menu(Entry_List_s * list)
+{
+    if(list == NULL) return;
+
+    char numbuf[64] = {0};
+
+    SwkbdState swkbd;
+
+    sprintf(numbuf, "%i", list->entries_count);
+    int max_chars = strlen(numbuf);
+    swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, max_chars);
+
+    sprintf(numbuf, "%i", list->selected_entry);
+    swkbdSetInitialText(&swkbd, numbuf);
+
+    sprintf(numbuf, "Where do you want to jump to?\nMay cause icons to reload.");
+    swkbdSetHintText(&swkbd, numbuf);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
+    swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->entries_count);
+
+    memset(numbuf, 0, sizeof(numbuf));
+    SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        list->selected_entry = atoi(numbuf) - 1;
+        list->scroll = list->selected_entry;
+        if(list->scroll >= list->entries_count - ENTRIES_PER_SCREEN)
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN - 1;
+    }
+}
+
 static void handle_scrolling(Entry_List_s * list)
 {
     // Scroll the menu up or down if the selected theme is out of its bounds
@@ -214,6 +264,14 @@ static void load_lists(Entry_List_s * lists)
     start_thread();
 }
 
+static void toggle_shuffle(Entry_List_s * list)
+{
+    Entry_s * current_entry = &list->entries[list->selected_entry];
+    if(current_entry->in_shuffle) list->shuffle_count--;
+    else list->shuffle_count++;
+    current_entry->in_shuffle = !current_entry->in_shuffle;
+}
+
 int main(void)
 {
     srand(time(NULL));
@@ -277,30 +335,42 @@ int main(void)
         {
             if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
             {
+                switch_mode:
                 current_mode++;
                 current_mode %= MODE_AMOUNT;
                 continue;
             }
             else if(!preview_mode && kDown & KEY_R) //toggle QR mode
             {
-                u32 out;
-                ACU_GetWifiStatus(&out);
-                if(out)
+                toggle_qr:
+                if(R_SUCCEEDED(camInit()))
                 {
-                    qr_mode = !qr_mode;
-                    if(qr_mode)
-                        init_qr();
+                    camExit();
+                    u32 out;
+                    ACU_GetWifiStatus(&out);
+                    if(out)
+                    {
+                        qr_mode = !qr_mode;
+                        if(qr_mode)
+                            init_qr();
+                        else
+                            exit_qr();
+                    }
                     else
-                        exit_qr();
+                    {
+                        throw_error("Please connect to Wi-Fi before scanning QRs", ERROR_LEVEL_WARNING);
+                    }
                 }
                 else
                 {
-                    throw_error("Please connect to Wi-Fi before scanning QR", ERROR_LEVEL_WARNING);
+                    throw_error("Your camera seems to have a problem, unable to scan QRs.", ERROR_LEVEL_WARNING);
                 }
+
                 continue;
             }
             else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
             {
+                toggle_preview:
                 if(!preview_mode)
                     preview_mode = load_preview(*current_list, &preview_offset);
                 else
@@ -450,9 +520,7 @@ int main(void)
             switch(current_mode)
             {
                 case MODE_THEMES:
-                    if(current_entry->in_shuffle) current_list->shuffle_count--;
-                    else current_list->shuffle_count++;
-                    current_entry->in_shuffle = !current_entry->in_shuffle;
+                    toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
                     if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
@@ -539,35 +607,65 @@ int main(void)
             u16 x = touch.px;
             u16 y = touch.py;
 
-            u16 arrowStartX = 128+16+8;
+            u16 arrowStartX = 152;
             u16 arrowEndX = arrowStartX+16;
 
             #define BETWEEN(min, x, max) (min < x && x < max)
 
-            if(y < 24)
+            if(kDown & KEY_TOUCH)
             {
-                if((kDown & KEY_TOUCH) && BETWEEN(arrowStartX, x,arrowEndX) && current_list->scroll > 0)
+                if(y < 24)
                 {
-                    change_selected(current_list, -ENTRIES_PER_SCREEN);
+                    if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    {
+                        change_selected(current_list, -ENTRIES_PER_SCREEN);
+                    }
+                    else if(BETWEEN(320-24, x, 320))
+                    {
+                        goto switch_mode;
+                    }
+                    else if(BETWEEN(320-48, x, 320-24))
+                    {
+                        goto toggle_qr;
+                    }
+                    else if(BETWEEN(320-72, x, 320-48))
+                    {
+                        goto toggle_preview;
+                    }
+                    else if(BETWEEN(320-96, x, 320-72))
+                    {
+                        load_icons_first(current_list);
+                    }
+                    else if(BETWEEN(320-120, x, 320-96) && current_mode == MODE_THEMES)
+                    {
+                        toggle_shuffle(current_list);
+                    }
                 }
-            }
-            else if(y >= 216)
-            {
-                if((kDown & KEY_TOUCH) && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
+                else if(y >= 216)
                 {
-                    change_selected(current_list, ENTRIES_PER_SCREEN);
+                    if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
+                    {
+                        change_selected(current_list, ENTRIES_PER_SCREEN);
+                    }
+                    else if(BETWEEN(176, x, 320))
+                    {
+                        jump_menu(current_list);
+                    }
                 }
             }
             else
             {
-                for(int i = 0; i < ENTRIES_PER_SCREEN; i++)
+                if(BETWEEN(24, y, 216))
                 {
-                    u16 miny = 24 + 48*i;
-                    u16 maxy = miny + 48;
-                    if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
+                    for(int i = 0; i < ENTRIES_PER_SCREEN; i++)
                     {
-                        current_list->selected_entry = current_list->scroll + i;
-                        break;
+                        u16 miny = 24 + 48*i;
+                        u16 maxy = miny + 48;
+                        if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
+                        {
+                            current_list->selected_entry = current_list->scroll + i;
+                            break;
+                        }
                     }
                 }
             }

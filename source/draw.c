@@ -42,6 +42,9 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
     pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
+    pp2d_load_texture_png(TEXTURE_RELOAD, "romfs:/reload.png");
+    pp2d_load_texture_png(TEXTURE_PREVIEW_ICON, "romfs:/preview.png");
+    pp2d_load_texture_png(TEXTURE_DOWNLOAD, "romfs:/download.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_0, "romfs:/battery0.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
@@ -185,6 +188,9 @@ void draw_install(InstallType type)
         case INSTALL_LOADING_SPLASHES:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading splashes, please wait...");
             break;
+        case INSTALL_LOADING_ICONS:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading icons, please wait...");
+            break;
         case INSTALL_SINGLE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
             break;
@@ -308,10 +314,17 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     {
         case MODE_THEMES:
             pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
+            pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-120, 0, COLOR_WHITE);
             break;
         default:
             break;
     }
+
+    pp2d_draw_texture_blend(TEXTURE_RELOAD, 320-96, 0, COLOR_WHITE);
+    pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-72, 0, COLOR_WHITE);
+    pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-48, 0, COLOR_WHITE);
+    pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", *mode_string[!list->mode]);
+
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
