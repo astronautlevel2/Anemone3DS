@@ -309,7 +309,8 @@ void themes_check_installed(void * void_arg)
         free(body_buf);
     }
 
-    for(int i = 0; i < list->entries_count; i++)
+    int total_installed = 0;
+    for(int i = 0; i < list->entries_count && total_installed < MAX_SHUFFLE_THEMES; i++)
     {
         Entry_s * theme = &list->entries[i];
         char * theme_body = NULL;
@@ -325,6 +326,7 @@ void themes_check_installed(void * void_arg)
             if(!memcmp(body_hash[j], theme_body_hash, HASH_SIZE_BYTES))
             {
                 theme->installed = true;
+                total_installed++;
                 if(!shuffle) break; //only need to check the first if the installed theme inst shuffle
             }
         }
