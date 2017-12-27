@@ -191,17 +191,19 @@ static void load_lists(Entry_List_s * lists)
         Entry_List_s * current_list = &lists[i];
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
-        load_entries(main_paths[i], current_list, i);
+        Result res = load_entries(main_paths[i], current_list, i);
+        if(R_SUCCEEDED(res))
+        {
+            if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+                arg.run_thread = true;
 
-        if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
-            arg.run_thread = true;
+            DEBUG("total: %i\n", current_list->entries_count);
 
-        DEBUG("total: %i\n", current_list->entries_count);
+            current_list->texture_id_offset = texture_id_offset;
+            load_icons_first(current_list);
 
-        current_list->texture_id_offset = texture_id_offset;
-        load_icons_first(current_list);
-
-        texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
+            texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
+        }
     }
     start_thread();
 }
