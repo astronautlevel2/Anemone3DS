@@ -39,7 +39,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
                 L"\uE001 Queue shuffle theme"
             },
             {
-                NULL,
+                L"\uE002 Reload broken icons",
                 L"\uE003 Preview theme"
             },
             {
@@ -60,7 +60,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
                 L"\uE001 Delete installed splash"
             },
             {
-                NULL,
+                L"\uE002 Reload broken icons",
                 L"\uE003 Preview splash"
             },
             {

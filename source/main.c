@@ -470,8 +470,10 @@ int main(void)
             switch(current_mode)
             {
                 case MODE_THEMES:
+                    load_icons_first(current_list);
                     break;
                 case MODE_SPLASHES:
+                    load_icons_first(current_list);
                     break;
                 default:
                     break;
