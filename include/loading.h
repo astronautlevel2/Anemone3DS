@@ -70,6 +70,7 @@ typedef struct {
 
     ssize_t texture_id_offset;
     ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
+    ssize_t assoc_entry_id[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
 
     int previous_scroll;
     int scroll;
@@ -83,8 +84,7 @@ typedef struct {
 } Entry_List_s;
 
 typedef struct {
-    void * thread_argument;
-    Handle * update_request;
+    void ** thread_argument;
     volatile bool run_thread;
 } Thread_Arg_s;
 

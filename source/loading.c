@@ -331,13 +331,14 @@ static bool loading_icons = false;
 void load_icons_thread(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
+    Handle update_request = *(Handle *)arg->thread_argument[1];
     do
     {
-        svcWaitSynchronization(*arg->update_request, U64_MAX);
-        svcClearEvent(*arg->update_request);
+        svcWaitSynchronization(update_request, U64_MAX);
+        svcClearEvent(update_request);
         if(loading_icons) continue;
         loading_icons = true;
-        volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_argument;
+        volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_argument[0];
         load_icons((Entry_List_s *)current_list);
         loading_icons = false;
     }

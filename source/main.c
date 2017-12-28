@@ -278,10 +278,15 @@ int main(void)
     init_services();
     init_screens();
 
+    svcCreateEvent(&update_icons_handle, RESET_ONESHOT);
+
     static Entry_List_s * current_list = NULL;
-    arg.thread_argument = (void*)&current_list;
-    arg.update_request = &update_icons_handle;
-    svcCreateEvent(&update_icons_handle, 0);
+    void * icon_args_void[] = {
+        &current_list,
+        &update_icons_handle,
+    };
+    arg.thread_argument = icon_args_void;
+    arg.run_thread = false;
 
     load_lists(lists);
 
