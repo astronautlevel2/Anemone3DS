@@ -269,10 +269,51 @@ static void rotate(ssize_t array[], int size, int amt) {
     reverse(array, size-1);
 }
 
+void handle_scrolling(Entry_List_s * list)
+{
+    // Scroll the menu up or down if the selected theme is out of its bounds
+    //----------------------------------------------------------------
+    if(list->entries_count > ENTRIES_PER_SCREEN)
+    {
+        if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+        }
+        else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            list->scroll = 0;
+        }
+        else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
+        {
+            list->scroll++;
+        }
+        else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
+        {
+            list->scroll--;
+        }
+        else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
+        {
+            list->scroll += ENTRIES_PER_SCREEN;
+        }
+        else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
+        {
+            list->scroll -= ENTRIES_PER_SCREEN;
+        }
+
+        if(list->scroll < 0)
+            list->scroll = 0;
+        if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+    }
+    //----------------------------------------------------------------
+}
+
 static void load_icons(Entry_List_s * current_list)
 {
     if(current_list == NULL || current_list->entries == NULL)
         return;
+
+    handle_scrolling(current_list);
 
     if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
         return; // return if the list is one that doesnt need swapping, or if nothing changed
@@ -343,7 +384,6 @@ static void load_icons(Entry_List_s * current_list)
         load_smdh_icon(*entries[i], ids[i]);
 }
 
-static bool loading_icons = false;
 void load_icons_thread(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
@@ -352,11 +392,8 @@ void load_icons_thread(void * void_arg)
     {
         svcWaitSynchronization(update_request, U64_MAX);
         svcClearEvent(update_request);
-        if(loading_icons) continue;
-        loading_icons = true;
         volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_arg[0];
         load_icons((Entry_List_s *)current_list);
-        loading_icons = false;
     }
     while(arg->run_thread);
 }

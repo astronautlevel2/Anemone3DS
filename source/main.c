@@ -183,45 +183,6 @@ static void jump_menu(Entry_List_s * list)
     }
 }
 
-static void handle_scrolling(Entry_List_s * list)
-{
-    // Scroll the menu up or down if the selected theme is out of its bounds
-    //----------------------------------------------------------------
-    if(list->entries_count > ENTRIES_PER_SCREEN)
-    {
-        if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
-        {
-            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
-        }
-        else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
-        {
-            list->scroll = 0;
-        }
-        else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
-        {
-            list->scroll++;
-        }
-        else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
-        {
-            list->scroll--;
-        }
-        else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
-        {
-            list->scroll += ENTRIES_PER_SCREEN;
-        }
-        else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
-        {
-            list->scroll -= ENTRIES_PER_SCREEN;
-        }
-
-        if(list->scroll < 0)
-            list->scroll = 0;
-        if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
-            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
-    }
-    //----------------------------------------------------------------
-}
-
 static void change_selected(Entry_List_s * list, int change_value)
 {
     if(abs(change_value) >= list->entries_count) return;
@@ -348,9 +309,15 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else {
-            handle_scrolling(current_list);
-            svcSignalEvent(update_icons_handle);
-            svcSleepThread(1e6);
+            if(!iconLoadingThread_arg.run_thread)
+            {
+                handle_scrolling(current_list);
+            }
+            else
+            {
+                svcSignalEvent(update_icons_handle);
+                svcSleepThread(5e6);
+            }
 
             current_list->previous_scroll = current_list->scroll;
             current_list->previous_selected = current_list->selected_entry;
@@ -602,12 +569,10 @@ int main(void)
         else if(kDown & KEY_LEFT) 
         {
             change_selected(current_list, -ENTRIES_PER_SCREEN);
-            load_icons_first(current_list, true);
         }
         else if(kDown & KEY_RIGHT)
         {
             change_selected(current_list, ENTRIES_PER_SCREEN);
-            load_icons_first(current_list, true);
         }
 
         // Fast scroll using circle pad
@@ -653,7 +618,6 @@ int main(void)
                     if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
                         change_selected(current_list, -ENTRIES_PER_SCREEN);
-                        load_icons_first(current_list, true);
                     }
                     else if(BETWEEN(320-24, x, 320))
                     {
@@ -681,7 +645,6 @@ int main(void)
                     if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
                     {
                         change_selected(current_list, ENTRIES_PER_SCREEN);
-                        load_icons_first(current_list, true);
                     }
                     else if(BETWEEN(176, x, 320))
                     {
