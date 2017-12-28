@@ -32,6 +32,10 @@
 #include "colors.h"
 
 typedef enum {
+    INSTALL_LOADING_THEMES,
+    INSTALL_LOADING_SPLASHES,
+    INSTALL_LOADING_ICONS,
+
     INSTALL_SPLASH,
     INSTALL_SPLASH_DELETE,
 
@@ -42,6 +46,8 @@ typedef enum {
 
     INSTALL_DOWNLOAD,
     INSTALL_ENTRY_DELETE,
+
+    INSTALL_NONE,
 } InstallType;
 
 typedef enum {
@@ -76,13 +82,12 @@ void init_screens(void);
 void exit_screens(void);
 
 void throw_error(char* error, ErrorLevel level);
-bool draw_confirm(const char* conf_msg, Entry_List_s* list, EntryMode current_mode);
+bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
 void draw_preview(int preview_offset);
 
 void draw_install(InstallType type);
 
-void draw_instructions(Instructions_s instructions);
-void draw_interface(Entry_List_s* list, EntryMode current_mode);
+void draw_interface(Entry_List_s* list, Instructions_s instructions);
 
 #endif

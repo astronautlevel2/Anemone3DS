@@ -37,6 +37,17 @@
 #define FASTSCROLL_WAIT 1e8
 
 static bool homebrew = false;
+static bool installed_themes = false;
+
+static Thread iconLoadingThread = {0};
+static Thread_Arg_s iconLoadingThread_arg = {0};
+static Handle update_icons_handle;
+
+static Thread installCheckThreads[MODE_AMOUNT] = {0};
+static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
+
+static Entry_List_s lists[MODE_AMOUNT] = {0};
+
 int __stacksize__ = 64 * 1024;
 Result archive_result;
 
@@ -45,7 +56,7 @@ const char * main_paths[MODE_AMOUNT] = {
     "/Splashes/",
 };
 
-void init_services(void)
+static void init_services(void)
 {
     consoleDebugInit(debugDevice_SVC);
     cfguInit();
@@ -61,7 +72,7 @@ void init_services(void)
     }
 }
 
-void exit_services(void)
+static void exit_services(void)
 {
     close_archives();
     cfguExit();
@@ -70,56 +81,221 @@ void exit_services(void)
     acExit();
 }
 
+static void stop_install_check(void)
+{
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        if(installCheckThreads_arg[i].run_thread)
+        {
+            installCheckThreads_arg[i].run_thread = false;
+            threadJoin(installCheckThreads[i], U64_MAX);
+        }
+    }
+}
+
+static void exit_thread(void)
+{
+    if(iconLoadingThread_arg.run_thread)
+    {
+        DEBUG("exiting thread\n");
+        iconLoadingThread_arg.run_thread = false;
+        svcSignalEvent(update_icons_handle);
+        threadJoin(iconLoadingThread, U64_MAX);
+        threadFree(iconLoadingThread);
+    }
+}
+
 void exit_function(void)
 {
+    stop_install_check();
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        Entry_List_s * current_list = &lists[i];
+        free(current_list->entries);
+        current_list->entries = NULL;
+    }
+
+    exit_thread();
+    svcCloseHandle(update_icons_handle);
     exit_screens();
     exit_services();
 
-    if(homebrew)
+    if(installed_themes)
     {
-        APT_HardwareResetAsync();
-    }
-    else
-    {
-        srvPublishToSubscriber(0x202, 0);
+        if(homebrew)
+        {
+            APT_HardwareResetAsync();
+        }
+        else
+        {
+            srvPublishToSubscriber(0x202, 0);
+        }
     }
 }
 
-void change_selected(Entry_List_s * list, int change_value)
+static SwkbdCallbackResult jump_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
 {
+    int typed_value = atoi(text);
+    if(typed_value > *(int*)entries_count)
+    {
+        *ppMessage = "The new position has to be\nsmaller or equal to the\nnumber of entries!";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    else if(typed_value == 0)
+    {
+        *ppMessage = "The new position has to\nbe positive!";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+static void jump_menu(Entry_List_s * list)
+{
+    if(list == NULL) return;
+
+    char numbuf[64] = {0};
+
+    SwkbdState swkbd;
+
+    sprintf(numbuf, "%i", list->entries_count);
+    int max_chars = strlen(numbuf);
+    swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, max_chars);
+
+    sprintf(numbuf, "%i", list->selected_entry);
+    swkbdSetInitialText(&swkbd, numbuf);
+
+    sprintf(numbuf, "Where do you want to jump to?\nMay cause icons to reload.");
+    swkbdSetHintText(&swkbd, numbuf);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
+    swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->entries_count);
+
+    memset(numbuf, 0, sizeof(numbuf));
+    SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        list->selected_entry = atoi(numbuf) - 1;
+        list->scroll = list->selected_entry;
+        if(list->scroll >= list->entries_count - ENTRIES_PER_SCREEN)
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN - 1;
+    }
+}
+
+static void handle_scrolling(Entry_List_s * list)
+{
+    // Scroll the menu up or down if the selected theme is out of its bounds
+    //----------------------------------------------------------------
+    if(list->entries_count > ENTRIES_PER_SCREEN)
+    {
+        if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+        }
+        else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
+        {
+            list->scroll = 0;
+        }
+        else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
+        {
+            list->scroll++;
+        }
+        else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
+        {
+            list->scroll--;
+        }
+        else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
+        {
+            list->scroll += ENTRIES_PER_SCREEN;
+        }
+        else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
+        {
+            list->scroll -= ENTRIES_PER_SCREEN;
+        }
+
+        if(list->scroll < 0)
+            list->scroll = 0;
+        if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
+            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+    }
+    //----------------------------------------------------------------
+}
+
+static void change_selected(Entry_List_s * list, int change_value)
+{
+    if(abs(change_value) >= list->entries_count) return;
+
     list->selected_entry += change_value;
-    if(change_value < 0 && list->selected_entry < 0)
-        list->selected_entry = list->entries_count - 1;
-    else
-        list->selected_entry %= list->entries_count;
+    if(list->selected_entry < 0)
+        list->selected_entry += list->entries_count;
+    list->selected_entry %= list->entries_count;
 }
 
-void load_lists(Entry_List_s * lists)
+static void start_thread(void)
 {
-    DEBUG("origin: %u\n", TEXTURE_ICON);
+    if(iconLoadingThread_arg.run_thread)
+    {
+        DEBUG("starting thread\n");
+        iconLoadingThread = threadCreate(load_icons_thread, &iconLoadingThread_arg, __stacksize__, 0x38, -2, false);
+    }
+}
 
-    ssize_t last_icon_id = TEXTURE_ICON;
+static void load_lists(Entry_List_s * lists)
+{
+    ssize_t texture_id_offset = TEXTURE_ICON;
+
+    stop_install_check();
+    exit_thread();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
+        InstallType loading_screen = INSTALL_NONE;
+        if(i == MODE_THEMES)
+            loading_screen = INSTALL_LOADING_THEMES;
+        else if(i == MODE_SPLASHES)
+            loading_screen = INSTALL_LOADING_SPLASHES;
+
+        draw_install(loading_screen);
+
         Entry_List_s * current_list = &lists[i];
-        last_icon_id += current_list->entries_count;
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
+        Result res = load_entries(main_paths[i], current_list, i);
+        if(R_SUCCEEDED(res))
+        {
+            if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+                iconLoadingThread_arg.run_thread = true;
+
+            DEBUG("total: %i\n", current_list->entries_count);
+
+            current_list->texture_id_offset = texture_id_offset;
+            load_icons_first(current_list, false);
+
+            texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
+
+            void (*install_check_function)(void*) = NULL;
+            if(i == MODE_THEMES)
+                install_check_function = themes_check_installed;
+            else if(i == MODE_SPLASHES)
+                install_check_function = splash_check_installed;
+
+            Thread_Arg_s * current_arg = &installCheckThreads_arg[i];
+            current_arg->run_thread = true;
+            current_arg->thread_arg = (void**)current_list;
+
+            installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, true);
+            svcSleepThread(1e8);
+        }
     }
-    pp2d_free_texture(last_icon_id);
+    start_thread();
+}
 
-    DEBUG("max: %u\n", last_icon_id);
-
-    ssize_t icon_id_start = TEXTURE_ICON;
-    for(int i = 0; i < MODE_AMOUNT; i++)
-    {
-        Entry_List_s * current_list = &lists[i];
-        current_list->icon_id_start = icon_id_start;
-        load_entries(main_paths[i], current_list);
-        icon_id_start += current_list->entries_count;
-    }
-
-    DEBUG("end: %u\n", icon_id_start);
+static void toggle_shuffle(Entry_List_s * list)
+{
+    Entry_s * current_entry = &list->entries[list->selected_entry];
+    if(current_entry->in_shuffle) list->shuffle_count--;
+    else list->shuffle_count++;
+    current_entry->in_shuffle = !current_entry->in_shuffle;
 }
 
 int main(void)
@@ -128,7 +304,16 @@ int main(void)
     init_services();
     init_screens();
 
-    Entry_List_s lists[MODE_AMOUNT] = {0};
+    svcCreateEvent(&update_icons_handle, RESET_ONESHOT);
+
+    static Entry_List_s * current_list = NULL;
+    void * iconLoadingThread_args_void[] = {
+        &current_list,
+        &update_icons_handle,
+    };
+    iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
+    iconLoadingThread_arg.run_thread = false;
+
     load_lists(lists);
 
     EntryMode current_mode = MODE_THEMES;
@@ -154,51 +339,70 @@ int main(void)
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
 
-        Entry_List_s * current_list = &lists[current_mode];
+        current_list = &lists[current_mode];
+
+        Instructions_s instructions = normal_instructions[current_mode];
+        if(install_mode)
+            instructions = install_instructions;
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(preview_offset);
         else {
-            draw_interface(current_list, current_mode);
-            if(install_mode)
-                draw_instructions(install_instructions);
-            else
-                draw_instructions(normal_instructions[current_mode]);
+            handle_scrolling(current_list);
+            svcSignalEvent(update_icons_handle);
+            svcSleepThread(1e6);
+
+            current_list->previous_scroll = current_list->scroll;
+            current_list->previous_selected = current_list->selected_entry;
+
+            draw_interface(current_list, instructions);
+            svcSleepThread(1e7);
         }
 
         pp2d_end_draw();
 
         if(kDown & KEY_START) break;
 
-
         if(!install_mode)
         {
             if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
             {
+                switch_mode:
                 current_mode++;
                 current_mode %= MODE_AMOUNT;
                 continue;
             }
             else if(!preview_mode && kDown & KEY_R) //toggle QR mode
             {
-                u32 out;
-                ACU_GetWifiStatus(&out);
-                if(out)
+                toggle_qr:
+                if(R_SUCCEEDED(camInit()))
                 {
-                    qr_mode = !qr_mode;
-                    if(qr_mode)
-                        init_qr();
+                    camExit();
+                    u32 out;
+                    ACU_GetWifiStatus(&out);
+                    if(out)
+                    {
+                        qr_mode = !qr_mode;
+                        if(qr_mode)
+                            init_qr();
+                        else
+                            exit_qr();
+                    }
                     else
-                        exit_qr();
+                    {
+                        throw_error("Please connect to Wi-Fi before scanning QRs", ERROR_LEVEL_WARNING);
+                    }
                 }
                 else
                 {
-                    throw_error("Please connect to Wi-Fi before scanning QR", ERROR_LEVEL_WARNING);
+                    throw_error("Your camera seems to have a problem, unable to scan QRs.", ERROR_LEVEL_WARNING);
                 }
+
                 continue;
             }
             else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
             {
+                toggle_preview:
                 if(!preview_mode)
                     preview_mode = load_preview(*current_list, &preview_offset);
                 else
@@ -215,6 +419,17 @@ int main(void)
 
                 if(!qr_mode)
                     load_lists(lists);
+                continue;
+            }
+            else if(qr_mode && kDown & KEY_B)
+            {
+                exit_qr();
+                qr_mode = false;
+                continue;
+            }
+            else if(preview_mode && kDown & (KEY_B | KEY_TOUCH))
+            {
+                preview_mode = false;
                 continue;
             }
         }
@@ -234,17 +449,50 @@ int main(void)
                 if((kDown | kHeld) & KEY_DLEFT)
                 {
                     draw_install(INSTALL_BGM);
-                    bgm_install(*current_entry);
+                    if(R_SUCCEEDED(bgm_install(*current_entry)))
+                    {
+                        for(int i = 0; i < current_list->entries_count; i++)
+                        {
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme == current_entry)
+                                theme->installed = true;
+                            else
+                                theme->installed = false;
+                        }
+                        installed_themes = true;
+                    }
                 }
                 else if((kDown | kHeld) & KEY_DUP)
                 {
                     draw_install(INSTALL_SINGLE);
                     theme_install(*current_entry);
+                    {
+                        for(int i = 0; i < current_list->entries_count; i++)
+                        {
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme == current_entry)
+                                theme->installed = true;
+                            else
+                                theme->installed = false;
+                        }
+                        installed_themes = true;
+                    }
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
                     draw_install(INSTALL_NO_BGM);
                     no_bgm_install(*current_entry);
+                    {
+                        for(int i = 0; i < current_list->entries_count; i++)
+                        {
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme == current_entry)
+                                theme->installed = true;
+                            else
+                                theme->installed = false;
+                        }
+                        installed_themes = true;
+                    }
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
                 {
@@ -254,14 +502,28 @@ int main(void)
                     }
                     else if(current_list->shuffle_count == 0)
                     {
-                        throw_error("You dont have any themes selected.", ERROR_LEVEL_WARNING);
+                        throw_error("You don't have any themes selected.", ERROR_LEVEL_WARNING);
                     }
                     else
                     {
                         draw_install(INSTALL_SHUFFLE);
                         Result res = shuffle_install(*current_list);
                         if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
-                        else current_list->shuffle_count = 0;
+                        else
+                        {
+                            for(int i = 0; i < current_list->entries_count; i++)
+                            {
+                                Entry_s * theme = &current_list->entries[i];
+                                if(theme->in_shuffle)
+                                {
+                                    theme->in_shuffle = false;
+                                    theme->installed = true;
+                                }
+                                else theme->installed = false;
+                            }
+                            current_list->shuffle_count = 0;
+                            installed_themes = true;
+                        }
                     }
                 }
             }
@@ -290,12 +552,10 @@ int main(void)
             switch(current_mode)
             {
                 case MODE_THEMES:
-                    if(current_entry->in_shuffle) current_list->shuffle_count--;
-                    else current_list->shuffle_count++;
-                    current_entry->in_shuffle = !current_entry->in_shuffle;
+                    toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list, current_mode))
+                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -310,8 +570,10 @@ int main(void)
             switch(current_mode)
             {
                 case MODE_THEMES:
+                    load_icons_first(current_list, false);
                     break;
                 case MODE_SPLASHES:
+                    load_icons_first(current_list, false);
                     break;
                 default:
                     break;
@@ -319,7 +581,7 @@ int main(void)
         }
         else if(kDown & KEY_SELECT)
         {
-            if(draw_confirm("Are you sure you would like to delete this?", current_list, current_mode))
+            if(draw_confirm("Are you sure you would like to delete this?", current_list))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(*current_entry);
@@ -340,10 +602,12 @@ int main(void)
         else if(kDown & KEY_LEFT) 
         {
             change_selected(current_list, -ENTRIES_PER_SCREEN);
+            load_icons_first(current_list, true);
         }
         else if(kDown & KEY_RIGHT)
         {
             change_selected(current_list, ENTRIES_PER_SCREEN);
+            load_icons_first(current_list, true);
         }
 
         // Fast scroll using circle pad
@@ -366,6 +630,81 @@ int main(void)
         {
             change_selected(current_list, ENTRIES_PER_SCREEN);
             svcSleepThread(FASTSCROLL_WAIT);
+        }
+
+        // Movement using the touchscreen
+        if((kDown | kHeld) & KEY_TOUCH)
+        {
+            touchPosition touch = {0};
+            hidTouchRead(&touch);
+
+            u16 x = touch.px;
+            u16 y = touch.py;
+
+            u16 arrowStartX = 152;
+            u16 arrowEndX = arrowStartX+16;
+
+            #define BETWEEN(min, x, max) (min < x && x < max)
+
+            if(kDown & KEY_TOUCH)
+            {
+                if(y < 24)
+                {
+                    if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    {
+                        change_selected(current_list, -ENTRIES_PER_SCREEN);
+                        load_icons_first(current_list, true);
+                    }
+                    else if(BETWEEN(320-24, x, 320))
+                    {
+                        goto switch_mode;
+                    }
+                    else if(BETWEEN(320-48, x, 320-24))
+                    {
+                        goto toggle_qr;
+                    }
+                    else if(BETWEEN(320-72, x, 320-48))
+                    {
+                        goto toggle_preview;
+                    }
+                    else if(BETWEEN(320-96, x, 320-72))
+                    {
+                        load_icons_first(current_list, false);
+                    }
+                    else if(BETWEEN(320-120, x, 320-96) && current_mode == MODE_THEMES)
+                    {
+                        toggle_shuffle(current_list);
+                    }
+                }
+                else if(y >= 216)
+                {
+                    if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
+                    {
+                        change_selected(current_list, ENTRIES_PER_SCREEN);
+                        load_icons_first(current_list, true);
+                    }
+                    else if(BETWEEN(176, x, 320))
+                    {
+                        jump_menu(current_list);
+                    }
+                }
+            }
+            else
+            {
+                if(BETWEEN(24, y, 216))
+                {
+                    for(int i = 0; i < ENTRIES_PER_SCREEN; i++)
+                    {
+                        u16 miny = 24 + 48*i;
+                        u16 maxy = miny + 48;
+                        if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
+                        {
+                            current_list->selected_entry = current_list->scroll + i;
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 

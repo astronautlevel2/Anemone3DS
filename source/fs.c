@@ -111,8 +111,11 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
  
     u64 size;
     FSFILE_GetSize(file, &size);
-    *buf = calloc(1, size);
-    FSFILE_Read(file, NULL, 0, *buf, size);
+    if(size != 0)
+    {
+        *buf = calloc(1, size);
+        FSFILE_Read(file, NULL, 0, *buf, size);
+    }
     FSFILE_Close(file);
     return (u32)size;
 }
