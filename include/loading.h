@@ -84,7 +84,7 @@ typedef struct {
 } Entry_List_s;
 
 typedef struct {
-    void ** thread_argument;
+    void ** thread_arg;
     volatile bool run_thread;
 } Thread_Arg_s;
 

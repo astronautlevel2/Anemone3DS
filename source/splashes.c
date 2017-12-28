@@ -60,7 +60,8 @@ void splash_install(Entry_s splash)
 
 void splash_check_installed(void * void_arg)
 {
-    Entry_List_s * list = (Entry_List_s *)void_arg;
+    Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
+    Entry_List_s * list = (Entry_List_s *)arg->thread_arg;
     if(list == NULL || list->entries == NULL) return;
 
     #ifndef CITRA_MODE
@@ -86,7 +87,7 @@ void splash_check_installed(void * void_arg)
     free(bottom_buf);
     bottom_buf = NULL;
 
-    for(int i = 0; i < list->entries_count; i++)
+    for(int i = 0; i < list->entries_count && arg->run_thread; i++)
     {
         Entry_s * splash = &list->entries[i];
         top_size = load_data("/splash.bin", *splash, &top_buf);

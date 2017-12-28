@@ -260,7 +260,8 @@ inline Result shuffle_install(Entry_List_s themes)
 
 void themes_check_installed(void * void_arg)
 {
-    Entry_List_s * list = (Entry_List_s *)void_arg;
+    Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
+    Entry_List_s * list = (Entry_List_s *)arg->thread_arg;
     if(list == NULL || list->entries == NULL) return;
 
     #ifndef CITRA_MODE
@@ -310,7 +311,7 @@ void themes_check_installed(void * void_arg)
     }
 
     int total_installed = 0;
-    for(int i = 0; i < list->entries_count && total_installed < MAX_SHUFFLE_THEMES; i++)
+    for(int i = 0; i < list->entries_count && total_installed < MAX_SHUFFLE_THEMES && arg->run_thread; i++)
     {
         Entry_s * theme = &list->entries[i];
         char * theme_body = NULL;

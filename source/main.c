@@ -38,9 +38,14 @@
 
 static bool homebrew = false;
 static bool installed_themes = false;
-static Thread_Arg_s arg = {0};
-static Handle update_icons_handle;
+
 static Thread iconLoadingThread;
+static Thread_Arg_s iconLoadingThread_arg = {0};
+static Handle update_icons_handle;
+
+static Thread installCheckThreads[MODE_AMOUNT];
+static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
+
 static Entry_List_s lists[MODE_AMOUNT] = {0};
 
 int __stacksize__ = 64 * 1024;
@@ -76,12 +81,24 @@ static void exit_services(void)
     acExit();
 }
 
+static void stop_install_check(void)
+{
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        if(installCheckThreads_arg[i].run_thread)
+        {
+            installCheckThreads_arg[i].run_thread = false;
+            threadJoin(installCheckThreads[i], U64_MAX);
+        }
+    }
+}
+
 static void exit_thread(void)
 {
-    if(arg.run_thread)
+    if(iconLoadingThread_arg.run_thread)
     {
         DEBUG("exiting thread\n");
-        arg.run_thread = false;
+        iconLoadingThread_arg.run_thread = false;
         svcSignalEvent(update_icons_handle);
         threadJoin(iconLoadingThread, U64_MAX);
         threadFree(iconLoadingThread);
@@ -90,6 +107,7 @@ static void exit_thread(void)
 
 void exit_function(void)
 {
+    stop_install_check();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * current_list = &lists[i];
@@ -216,10 +234,10 @@ static void change_selected(Entry_List_s * list, int change_value)
 
 static void start_thread(void)
 {
-    if(arg.run_thread)
+    if(iconLoadingThread_arg.run_thread)
     {
         DEBUG("starting thread\n");
-        iconLoadingThread = threadCreate(load_icons_thread, &arg, __stacksize__, 0x38, -2, false);
+        iconLoadingThread = threadCreate(load_icons_thread, &iconLoadingThread_arg, __stacksize__, 0x38, -2, false);
     }
 }
 
@@ -227,6 +245,7 @@ static void load_lists(Entry_List_s * lists)
 {
     ssize_t texture_id_offset = TEXTURE_ICON;
 
+    stop_install_check();
     exit_thread();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
@@ -245,7 +264,7 @@ static void load_lists(Entry_List_s * lists)
         if(R_SUCCEEDED(res))
         {
             if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
-                arg.run_thread = true;
+                iconLoadingThread_arg.run_thread = true;
 
             DEBUG("total: %i\n", current_list->entries_count);
 
@@ -254,10 +273,17 @@ static void load_lists(Entry_List_s * lists)
 
             texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
 
+            void (*install_check_function)(void*) = NULL;
             if(i == MODE_THEMES)
-                threadCreate(themes_check_installed, current_list, __stacksize__, 0x3f, -2, true);
+                install_check_function = themes_check_installed;
             else if(i == MODE_SPLASHES)
-                threadCreate(splash_check_installed, current_list, __stacksize__, 0x3f, -2, true);
+                install_check_function = splash_check_installed;
+
+            Thread_Arg_s * current_arg = &installCheckThreads_arg[i];
+            current_arg->run_thread = true;
+            current_arg->thread_arg = (void**)current_list;
+
+            installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, true);
             svcSleepThread(1e8);
         }
     }
@@ -281,12 +307,12 @@ int main(void)
     svcCreateEvent(&update_icons_handle, RESET_ONESHOT);
 
     static Entry_List_s * current_list = NULL;
-    void * icon_args_void[] = {
+    void * iconLoadingThread_args_void[] = {
         &current_list,
         &update_icons_handle,
     };
-    arg.thread_argument = icon_args_void;
-    arg.run_thread = false;
+    iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
+    iconLoadingThread_arg.run_thread = false;
 
     load_lists(lists);
 
@@ -330,6 +356,7 @@ int main(void)
             current_list->previous_selected = current_list->selected_entry;
 
             draw_interface(current_list, instructions);
+            svcSleepThread(1e7);
         }
 
         pp2d_end_draw();
