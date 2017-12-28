@@ -39,11 +39,11 @@
 static bool homebrew = false;
 static bool installed_themes = false;
 
-static Thread iconLoadingThread;
+static Thread iconLoadingThread = {0};
 static Thread_Arg_s iconLoadingThread_arg = {0};
 static Handle update_icons_handle;
 
-static Thread installCheckThreads[MODE_AMOUNT];
+static Thread installCheckThreads[MODE_AMOUNT] = {0};
 static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
@@ -269,7 +269,7 @@ static void load_lists(Entry_List_s * lists)
             DEBUG("total: %i\n", current_list->entries_count);
 
             current_list->texture_id_offset = texture_id_offset;
-            load_icons_first(current_list);
+            load_icons_first(current_list, false);
 
             texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
 
@@ -570,10 +570,10 @@ int main(void)
             switch(current_mode)
             {
                 case MODE_THEMES:
-                    load_icons_first(current_list);
+                    load_icons_first(current_list, false);
                     break;
                 case MODE_SPLASHES:
-                    load_icons_first(current_list);
+                    load_icons_first(current_list, false);
                     break;
                 default:
                     break;
@@ -602,10 +602,12 @@ int main(void)
         else if(kDown & KEY_LEFT) 
         {
             change_selected(current_list, -ENTRIES_PER_SCREEN);
+            load_icons_first(current_list, true);
         }
         else if(kDown & KEY_RIGHT)
         {
             change_selected(current_list, ENTRIES_PER_SCREEN);
+            load_icons_first(current_list, true);
         }
 
         // Fast scroll using circle pad
@@ -651,6 +653,7 @@ int main(void)
                     if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
                         change_selected(current_list, -ENTRIES_PER_SCREEN);
+                        load_icons_first(current_list, true);
                     }
                     else if(BETWEEN(320-24, x, 320))
                     {
@@ -666,7 +669,7 @@ int main(void)
                     }
                     else if(BETWEEN(320-96, x, 320-72))
                     {
-                        load_icons_first(current_list);
+                        load_icons_first(current_list, false);
                     }
                     else if(BETWEEN(320-120, x, 320-96) && current_mode == MODE_THEMES)
                     {
@@ -678,6 +681,7 @@ int main(void)
                     if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
                     {
                         change_selected(current_list, ENTRIES_PER_SCREEN);
+                        load_icons_first(current_list, true);
                     }
                     else if(BETWEEN(176, x, 320))
                     {
