@@ -34,7 +34,7 @@
 #include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
-#define FASTSCROLL_WAIT 1e8
+#define FASTSCROLL_WAIT 1.5e8
 
 static bool homebrew = false;
 static bool installed_themes = false;
