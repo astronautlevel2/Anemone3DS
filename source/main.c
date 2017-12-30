@@ -88,7 +88,6 @@ static void stop_install_check(void)
         if(installCheckThreads_arg[i].run_thread)
         {
             installCheckThreads_arg[i].run_thread = false;
-            threadJoin(installCheckThreads[i], U64_MAX);
         }
     }
 }
