@@ -105,7 +105,7 @@ static void exit_thread(void)
     }
 }
 
-void exit_function(void)
+void exit_function(bool power_pressed)
 {
     stop_install_check();
     for(int i = 0; i < MODE_AMOUNT; i++)
@@ -120,7 +120,7 @@ void exit_function(void)
     exit_screens();
     exit_services();
 
-    if(installed_themes)
+    if(!power_pressed && installed_themes)
     {
         if(homebrew)
         {
@@ -361,7 +361,11 @@ int main(void)
 
         pp2d_end_draw();
 
-        if(kDown & KEY_START) break;
+        if(kDown & KEY_START)
+        {
+            exit_function(false);
+            return 0;
+        }
 
         if(!install_mode)
         {
@@ -708,7 +712,6 @@ int main(void)
         }
     }
 
-    exit_function();
-
+    exit_function(true);
     return 0;
 }

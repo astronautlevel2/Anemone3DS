@@ -74,6 +74,4 @@ enum TextureID {
     TEXTURE_ICON, // always the last
 };
 
-void exit_function(void);
-
 #endif
