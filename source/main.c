@@ -312,14 +312,13 @@ int main(void)
             if(!iconLoadingThread_arg.run_thread)
             {
                 handle_scrolling(current_list);
+                current_list->previous_scroll = current_list->scroll;
             }
             else
             {
                 svcSignalEvent(update_icons_handle);
                 svcSleepThread(5e6);
             }
-
-            current_list->previous_scroll = current_list->scroll;
 
             draw_interface(current_list, instructions);
             svcSleepThread(1e7);

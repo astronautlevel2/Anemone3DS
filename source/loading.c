@@ -268,6 +268,8 @@ void handle_scrolling(Entry_List_s * list)
     {
         for(int i = 0; i < list->entries_count; i++)
         {
+            int change = 0;
+
             if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
             {
                 list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
@@ -278,27 +280,32 @@ void handle_scrolling(Entry_List_s * list)
             }
             else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
             {
-                list->scroll++;
+                change = 1;
             }
             else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
             {
-                list->scroll--;
+                change = -1;
             }
             else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
             {
-                list->scroll += ENTRIES_PER_SCREEN;
+                change = ENTRIES_PER_SCREEN;
             }
             else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
             {
-                list->scroll -= ENTRIES_PER_SCREEN;
+                change = -ENTRIES_PER_SCREEN;
             }
+
+            list->scroll += change;
 
             if(list->scroll < 0)
                 list->scroll = 0;
             else if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
                 list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
 
-            list->previous_selected = list->selected_entry;
+            if(!change)
+                list->previous_selected = list->selected_entry;
+            else
+                list->previous_selected += change;
         }
     }
     //----------------------------------------------------------------
@@ -387,6 +394,8 @@ static void load_icons(Entry_List_s * current_list)
     u64 load_time = end_load - start_load;
     u64 scroll_time = end_scroll-start_scroll;
     DEBUG("times (ms): scroll %llu, rot %llu, load %llu\n", scroll_time, rot_time, load_time);
+
+    current_list->previous_scroll = current_list->scroll;
 }
 
 void load_icons_thread(void * void_arg)
