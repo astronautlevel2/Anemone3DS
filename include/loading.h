@@ -70,7 +70,6 @@ typedef struct {
 
     ssize_t texture_id_offset;
     ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
-    ssize_t assoc_entry_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
 
     int previous_scroll;
     int scroll;
