@@ -320,7 +320,6 @@ int main(void)
             }
 
             current_list->previous_scroll = current_list->scroll;
-            current_list->previous_selected = current_list->selected_entry;
 
             draw_interface(current_list, instructions);
             svcSleepThread(1e7);

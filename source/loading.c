@@ -275,35 +275,40 @@ void handle_scrolling(Entry_List_s * list)
     //----------------------------------------------------------------
     if(list->entries_count > ENTRIES_PER_SCREEN)
     {
-        if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+        for(int i = 0; i < list->entries_count; i++)
         {
-            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
-        }
-        else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
-        {
-            list->scroll = 0;
-        }
-        else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
-        {
-            list->scroll++;
-        }
-        else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
-        {
-            list->scroll--;
-        }
-        else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
-        {
-            list->scroll += ENTRIES_PER_SCREEN;
-        }
-        else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
-        {
-            list->scroll -= ENTRIES_PER_SCREEN;
-        }
+            if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+            {
+                list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+            }
+            else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
+            {
+                list->scroll = 0;
+            }
+            else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
+            {
+                list->scroll++;
+            }
+            else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
+            {
+                list->scroll--;
+            }
+            else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
+            {
+                list->scroll += ENTRIES_PER_SCREEN;
+            }
+            else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
+            {
+                list->scroll -= ENTRIES_PER_SCREEN;
+            }
 
-        if(list->scroll < 0)
-            list->scroll = 0;
-        if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
-            list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+            if(list->scroll < 0)
+                list->scroll = 0;
+            else if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
+                list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+
+            list->previous_selected = list->selected_entry;
+        }
     }
     //----------------------------------------------------------------
 }
@@ -313,7 +318,9 @@ static void load_icons(Entry_List_s * current_list)
     if(current_list == NULL || current_list->entries == NULL)
         return;
 
+    u64 start_scroll = osGetTime();
     handle_scrolling(current_list);
+    u64 end_scroll = osGetTime();
 
     if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
         return; // return if the list is one that doesnt need swapping, or if nothing changed
@@ -343,6 +350,7 @@ static void load_icons(Entry_List_s * current_list)
     ssize_t * icons_ids = (ssize_t *)current_list->icons_ids;
     ssize_t * assoc_entry_ids = (ssize_t *)current_list->assoc_entry_ids;
 
+    u64 start_rot = osGetTime();
     for(int i = starti; i != endi; i++, ctr++)
     {
         ssize_t id = 0;
@@ -374,14 +382,22 @@ static void load_icons(Entry_List_s * current_list)
         ids[ctr] = id;
         *assoc = id;
     }
+    u64 end_rot = osGetTime();
 
     #undef FIRST
     #undef LAST
     #undef SIGN
 
+    u64 start_load = osGetTime();
     svcSleepThread(1e6);
     for(int i = 0; i < abs(delta); i++)
         load_smdh_icon(*entries[i], ids[i]);
+    u64 end_load = osGetTime();
+
+    u64 rot_time = end_rot - start_rot;
+    u64 load_time = end_load - start_load;
+    u64 scroll_time = end_scroll-start_scroll;
+    DEBUG("times (ms): scroll %llu, rot %llu, load %llu\n", scroll_time, rot_time, load_time);
 }
 
 void load_icons_thread(void * void_arg)
