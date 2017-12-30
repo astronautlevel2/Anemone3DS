@@ -380,6 +380,9 @@ static void load_icons(Entry_List_s * current_list)
         load_smdh_icon(*entries[i], ids[i]);
     u64 end_load = osGetTime();
 
+    free(entries);
+    free(ids);
+
     u64 rot_time = end_rot - start_rot;
     u64 load_time = end_load - start_load;
     u64 scroll_time = end_scroll-start_scroll;
