@@ -550,12 +550,12 @@ int main(void)
         {
             change_selected(current_list, -1);
         }
-        else if(kDown & KEY_DOWN) 
+        else if(kDown & KEY_DOWN)
         {
             change_selected(current_list, 1);
         }
         // Quick moving
-        else if(kDown & KEY_LEFT) 
+        else if(kDown & KEY_LEFT)
         {
             change_selected(current_list, -ENTRIES_PER_SCREEN);
         }
