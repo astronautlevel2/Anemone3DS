@@ -17,13 +17,13 @@ This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additi
 
 # Credits
 The following people contributed to Anemone3DS in some way. Without these people, Anemone3DS wouldn't exist, or wouldn't be as good as it is:
- * [Daedreth](https://github.com/daedreth), who wrote the initial implementation of theme application code and SMDH parsing.
- * [LiquidFenrir](https://github.com/LiquidFenrir), who refactored a lot of my messy GUI code and wrote the image preview from zip code, as well as the icon code.
- * [Sono](https://github.com/MarcuzD), who wrote the BCSTM playback code.
+ * [Daedreth](https://github.com/daedreth), who wrote the initial implementation of theme installation code and SMDH parsing.
+ * [LiquidFenrir](https://github.com/LiquidFenrir), who refactored a lot of my messy code and has been essential in development.
  * [Kenn (mattkenster)](https://github.com/mattkenster), for designing the GUI, a number of sprites used in the application, and drawing the banner and icon.
 
 Special thanks go to these people who, while not directly contributing, helped immensely:
  * [Rinnegatamante](https://github.com/Rinnegatamante), whose code served as reference on theme installation.
+ * [SteveIce10](https://github.com/SteveIce10), whose QR code in FBI was essential.
  * [BernardoGiordano](https://github.com/BernardoGiordano) for making pp2d, and being super responsive to feature requests and just general help.
  * [yellows8](https://github.com/yellows8) for his home menu extdump tool, which was invaluable in debugging.
  * the folks on #dev of Nintendo Homebrew, who helped with unicode shenanigans (especially [Stary2001](https://github.com/Stary2001), [Fenrir](https://github.com/FenrirWolf), and DanielKO).
