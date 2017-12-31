@@ -70,7 +70,6 @@ typedef struct {
 
     ssize_t texture_id_offset;
     ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
-    ssize_t assoc_entry_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
 
     int previous_scroll;
     int scroll;
@@ -92,6 +91,7 @@ void delete_entry(Entry_s entry);
 Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mode);
 bool load_preview(Entry_List_s list, int * preview_offset);
 void load_icons_first(Entry_List_s * current_list, bool silent);
+void handle_scrolling(Entry_List_s * list);
 void load_icons_thread(void * void_arg);
 u32 load_data(char * filename, Entry_s entry, char ** buf);
 
