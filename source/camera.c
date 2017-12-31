@@ -141,7 +141,7 @@ bool start_capture_cam(qr_data *data)
 void update_qr(qr_data *data, EntryMode current_mode)
 {
     hidScanInput();
-    if (hidKeysDown() & KEY_R) {
+    if (hidKeysDown() & (KEY_R | KEY_B | KEY_TOUCH)) {
         exit_qr(data);
         return;
     }
@@ -169,10 +169,11 @@ void update_qr(qr_data *data, EntryMode current_mode)
     pp2d_load_texture_memory(TEXTURE_QR, data->texture_buffer, 400, 240);
 
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
-    pp2d_draw_rectangle(0, 216, 400, 24, RGBA8(55, 122, 168, 255));
-    pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
+
+    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    pp2d_draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
     pp2d_end_draw();
-    
+
     int w;
     int h;
     u8 *image = (u8*) quirc_begin(data->context, &w, &h);
@@ -194,12 +195,13 @@ void update_qr(qr_data *data, EntryMode current_mode)
         {
             exit_qr(data);
             http_get((char*)scan_data.payload, main_paths[current_mode]);
+            data->success = true;
         }   
     }
-    
+
 }
 
-void init_qr(EntryMode current_mode)
+bool init_qr(EntryMode current_mode)
 {
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
@@ -211,6 +213,8 @@ void init_qr(EntryMode current_mode)
     data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
 
     while (!data->finished) update_qr(data, current_mode);
+
+    return (bool)data->success;
 }
 
 /*
