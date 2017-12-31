@@ -33,7 +33,7 @@ BANNER_IMAGE        :=	meta/banner.png
 RSF_PATH            :=	meta/app.rsf
 
 # If left blank, makerom will use the default Homebrew logo
-LOGO                :=	
+LOGO                :=	meta/logo.bin
 
 
 # If left blank, makerom will use default values (0xff3ff and CTR-P-CTAP, respectively)
