@@ -50,6 +50,7 @@ static Entry_List_s lists[MODE_AMOUNT] = {0};
 
 int __stacksize__ = 64 * 1024;
 Result archive_result;
+u32 old_time_limit;
 
 const char * main_paths[MODE_AMOUNT] = {
     "/Themes/",
@@ -62,6 +63,8 @@ static void init_services(void)
     cfguInit();
     ptmuInit();
     acInit();
+    APT_GetAppCpuTimeLimit(&old_time_limit);
+    APT_SetAppCpuTimeLimit(30);
     httpcInit(0);
     archive_result = open_archives();
     if(envIsHomebrew())
@@ -77,6 +80,7 @@ static void exit_services(void)
     close_archives();
     cfguExit();
     ptmuExit();
+    if (old_time_limit != UINT32_MAX) APT_SetAppCpuTimeLimit(old_time_limit);
     httpcExit();
     acExit();
 }
@@ -340,22 +344,16 @@ int main(void)
                 current_mode %= MODE_AMOUNT;
                 continue;
             }
-            else if(!preview_mode && kDown & KEY_R) //toggle QR mode
+            else if(!qr_mode && !preview_mode && kDown & KEY_R) //toggle QR mode
             {
-                toggle_qr:
+                enable_qr:
                 if(R_SUCCEEDED(camInit()))
                 {
                     camExit();
                     u32 out;
                     ACU_GetWifiStatus(&out);
                     if(out)
-                    {
-                        qr_mode = !qr_mode;
-                        if(qr_mode)
-                            init_qr();
-                        else
-                            exit_qr();
-                    }
+                        init_qr(current_mode);
                     else
                     {
                         throw_error("Please connect to Wi-Fi before scanning QRs", ERROR_LEVEL_WARNING);
@@ -375,24 +373,6 @@ int main(void)
                     preview_mode = load_preview(*current_list, &preview_offset);
                 else
                     preview_mode = false;
-                continue;
-            }
-            else if(qr_mode && kDown & KEY_L) //scan a QR code while in QR mode
-            {
-                CAMU_StopCapture(PORT_BOTH);
-                CAMU_Activate(SELECT_NONE);
-                qr_mode = !scan_qr(current_mode);
-                CAMU_Activate(SELECT_OUT1_OUT2);
-                CAMU_StartCapture(PORT_BOTH);
-
-                if(!qr_mode)
-                    load_lists(lists);
-                continue;
-            }
-            else if(qr_mode && kDown & KEY_B)
-            {
-                exit_qr();
-                qr_mode = false;
                 continue;
             }
             else if(preview_mode && kDown & (KEY_B | KEY_TOUCH))
@@ -626,7 +606,7 @@ int main(void)
                     }
                     else if(BETWEEN(320-48, x, 320-24))
                     {
-                        goto toggle_qr;
+                        goto enable_qr;
                     }
                     else if(BETWEEN(320-72, x, 320-48))
                     {
@@ -671,7 +651,6 @@ int main(void)
             }
         }
     }
-
     exit_function(true);
     return 0;
 }

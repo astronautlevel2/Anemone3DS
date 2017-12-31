@@ -29,10 +29,20 @@
 
 #include "common.h"
 
-void init_qr(void);
-void exit_qr(void);
+typedef struct {
+    u16 *camera_buffer;
+    u32 *texture_buffer;
+    Handle mutex;
+    volatile bool finished;
+    Handle cancel;
+
+    bool capturing;
+    struct quirc* context;
+} qr_data;
+
+void init_qr(EntryMode current_mode);
+void exit_qr(qr_data *data);
 void take_picture(void);
-bool scan_qr(EntryMode current_mode);
 Result http_get(char *url, const char *path);
 
 #endif

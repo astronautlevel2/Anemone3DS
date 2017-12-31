@@ -61,7 +61,7 @@ void exit_screens(void)
     pp2d_exit();
 }
 
-static void draw_base_interface(void)
+void draw_base_interface(void)
 {
     pp2d_begin_draw(GFX_TOP, GFX_LEFT);
     pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
