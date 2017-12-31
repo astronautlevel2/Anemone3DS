@@ -39,21 +39,34 @@ void splash_install(Entry_s splash)
     char *screen_buf = NULL;
 
     u32 size = load_data("/splash.bin", splash, &screen_buf);
-    remake_file("/luma/splash.bin", ArchiveSD, size);
-    buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
-
-    size = load_data("/splashbottom.bin", splash, &screen_buf);
-    remake_file("/luma/splashbottom.bin", ArchiveSD, size);
-    buf_to_file(size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
-
-    char *config_buf;
-    size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/config.bin"), ArchiveSD, &config_buf);
-    if(size)
+    if(size != 0)
     {
-        if(config_buf[0xC] == 0)
+        remake_file("/luma/splash.bin", ArchiveSD, size);
+        buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
+    }
+
+    u32 bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
+    if(bottom_size != 0)
+    {
+        remake_file("/luma/splashbottom.bin", ArchiveSD, bottom_size);
+        buf_to_file(bottom_size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
+    }
+
+    if(size == 0 && bottom_size == 0)
+    {
+        throw_error("No splash.bin or splashbottom.bin found.\nIs this a splash?", ERROR_LEVEL_WARNING);
+    }
+    else
+    {
+        char *config_buf;
+        size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/config.bin"), ArchiveSD, &config_buf);
+        if(size)
         {
-            free(config_buf);
-            throw_error("WARNING: Splashes are disabled in Luma Config", ERROR_LEVEL_WARNING);
+            if(config_buf[0xC] == 0)
+            {
+                free(config_buf);
+                throw_error("WARNING: Splashes are disabled in Luma Config", ERROR_LEVEL_WARNING);
+            }
         }
     }
 }
