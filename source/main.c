@@ -108,17 +108,21 @@ static void exit_thread(void)
     }
 }
 
-void exit_function(bool power_pressed)
+void free_lists(void)
 {
     stop_install_check();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * current_list = &lists[i];
         free(current_list->entries);
-        current_list->entries = NULL;
+        memset(current_list, 0, sizeof(Entry_List_s));
     }
-
     exit_thread();
+}
+
+void exit_function(bool power_pressed)
+{
+    free_lists();
     svcCloseHandle(update_icons_handle);
     exit_screens();
     exit_services();
@@ -209,8 +213,7 @@ static void load_lists(Entry_List_s * lists)
 {
     ssize_t texture_id_offset = TEXTURE_ICON;
 
-    stop_install_check();
-    exit_thread();
+    free_lists();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         InstallType loading_screen = INSTALL_NONE;
@@ -222,8 +225,6 @@ static void load_lists(Entry_List_s * lists)
         draw_install(loading_screen);
 
         Entry_List_s * current_list = &lists[i];
-        free(current_list->entries);
-        memset(current_list, 0, sizeof(Entry_List_s));
         Result res = load_entries(main_paths[i], current_list, i);
         if(R_SUCCEEDED(res))
         {
@@ -353,7 +354,13 @@ int main(void)
                     u32 out;
                     ACU_GetWifiStatus(&out);
                     if(out)
-                        init_qr(current_mode);
+                    {
+
+                        if(init_qr(current_mode))
+                        {
+                            load_lists(lists);
+                        }
+                    }
                     else
                     {
                         throw_error("Please connect to Wi-Fi before scanning QRs", ERROR_LEVEL_WARNING);

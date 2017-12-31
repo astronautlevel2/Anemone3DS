@@ -34,13 +34,14 @@ typedef struct {
     u32 *texture_buffer;
     Handle mutex;
     volatile bool finished;
+    volatile bool success;
     Handle cancel;
 
     bool capturing;
     struct quirc* context;
 } qr_data;
 
-void init_qr(EntryMode current_mode);
+bool init_qr(EntryMode current_mode);
 void exit_qr(qr_data *data);
 void take_picture(void);
 Result http_get(char *url, const char *path);
