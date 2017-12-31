@@ -280,7 +280,10 @@ int main(void)
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
 
-    load_lists(lists);
+    #ifndef CITRA_MODE
+    if(R_SUCCEEDED(archive_result))
+        load_lists(lists);
+    #endif
 
     EntryMode current_mode = MODE_THEMES;
 
@@ -290,13 +293,22 @@ int main(void)
     bool qr_mode = false;
     bool install_mode = false;
 
+    bool quit = false;
+
     while(aptMainLoop())
     {
+        if(quit)
+        {
+            exit_function(false);
+            return 0;
+        }
+
         #ifndef CITRA_MODE
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
             throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
-            break;
+            quit = true;
+            continue;
         }
         #endif
 
@@ -331,11 +343,7 @@ int main(void)
 
         pp2d_end_draw();
 
-        if(kDown & KEY_START)
-        {
-            exit_function(false);
-            return 0;
-        }
+        if(kDown & KEY_START) quit = true;
 
         if(!install_mode)
         {
@@ -659,6 +667,7 @@ int main(void)
             }
         }
     }
+
     exit_function(true);
     return 0;
 }
