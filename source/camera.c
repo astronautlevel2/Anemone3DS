@@ -169,8 +169,9 @@ void update_qr(qr_data *data, EntryMode current_mode)
     pp2d_load_texture_memory(TEXTURE_QR, data->texture_buffer, 400, 240);
 
     pp2d_draw_texture(TEXTURE_QR, 0, 0);
-    pp2d_draw_rectangle(0, 216, 400, 24, RGBA8(55, 122, 168, 255));
-    pp2d_draw_text_center(GFX_TOP, 220, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
+
+    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    pp2d_draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
     pp2d_end_draw();
 
     int w;
