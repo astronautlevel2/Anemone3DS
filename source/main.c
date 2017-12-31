@@ -421,7 +421,7 @@ int main(void)
                 else if((kDown | kHeld) & KEY_DUP)
                 {
                     draw_install(INSTALL_SINGLE);
-                    theme_install(*current_entry);
+                    if(R_SUCCEEDED(theme_install(*current_entry)))
                     {
                         for(int i = 0; i < current_list->entries_count; i++)
                         {
@@ -437,7 +437,7 @@ int main(void)
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
                     draw_install(INSTALL_NO_BGM);
-                    no_bgm_install(*current_entry);
+                    if(R_SUCCEEDED(no_bgm_install(*current_entry)))
                     {
                         for(int i = 0; i < current_list->entries_count; i++)
                         {
