@@ -223,6 +223,7 @@ static void load_lists(Entry_List_s * lists)
             loading_screen = INSTALL_LOADING_SPLASHES;
 
         draw_install(loading_screen);
+        draw_install(loading_screen);
 
         Entry_List_s * current_list = &lists[i];
         Result res = load_entries(main_paths[i], current_list, i);
