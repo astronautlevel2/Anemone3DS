@@ -184,9 +184,6 @@ static void jump_menu(Entry_List_s * list)
     if(button == SWKBD_BUTTON_CONFIRM)
     {
         list->selected_entry = atoi(numbuf) - 1;
-        list->scroll = list->selected_entry;
-        if(list->scroll >= list->entries_count - ENTRIES_PER_SCREEN)
-            list->scroll = list->entries_count - ENTRIES_PER_SCREEN - 1;
     }
 }
 
