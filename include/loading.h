@@ -69,7 +69,7 @@ typedef struct {
     int entries_count;
 
     ssize_t texture_id_offset;
-    ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
+    ssize_t * icons_ids;
 
     int previous_scroll;
     int scroll;
@@ -80,6 +80,8 @@ typedef struct {
     int shuffle_count;
 
     EntryMode mode;
+    int entries_per_screen;
+    int entry_size;
 } Entry_List_s;
 
 typedef struct {
@@ -88,7 +90,7 @@ typedef struct {
 } Thread_Arg_s;
 
 void delete_entry(Entry_s entry);
-Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mode);
+Result load_entries(const char * loading_path, Entry_List_s * list);
 bool load_preview(Entry_List_s list, int * preview_offset);
 void load_icons_first(Entry_List_s * current_list, bool silent);
 void handle_scrolling(Entry_List_s * list);

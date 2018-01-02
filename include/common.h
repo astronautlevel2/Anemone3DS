@@ -33,8 +33,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ENTRIES_PER_SCREEN 4
-
 #define DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #define POS() DEBUG("%s (line %d)...\n", __func__, __LINE__)
 
@@ -45,6 +43,7 @@
 typedef enum {
     MODE_THEMES = 0,
     MODE_SPLASHES,
+    MODE_BADGES,
 
     MODE_AMOUNT,
 } EntryMode;
@@ -53,12 +52,13 @@ extern const char * main_paths[MODE_AMOUNT];
 
 enum TextureID {
     TEXTURE_FONT_RESERVED = 0, // used by pp2d for the font
+
     TEXTURE_ARROW,
     TEXTURE_SHUFFLE,
     TEXTURE_INSTALLED,
-    TEXTURE_PREVIEW_ICON,
     TEXTURE_DOWNLOAD,
-    TEXTURE_RELOAD,
+    TEXTURE_EXIT,
+
     TEXTURE_BATTERY_0,
     TEXTURE_BATTERY_1,
     TEXTURE_BATTERY_2,
@@ -66,8 +66,10 @@ enum TextureID {
     TEXTURE_BATTERY_4,
     TEXTURE_BATTERY_5,
     TEXTURE_BATTERY_CHARGE,
+
     TEXTURE_QR,
     TEXTURE_PREVIEW,
+
     TEXTURE_SELECT_BUTTON,
     TEXTURE_START_BUTTON,
 

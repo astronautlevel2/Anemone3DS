@@ -114,15 +114,19 @@ static int compare_entries(const void * a, const void * b)
 
 static void sort_list(Entry_List_s * list)
 {
-    qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
+    if(list->entries != NULL)
+        qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
 }
 
-Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mode)
+Result load_entries(const char * loading_path, Entry_List_s * list)
 {
     Handle dir_handle;
     Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, loading_path));
     if(R_FAILED(res))
+    {
+        DEBUG("Failed to open folder: %s\n", loading_path);
         return res;
+    }
 
     u32 entries_read = 1;
 
@@ -133,8 +137,16 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
         if(R_FAILED(res) || entries_read == 0)
             break;
 
-        if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP"))
-            continue;
+        if(list->mode == MODE_BADGES)
+        {
+            if(strcmp(dir_entry.shortExt, "PNG"))
+                continue;
+        }
+        else
+        {
+            if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP")) 
+                continue;
+        }
 
         list->entries_count++;
         Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
@@ -143,6 +155,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
             free(list->entries);
             list->entries = NULL;
             res = -1;
+            DEBUG("break\n");
             break;
         }
         else
@@ -154,15 +167,23 @@ Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mo
         struacat(current_entry->path, loading_path);
         strucat(current_entry->path, dir_entry.name);
 
-        current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-
-        parse_smdh(current_entry, dir_entry.name);
+        if(list->mode == MODE_BADGES)
+        {
+            ssize_t dir_entry_name_len = strulen(dir_entry.name, 0x106);
+            memcpy(&current_entry->name, dir_entry.name, (dir_entry_name_len - 4)*sizeof(u16));
+            utf8_to_utf16(current_entry->desc, (u8*)"No description", 0x100);
+            utf8_to_utf16(current_entry->author, (u8*)"Unknown author", 0x80);
+        }
+        else
+        {
+            current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
+            parse_smdh(current_entry, dir_entry.name);
+        }
     }
 
     FSDIR_Close(dir_handle);
 
     sort_list(list);
-    list->mode = mode;
 
     return res;
 }
@@ -176,7 +197,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     int starti = 0, endi = 0;
 
-    if(list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+    if(list->entries_count <= list->entries_per_screen*ICONS_OFFSET_AMOUNT)
     {
         DEBUG("small load\n");
         // if the list is one that doesnt need swapping, load everything at once
@@ -186,14 +207,15 @@ void load_icons_first(Entry_List_s * list, bool silent)
     {
         DEBUG("extended load\n");
         // otherwise, load around to prepare for swapping
-        starti = list->scroll - ENTRIES_PER_SCREEN*ICONS_VISIBLE;
-        endi = starti + ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
+        starti = list->scroll - list->entries_per_screen*ICONS_VISIBLE;
+        endi = starti + list->entries_per_screen*ICONS_OFFSET_AMOUNT;
     }
 
-    ssize_t * icon_ids = (ssize_t *)list->icons_ids;
+    list->icons_ids = calloc(endi-starti, sizeof(ssize_t));
+
+    ssize_t * icons_ids = list->icons_ids;
     ssize_t id = list->texture_id_offset;
 
-    memset(icon_ids, 0, ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT*sizeof(ssize_t));
     for(int i = starti; i < endi; i++, id++)
     {
         int offset = i;
@@ -203,8 +225,16 @@ void load_icons_first(Entry_List_s * list, bool silent)
             offset -= list->entries_count;
 
         Entry_s current_entry = list->entries[offset];
-        load_smdh_icon(current_entry, id);
-        icon_ids[i-starti] = id;
+        if(list->mode == MODE_BADGES)
+        {
+            char * icon_buf = NULL;
+            u32 size = load_data("", current_entry, &icon_buf);
+            pp2d_load_texture_png_memory(id, icon_buf, size);
+        }
+        else
+            load_smdh_icon(current_entry, id);
+
+        icons_ids[i-starti] = id;
     }
 }
 
@@ -229,21 +259,21 @@ void handle_scrolling(Entry_List_s * list)
 {
     // Scroll the menu up or down if the selected theme is out of its bounds
     //----------------------------------------------------------------
-    if(list->entries_count > ENTRIES_PER_SCREEN)
+    if(list->entries_count > list->entries_per_screen)
     {
         for(int i = 0; i < list->entries_count; i++)
         {
             int change = 0;
 
-            if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->previous_scroll < ENTRIES_PER_SCREEN && list->selected_entry >= list->entries_count - ENTRIES_PER_SCREEN)
+            if(list->entries_count > list->entries_per_screen*2 && list->previous_scroll < list->entries_per_screen && list->selected_entry >= list->entries_count - list->entries_per_screen)
             {
-                list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+                list->scroll = list->entries_count - list->entries_per_screen;
             }
-            else if(list->entries_count > ENTRIES_PER_SCREEN*2 && list->selected_entry < ENTRIES_PER_SCREEN && list->previous_selected >= list->entries_count - ENTRIES_PER_SCREEN)
+            else if(list->entries_count > list->entries_per_screen*2 && list->selected_entry < list->entries_per_screen && list->previous_selected >= list->entries_count - list->entries_per_screen)
             {
                 list->scroll = 0;
             }
-            else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+ENTRIES_PER_SCREEN)
+            else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+list->entries_per_screen)
             {
                 change = 1;
             }
@@ -251,21 +281,21 @@ void handle_scrolling(Entry_List_s * list)
             {
                 change = -1;
             }
-            else if(list->selected_entry == list->previous_selected+ENTRIES_PER_SCREEN || list->selected_entry >= list->scroll + ENTRIES_PER_SCREEN)
+            else if(list->selected_entry == list->previous_selected+list->entries_per_screen || list->selected_entry >= list->scroll + list->entries_per_screen)
             {
-                change = ENTRIES_PER_SCREEN;
+                change = list->entries_per_screen;
             }
-            else if(list->selected_entry == list->previous_selected-ENTRIES_PER_SCREEN || list->selected_entry < list->scroll)
+            else if(list->selected_entry == list->previous_selected-list->entries_per_screen || list->selected_entry < list->scroll)
             {
-                change = -ENTRIES_PER_SCREEN;
+                change = -list->entries_per_screen;
             }
 
             list->scroll += change;
 
             if(list->scroll < 0)
                 list->scroll = 0;
-            else if(list->scroll > list->entries_count - ENTRIES_PER_SCREEN)
-                list->scroll = list->entries_count - ENTRIES_PER_SCREEN;
+            else if(list->scroll > list->entries_count - list->entries_per_screen)
+                list->scroll = list->entries_count - list->entries_per_screen;
 
             if(!change)
                 list->previous_selected = list->selected_entry;
@@ -283,13 +313,13 @@ static void load_icons(Entry_List_s * current_list)
 
     handle_scrolling(current_list);
 
-    if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
+    if(current_list->entries_count <= current_list->entries_per_screen*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
         return; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
 
     int delta = current_list->scroll - current_list->previous_scroll;
-    if(abs(delta) >= current_list->entries_count - ENTRIES_PER_SCREEN*(ICONS_OFFSET_AMOUNT-1))
+    if(abs(delta) >= current_list->entries_count - current_list->entries_per_screen*(ICONS_OFFSET_AMOUNT-1))
         delta = -SIGN(delta) * (current_list->entries_count - abs(delta));
 
     int starti = current_list->scroll;
@@ -306,26 +336,26 @@ static void load_icons(Entry_List_s * current_list)
     ssize_t * ids = calloc(abs(delta), sizeof(ssize_t));
 
     #define FIRST(arr) arr[0]
-    #define LAST(arr) arr[ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT - 1]
+    #define LAST(arr) arr[current_list->entries_per_screen*ICONS_OFFSET_AMOUNT - 1]
 
-    ssize_t * icons_ids = (ssize_t *)current_list->icons_ids;
+    ssize_t * icons_ids = current_list->icons_ids;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
         ssize_t id = 0;
         int offset = i;
 
-        rotate(icons_ids, ICONS_OFFSET_AMOUNT*ENTRIES_PER_SCREEN, -1*SIGN(delta));
+        rotate(icons_ids, ICONS_OFFSET_AMOUNT*current_list->entries_per_screen, -1*SIGN(delta));
 
         if(delta > 0)
         {
             id = LAST(icons_ids);
-            offset += ENTRIES_PER_SCREEN*ICONS_UNDER - delta;
+            offset += current_list->entries_per_screen*ICONS_UNDER - delta;
         }
         else
         {
             id = FIRST(icons_ids);
-            offset -= ENTRIES_PER_SCREEN*ICONS_VISIBLE;
+            offset -= current_list->entries_per_screen*ICONS_VISIBLE;
             i -= 2; //i-- twice to counter the i++, needed only for this case
         }
 
@@ -344,7 +374,18 @@ static void load_icons(Entry_List_s * current_list)
 
     svcSleepThread(1e6);
     for(int i = 0; i < abs(delta); i++)
-        load_smdh_icon(*entries[i], ids[i]);
+    {
+        Entry_s current_entry = *entries[i];
+        ssize_t id = ids[i];
+        if(current_list->mode == MODE_BADGES)
+        {
+            char * icon_buf = NULL;
+            u32 size = load_data("", current_entry, &icon_buf);
+            pp2d_load_texture_png_memory(id, icon_buf, size);
+        }
+        else
+            load_smdh_icon(current_entry, id);
+    }
 
     free(entries);
     free(ids);

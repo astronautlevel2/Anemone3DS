@@ -23,27 +23,26 @@
 *         or requiring that modified versions of such material be marked in
 *         reasonable ways as different from the original version.
 */
+#include "badges.h"
+#include "unicode.h"
+#include "fs.h"
+#include "draw.h"
 
-#ifndef FS_H
-#define FS_H
+static Result badge_install_internal(Entry_List_s list)
+{
+    return -1;
+}
 
-#include "common.h"
+Result badge_install(Entry_s badges)
+{
+    Entry_List_s list = {0};
+    list.entries_count = 1;
+    list.selected_entry = 0;
+    list.entries = &badges;
+    return badge_install_internal(list);
+}
 
-FS_Archive ArchiveSD;
-FS_Archive ArchiveHomeExt;
-FS_Archive ArchiveThemeExt;
-FS_Archive ArchiveBadgeExt;
-
-Result themeResult;
-Result badgeResult;
-
-Result open_archives(void);
-Result close_archives(void);
-
-u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf);
-u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf);
-
-Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf);
-void remake_file(char *path, FS_Archive archive, u32 size);
-
-#endif
+Result badge_install_all(Entry_List_s list)
+{
+    return badge_install_internal(list);
+}
