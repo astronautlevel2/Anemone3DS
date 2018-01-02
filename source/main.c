@@ -280,6 +280,8 @@ int main(void)
     #ifndef CITRA_MODE
     if(R_SUCCEEDED(archive_result))
         load_lists(lists);
+    #else
+    load_lists(lists);
     #endif
 
     EntryMode current_mode = MODE_THEMES;
