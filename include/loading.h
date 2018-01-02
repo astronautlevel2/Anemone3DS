@@ -29,6 +29,8 @@
 
 #include "common.h"
 
+#define ICONS_IDS_CUTOFF 10
+
 enum ICON_IDS_OFFSET {
     ICONS_ABOVE = 0,
     ICONS_VISIBLE,
@@ -69,7 +71,7 @@ typedef struct {
     int entries_count;
 
     ssize_t texture_id_offset;
-    ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
+    ssize_t icons_ids[ICONS_IDS_CUTOFF];
 
     int previous_scroll;
     int scroll;

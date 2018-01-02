@@ -176,7 +176,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     int starti = 0, endi = 0;
 
-    if(list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+    if(list->entries_count <= ICONS_IDS_CUTOFF)
     {
         DEBUG("small load\n");
         // if the list is one that doesnt need swapping, load everything at once
@@ -283,7 +283,7 @@ static void load_icons(Entry_List_s * current_list)
 
     handle_scrolling(current_list);
 
-    if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
+    if(current_list->entries_count <= ICONS_IDS_CUTOFF || current_list->previous_scroll == current_list->scroll)
         return; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))

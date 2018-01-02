@@ -226,7 +226,7 @@ static void load_lists(Entry_List_s * lists)
         Result res = load_entries(main_paths[i], current_list, i);
         if(R_SUCCEEDED(res))
         {
-            if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
+            if(current_list->entries_count > ICONS_IDS_CUTOFF)
                 iconLoadingThread_arg.run_thread = true;
 
             DEBUG("total: %i\n", current_list->entries_count);
@@ -234,7 +234,7 @@ static void load_lists(Entry_List_s * lists)
             current_list->texture_id_offset = texture_id_offset;
             load_icons_first(current_list, false);
 
-            texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
+            texture_id_offset += ICONS_IDS_CUTOFF;
 
             void (*install_check_function)(void*) = NULL;
             if(i == MODE_THEMES)
