@@ -176,24 +176,24 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     int starti = 0, endi = 0;
 
-    if(list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
-    {
-        DEBUG("small load\n");
-        // if the list is one that doesnt need swapping, load everything at once
-        endi = list->entries_count;
-    }
-    else
+    if(list->entries_count > ICONS_IDS_CUTOFF)
     {
         DEBUG("extended load\n");
         // otherwise, load around to prepare for swapping
         starti = list->scroll - ENTRIES_PER_SCREEN*ICONS_VISIBLE;
         endi = starti + ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
     }
+    else
+    {
+        DEBUG("small load\n");
+        // if the list is one that doesnt need swapping, load everything at once
+        endi = list->entries_count;
+    }
 
-    ssize_t * icon_ids = (ssize_t *)list->icons_ids;
+    ssize_t * icon_ids = list->icons_ids;
     ssize_t id = list->texture_id_offset;
 
-    memset(icon_ids, 0, ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT*sizeof(ssize_t));
+    memset(icon_ids, 0, ICONS_IDS_CUTOFF*sizeof(ssize_t));
     for(int i = starti; i < endi; i++, id++)
     {
         int offset = i;
@@ -308,7 +308,7 @@ static void load_icons(Entry_List_s * current_list)
     #define FIRST(arr) arr[0]
     #define LAST(arr) arr[ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT - 1]
 
-    ssize_t * icons_ids = (ssize_t *)current_list->icons_ids;
+    ssize_t * icons_ids = current_list->icons_ids;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
