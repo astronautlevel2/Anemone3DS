@@ -283,7 +283,7 @@ static void load_icons(Entry_List_s * current_list)
 
     handle_scrolling(current_list);
 
-    if(current_list->entries_count <= ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
+    if(current_list->entries_count <= ICONS_IDS_CUTOFF || current_list->previous_scroll == current_list->scroll)
         return; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
@@ -306,7 +306,8 @@ static void load_icons(Entry_List_s * current_list)
     ssize_t * ids = calloc(abs(delta), sizeof(ssize_t));
 
     #define FIRST(arr) arr[0]
-    #define LAST(arr) arr[ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT - 1]
+    #define ROT_ARR_SIZE ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT
+    #define LAST(arr) arr[ROT_ARR_SIZE - 1]
 
     ssize_t * icons_ids = current_list->icons_ids;
 
@@ -315,7 +316,7 @@ static void load_icons(Entry_List_s * current_list)
         ssize_t id = 0;
         int offset = i;
 
-        rotate(icons_ids, ICONS_OFFSET_AMOUNT*ENTRIES_PER_SCREEN, -1*SIGN(delta));
+        rotate(icons_ids, ROT_ARR_SIZE, -1*SIGN(delta));
 
         if(delta > 0)
         {
@@ -339,12 +340,13 @@ static void load_icons(Entry_List_s * current_list)
     }
 
     #undef FIRST
+    #undef ROT_ARR_SIZE
     #undef LAST
     #undef SIGN
 
     svcSleepThread(1e6);
     for(int i = 0; i < abs(delta); i++)
-        load_smdh_icon(*entries[i], ids[i]);
+        load_smdh_icon(*(entries[i]), ids[i]);
 
     free(entries);
     free(ids);

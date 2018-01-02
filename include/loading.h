@@ -29,7 +29,7 @@
 
 #include "common.h"
 
-#define ICONS_IDS_CUTOFF 200
+#define ICONS_IDS_CUTOFF 10
 
 enum ICON_IDS_OFFSET {
     ICONS_ABOVE = 0,
