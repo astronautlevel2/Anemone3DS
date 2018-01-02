@@ -176,24 +176,24 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     int starti = 0, endi = 0;
 
-    if(list->entries_count > ICONS_IDS_CUTOFF)
+    if(list->entries_count <= ICONS_IDS_CUTOFF)
+    {
+        DEBUG("small load\n");
+        // if the list is one that doesnt need swapping, load everything at once
+        endi = list->entries_count;
+    }
+    else
     {
         DEBUG("extended load\n");
         // otherwise, load around to prepare for swapping
         starti = list->scroll - ENTRIES_PER_SCREEN*ICONS_VISIBLE;
         endi = starti + ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
     }
-    else
-    {
-        DEBUG("small load\n");
-        // if the list is one that doesnt need swapping, load everything at once
-        endi = list->entries_count;
-    }
 
-    ssize_t * icon_ids = list->icons_ids;
+    ssize_t * icon_ids = (ssize_t *)list->icons_ids;
     ssize_t id = list->texture_id_offset;
 
-    memset(icon_ids, 0, ICONS_IDS_CUTOFF*sizeof(ssize_t));
+    memset(icon_ids, 0, ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT*sizeof(ssize_t));
     for(int i = starti; i < endi; i++, id++)
     {
         int offset = i;
@@ -306,17 +306,16 @@ static void load_icons(Entry_List_s * current_list)
     ssize_t * ids = calloc(abs(delta), sizeof(ssize_t));
 
     #define FIRST(arr) arr[0]
-    #define ROT_ARR_SIZE ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT
-    #define LAST(arr) arr[ROT_ARR_SIZE - 1]
+    #define LAST(arr) arr[ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT - 1]
 
-    ssize_t * icons_ids = current_list->icons_ids;
+    ssize_t * icons_ids = (ssize_t *)current_list->icons_ids;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
         ssize_t id = 0;
         int offset = i;
 
-        rotate(icons_ids, ROT_ARR_SIZE, -1*SIGN(delta));
+        rotate(icons_ids, ICONS_OFFSET_AMOUNT*ENTRIES_PER_SCREEN, -1*SIGN(delta));
 
         if(delta > 0)
         {
@@ -340,13 +339,12 @@ static void load_icons(Entry_List_s * current_list)
     }
 
     #undef FIRST
-    #undef ROT_ARR_SIZE
     #undef LAST
     #undef SIGN
 
     svcSleepThread(1e6);
     for(int i = 0; i < abs(delta); i++)
-        load_smdh_icon(*(entries[i]), ids[i]);
+        load_smdh_icon(*entries[i], ids[i]);
 
     free(entries);
     free(ids);

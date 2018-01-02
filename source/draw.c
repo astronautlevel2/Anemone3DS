@@ -355,15 +355,9 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         {
             ssize_t id = 0;
             if(list->entries_count > ICONS_IDS_CUTOFF)
-            {
-                ssize_t * visible_icons_ids = &list->icons_ids[ICONS_VISIBLE];
-                id = visible_icons_ids[i - list->scroll];
-            }
+                id = list->icons_ids[ICONS_VISIBLE*ENTRIES_PER_SCREEN + (i - list->scroll)];
             else
-            {
                 id = list->icons_ids[i];
-            }
-
             pp2d_draw_texture(id, 0, 24 + vertical_offset);
         }
         else

@@ -234,10 +234,7 @@ static void load_lists(Entry_List_s * lists)
             current_list->texture_id_offset = texture_id_offset;
             load_icons_first(current_list, false);
 
-            if(current_list->entries_count > ICONS_IDS_CUTOFF)
-                texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
-            else
-                texture_id_offset += current_list->entries_count;
+            texture_id_offset += ICONS_IDS_CUTOFF;
 
             void (*install_check_function)(void*) = NULL;
             if(i == MODE_THEMES)
