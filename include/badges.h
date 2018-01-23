@@ -101,6 +101,10 @@ typedef struct {
     Badge_Layout_Slot_s badge_layout_slot_entries[BADGE_LAYOUT_SLOT_LIMIT];
 } Badge_Mng_File_dat_s;
 
+enum BadgeInstall {
+    BADGE_INSTALL_SINGLE = BIT(0),
+};
+
 Result badge_install(Entry_s badges);
 Result badge_install_all(Entry_List_s list);
 

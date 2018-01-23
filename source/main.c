@@ -308,7 +308,7 @@ int main(void)
     if(R_SUCCEEDED(themeResult))
         load_lists(lists);
     #else
-        load_lists(lists);
+    load_lists(lists);
     #endif
 
     EntryMode current_mode = MODE_THEMES;
@@ -338,7 +338,7 @@ int main(void)
         }
         if(R_FAILED(badgeResult) && current_mode == MODE_BADGES)
         {
-            throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_WARNING);
+            throw_error("Badge extdata does not exist!\nDownload and launch the Badge Arcade.", ERROR_LEVEL_WARNING);
             goto switch_mode;
         }
         #endif
@@ -538,6 +538,8 @@ int main(void)
                     draw_install(INSTALL_SPLASH);
                     splash_install(*current_entry);
                     break;
+                case MODE_BADGES:
+                    badge_install(*current_entry);
                 default:
                     break;
             }

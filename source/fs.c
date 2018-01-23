@@ -85,20 +85,14 @@ Result open_archives(void)
     theme.type = PATH_BINARY;
     theme.size = 0xC;
     theme.data = themePath;
-    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
+    if(R_FAILED(themeResult = res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
 
     u32 badgePath[3] = {MEDIATYPE_SD, archiveBadge, 0};
     badge.type = PATH_BINARY;
     badge.size = 0xC;
     badge.data = badgePath;
-    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge))) return res;
+    if(R_FAILED(badgeResult = res = FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge))) return res;
 
-    Handle test_handle;
-    if(R_SUCCEEDED(themeResult = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0)))
-        FSFILE_Close(test_handle);
-     if(R_SUCCEEDED(badgeResult = FSUSER_OpenFile(&test_handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), FS_OPEN_READ, 0)))
-        FSFILE_Close(test_handle);
- 
     return 0;
 }
 
