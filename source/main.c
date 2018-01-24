@@ -539,6 +539,7 @@ int main(void)
                     splash_install(*current_entry);
                     break;
                 case MODE_BADGES:
+                    draw_install(INSTALL_BADGE);
                     badge_install(*current_entry);
                 default:
                     break;

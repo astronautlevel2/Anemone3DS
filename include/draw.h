@@ -45,6 +45,8 @@ typedef enum {
     INSTALL_BGM,
     INSTALL_NO_BGM,
 
+    INSTALL_BADGE,
+
     INSTALL_DOWNLOAD,
     INSTALL_ENTRY_DELETE,
 
