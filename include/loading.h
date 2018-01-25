@@ -89,7 +89,7 @@ typedef struct {
     volatile bool run_thread;
 } Thread_Arg_s;
 
-void delete_entry(Entry_s entry);
+void delete_entry(Entry_s entry, bool is_file);
 Result load_entries(const char * loading_path, Entry_List_s * list);
 bool load_preview(Entry_List_s list, int * preview_offset);
 void load_icons_first(Entry_List_s * current_list, bool silent);

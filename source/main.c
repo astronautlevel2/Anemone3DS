@@ -584,7 +584,7 @@ int main(void)
             if(draw_confirm("Are you sure you would like to delete this?", current_list))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
-                delete_entry(*current_entry);
+                delete_entry(*current_entry, current_entry->is_zip || current_mode == MODE_BADGES);
                 load_lists(lists);
             }
         }
