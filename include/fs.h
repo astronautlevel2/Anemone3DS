@@ -41,6 +41,7 @@ Result open_archives(void);
 Result close_archives(void);
 
 u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf);
+u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char ** buf);
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf);
 
 Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf);
