@@ -213,14 +213,13 @@ void update_qr(qr_data *data)
 
                 if(r == ARCHIVE_OK)
                 {
-                    bool splash = false;
-                    bool theme = false;
+                    EntryMode mode = MODE_AMOUNT;
 
                     char * buf = NULL;
                     do {
                         if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
                         {
-                            theme = true;
+                            mode = MODE_THEMES;
                             break;
                         }
 
@@ -228,7 +227,7 @@ void update_qr(qr_data *data)
                         buf = NULL;
                         if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
                         {
-                            splash = true;
+                            mode = MODE_SPLASHES;
                             break;
                         }
 
@@ -236,7 +235,15 @@ void update_qr(qr_data *data)
                         buf = NULL;
                         if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
                         {
-                            splash = true;
+                            mode = MODE_SPLASHES;
+                            break;
+                        }
+
+                        free(buf);
+                        buf = NULL;
+                        if(zip_memory_to_buf("preview.png", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_BADGES;
                             break;
                         }
                     }
@@ -245,32 +252,52 @@ void update_qr(qr_data *data)
                     free(buf);
                     buf = NULL;
 
-                    char path_to_file[0x106] = {0};
-                    if(theme)
+                    if(mode == MODE_AMOUNT)
                     {
-                        strcpy(path_to_file, main_paths[MODE_THEMES]);
-                    }
-                    else if(splash)
-                    {
-                        strcpy(path_to_file, main_paths[MODE_SPLASHES]);
+                        throw_error("Zip downloaded is neither a splash, a theme, or a badge.", ERROR_LEVEL_WARNING);
                     }
                     else
                     {
-                        throw_error("Zip downloaded is neither a splash nor a theme.", ERROR_LEVEL_WARNING);
+                        char path_to_file[0x107] = {0};
+                        strcpy(path_to_file, main_paths[mode]);
+
+                        if(mode == MODE_BADGES)
+                        {
+                            a = archive_read_new();
+                            archive_read_support_format_zip(a);
+                            archive_read_open_memory(a, zip_buf, zip_size);
+
+                            struct archive_entry *entry;
+                            while(archive_read_next_header(a, &entry) == ARCHIVE_OK)
+                            {
+                                if(!strcasecmp(archive_entry_pathname(entry), "preview.png"))
+                                    continue;
+
+                                u64 file_size = archive_entry_size(entry);
+                                buf = calloc(file_size, sizeof(char));
+                                archive_read_data(a, buf, file_size);
+                                char full_path[0x107] = {0};
+                                strcpy(full_path, path_to_file);
+                                strcat(full_path, archive_entry_pathname(entry));
+                                remake_file(full_path, ArchiveSD, file_size);
+                                buf_to_file(file_size, full_path, ArchiveSD, buf);
+                                free(buf);
+                            }
+
+                            archive_read_free(a);
+                        }
+                        else
+                        {
+                            strcat(path_to_file, filename);
+                            char * extension = strrchr(path_to_file, '.');
+                            if (extension == NULL || strcmp(extension, ".zip"))
+                                strcat(path_to_file, ".zip");
+
+                            remake_file(path_to_file, ArchiveSD, zip_size);
+                            buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+                            data->success = true;
+                        }
                     }
-
-                    if(path_to_file[0] != '\0')
-                    {
-                        strcat(path_to_file, filename);
-                        char * extension = strrchr(path_to_file, '.');
-                        if (extension == NULL || strcmp(extension, ".zip"))
-                            strcat(path_to_file, ".zip");
-
-                        remake_file(path_to_file, ArchiveSD, zip_size);
-                        buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
-                        data->success = true;
-                    }
-
 
                 }
                 else
