@@ -34,14 +34,25 @@
 #define BADGE_LIMIT 1000
 #define BADGE_LAYOUT_SLOT_LIMIT 360
 
+#define ICON_SIZE_64 (64*64)
+#define ICON_SIZE_32 (32*32)
+
+typedef struct {
+    u16 icon_data[ICON_SIZE_64];
+    u8 icon_alpha[ICON_SIZE_64/2];
+} Badge_Icon_64_s;
+
+typedef struct {
+    u16 icon_data[ICON_SIZE_32];
+    u8 icon_alpha[ICON_SIZE_32/2];
+} Badge_Icon_32_s;
+
 typedef struct {
     u16 badge_set_titles[BADGE_SET_LIMIT][16][0x45];
     u16 badge_titles[BADGE_LIMIT][16][0x45];
-    u16 badge_set_icons_565_64[BADGE_SET_LIMIT][64*64];
-    u16 badge_icons_565_64[BADGE_LIMIT][64*64];
-    u8 badge_icons_A4_64[BADGE_LIMIT][(64*64)/2];
-    u16 badge_icons_565_32[BADGE_LIMIT][32*32];
-    u8 badge_icons_A4_32[BADGE_LIMIT][(32*32)/2];
+    u16 badge_set_icons_565_64[BADGE_SET_LIMIT][ICON_SIZE_64];
+    Badge_Icon_64_s badge_icons_64[BADGE_LIMIT];
+    Badge_Icon_32_s badge_icons_32[BADGE_LIMIT];
 } Badge_Data_dat_s;
 
 typedef struct {
