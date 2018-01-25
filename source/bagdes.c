@@ -29,7 +29,7 @@
 #include "draw.h"
 #include "pp2d/pp2d/lodepng.h"
 
-void rgba8_to_tiled_buffers(u8* image, unsigned int width, unsigned int height, u16* rgb_buf_64x64, u8* alpha_buf_64x64, u16* rgb_buf_32x32, u8* alpha_buf_32x32) {
+static void rgba8_to_tiled_buffers(u8* image, unsigned int width, unsigned int height, u16* rgb_buf_64x64, u8* alpha_buf_64x64, u16* rgb_buf_32x32, u8* alpha_buf_32x32) {
     u8 r, g, b, a;
     for (unsigned int y = 0; y < height; y++)
     {

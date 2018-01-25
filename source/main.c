@@ -415,7 +415,6 @@ int main(void)
             }
             else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
             {
-                toggle_preview:
                 if(!preview_mode)
                     preview_mode = load_preview(*current_list, &preview_offset);
                 else
