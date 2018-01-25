@@ -71,7 +71,6 @@ static void rgba8_to_tiled_buffers(u8* image, unsigned int width, unsigned int h
 
 static Result badge_install_internal(Entry_List_s list, int install_mode)
 {
-    DEBUG("opening badge manage\n");
     char* badgemanage_buf = NULL;
     if(file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgemanage_buf) == 0)
     {
@@ -79,7 +78,6 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
     }
     Badge_Mng_File_dat_s * badge_manage = (Badge_Mng_File_dat_s *)badgemanage_buf;
 
-    DEBUG("opening badge data\n");
     char* badgedata_buf = NULL;
     if(file_to_buf(fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, &badgedata_buf) == 0)
     {
@@ -93,20 +91,16 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
     u32 start_index = badge_manage->unique_badges_amount;
     u32 total_installed_badges = 0;
 
-    DEBUG("starting loop\n");
     for(int i = (install_mode & BADGE_INSTALL_SINGLE ? list.selected_entry : 0); i < list.entries_count; i++)
     {
         Entry_s current_entry = list.entries[i];
 
         char * image_buf = NULL;
-        DEBUG("load_data\n");
         u32 size = load_data("", current_entry, &image_buf);
         u32 * image = NULL;
         unsigned int width = 0, height = 0;
-        DEBUG("lodepng\n");
         if(lodepng_decode32((unsigned char**)&image, &width, &height, (unsigned char*)image_buf, size) == 0)
         {
-            DEBUG("check\n");
             if (width < 64 || height < 64 || width % 64 != 0 || width % 64 != 0 || width > 12*384  || height > 6*384)
             {
                 throw_error("PNG file doesnt have the right size.", ERROR_LEVEL_WARNING);
@@ -114,7 +108,6 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
             else
             {
                 unsigned int badges_in_image = (height/64)*(width/64);
-                DEBUG("badges_in_image: %u\n", badges_in_image);
 
                 u16 ** badge_icons_565_64 = calloc(badges_in_image, sizeof(u16*));
                 u8 ** badge_icons_A4_64 = calloc(badges_in_image, sizeof(u8*));
@@ -134,27 +127,21 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
                     badge_icons_A4_32[j] = icon_alpha_32 + j*ICON_SIZE_32*sizeof(u8)/2;
                 }
 
-                DEBUG("rgba8_to_tiled_buffers\n");
                 rgba8_to_tiled_buffers((u8*)image, width, height,
                                        icon_data_64,
                                        icon_alpha_64,
                                        icon_data_32,
                                        icon_alpha_32);
-                DEBUG("free\n");
                 free(image);
                 image = NULL;
 
-                DEBUG("loop\n");
                 for(unsigned int j = 0; j < badges_in_image; j++)
                 {
                     u32 current_index = start_index+total_installed_badges;
-                    DEBUG("memcpy\n");
                     for(int k = 0; k < 16; k++)
                         memcpy(badge_data->badge_titles[current_index][k], current_entry.name, 0x40); //entry name is only 0x41, but badge name can go up to 0x45
 
-                    DEBUG("%p %p %x\n", badge_data->badge_icons_64[current_index].icon_data, badge_icons_565_64[j], ICON_SIZE_64*sizeof(u16));
                     memcpy(badge_data->badge_icons_64[current_index].icon_data, badge_icons_565_64[j], ICON_SIZE_64*sizeof(u16));
-                    DEBUG("%p %p %x\n", badge_data->badge_icons_64[current_index].icon_alpha, badge_icons_A4_64[j], ICON_SIZE_64/2);
                     memcpy(badge_data->badge_icons_64[current_index].icon_alpha, badge_icons_A4_64[j], ICON_SIZE_64/2);
 
                     memcpy(badge_data->badge_icons_32[current_index].icon_data, badge_icons_565_32[j], ICON_SIZE_32*sizeof(u16));
@@ -206,14 +193,12 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
 
     badge_manage->unique_badges_amount += total_installed_badges;
 
-    DEBUG("set\n");
     u32 i = 0;
     for(; i < badge_manage->badge_sets_amount; i++)
     {
         Badge_Set_Info_s * current_set = &badge_manage->badge_set_info_entries[i];
         if(current_set->set_identifier.set_id == homebrew_set_id) //if there already is a homebrew set, add to it
         {
-            DEBUG("found\n");
             current_set->unique_badges_amount += total_installed_badges;
             current_set->total_badges_amount += total_installed_badges*badge_quantity;
             break;
@@ -222,7 +207,6 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
 
     if(i == badge_manage->badge_sets_amount) //if the homebrew set wasnt found, create it
     {
-        DEBUG("not found\n");
         Badge_Set_Info_s * current_set = &badge_manage->badge_set_info_entries[i];
         Badge_Set_Identifier_s * current_identifier = &current_set->set_identifier;
 
@@ -234,7 +218,6 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
         current_set->total_badges_amount = total_installed_badges*badge_quantity;
         current_set->start_badge_index = start_index;
 
-        DEBUG("title\n");
         u16 title[0x46] = {0};
         utf8_to_utf16(title, (u8*)"Homebrew Badges", 0x45);
         for(int j = 0; j < 16; j++)
@@ -242,7 +225,6 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
 
         u8 * image = NULL;
         unsigned int width = 0, height = 0;
-        DEBUG("lodepng\n");
         if(lodepng_decode32_file(&image, &width, &height, "romfs:/badge_set_icon.png") == 0)
             rgba8_to_tiled_buffers(image, 64, 64, badge_data->badge_set_icons_565_64[badge_manage->badge_sets_amount], NULL, NULL, NULL);
         free(image);
@@ -251,11 +233,9 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
         badge_manage->badge_sets_amount++;
     }
 
-    DEBUG("writing to file\n");
     buf_to_file(sizeof(Badge_Mng_File_dat_s), "/BadgeMngFile.dat", ArchiveBadgeExt, badgemanage_buf);
     buf_to_file(sizeof(Badge_Data_dat_s), "/BadgeData.dat", ArchiveBadgeExt, badgedata_buf);
 
-    DEBUG("free\n");
     free(badgemanage_buf);
     free(badgedata_buf);
     return 0;
