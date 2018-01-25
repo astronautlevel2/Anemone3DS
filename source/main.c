@@ -558,6 +558,9 @@ int main(void)
                         splash_delete();
                     }
                     break;
+                case MODE_BADGES:
+                    draw_install(INSTALL_BADGES_ALL);
+                    badge_install_all(*current_list);
                 default:
                     break;
             }

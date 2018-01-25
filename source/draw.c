@@ -217,6 +217,9 @@ void draw_install(InstallType type)
         case INSTALL_BADGE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a badge...");
             break;
+        case INSTALL_BADGES_ALL:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing all badges in the list...");
+            break;
         case INSTALL_ENTRY_DELETE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Deleting from SD...");
             break;
