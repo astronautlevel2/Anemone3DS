@@ -42,9 +42,8 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
     pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
-    pp2d_load_texture_png(TEXTURE_RELOAD, "romfs:/reload.png");
-    pp2d_load_texture_png(TEXTURE_PREVIEW_ICON, "romfs:/preview.png");
     pp2d_load_texture_png(TEXTURE_DOWNLOAD, "romfs:/download.png");
+    pp2d_load_texture_png(TEXTURE_EXIT, "romfs:/exit.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_0, "romfs:/battery0.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
     pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
@@ -188,6 +187,9 @@ void draw_install(InstallType type)
         case INSTALL_LOADING_SPLASHES:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading splashes, please wait...");
             break;
+        case INSTALL_LOADING_BADGES:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading badges, please wait...");
+            break;
         case INSTALL_LOADING_ICONS:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading icons, please wait...");
             break;
@@ -203,11 +205,20 @@ void draw_install(InstallType type)
         case INSTALL_DOWNLOAD:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
             break;
+        case INSTALL_CHECKING_DOWNLOAD:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Checking downloaded file...");
+            break;
         case INSTALL_SPLASH:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a splash...");
             break;
         case INSTALL_SPLASH_DELETE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Deleting installed splash...");
+            break;
+        case INSTALL_BADGE:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a badge...");
+            break;
+        case INSTALL_BADGES_ALL:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing all badges in the list...");
             break;
         case INSTALL_ENTRY_DELETE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Deleting from SD...");
@@ -265,6 +276,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     const char* mode_string[MODE_AMOUNT] = {
         "Theme mode",
         "Splash mode",
+        "Badge mode",
     };
 
     pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
@@ -274,11 +286,13 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         const char* mode_found_string[MODE_AMOUNT] = {
             "No themes found",
             "No splashes found",
+            "No badges found",
         };
         pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, COLOR_YELLOW, mode_found_string[current_mode]);
         pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_YELLOW, "Press \uE005 to download from QR");
         const char* mode_switch_string[MODE_AMOUNT] = {
             "Or \uE004 to switch to splashes",
+            "Or \uE004 to switch to badges",
             "Or \uE004 to switch to themes",
         };
         pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, mode_switch_string[current_mode]);
@@ -287,6 +301,14 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         pp2d_texture_blend(COLOR_YELLOW);
         pp2d_texture_scale(1.25, 1.4);
         pp2d_texture_draw();
+
+        pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+
+        pp2d_draw_texture_blend(TEXTURE_EXIT, 320-120, 0, COLOR_WHITE);
+        pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-96, 0, COLOR_WHITE);
+        for(int i = 0; i < MODE_AMOUNT; i++)
+            pp2d_draw_textf(320-(24*(i+1))+2.5, -3, 1, 1, COLOR_WHITE, "%c", *(mode_string[i]));
+
         return;
     }
 
@@ -295,18 +317,24 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     int selected_entry = list->selected_entry;
     Entry_s current_entry = list->entries[selected_entry];
 
-    wchar_t title[0x41] = {0};
-    utf16_to_utf32((u32*)title, current_entry.name, 0x40);
-    pp2d_draw_wtext_wrap(20, 30, 0.7, 0.7, COLOR_WHITE, 380, title);
+    float wrap = 363;
 
     wchar_t author[0x41] = {0};
     utf16_to_utf32((u32*)author, current_entry.author, 0x40);
-    pp2d_draw_text(20, 50, 0.5, 0.5, COLOR_WHITE, "By: ");
-    pp2d_draw_wtext_wrap(44, 50, 0.5, 0.5, COLOR_WHITE, 380, author);
+    pp2d_draw_text(20, 35, 0.5, 0.5, COLOR_WHITE, "By ");
+    pp2d_draw_wtext_wrap(40, 35, 0.5, 0.5, COLOR_WHITE, wrap, author);
+
+    wchar_t title[0x41] = {0};
+    utf16_to_utf32((u32*)title, current_entry.name, 0x40);
+    pp2d_draw_wtext_wrap(20, 50, 0.7, 0.7, COLOR_WHITE, wrap, title);
+
+    int width = (int)pp2d_get_wtext_width(title, 0.7, 0.7);
+    int height = (int)pp2d_get_wtext_height(title, 0.7, 0.7);
+    int count = ((width - (width % (int)wrap))/wrap) + 1;
 
     wchar_t description[0x81] = {0};
     utf16_to_utf32((u32*)description, current_entry.desc, 0x80);
-    pp2d_draw_wtext_wrap(20, 65, 0.5, 0.5, COLOR_WHITE, 363, description);
+    pp2d_draw_wtext_wrap(20, 50+count*height, 0.5, 0.5, COLOR_WHITE, wrap, description);
 
     pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
@@ -314,26 +342,24 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     {
         case MODE_THEMES:
             pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
-            pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-120, 0, COLOR_WHITE);
             break;
         default:
             break;
     }
 
-    pp2d_draw_texture_blend(TEXTURE_RELOAD, 320-96, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-72, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-48, 0, COLOR_WHITE);
-    pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", *mode_string[!list->mode]);
-
+    pp2d_draw_texture_blend(TEXTURE_EXIT, 320-120, 0, COLOR_WHITE);
+    pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-96, 0, COLOR_WHITE);
+    for(int i = 0; i < MODE_AMOUNT; i++)
+        pp2d_draw_textf(320-(24*(i+1))+2.5, -3, 1, 1, COLOR_WHITE, "%c", *(mode_string[i]));
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
         pp2d_draw_texture(TEXTURE_ARROW, 155, 6);
-    if(list->scroll + ENTRIES_PER_SCREEN < list->entries_count)
+    if(list->scroll + list->entries_per_screen < list->entries_count)
         pp2d_draw_texture_flip(TEXTURE_ARROW, 155, 224, VERTICAL);
 
-    for(int i = list->scroll; i < (ENTRIES_PER_SCREEN + list->scroll); i++)
+    for(int i = list->scroll; i < (list->entries_per_screen + list->scroll); i++)
     {
         if(i >= list->entries_count) break;
 
@@ -342,26 +368,28 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         wchar_t name[0x41] = {0};
         utf16_to_utf32((u32*)name, current_entry.name, 0x40);
 
-        int vertical_offset = 48 * (i - list->scroll);
+        int vertical_offset = list->entry_size * (i - list->scroll);
         u32 font_color = COLOR_WHITE;
 
         if(i == list->selected_entry)
         {
             font_color = COLOR_BLACK;
-            pp2d_draw_rectangle(0, 24 + vertical_offset, 320, 48, COLOR_CURSOR);
+            pp2d_draw_rectangle(0, 24 + vertical_offset, 320, list->entry_size, COLOR_CURSOR);
         }
-        pp2d_draw_wtext(54, 40 + vertical_offset, 0.55, 0.55, font_color, name);
+        pp2d_draw_wtext(list->entry_size+6, 40 + vertical_offset, 0.55, 0.55, font_color, name);
         if(!current_entry.placeholder_color)
         {
             ssize_t id = 0;
-            if(list->entries_count > ICONS_OFFSET_AMOUNT*ENTRIES_PER_SCREEN)
-                id = list->icons_ids[ICONS_VISIBLE][i - list->scroll];
+            if(list->entries_count > list->entries_per_screen*ICONS_OFFSET_AMOUNT)
+            {
+                id = list->icons_ids[ICONS_VISIBLE*list->entries_per_screen + (i - list->scroll)];
+            }
             else
-                id = ((size_t *)list->icons_ids)[i];
-            pp2d_draw_texture(id, 0, 24 + vertical_offset);
+                id = list->icons_ids[i];
+            pp2d_draw_texture_part(id, 0, 24 + vertical_offset, 0, 0, list->entry_size, list->entry_size);
         }
         else
-            pp2d_draw_rectangle(0, 24 + vertical_offset, 48, 48, current_entry.placeholder_color);
+            pp2d_draw_rectangle(0, 24 + vertical_offset, list->entry_size, list->entry_size, current_entry.placeholder_color);
 
         if(current_entry.in_shuffle)
             pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, 24 + vertical_offset, font_color);

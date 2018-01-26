@@ -33,6 +33,9 @@
 #include "fs.h"
 #include "loading.h"
 
+#include <archive.h>
+#include <archive_entry.h>
+
 /*
 static u32 transfer_size;
 static Handle event;
@@ -138,7 +141,7 @@ bool start_capture_cam(qr_data *data)
     return true;
 }
 
-void update_qr(qr_data *data, EntryMode current_mode)
+void update_qr(qr_data *data)
 {
     hidScanInput();
     if (hidKeysDown() & (KEY_R | KEY_B | KEY_TOUCH)) {
@@ -194,14 +197,126 @@ void update_qr(qr_data *data, EntryMode current_mode)
         if (!quirc_decode(&code, &scan_data))
         {
             exit_qr(data);
-            http_get((char*)scan_data.payload, main_paths[current_mode]);
-            data->success = true;
+            char * zip_buf = NULL;
+            char * filename = NULL;
+            u32 zip_size = http_get((char*)scan_data.payload, &filename, &zip_buf);
+
+            if(zip_size != 0)
+            {
+                draw_install(INSTALL_CHECKING_DOWNLOAD);
+
+                struct archive *a = archive_read_new();
+                archive_read_support_format_zip(a);
+
+                int r = archive_read_open_memory(a, zip_buf, zip_size);
+                archive_read_free(a);
+
+                if(r == ARCHIVE_OK)
+                {
+                    EntryMode mode = MODE_AMOUNT;
+
+                    char * buf = NULL;
+                    do {
+                        if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_THEMES;
+                            break;
+                        }
+
+                        free(buf);
+                        buf = NULL;
+                        if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_SPLASHES;
+                            break;
+                        }
+
+                        free(buf);
+                        buf = NULL;
+                        if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_SPLASHES;
+                            break;
+                        }
+
+                        free(buf);
+                        buf = NULL;
+                        if(zip_memory_to_buf("preview.png", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_BADGES;
+                            break;
+                        }
+                    }
+                    while(false);
+
+                    free(buf);
+                    buf = NULL;
+
+                    if(mode == MODE_AMOUNT)
+                    {
+                        throw_error("Zip downloaded is neither a splash, a theme, or a badge.", ERROR_LEVEL_WARNING);
+                    }
+                    else
+                    {
+                        char path_to_file[0x107] = {0};
+                        strcpy(path_to_file, main_paths[mode]);
+
+                        if(mode == MODE_BADGES)
+                        {
+                            a = archive_read_new();
+                            archive_read_support_format_zip(a);
+                            archive_read_open_memory(a, zip_buf, zip_size);
+
+                            struct archive_entry *entry;
+                            while(archive_read_next_header(a, &entry) == ARCHIVE_OK)
+                            {
+                                if(!strcasecmp(archive_entry_pathname(entry), "preview.png"))
+                                    continue;
+
+                                u64 file_size = archive_entry_size(entry);
+                                buf = calloc(file_size, sizeof(char));
+                                archive_read_data(a, buf, file_size);
+                                char full_path[0x107] = {0};
+                                strcpy(full_path, path_to_file);
+                                strcat(full_path, archive_entry_pathname(entry));
+                                remake_file(full_path, ArchiveSD, file_size);
+                                buf_to_file(file_size, full_path, ArchiveSD, buf);
+                                free(buf);
+                            }
+
+                            archive_read_free(a);
+                        }
+                        else
+                        {
+                            strcat(path_to_file, filename);
+                            char * extension = strrchr(path_to_file, '.');
+                            if (extension == NULL || strcmp(extension, ".zip"))
+                                strcat(path_to_file, ".zip");
+
+                            remake_file(path_to_file, ArchiveSD, zip_size);
+                            buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+                            data->success = true;
+                        }
+                    }
+
+                }
+                else
+                {
+                    throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
+                }
+            }
+            else
+            {
+                throw_error("Download failed.", ERROR_LEVEL_WARNING);
+            }
+
+            free(zip_buf);
         }   
     }
 
 }
 
-bool init_qr(EntryMode current_mode)
+bool init_qr(void)
 {
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
@@ -212,7 +327,7 @@ bool init_qr(EntryMode current_mode)
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
     data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
 
-    while (!data->finished) update_qr(data, current_mode);
+    while (!data->finished) update_qr(data);
 
     return (bool)data->success;
 }
@@ -221,7 +336,7 @@ bool init_qr(EntryMode current_mode)
 Putting this in camera because I'm too lazy to make a network.c
 This'll probably get refactored later
 */
-Result http_get(char *url, const char *path)
+u32 http_get(char *url, char ** filename, char ** buf)
 {
     Result ret;
     httpcContext context;
@@ -230,8 +345,7 @@ Result http_get(char *url, const char *path)
     u32 content_size = 0;
     u32 read_size = 0;
     u32 size = 0;
-    u8 *buf;
-    u8 *last_buf;
+    char *last_buf;
 
     do {
         ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
@@ -246,14 +360,14 @@ Result http_get(char *url, const char *path)
         {
             httpcCloseContext(&context);
             if (new_url != NULL) free(new_url);
-            return ret;
+            return 0;
         }
 
         ret = httpcGetResponseStatusCode(&context, &status_code);
         if(ret!=0){
             httpcCloseContext(&context);
             if(new_url!=NULL) free(new_url);
-            return ret;
+            return 0;
         }
 
         if ((status_code >= 301 && status_code <= 303) || (status_code >= 307 && status_code <= 308))
@@ -269,7 +383,7 @@ Result http_get(char *url, const char *path)
     {
         httpcCloseContext(&context);
         if (new_url != NULL) free(new_url);
-        return ret;
+        return 0;
     }
 
     ret = httpcGetDownloadSizeState(&context, NULL, &content_size);
@@ -277,15 +391,15 @@ Result http_get(char *url, const char *path)
     {
         httpcCloseContext(&context);
         if (new_url != NULL) free(new_url);
-        return ret;
+        return 0;
     }
 
-    buf = malloc(0x1000);
-    if (buf == NULL)
+    *buf = malloc(0x1000);
+    if (*buf == NULL)
     {
         httpcCloseContext(&context);
         free(new_url);
-        return -2;
+        return 0;
     }
 
     char *content_disposition = malloc(1024);
@@ -294,77 +408,66 @@ Result http_get(char *url, const char *path)
     {
         free(content_disposition);
         free(new_url);
-        free(buf);
-        return ret;
+        free(*buf);
+        return 0;
     }
 
-    char *filename;
-    filename = strtok(content_disposition, "\"");
-    filename = strtok(NULL, "\"");
+    *filename = strtok(content_disposition, "\"");
+    *filename = strtok(NULL, "\"");
 
-    char *illegal_characters = "\"?;:/\\+";
-    if(!filename)
+    if(!(*filename))
     {
         free(content_disposition);
         free(new_url);
-        free(buf);
+        free(*buf);
         throw_error("Target is not valid!", ERROR_LEVEL_WARNING);
-        return -1;
+        return 0;
     }
-    for (size_t i = 0; i < strlen(filename); i++)
+
+    char *illegal_characters = "\"?;:/\\+";
+    for (size_t i = 0; i < strlen(*filename); i++)
     {
         for (size_t n = 0; n < strlen(illegal_characters); n++)
         {
-            if (filename[i] == illegal_characters[n]) 
+            if ((*filename)[i] == illegal_characters[n])
             {
-                filename[i] = '-';
+                (*filename)[i] = '-';
             }
         }
     }
 
     do {
-        ret = httpcDownloadData(&context, buf + size, 0x1000, &read_size);
+        ret = httpcDownloadData(&context, (*(u8**)buf) + size, 0x1000, &read_size);
         size += read_size;
 
         if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
         {
-            last_buf = buf;
-            buf = realloc(buf, size + 0x1000);
-            if (buf == NULL)
+            last_buf = *buf;
+            *buf = realloc(*buf, size + 0x1000);
+            if (*buf == NULL)
             {
                 httpcCloseContext(&context);
                 free(content_disposition);
                 free(new_url);
                 free(last_buf);
-                return ret;
+                return 0;
             }
         }
     } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
 
-    last_buf = buf;
-    buf = realloc(buf, size);
-    if (buf == NULL)
+    last_buf = *buf;
+    *buf = realloc(*buf, size);
+    if (*buf == NULL)
     {
         httpcCloseContext(&context);
         free(content_disposition);
         free(new_url);
         free(last_buf);
-        return -1;
+        return 0;
     }
-
-    char path_to_file[0x106] = {0};
-    strcpy(path_to_file, path);
-    strcat(path_to_file, filename);
-    char * extension = strrchr(path_to_file, '.');
-    if (extension == NULL || strcmp(extension, ".zip"))
-        strcat(path_to_file, ".zip");
-
-    remake_file(path_to_file, ArchiveSD, size);
-    buf_to_file(size, path_to_file, ArchiveSD, (char*)buf);
 
     free(content_disposition);
     free(new_url);
-    free(buf);
 
-    return 0;
+    return size;
 }

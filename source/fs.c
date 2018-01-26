@@ -29,12 +29,8 @@
 #include "fs.h"
 #include "unicode.h"
  
-#include "minizip/unzip.h"
- 
-int filename_compare(__attribute__((unused)) unzFile file, const char *current_filename, const char *filename)
-{
-    return strcasecmp(current_filename, filename);
-}
+#include <archive.h>
+#include <archive_entry.h>
  
 Result open_archives(void)
 {
@@ -42,11 +38,13 @@ Result open_archives(void)
     u8 regionCode;
     u32 archive1;
     u32 archive2;
+    u32 archiveBadge = 0x000014d1;
  
     Result res = 0;
  
     FS_Path home;
     FS_Path theme;
+    FS_Path badge;
  
     CFGU_SecureInfoGetRegion(&regionCode);
     switch(regionCode)
@@ -83,12 +81,14 @@ Result open_archives(void)
     theme.type = PATH_BINARY;
     theme.size = 0xC;
     theme.data = themePath;
-    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
- 
-    Handle test_handle;
-    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0))) return res;
-    FSFILE_Close(test_handle);
- 
+    if(R_FAILED(themeResult = res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
+
+    u32 badgePath[3] = {MEDIATYPE_SD, archiveBadge, 0};
+    badge.type = PATH_BINARY;
+    badge.size = 0xC;
+    badge.data = badgePath;
+    if(R_FAILED(badgeResult = res = FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge))) return res;
+
     return 0;
 }
 
@@ -99,6 +99,7 @@ Result close_archives(void)
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveSD))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveHomeExt))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveThemeExt))) return res;
+    if(R_FAILED(res = FSUSER_CloseArchive(ArchiveBadgeExt))) return res;
 
     return 0;
 }
@@ -120,42 +121,66 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
     return (u32)size;
 }
 
+static u32 zip_to_buf(struct archive *a, char *file_name, char ** buf)
+{
+    struct archive_entry *entry;
+
+    bool found = false;
+    u64 file_size = 0;
+
+    while(!found && archive_read_next_header(a, &entry) == ARCHIVE_OK)
+    {
+        found = !strcasecmp(archive_entry_pathname(entry), file_name);
+    }
+
+    if(found)
+    {
+        file_size = archive_entry_size(entry);
+        *buf = calloc(file_size, sizeof(char));
+        archive_read_data(a, *buf, file_size);
+    }
+    else
+    {
+        DEBUG("Couldn't find file in zip\n");
+    }
+
+    archive_read_free(a);
+
+    return (u32)file_size;
+}
+
+u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char ** buf)
+{
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+
+    int r = archive_read_open_memory(a, zip_memory, zip_size);
+    if(r != ARCHIVE_OK)
+    {
+        DEBUG("Invalid zip being opened\n");
+        return 0;
+    }
+
+    return zip_to_buf(a, file_name, buf);
+}
+
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
     ssize_t len = strulen(zip_path, 0x106);
     char *path = calloc(sizeof(char), len*sizeof(u16));
     utf16_to_utf8((u8*)path, zip_path, len*sizeof(u16));
 
-    unzFile zip_handle = unzOpen(path);
-    free(path);
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
 
-    if(zip_handle == NULL)
+    int r = archive_read_open_filename(a, path, 0x4000);
+    if(r != ARCHIVE_OK)
     {
-        DEBUG("invalid zip being opened\n");
+        DEBUG("Invalid zip being opened\n");
         return 0;
     }
 
-    u32 file_size = 0;
-    int status = unzLocateFile(zip_handle, file_name, filename_compare);
-
-    if(status == UNZ_OK)
-    {
-        unz_file_info *file_info = calloc(1, sizeof(unz_file_info));
-        unzGetCurrentFileInfo(zip_handle, file_info, NULL, 0, NULL, 0, NULL, 0);
-        file_size = file_info->uncompressed_size;
-        free(file_info);
-        *buf = calloc(1, file_size);
-        unzOpenCurrentFile(zip_handle);
-        unzReadCurrentFile(zip_handle, *buf, file_size);
-        unzCloseCurrentFile(zip_handle);
-    }
-    else if(status == UNZ_END_OF_LIST_OF_FILE)
-        DEBUG("file not found in zip\n");
-    else
-        DEBUG("other zip error\n");
-
-    unzClose(zip_handle);
-    return file_size;
+    return zip_to_buf(a, file_name, buf);
 }
 
 Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)

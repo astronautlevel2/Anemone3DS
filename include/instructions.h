@@ -64,6 +64,27 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
                 L"\uE003 Preview splash"
             },
             {
+                L"\uE004 Switch to badges",
+                L"\uE005 Scan QR code"
+            },
+            {
+                L"Exit",
+                L"Delete from SD"
+            }
+        }
+    },
+        {
+        .info_line = NULL,
+        .instructions = {
+            {
+                L"\uE000 Install badge",
+                L"\uE001 Install all badges"
+            },
+            {
+                L"\uE002 Reload broken icons",
+                NULL
+            },
+            {
                 L"\uE004 Switch to themes",
                 L"\uE005 Scan QR code"
             },
@@ -72,7 +93,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
                 L"Delete from SD"
             }
         }
-    }
+    },
 };
 
 Instructions_s install_instructions = {
