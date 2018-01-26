@@ -153,9 +153,9 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
                     memcpy(badge_data->badge_icons_32[current_index].icon_data, badge_icons_565_32[j], ICON_SIZE_32*sizeof(u16));
                     memcpy(badge_data->badge_icons_32[current_index].icon_alpha, badge_icons_A4_32[j], ICON_SIZE_32/2);
 
-                    char name[0x41] = {0};
-                    utf16_to_utf8((u8*)name, current_entry.name, 0x40);
-                    u32 shortcut_lowid = get_shortuct(name);
+                    char filename[0x107] = {0};
+                    utf16_to_utf8((u8*)filename, &current_entry.path[strlen(main_paths[MODE_BADGES])], 0x106);
+                    u32 shortcut_lowid = get_shortuct(filename);
 
                     Badge_Info_s * current_slot = &badge_manage->badge_info_entries[current_index];
                     Badge_Identifier_s * current_identifier = &current_slot->identifier;
