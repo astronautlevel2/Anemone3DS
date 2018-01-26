@@ -29,6 +29,12 @@
 #include "draw.h"
 #include "pp2d/pp2d/lodepng.h"
 
+static u32 get_shortuct(const char * name)
+{
+    while(*(name++) != '.');
+    return strtoul(name, NULL, 16);
+}
+
 static void rgba8_to_tiled_buffers(u8* image, unsigned int width, unsigned int height, u16* rgb_buf_64x64, u8* alpha_buf_64x64, u16* rgb_buf_32x32, u8* alpha_buf_32x32) {
     u8 r, g, b, a;
     for (unsigned int y = 0; y < height; y++)
@@ -146,7 +152,10 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
 
                     memcpy(badge_data->badge_icons_32[current_index].icon_data, badge_icons_565_32[j], ICON_SIZE_32*sizeof(u16));
                     memcpy(badge_data->badge_icons_32[current_index].icon_alpha, badge_icons_A4_32[j], ICON_SIZE_32/2);
-                    u32 shortcut_lowid = 0;
+
+                    char name[0x41] = {0};
+                    utf16_to_utf8((u8*)name, current_entry.name, 0x40);
+                    u32 shortcut_lowid = get_shortuct(name);
 
                     Badge_Info_s * current_slot = &badge_manage->badge_info_entries[current_index];
                     Badge_Identifier_s * current_identifier = &current_slot->identifier;
