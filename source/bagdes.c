@@ -29,7 +29,7 @@
 #include "draw.h"
 #include "pp2d/pp2d/lodepng.h"
 
-static u32 get_shortuct(const char * name)
+static u32 get_shortcut(const char * name)
 {
     while(*(name++) != '.');
     return strtoul(name, NULL, 16);
@@ -155,7 +155,7 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
 
                     char filename[0x107] = {0};
                     utf16_to_utf8((u8*)filename, &current_entry.path[strlen(main_paths[MODE_BADGES])], 0x106);
-                    u32 shortcut_lowid = get_shortuct(filename);
+                    u32 shortcut_lowid = get_shortcut(filename);
 
                     Badge_Info_s * current_slot = &badge_manage->badge_info_entries[current_index];
                     Badge_Identifier_s * current_identifier = &current_slot->identifier;
