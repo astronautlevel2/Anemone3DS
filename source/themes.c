@@ -44,9 +44,9 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        if(themes.shuffle_count == 0)
+        if(themes.shuffle_count < 2)
         {
-            DEBUG("no themes selected for shuffle\n");
+            DEBUG("not enough themes selected for shuffle\n");
             return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
         }
 
