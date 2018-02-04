@@ -122,15 +122,15 @@ static Result badge_install_internal(Entry_List_s list, int install_mode)
 
                 u16 * icon_data_64 = calloc(badges_in_image*ICON_SIZE_64, sizeof(u16));
                 u8 * icon_alpha_64 = calloc((badges_in_image*ICON_SIZE_64)/2, sizeof(u8));
-                u16 * icon_data_32 = calloc(badges_in_image*ICON_SIZE_32, sizeof(u16*));
+                u16 * icon_data_32 = calloc(badges_in_image*ICON_SIZE_32, sizeof(u16));
                 u8 * icon_alpha_32 = calloc((badges_in_image*ICON_SIZE_32)/2, sizeof(u8));
 
                 for(unsigned int j = 0; j < badges_in_image; j++)
                 {
                     badge_icons_565_64[j]  = icon_data_64 + j*ICON_SIZE_64*sizeof(u16);
-                    badge_icons_A4_64[j] = icon_alpha_64 + j*ICON_SIZE_64*sizeof(u8)/2;
+                    badge_icons_A4_64[j] = icon_alpha_64 + (j*ICON_SIZE_64*sizeof(u8))/2;
                     badge_icons_565_32[j] = icon_data_32 + j*ICON_SIZE_32*sizeof(u16);
-                    badge_icons_A4_32[j] = icon_alpha_32 + j*ICON_SIZE_32*sizeof(u8)/2;
+                    badge_icons_A4_32[j] = icon_alpha_32 + (j*ICON_SIZE_32*sizeof(u8))/2;
                 }
 
                 rgba8_to_tiled_buffers((u8*)image, width, height,
