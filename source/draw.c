@@ -314,7 +314,7 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
     pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
     pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][11]);
-    
+
     pp2d_draw_texture_rotate(TEXTURE_ARROW, 0, 114, -90);
     pp2d_draw_texture_rotate(TEXTURE_ARROW, 304, 113, 90);
 
@@ -327,10 +327,10 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
         wchar_t name[0x41] = {0};
         utf16_to_utf32((u32*)name, current_entry->name, 0x40);
 
-        int vertical_offset = 0;
-        int horizontal_offset = i;
-        vertical_offset %= list->entries_per_screen_h;
-        vertical_offset /= list->entries_per_screen_h;
+        int vertical_offset = i - list->scroll;
+        int horizontal_offset = 0;
+        horizontal_offset = vertical_offset/list->entries_per_screen_v;
+        vertical_offset %= list->entries_per_screen_v;
         horizontal_offset *= list->entry_size;
         vertical_offset *= list->entry_size;
         vertical_offset += 24;

@@ -40,6 +40,8 @@
         POS(); \
         DEBUG(__VA_ARGS__)
 
+#define FASTSCROLL_WAIT 1.5e8
+
 typedef enum {
     MODE_THEMES = 0,
     MODE_SPLASHES,

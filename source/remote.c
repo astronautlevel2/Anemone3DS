@@ -288,6 +288,28 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     free(zip_buf);
 }
 
+static void change_selected(Entry_List_s * list, int change_value)
+{
+    if(abs(change_value) >= list->entries_count) return;
+
+    int newval = list->selected_entry + change_value;
+
+    if(abs(change_value) == 1)
+    {
+        if(newval < 0)
+            newval += list->entries_per_screen_v;
+        if(newval/list->entries_per_screen_v != list->selected_entry/list->entries_per_screen_v)
+            newval += list->entries_per_screen_v*(-change_value);
+    }
+    else
+    {
+        if(newval < 0)
+            newval += list->entries_per_screen_h*list->entries_per_screen_v;
+        newval %= list->entries_count;
+    }
+    list->selected_entry = newval;
+}
+
 bool themeplaza_browser(EntryMode mode)
 {
     bool downloaded = false;
@@ -346,6 +368,7 @@ bool themeplaza_browser(EntryMode mode)
         {
             break;
         }
+        
         else if(kDown & KEY_L)
         {
             load_remote_list(current_list, current_list->tp_current_page-1, mode);
@@ -354,7 +377,48 @@ bool themeplaza_browser(EntryMode mode)
         {
             load_remote_list(current_list, current_list->tp_current_page+1, mode);
         }
+        
+        // Movement in the UI
+        else if(kDown & KEY_UP)
+        {
+            change_selected(current_list, -1);
+        }
+        else if(kDown & KEY_DOWN)
+        {
+            change_selected(current_list, 1);
+        }
+        // Quick moving
+        else if(kDown & KEY_LEFT)
+        {
+            change_selected(current_list, -current_list->entries_per_screen_v);
+        }
+        else if(kDown & KEY_RIGHT)
+        {
+            change_selected(current_list, current_list->entries_per_screen_v);
+        }
 
+        // Fast scroll using circle pad
+        else if(kHeld & KEY_CPAD_UP)
+        {
+            change_selected(current_list, -1);
+            svcSleepThread(FASTSCROLL_WAIT);
+        }
+        else if(kHeld & KEY_CPAD_DOWN)
+        {
+            change_selected(current_list, 1);
+            svcSleepThread(FASTSCROLL_WAIT);
+        }
+        else if(kHeld & KEY_CPAD_LEFT)
+        {
+            change_selected(current_list, -current_list->entries_per_screen_v);
+            svcSleepThread(FASTSCROLL_WAIT);
+        }
+        else if(kHeld & KEY_CPAD_RIGHT)
+        {
+            change_selected(current_list, current_list->entries_per_screen_v);
+            svcSleepThread(FASTSCROLL_WAIT);
+        }
+        
         touch:
         if((kDown | kHeld) & KEY_TOUCH)
         {
@@ -365,13 +429,14 @@ bool themeplaza_browser(EntryMode mode)
             u16 y = touch.py;
 
             #define BETWEEN(min, x, max) (min < x && x < max)
-
+            
+            
             if(kDown & KEY_TOUCH)
             {
                 if(preview_mode)
                 {
                     preview_mode = false;
-                    continue
+                    continue;
                 }
                 else if(y < 24)
                 {
@@ -394,31 +459,21 @@ bool themeplaza_browser(EntryMode mode)
                         // goto switch_mode;
                     // }
                 }
-                else if(y >= 216)
-                {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - current_list->entries_per_screen_v)
-                    {
-                        change_selected(current_list, current_list->entries_per_screen_v);
-                    }
-                    else if(current_list->entries != NULL && BETWEEN(176, x, 320))
-                    {
-                        jump_menu(current_list);
-                    }
-                }
             }
             else
             {
-                if(current_list->entries != NULL && BETWEEN(24, y, 216))
+                if(BETWEEN(24, y, 240-24))
                 {
-                    for(int i = 0; i < current_list->entries_loaded; i++)
+                    int border = 16;
+                    if(BETWEEN(border, x, 320-border))
                     {
-                        u16 miny = 24 + current_list->entry_size*i;
-                        u16 maxy = miny + current_list->entry_size;
-                        if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
-                        {
-                            current_list->selected_entry = current_list->scroll + i;
-                            break;
-                        }
+                        x -= border;
+                        x /= current_list->entry_size;
+                        y -= 24;
+                        y /= current_list->entry_size;
+                        int new_selected = current_list->scroll + y + x*current_list->entries_per_screen_v;
+                        if(new_selected < current_list->entries_count)
+                            current_list->selected_entry = new_selected;
                     }
                 }
             }
