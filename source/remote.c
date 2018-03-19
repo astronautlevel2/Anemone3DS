@@ -295,8 +295,8 @@ bool themeplaza_browser(EntryMode mode)
     bool preview_mode = false;
     int preview_offset = 0;
 
-    Entry_List_s lists[MODE_AMOUNT][ICONS_OFFSET_AMOUNT] = {0};
-    Entry_List_s * current_list = &lists[mode][ICONS_VISIBLE];
+    Entry_List_s list = {0};
+    Entry_List_s * current_list = &list;
     load_remote_list(current_list, 1, mode);
 
     if(current_list->entries == NULL)
