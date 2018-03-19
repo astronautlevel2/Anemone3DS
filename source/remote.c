@@ -321,11 +321,11 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s * current_list = &list;
     load_remote_list(current_list, 1, mode);
 
-    if(current_list->entries == NULL)
-        return false;
-
     while(aptMainLoop())
     {
+        if(current_list->entries == NULL)
+            break;
+
         if(preview_mode)
             draw_preview(TEXTURE_REMOTE_PREVIEW, preview_offset);
         else
@@ -368,7 +368,7 @@ bool themeplaza_browser(EntryMode mode)
         {
             break;
         }
-        
+
         else if(kDown & KEY_L)
         {
             load_remote_list(current_list, current_list->tp_current_page-1, mode);
@@ -377,7 +377,7 @@ bool themeplaza_browser(EntryMode mode)
         {
             load_remote_list(current_list, current_list->tp_current_page+1, mode);
         }
-        
+
         // Movement in the UI
         else if(kDown & KEY_UP)
         {
@@ -418,7 +418,7 @@ bool themeplaza_browser(EntryMode mode)
             change_selected(current_list, current_list->entries_per_screen_v);
             svcSleepThread(FASTSCROLL_WAIT);
         }
-        
+
         touch:
         if((kDown | kHeld) & KEY_TOUCH)
         {
@@ -429,8 +429,8 @@ bool themeplaza_browser(EntryMode mode)
             u16 y = touch.py;
 
             #define BETWEEN(min, x, max) (min < x && x < max)
-            
-            
+
+
             if(kDown & KEY_TOUCH)
             {
                 if(preview_mode)
@@ -454,10 +454,16 @@ bool themeplaza_browser(EntryMode mode)
                     {
                         goto toggle_preview;
                     }
-                    // else if(BETWEEN(320-24, x, 320))
-                    // {
-                        // goto switch_mode;
-                    // }
+                    else if(BETWEEN(320-24, x, 320))
+                    {
+                        mode++;
+                        mode %= MODE_AMOUNT;
+
+                        free(current_list->entries);
+                        free(current_list->icons_ids);
+
+                        load_remote_list(current_list, 1, mode);
+                    }
                 }
             }
             else
