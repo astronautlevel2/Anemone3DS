@@ -327,10 +327,11 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
         wchar_t name[0x41] = {0};
         utf16_to_utf32((u32*)name, current_entry->name, 0x40);
 
-        int vertical_offset = i - list->scroll;
-        int horizontal_offset = 0;
-        horizontal_offset = vertical_offset/list->entries_per_screen_v;
-        vertical_offset %= list->entries_per_screen_v;
+        int vertical_offset = 0;
+        int horizontal_offset = i - list->scroll;
+        vertical_offset = horizontal_offset/list->entries_per_screen_h;
+        horizontal_offset %= list->entries_per_screen_h;
+
         horizontal_offset *= list->entry_size;
         vertical_offset *= list->entry_size;
         vertical_offset += 24;

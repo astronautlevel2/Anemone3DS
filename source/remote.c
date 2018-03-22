@@ -297,9 +297,9 @@ static void change_selected(Entry_List_s * list, int change_value)
     if(abs(change_value) == 1)
     {
         if(newval < 0)
-            newval += list->entries_per_screen_v;
-        if(newval/list->entries_per_screen_v != list->selected_entry/list->entries_per_screen_v)
-            newval += list->entries_per_screen_v*(-change_value);
+            newval += list->entries_per_screen_h;
+        if(newval/list->entries_per_screen_h != list->selected_entry/list->entries_per_screen_h)
+            newval += list->entries_per_screen_h*(-change_value);
     }
     else
     {
@@ -381,20 +381,20 @@ bool themeplaza_browser(EntryMode mode)
         // Movement in the UI
         else if(kDown & KEY_UP)
         {
-            change_selected(current_list, -1);
+            change_selected(current_list, -current_list->entries_per_screen_h);
         }
         else if(kDown & KEY_DOWN)
         {
-            change_selected(current_list, 1);
+            change_selected(current_list, current_list->entries_per_screen_h);
         }
         // Quick moving
         else if(kDown & KEY_LEFT)
         {
-            change_selected(current_list, -current_list->entries_per_screen_v);
+            change_selected(current_list, -1);
         }
         else if(kDown & KEY_RIGHT)
         {
-            change_selected(current_list, current_list->entries_per_screen_v);
+            change_selected(current_list, 1);
         }
 
         // Fast scroll using circle pad
@@ -468,7 +468,12 @@ bool themeplaza_browser(EntryMode mode)
             }
             else
             {
-                if(BETWEEN(24, y, 240-24))
+                if(preview_mode)
+                {
+                    preview_mode = false;
+                    continue;
+                }
+                else if(BETWEEN(24, y, 240-24))
                 {
                     int border = 16;
                     if(BETWEEN(border, x, 320-border))
