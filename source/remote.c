@@ -178,7 +178,6 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
         list->entry_size = entry_size[mode];
         list->entries_per_screen_v = entries_per_screen_v[mode];
         list->entries_per_screen_h = entries_per_screen_h[mode];
-        DEBUG("%i %i\n", list->entries_per_screen_v, list->entries_per_screen_h);
 
         json_error_t error;
         json_t *root = json_loadb(page_json, json_len, 0, &error);
@@ -276,13 +275,14 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     free(download_url);
 
     char path_to_file[0x107] = {0};
-    strcat(path_to_file, main_paths[mode]);
-    strcat(path_to_file, filename);
+    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+    free(filename);
 
     char * extension = strrchr(path_to_file, '.');
     if (extension == NULL || strcmp(extension, ".zip"))
         strcat(path_to_file, ".zip");
 
+    DEBUG("Saving to sd: %s\n", path_to_file);
     remake_file(path_to_file, ArchiveSD, zip_size);
     buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
     free(zip_buf);
@@ -576,7 +576,7 @@ u32 http_get(const char *url, char ** filename, char ** buf)
 
     if(filename)
     {
-        char *content_disposition = malloc(1024);
+        char *content_disposition = calloc(1024, sizeof(char));
         ret = httpcGetResponseHeader(&context, "Content-Disposition", content_disposition, 1024);
         if (ret != 0)
         {
@@ -587,10 +587,10 @@ u32 http_get(const char *url, char ** filename, char ** buf)
             return 0;
         }
 
-        *filename = strtok(content_disposition, "\"");
-        *filename = strtok(NULL, "\"");
+        char * tok = strtok(content_disposition, "\"");
+        tok = strtok(NULL, "\"");
 
-        if(!(*filename))
+        if(!(tok))
         {
             free(content_disposition);
             free(new_url);
@@ -601,16 +601,19 @@ u32 http_get(const char *url, char ** filename, char ** buf)
         }
 
         char *illegal_characters = "\"?;:/\\+";
-        for (size_t i = 0; i < strlen(*filename); i++)
+        for (size_t i = 0; i < strlen(tok); i++)
         {
             for (size_t n = 0; n < strlen(illegal_characters); n++)
             {
-                if ((*filename)[i] == illegal_characters[n])
+                if ((tok)[i] == illegal_characters[n])
                 {
-                    (*filename)[i] = '-';
+                    (tok)[i] = '-';
                 }
             }
         }
+
+        *filename = calloc(1024, sizeof(char));
+        strcpy(*filename, tok);
         free(content_disposition);
     }
 

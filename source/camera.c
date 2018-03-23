@@ -195,10 +195,25 @@ void update_qr(qr_data *data, EntryMode current_mode)
         if (!quirc_decode(&code, &scan_data))
         {
             exit_qr(data);
+
             draw_install(INSTALL_DOWNLOAD);
-            char * zip_data = NULL;
+            char * zip_buf = NULL;
             char * filename = NULL;
-            http_get((char*)scan_data.payload, &filename, &zip_data);
+            u32 zip_size = http_get((char*)scan_data.payload, &filename, &zip_buf);
+
+            char path_to_file[0x107] = {0};
+            sprintf(path_to_file, "%s%s", main_paths[current_mode], filename);
+            free(filename);
+
+            char * extension = strrchr(path_to_file, '.');
+            if (extension == NULL || strcmp(extension, ".zip"))
+                strcat(path_to_file, ".zip");
+
+            DEBUG("Saving to sd: %s\n", path_to_file);
+            remake_file(path_to_file, ArchiveSD, zip_size);
+            buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+            free(zip_buf);
+
             data->success = true;
         }   
     }
