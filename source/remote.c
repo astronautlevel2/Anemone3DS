@@ -271,6 +271,7 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
 
     char * zip_buf = NULL;
     char * filename = NULL;
+    draw_install(INSTALL_DOWNLOAD);
     u32 zip_size = http_get(download_url, &filename, &zip_buf);
     free(download_url);
 
