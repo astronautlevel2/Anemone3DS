@@ -483,7 +483,7 @@ bool themeplaza_browser(EntryMode mode)
                         x /= current_list->entry_size;
                         y -= 24;
                         y /= current_list->entry_size;
-                        int new_selected = current_list->scroll + y + x*current_list->entries_per_screen_v;
+                        int new_selected = y*current_list->entries_per_screen_h + x;
                         if(new_selected < current_list->entries_count)
                             current_list->selected_entry = new_selected;
                     }
