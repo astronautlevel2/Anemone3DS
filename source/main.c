@@ -316,8 +316,6 @@ int main(void)
     bool qr_mode = false;
     bool install_mode = false;
 
-    bool quit = false;
-
     while(aptMainLoop())
     {
         if(quit)
