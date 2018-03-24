@@ -289,6 +289,55 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     free(zip_buf);
 }
 
+static SwkbdCallbackResult jump_menu_callback(void* page_number, const char** ppMessage, const char* text, size_t textlen)
+{
+    int typed_value = atoi(text);
+    if(typed_value > *(json_int_t*)page_number)
+    {
+        *ppMessage = "The new page has to be\nsmaller or equal to the\nnumber of pages!";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    else if(typed_value == 0)
+    {
+        *ppMessage = "The new position has to\nbe positive!";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+static void jump_menu(Entry_List_s * list)
+{
+    if(list == NULL) return;
+
+    char numbuf[64] = {0};
+
+    SwkbdState swkbd;
+
+    sprintf(numbuf, "%"  JSON_INTEGER_FORMAT, list->tp_page_count);
+    int max_chars = strlen(numbuf);
+    swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, max_chars);
+
+    sprintf(numbuf, "%"  JSON_INTEGER_FORMAT, list->tp_current_page);
+    swkbdSetInitialText(&swkbd, numbuf);
+
+    sprintf(numbuf, "Which page do you want to jump to?");
+    swkbdSetHintText(&swkbd, numbuf);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
+    swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->tp_page_count);
+
+    memset(numbuf, 0, sizeof(numbuf));
+    SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        json_int_t newpage = (json_int_t)atoi(numbuf);
+        if(newpage != list->tp_current_page)
+            load_remote_list(list, newpage, list->mode);
+    }
+}
+
 static void change_selected(Entry_List_s * list, int change_value)
 {
     if(abs(change_value) >= list->entries_count) return;
@@ -465,6 +514,10 @@ bool themeplaza_browser(EntryMode mode)
 
                         load_remote_list(current_list, 1, mode);
                     }
+                }
+                else if(BETWEEN(240-24, y, 240) && BETWEEN(176, x, 320))
+                {
+                    jump_menu(current_list);
                 }
             }
             else
