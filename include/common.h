@@ -58,6 +58,7 @@ extern bool quit;
 enum TextureID {
     TEXTURE_FONT_RESERVED = 0, // used by pp2d for the font
     TEXTURE_ARROW,
+    TEXTURE_ARROW_SIDE,
     TEXTURE_SHUFFLE,
     TEXTURE_INSTALLED,
     TEXTURE_PREVIEW_ICON,

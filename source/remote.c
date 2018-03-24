@@ -480,7 +480,7 @@ bool themeplaza_browser(EntryMode mode)
 
             #define BETWEEN(min, x, max) (min < x && x < max)
 
-
+            int border = 16;
             if(kDown & KEY_TOUCH)
             {
                 if(preview_mode)
@@ -519,6 +519,17 @@ bool themeplaza_browser(EntryMode mode)
                 {
                     jump_menu(current_list);
                 }
+                else
+                {
+                    if(BETWEEN(0, x, border))
+                    {
+                        load_remote_list(current_list, current_list->tp_current_page-1, mode);
+                    }
+                    else if(BETWEEN(320-border, x, 320))
+                    {
+                        load_remote_list(current_list, current_list->tp_current_page+1, mode);
+                    }
+                }
             }
             else
             {
@@ -529,7 +540,6 @@ bool themeplaza_browser(EntryMode mode)
                 }
                 else if(BETWEEN(24, y, 240-24))
                 {
-                    int border = 16;
                     if(BETWEEN(border, x, 320-border))
                     {
                         x -= border;

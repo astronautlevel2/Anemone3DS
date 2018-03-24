@@ -40,6 +40,7 @@ void init_screens(void)
     pp2d_set_screen_color(GFX_BOTTOM, COLOR_BACKGROUND);
 
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
+    pp2d_load_texture_png(TEXTURE_ARROW_SIDE, "romfs:/arrow_side.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
     pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
     pp2d_load_texture_png(TEXTURE_DOWNLOAD, "romfs:/download.png");
@@ -315,8 +316,8 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
     pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][11]);
 
-    pp2d_draw_texture_rotate(TEXTURE_ARROW, 0, 114, -90);
-    pp2d_draw_texture_rotate(TEXTURE_ARROW, 304, 113, 90);
+    pp2d_draw_texture(TEXTURE_ARROW_SIDE, 3, 114);
+    pp2d_draw_texture_flip(TEXTURE_ARROW_SIDE, 308, 114, HORIZONTAL);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
