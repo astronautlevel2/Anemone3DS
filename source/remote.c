@@ -405,6 +405,13 @@ bool themeplaza_browser(EntryMode mode)
             else
                 preview_mode = false;
         }
+        else if(kDown & KEY_B)
+        {
+            if(preview_mode)
+                preview_mode = false;
+            else
+                break;
+        }
 
         if(preview_mode)
             goto touch;
@@ -413,10 +420,6 @@ bool themeplaza_browser(EntryMode mode)
         {
             download_remote_entry(current_entry, mode);
             downloaded = true;
-        }
-        else if(kDown & KEY_B)
-        {
-            break;
         }
 
         else if(kDown & KEY_L)
