@@ -422,7 +422,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     switch(current_mode)
     {
         case MODE_THEMES:
-            pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
+            pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
             break;
         default:
             break;
