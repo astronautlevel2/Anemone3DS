@@ -191,6 +191,8 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
                     list->tp_page_count = json_integer_value(value);
                 else if(json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
                     load_remote_entries(list, value);
+                else if(json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE) && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
+                    throw_error("No results for this search.", ERROR_LEVEL_WARNING);
             }
         }
         else

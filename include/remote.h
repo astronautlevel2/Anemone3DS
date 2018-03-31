@@ -37,6 +37,10 @@
 #define THEMEPLAZA_JSON_PAGE_COUNT   "pages"
 #define THEMEPLAZA_JSON_PAGE_IDS     "items"
 
+#define THEMEPLAZA_JSON_ERROR_MESSAGE             "message"
+#define THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND   "No items found"
+
+
 #define THEMEPLAZA_ENTRY_FORMAT THEMEPLAZA_BASE_API_URL  "/query?item_id=%"  JSON_INTEGER_FORMAT
 #define THEMEPLAZA_JSON_ENTRY_NAME   "title"
 #define THEMEPLAZA_JSON_ENTRY_DESC   "description"
