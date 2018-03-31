@@ -131,7 +131,9 @@ static void load_remote_icon(size_t textureID, json_int_t id)
 static void load_remote_entries(Entry_List_s * list, json_t *ids_array)
 {
     list->entries_count = json_array_size(ids_array);
+    free(list->entries);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
+    free(list->icons_ids);
     list->icons_ids = calloc(list->entries_count, sizeof(ssize_t));
     list->entries_loaded = list->entries_count;
 
@@ -551,8 +553,6 @@ bool themeplaza_browser(EntryMode mode)
                         mode++;
                         mode %= MODE_AMOUNT;
 
-                        free(current_list->entries);
-                        free(current_list->icons_ids);
                         free(current_list->tp_search);
                         current_list->tp_search = strdup("");
 
