@@ -166,7 +166,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 
     char * page_json = NULL;
     char * api_url = NULL;
-    asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode+1);
+    asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode+1, list->tp_search);
     u32 json_len = http_get(api_url, NULL, &page_json);
     free(api_url);
 
@@ -338,6 +338,38 @@ static void jump_menu(Entry_List_s * list)
     }
 }
 
+static void search_menu(Entry_List_s * list)
+{
+    const int max_chars = 256;
+    char * search = calloc(max_chars+1, sizeof(char));
+
+    SwkbdState swkbd;
+
+    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
+    swkbdSetHintText(&swkbd, "Which tags do you want to search for?");
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Search", true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
+
+    SwkbdButton button = swkbdInputText(&swkbd, search, max_chars);
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        free(list->tp_search);
+        for(unsigned int i = 0; i < strlen(search); i++)
+        {
+            if(search[i] == ' ')
+                search[i] = '+';
+        }
+        list->tp_search = search;
+        load_remote_list(list, 1, list->mode);
+    }
+    else
+    {
+        free(search);
+    }
+}
+
 static void change_selected(Entry_List_s * list, int change_value)
 {
     if(abs(change_value) >= list->entries_count) return;
@@ -369,6 +401,7 @@ bool themeplaza_browser(EntryMode mode)
 
     Entry_List_s list = {0};
     Entry_List_s * current_list = &list;
+    current_list->tp_search = strdup("");
     load_remote_list(current_list, 1, mode);
 
     while(aptMainLoop())
@@ -493,7 +526,11 @@ bool themeplaza_browser(EntryMode mode)
                 }
                 else if(y < 24)
                 {
-                    if(BETWEEN(320-96, x, 320-72))
+                    if(BETWEEN(0, x, 80))
+                    {
+                        search_menu(current_list);
+                    }
+                    else if(BETWEEN(320-96, x, 320-72))
                     {
                         break;
                     }
@@ -514,6 +551,8 @@ bool themeplaza_browser(EntryMode mode)
 
                         free(current_list->entries);
                         free(current_list->icons_ids);
+                        free(current_list->tp_search);
+                        current_list->tp_search = strdup("");
 
                         load_remote_list(current_list, 1, mode);
                     }
@@ -560,6 +599,7 @@ bool themeplaza_browser(EntryMode mode)
 
     free(current_list->entries);
     free(current_list->icons_ids);
+    free(current_list->tp_search);
 
     return downloaded;
 }

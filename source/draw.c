@@ -311,6 +311,8 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 
     pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
+    pp2d_draw_text(7, 3, 0.6, 0.6, COLOR_WHITE, "Search...");
+
     pp2d_draw_texture_blend(TEXTURE_LIST, 320-96, 0, COLOR_WHITE);
     pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
     pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
