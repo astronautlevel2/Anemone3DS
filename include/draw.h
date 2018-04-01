@@ -48,6 +48,10 @@ typedef enum {
     INSTALL_CHECKING_DOWNLOAD,
     INSTALL_ENTRY_DELETE,
 
+    INSTALL_LOADING_REMOTE_THEMES,
+    INSTALL_LOADING_REMOTE_SPLASHES,
+    INSTALL_LOADING_REMOTE_PREVIEW,
+
     INSTALL_NONE,
 } InstallType;
 
@@ -85,11 +89,12 @@ void exit_screens(void);
 void throw_error(char* error, ErrorLevel level);
 bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
-void draw_preview(int preview_offset);
+void draw_preview(ssize_t previewID, int preview_offset);
 
 void draw_install(InstallType type);
 
 void draw_base_interface(void);
+void draw_grid_interface(Entry_List_s* list, Instructions_s instructions);
 void draw_interface(Entry_List_s* list, Instructions_s instructions);
 
 #endif

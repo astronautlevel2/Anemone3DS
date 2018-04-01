@@ -30,12 +30,12 @@
 #include "splashes.h"
 #include "draw.h"
 #include "camera.h"
+#include "remote.h"
 #include "instructions.h"
 #include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
-#define FASTSCROLL_WAIT 1.5e8
-
+bool quit = false;
 static bool homebrew = false;
 static bool installed_themes = false;
 
@@ -55,6 +55,18 @@ u32 old_time_limit;
 const char * main_paths[MODE_AMOUNT] = {
     "/Themes/",
     "/Splashes/",
+};
+const int entries_per_screen_v[MODE_AMOUNT] = {
+    4,
+    4,
+};
+const int entries_per_screen_h[MODE_AMOUNT] = { //for themeplaza browser
+    6,
+    6,
+};
+const int entry_size[MODE_AMOUNT] = {
+    48,
+    48,
 };
 
 static void init_services(void)
@@ -89,10 +101,7 @@ static void stop_install_check(void)
 {
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
-        if(installCheckThreads_arg[i].run_thread)
-        {
-            installCheckThreads_arg[i].run_thread = false;
-        }
+        installCheckThreads_arg[i].run_thread = false;
     }
 }
 
@@ -115,6 +124,7 @@ void free_lists(void)
     {
         Entry_List_s * current_list = &lists[i];
         free(current_list->entries);
+        free(current_list->icons_ids);
         memset(current_list, 0, sizeof(Entry_List_s));
     }
     exit_thread();
@@ -138,6 +148,70 @@ void exit_function(bool power_pressed)
             srvPublishToSubscriber(0x202, 0);
         }
     }
+}
+
+static void start_thread(void)
+{
+    if(iconLoadingThread_arg.run_thread)
+    {
+        DEBUG("starting thread\n");
+        iconLoadingThread = threadCreate(load_icons_thread, &iconLoadingThread_arg, __stacksize__, 0x38, -2, false);
+    }
+}
+
+static void load_lists(Entry_List_s * lists)
+{
+    ssize_t texture_id_offset = TEXTURE_ICON;
+
+    free_lists();
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        InstallType loading_screen = INSTALL_NONE;
+        if(i == MODE_THEMES)
+            loading_screen = INSTALL_LOADING_THEMES;
+        else if(i == MODE_SPLASHES)
+            loading_screen = INSTALL_LOADING_SPLASHES;
+
+        draw_install(loading_screen);
+        draw_install(loading_screen);
+
+        Entry_List_s * current_list = &lists[i];
+        current_list->mode = i;
+        current_list->entries_per_screen_v = entries_per_screen_v[i];
+        current_list->entries_per_screen_h = 1;
+        current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
+        current_list->entry_size = entry_size[i];
+        Result res = load_entries(main_paths[i], current_list);
+        if(R_SUCCEEDED(res))
+        {
+            if(current_list->entries_count > current_list->entries_loaded*ICONS_OFFSET_AMOUNT)
+                iconLoadingThread_arg.run_thread = true;
+
+            DEBUG("total: %i\n", current_list->entries_count);
+
+            current_list->texture_id_offset = texture_id_offset;
+            load_icons_first(current_list, false);
+
+            texture_id_offset += current_list->entries_loaded*ICONS_OFFSET_AMOUNT;
+
+            void (*install_check_function)(void*) = NULL;
+            if(i == MODE_THEMES)
+                install_check_function = themes_check_installed;
+            else if(i == MODE_SPLASHES)
+                install_check_function = splash_check_installed;
+
+            Thread_Arg_s * current_arg = &installCheckThreads_arg[i];
+            current_arg->run_thread = true;
+            current_arg->thread_arg = (void**)current_list;
+
+            if(install_check_function != NULL)
+            {
+                installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, true);
+                svcSleepThread(1e8);
+            }
+        }
+    }
+    start_thread();
 }
 
 static SwkbdCallbackResult jump_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
@@ -185,8 +259,8 @@ static void jump_menu(Entry_List_s * list)
     {
         list->selected_entry = atoi(numbuf) - 1;
         list->scroll = list->selected_entry;
-        if(list->scroll >= list->entries_count - ENTRIES_PER_SCREEN)
-            list->scroll = list->entries_count - ENTRIES_PER_SCREEN - 1;
+        if(list->scroll >= list->entries_count - list->entries_loaded)
+            list->scroll = list->entries_count - list->entries_loaded - 1;
     }
 }
 
@@ -194,66 +268,13 @@ static void change_selected(Entry_List_s * list, int change_value)
 {
     if(abs(change_value) >= list->entries_count) return;
 
-    list->selected_entry += change_value;
-    if(list->selected_entry < 0)
-        list->selected_entry += list->entries_count;
-    list->selected_entry %= list->entries_count;
-}
+    int newval = list->selected_entry + change_value;
 
-static void start_thread(void)
-{
-    if(iconLoadingThread_arg.run_thread)
-    {
-        DEBUG("starting thread\n");
-        iconLoadingThread = threadCreate(load_icons_thread, &iconLoadingThread_arg, __stacksize__, 0x38, -2, false);
-    }
-}
+    if(newval < 0)
+        newval += list->entries_count;
+    newval %= list->entries_count;
 
-static void load_lists(Entry_List_s * lists)
-{
-    ssize_t texture_id_offset = TEXTURE_ICON;
-
-    free_lists();
-    for(int i = 0; i < MODE_AMOUNT; i++)
-    {
-        InstallType loading_screen = INSTALL_NONE;
-        if(i == MODE_THEMES)
-            loading_screen = INSTALL_LOADING_THEMES;
-        else if(i == MODE_SPLASHES)
-            loading_screen = INSTALL_LOADING_SPLASHES;
-
-        draw_install(loading_screen);
-        draw_install(loading_screen);
-
-        Entry_List_s * current_list = &lists[i];
-        Result res = load_entries(main_paths[i], current_list, i);
-        if(R_SUCCEEDED(res))
-        {
-            if(current_list->entries_count > ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT)
-                iconLoadingThread_arg.run_thread = true;
-
-            DEBUG("total: %i\n", current_list->entries_count);
-
-            current_list->texture_id_offset = texture_id_offset;
-            load_icons_first(current_list, false);
-
-            texture_id_offset += ENTRIES_PER_SCREEN*ICONS_OFFSET_AMOUNT;
-
-            void (*install_check_function)(void*) = NULL;
-            if(i == MODE_THEMES)
-                install_check_function = themes_check_installed;
-            else if(i == MODE_SPLASHES)
-                install_check_function = splash_check_installed;
-
-            Thread_Arg_s * current_arg = &installCheckThreads_arg[i];
-            current_arg->run_thread = true;
-            current_arg->thread_arg = (void**)current_list;
-
-            installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, true);
-            svcSleepThread(1e8);
-        }
-    }
-    start_thread();
+    list->selected_entry = newval;
 }
 
 static void toggle_shuffle(Entry_List_s * list)
@@ -283,6 +304,8 @@ int main(void)
     #ifndef CITRA_MODE
     if(R_SUCCEEDED(archive_result))
         load_lists(lists);
+    #else
+    load_lists(lists);
     #endif
 
     EntryMode current_mode = MODE_THEMES;
@@ -292,8 +315,6 @@ int main(void)
 
     bool qr_mode = false;
     bool install_mode = false;
-
-    bool quit = false;
 
     while(aptMainLoop())
     {
@@ -324,7 +345,7 @@ int main(void)
             instructions = install_instructions;
 
         if(qr_mode) take_picture();
-        else if(preview_mode) draw_preview(preview_offset);
+        else if(preview_mode) draw_preview(TEXTURE_PREVIEW, preview_offset);
         else {
             if(!iconLoadingThread_arg.run_thread)
             {
@@ -364,7 +385,6 @@ int main(void)
                     ACU_GetWifiStatus(&out);
                     if(out)
                     {
-
                         if(init_qr())
                         {
                             load_lists(lists);
@@ -399,7 +419,7 @@ int main(void)
         }
 
         if(qr_mode || preview_mode || current_list->entries == NULL)
-            continue;
+            goto touch;
 
         int selected_entry = current_list->selected_entry;
         Entry_s * current_entry = &current_list->entries[selected_entry];
@@ -464,9 +484,9 @@ int main(void)
                     {
                         throw_error("You have too many themes selected.", ERROR_LEVEL_WARNING);
                     }
-                    else if(current_list->shuffle_count == 0)
+                    else if(current_list->shuffle_count < 2)
                     {
-                        throw_error("You don't have any themes selected.", ERROR_LEVEL_WARNING);
+                        throw_error("You don't have enough themes selected.", ERROR_LEVEL_WARNING);
                     }
                     else
                     {
@@ -548,7 +568,7 @@ int main(void)
             if(draw_confirm("Are you sure you would like to delete this?", current_list))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
-                delete_entry(*current_entry);
+                delete_entry(current_entry, current_entry->is_zip);
                 load_lists(lists);
             }
         }
@@ -565,11 +585,11 @@ int main(void)
         // Quick moving
         else if(kDown & KEY_LEFT)
         {
-            change_selected(current_list, -ENTRIES_PER_SCREEN);
+            change_selected(current_list, -current_list->entries_per_screen_v);
         }
         else if(kDown & KEY_RIGHT)
         {
-            change_selected(current_list, ENTRIES_PER_SCREEN);
+            change_selected(current_list, current_list->entries_per_screen_v);
         }
 
         // Fast scroll using circle pad
@@ -585,16 +605,17 @@ int main(void)
         }
         else if(kHeld & KEY_CPAD_LEFT)
         {
-            change_selected(current_list, -ENTRIES_PER_SCREEN);
+            change_selected(current_list, -current_list->entries_per_screen_v);
             svcSleepThread(FASTSCROLL_WAIT);
         }
         else if(kHeld & KEY_CPAD_RIGHT)
         {
-            change_selected(current_list, ENTRIES_PER_SCREEN);
+            change_selected(current_list, current_list->entries_per_screen_v);
             svcSleepThread(FASTSCROLL_WAIT);
         }
 
         // Movement using the touchscreen
+        touch:
         if((kDown | kHeld) & KEY_TOUCH)
         {
             touchPosition touch = {0};
@@ -612,38 +633,42 @@ int main(void)
             {
                 if(y < 24)
                 {
-                    if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
-                        change_selected(current_list, -ENTRIES_PER_SCREEN);
+                        change_selected(current_list, -current_list->entries_per_screen_v);
+                    }
+                    else if(BETWEEN(320-120, x, 320-96))
+                    {
+                        goto enable_qr;
+                    }
+                    else if(BETWEEN(320-96, x, 320-72))
+                    {
+                        if(themeplaza_browser(current_mode))
+                        {
+                            current_mode = MODE_THEMES;
+                            load_lists(lists);
+                        }
+                    }
+                    else if(BETWEEN(320-72, x, 320-48))
+                    {
+                        quit = true;
+                    }
+                    else if(BETWEEN(320-48, x, 320-24))
+                    {
+                        goto toggle_preview;
                     }
                     else if(BETWEEN(320-24, x, 320))
                     {
                         goto switch_mode;
                     }
-                    else if(BETWEEN(320-48, x, 320-24))
-                    {
-                        goto enable_qr;
-                    }
-                    else if(BETWEEN(320-72, x, 320-48))
-                    {
-                        goto toggle_preview;
-                    }
-                    else if(BETWEEN(320-96, x, 320-72))
-                    {
-                        load_icons_first(current_list, false);
-                    }
-                    else if(BETWEEN(320-120, x, 320-96) && current_mode == MODE_THEMES)
-                    {
-                        toggle_shuffle(current_list);
-                    }
                 }
                 else if(y >= 216)
                 {
-                    if(BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - ENTRIES_PER_SCREEN)
+                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - current_list->entries_per_screen_v)
                     {
-                        change_selected(current_list, ENTRIES_PER_SCREEN);
+                        change_selected(current_list, current_list->entries_per_screen_v);
                     }
-                    else if(BETWEEN(176, x, 320))
+                    else if(current_list->entries != NULL && BETWEEN(176, x, 320))
                     {
                         jump_menu(current_list);
                     }
@@ -651,12 +676,12 @@ int main(void)
             }
             else
             {
-                if(BETWEEN(24, y, 216))
+                if(current_list->entries != NULL && BETWEEN(24, y, 216))
                 {
-                    for(int i = 0; i < ENTRIES_PER_SCREEN; i++)
+                    for(int i = 0; i < current_list->entries_loaded; i++)
                     {
-                        u16 miny = 24 + 48*i;
-                        u16 maxy = miny + 48;
+                        u16 miny = 24 + current_list->entry_size*i;
+                        u16 maxy = miny + current_list->entry_size;
                         if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
                         {
                             current_list->selected_entry = current_list->scroll + i;

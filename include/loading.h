@@ -28,6 +28,7 @@
 #define LOADING_H
 
 #include "common.h"
+#include <jansson.h>
 
 enum ICON_IDS_OFFSET {
     ICONS_ABOVE = 0,
@@ -62,6 +63,8 @@ typedef struct {
 
     bool in_shuffle;
     bool installed;
+
+    json_int_t tp_download_id;
 } Entry_s;
 
 typedef struct {
@@ -69,7 +72,7 @@ typedef struct {
     int entries_count;
 
     ssize_t texture_id_offset;
-    ssize_t icons_ids[ICONS_OFFSET_AMOUNT][ENTRIES_PER_SCREEN];
+    ssize_t * icons_ids;
 
     int previous_scroll;
     int scroll;
@@ -80,6 +83,14 @@ typedef struct {
     int shuffle_count;
 
     EntryMode mode;
+    int entries_per_screen_v;
+    int entries_per_screen_h;
+    int entries_loaded;
+    int entry_size;
+
+    json_int_t tp_current_page;
+    json_int_t tp_page_count;
+    char * tp_search;
 } Entry_List_s;
 
 typedef struct {
@@ -87,8 +98,8 @@ typedef struct {
     volatile bool run_thread;
 } Thread_Arg_s;
 
-void delete_entry(Entry_s entry);
-Result load_entries(const char * loading_path, Entry_List_s * list, EntryMode mode);
+void delete_entry(Entry_s * entry, bool is_file);
+Result load_entries(const char * loading_path, Entry_List_s * list);
 bool load_preview(Entry_List_s list, int * preview_offset);
 void load_icons_first(Entry_List_s * current_list, bool silent);
 void handle_scrolling(Entry_List_s * list);

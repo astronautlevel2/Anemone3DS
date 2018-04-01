@@ -4,14 +4,15 @@ A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.\
 To-do list here: https://trello.com/b/F1YSa1VK
 
 # Dependencies
- * zlib and libarchive, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs).
- * [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
+ * zlib, jansson, and libarchive, which can be retrieved from the [3ds_portlibs](https://github.com/devkitPro/3ds_portlibs).
+
+* [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools), which can be retrieved from [SteveIce10's](https://github.com/Steveice10) buildtools repo. These must be added to your PATH.
  * ~~[pp2d](https://github.com/BernardoGiordano/pp2d), which is included in the repo if you do a git clone --recursive.~~ Due to circumstances surrounding the privacy settings on the pp2d repo, the source files are now included directly within the repo.
  * Git needs to be on your PATH, if building in a non-*nix environment.
 # Building
 First of all, make sure devkitPRO is properly installed and added to the PATH.
 After that, open the directory you want to clone the repo into, and type: `git clone https://github.com/astronautlevel2/Anemone3DS/ --recursive`.
-Instructions for installing zlib can be found on the [3ds_portlibs repo](https://github.com/devkitPro/3ds_portlibs) (its easy, just run `make` and `make install-zlib`). After also adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built files will be in `/out/`.
+Instructions for installing zlib, jansson and libarchive can be found on the [3ds_portlibs repo](https://github.com/devkitPro/3ds_portlibs) (its easy, just run `make` and `make install-zlib`). After also adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built files will be in `/out/`.
 # License
 This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additional terms 7b and 7c apply to this project.
 

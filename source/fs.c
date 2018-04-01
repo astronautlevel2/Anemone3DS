@@ -152,7 +152,7 @@ u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char 
     int r = archive_read_open_memory(a, zip_memory, zip_size);
     if(r != ARCHIVE_OK)
     {
-        DEBUG("Invalid zip being opened\n");
+        DEBUG("Invalid zip being opened from memory\n");
         return 0;
     }
 

@@ -32,6 +32,7 @@
 #include "draw.h"
 #include "fs.h"
 #include "loading.h"
+#include "remote.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -197,6 +198,8 @@ void update_qr(qr_data *data)
         if (!quirc_decode(&code, &scan_data))
         {
             exit_qr(data);
+
+            draw_install(INSTALL_DOWNLOAD);
             char * zip_buf = NULL;
             char * filename = NULL;
             u32 zip_size = http_get((char*)scan_data.payload, &filename, &zip_buf);
@@ -245,7 +248,7 @@ void update_qr(qr_data *data)
                     free(buf);
                     buf = NULL;
 
-                    char path_to_file[0x106] = {0};
+                    char path_to_file[0x107] = {0};
                     if(theme)
                     {
                         strcpy(path_to_file, main_paths[MODE_THEMES]);
@@ -270,8 +273,6 @@ void update_qr(qr_data *data)
                         buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
                         data->success = true;
                     }
-
-
                 }
                 else
                 {
@@ -283,6 +284,7 @@ void update_qr(qr_data *data)
                 throw_error("Download failed.", ERROR_LEVEL_WARNING);
             }
 
+            free(filename);
             free(zip_buf);
         }   
     }
@@ -305,142 +307,3 @@ bool init_qr(void)
     return (bool)data->success;
 }
 
-/*
-Putting this in camera because I'm too lazy to make a network.c
-This'll probably get refactored later
-*/
-u32 http_get(char *url, char ** filename, char ** buf)
-{
-    Result ret;
-    httpcContext context;
-    char *new_url = NULL;
-    u32 status_code;
-    u32 content_size = 0;
-    u32 read_size = 0;
-    u32 size = 0;
-    char *last_buf;
-
-    do {
-        ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
-        ret = httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
-        ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-        ret = httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
-        ret = httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-        draw_install(INSTALL_DOWNLOAD);
-
-        ret = httpcBeginRequest(&context);
-        if (ret != 0)
-        {
-            httpcCloseContext(&context);
-            if (new_url != NULL) free(new_url);
-            return 0;
-        }
-
-        ret = httpcGetResponseStatusCode(&context, &status_code);
-        if(ret!=0){
-            httpcCloseContext(&context);
-            if(new_url!=NULL) free(new_url);
-            return 0;
-        }
-
-        if ((status_code >= 301 && status_code <= 303) || (status_code >= 307 && status_code <= 308))
-        {
-            if (new_url == NULL) new_url = malloc(0x1000);
-            ret = httpcGetResponseHeader(&context, "Location", new_url, 0x1000);
-            url = new_url;
-            httpcCloseContext(&context);
-        }
-    } while ((status_code >= 301 && status_code <= 303) || (status_code >= 307 && status_code <= 308));
-
-    if (status_code != 200)
-    {
-        httpcCloseContext(&context);
-        if (new_url != NULL) free(new_url);
-        return 0;
-    }
-
-    ret = httpcGetDownloadSizeState(&context, NULL, &content_size);
-    if (ret != 0)
-    {
-        httpcCloseContext(&context);
-        if (new_url != NULL) free(new_url);
-        return 0;
-    }
-
-    *buf = malloc(0x1000);
-    if (*buf == NULL)
-    {
-        httpcCloseContext(&context);
-        free(new_url);
-        return 0;
-    }
-
-    char *content_disposition = malloc(1024);
-    ret = httpcGetResponseHeader(&context, "Content-Disposition", content_disposition, 1024);
-    if (ret != 0)
-    {
-        free(content_disposition);
-        free(new_url);
-        free(*buf);
-        return 0;
-    }
-
-    *filename = strtok(content_disposition, "\"");
-    *filename = strtok(NULL, "\"");
-
-    if(!(*filename))
-    {
-        free(content_disposition);
-        free(new_url);
-        free(*buf);
-        throw_error("Target is not valid!", ERROR_LEVEL_WARNING);
-        return 0;
-    }
-
-    char *illegal_characters = "\"?;:/\\+";
-    for (size_t i = 0; i < strlen(*filename); i++)
-    {
-        for (size_t n = 0; n < strlen(illegal_characters); n++)
-        {
-            if ((*filename)[i] == illegal_characters[n])
-            {
-                (*filename)[i] = '-';
-            }
-        }
-    }
-
-    do {
-        ret = httpcDownloadData(&context, (*(u8**)buf) + size, 0x1000, &read_size);
-        size += read_size;
-
-        if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
-        {
-            last_buf = *buf;
-            *buf = realloc(*buf, size + 0x1000);
-            if (*buf == NULL)
-            {
-                httpcCloseContext(&context);
-                free(content_disposition);
-                free(new_url);
-                free(last_buf);
-                return 0;
-            }
-        }
-    } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
-
-    last_buf = *buf;
-    *buf = realloc(*buf, size);
-    if (*buf == NULL)
-    {
-        httpcCloseContext(&context);
-        free(content_disposition);
-        free(new_url);
-        free(last_buf);
-        return 0;
-    }
-
-    free(content_disposition);
-    free(new_url);
-
-    return size;
-}
