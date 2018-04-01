@@ -34,6 +34,9 @@
 #include "loading.h"
 #include "remote.h"
 
+#include <archive.h>
+#include <archive_entry.h>
+
 /*
 static u32 transfer_size;
 static Handle event;
@@ -139,7 +142,7 @@ bool start_capture_cam(qr_data *data)
     return true;
 }
 
-void update_qr(qr_data *data, EntryMode current_mode)
+void update_qr(qr_data *data)
 {
     hidScanInput();
     if (hidKeysDown() & (KEY_R | KEY_B | KEY_TOUCH)) {
@@ -201,26 +204,84 @@ void update_qr(qr_data *data, EntryMode current_mode)
             char * filename = NULL;
             u32 zip_size = http_get((char*)scan_data.payload, &filename, &zip_buf);
 
-            char path_to_file[0x107] = {0};
-            sprintf(path_to_file, "%s%s", main_paths[current_mode], filename);
+            if(zip_size != 0)
+            {
+                draw_install(INSTALL_CHECKING_DOWNLOAD);
+
+                struct archive *a = archive_read_new();
+                archive_read_support_format_zip(a);
+
+                int r = archive_read_open_memory(a, zip_buf, zip_size);
+                archive_read_free(a);
+
+                if(r == ARCHIVE_OK)
+                {
+                    EntryMode mode = MODE_AMOUNT;
+
+                    char * buf = NULL;
+                    do {
+                        if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_THEMES;
+                            break;
+                        }
+
+                        free(buf);
+                        buf = NULL;
+                        if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_SPLASHES;
+                            break;
+                        }
+
+                        free(buf);
+                        buf = NULL;
+                        if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
+                        {
+                            mode = MODE_SPLASHES;
+                            break;
+                        }
+                    }
+                    while(false);
+
+                    free(buf);
+                    buf = NULL;
+
+                    if(mode != MODE_AMOUNT)
+                    {
+                        char path_to_file[0x107] = {0};
+                        sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+                        char * extension = strrchr(path_to_file, '.');
+                        if (extension == NULL || strcmp(extension, ".zip"))
+                            strcat(path_to_file, ".zip");
+
+                        remake_file(path_to_file, ArchiveSD, zip_size);
+                        buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+                        data->success = true;
+                    }
+                    else
+                    {
+                        throw_error("Zip downloaded is neither\na splash nor a theme.", ERROR_LEVEL_WARNING);
+                    }
+                }
+                else
+                {
+                    throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
+                }
+            }
+            else
+            {
+                throw_error("Download failed.", ERROR_LEVEL_WARNING);
+            }
+
             free(filename);
-
-            char * extension = strrchr(path_to_file, '.');
-            if (extension == NULL || strcmp(extension, ".zip"))
-                strcat(path_to_file, ".zip");
-
-            DEBUG("Saving to sd: %s\n", path_to_file);
-            remake_file(path_to_file, ArchiveSD, zip_size);
-            buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
             free(zip_buf);
-
-            data->success = true;
         }   
     }
 
 }
 
-bool init_qr(EntryMode current_mode)
+bool init_qr(void)
 {
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
@@ -231,7 +292,8 @@ bool init_qr(EntryMode current_mode)
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
     data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
 
-    while (!data->finished) update_qr(data, current_mode);
+    while (!data->finished) update_qr(data);
 
     return (bool)data->success;
 }
+

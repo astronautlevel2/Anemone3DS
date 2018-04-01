@@ -215,6 +215,9 @@ void draw_install(InstallType type)
         case INSTALL_DOWNLOAD:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
             break;
+        case INSTALL_CHECKING_DOWNLOAD:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Checking downloaded file...");
+            break;
         case INSTALL_SPLASH:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a splash...");
             break;

@@ -385,7 +385,7 @@ int main(void)
                     ACU_GetWifiStatus(&out);
                     if(out)
                     {
-                        if(init_qr(current_mode))
+                        if(init_qr())
                         {
                             load_lists(lists);
                         }

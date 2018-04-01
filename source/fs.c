@@ -29,12 +29,8 @@
 #include "fs.h"
 #include "unicode.h"
  
-#include "minizip/unzip.h"
- 
-int filename_compare(__attribute__((unused)) unzFile file, const char *current_filename, const char *filename)
-{
-    return strcasecmp(current_filename, filename);
-}
+#include <archive.h>
+#include <archive_entry.h>
  
 Result open_archives(void)
 {
@@ -120,40 +116,66 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
     return (u32)size;
 }
 
-u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
+static u32 zip_to_buf(struct archive *a, char *file_name, char ** buf)
 {
-    char path[0x107] = {0};
-    utf16_to_utf8((u8*)path, zip_path, 0x106);
+    struct archive_entry *entry;
 
-    unzFile zip_handle = unzOpen(path);
+    bool found = false;
+    u64 file_size = 0;
 
-    if(zip_handle == NULL)
+    while(!found && archive_read_next_header(a, &entry) == ARCHIVE_OK)
     {
-        DEBUG("invalid zip being opened: %s, %s\n", path, file_name);
+        found = !strcasecmp(archive_entry_pathname(entry), file_name);
+    }
+
+    if(found)
+    {
+        file_size = archive_entry_size(entry);
+        *buf = calloc(file_size, sizeof(char));
+        archive_read_data(a, *buf, file_size);
+    }
+    else
+    {
+        DEBUG("Couldn't find file in zip\n");
+    }
+
+    archive_read_free(a);
+
+    return (u32)file_size;
+}
+
+u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char ** buf)
+{
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+
+    int r = archive_read_open_memory(a, zip_memory, zip_size);
+    if(r != ARCHIVE_OK)
+    {
+        DEBUG("Invalid zip being opened from memory\n");
         return 0;
     }
 
-    u32 file_size = 0;
-    int status = unzLocateFile(zip_handle, file_name, filename_compare);
+    return zip_to_buf(a, file_name, buf);
+}
 
-    if(status == UNZ_OK)
+u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
+{
+    ssize_t len = strulen(zip_path, 0x106);
+    char *path = calloc(sizeof(char), len*sizeof(u16));
+    utf16_to_utf8((u8*)path, zip_path, len*sizeof(u16));
+
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+
+    int r = archive_read_open_filename(a, path, 0x4000);
+    if(r != ARCHIVE_OK)
     {
-        unz_file_info *file_info = calloc(1, sizeof(unz_file_info));
-        unzGetCurrentFileInfo(zip_handle, file_info, NULL, 0, NULL, 0, NULL, 0);
-        file_size = file_info->uncompressed_size;
-        free(file_info);
-        *buf = calloc(1, file_size);
-        unzOpenCurrentFile(zip_handle);
-        unzReadCurrentFile(zip_handle, *buf, file_size);
-        unzCloseCurrentFile(zip_handle);
+        DEBUG("Invalid zip being opened\n");
+        return 0;
     }
-    else if(status == UNZ_END_OF_LIST_OF_FILE)
-        DEBUG("file not found in zip\n");
-    else
-        DEBUG("other zip error\n");
 
-    unzClose(zip_handle);
-    return file_size;
+    return zip_to_buf(a, file_name, buf);
 }
 
 Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)

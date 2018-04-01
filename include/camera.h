@@ -41,7 +41,7 @@ typedef struct {
     struct quirc* context;
 } qr_data;
 
-bool init_qr(EntryMode current_mode);
+bool init_qr(void);
 void exit_qr(qr_data *data);
 void take_picture(void);
 

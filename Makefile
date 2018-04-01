@@ -18,7 +18,7 @@ APP_AUTHOR          :=	astronautlevel and daedreth
 TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
 OUTDIR              :=	out
 BUILD               :=	build
-SOURCES             :=	source source/pp2d/pp2d source/minizip source/quirc
+SOURCES             :=	source source/pp2d/pp2d source/quirc
 INCLUDES            :=	include
 ROMFS               :=	romfs
 
@@ -65,7 +65,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -ljansson -lcitro3d -lctrud -lm -lz
+LIBS	:= -larchive -ljansson -lcitro3d -lctrud -lm -lz
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
