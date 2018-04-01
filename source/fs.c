@@ -122,16 +122,14 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
-    ssize_t len = strulen(zip_path, 0x106);
-    char *path = calloc(sizeof(char), len*sizeof(u16));
-    utf16_to_utf8((u8*)path, zip_path, len*sizeof(u16));
+    char path[0x107] = {0};
+    utf16_to_utf8((u8*)path, zip_path, 0x106);
 
     unzFile zip_handle = unzOpen(path);
-    free(path);
 
     if(zip_handle == NULL)
     {
-        DEBUG("invalid zip being opened\n");
+        DEBUG("invalid zip being opened: %s, %s\n", path, file_name);
         return 0;
     }
 

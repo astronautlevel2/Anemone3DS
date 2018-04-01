@@ -24,25 +24,34 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef CAMERA_H
-#define CAMERA_H
+#ifndef REMOTE_H
+#define REMOTE_H
 
 #include "common.h"
 
-typedef struct {
-    u16 *camera_buffer;
-    u32 *texture_buffer;
-    Handle mutex;
-    volatile bool finished;
-    volatile bool success;
-    Handle cancel;
+#define THEMEPLAZA_BASE_URL "https://themeplaza.eu"
+#define THEMEPLAZA_API_URL "/api/anemone/v1"
+#define THEMEPLAZA_BASE_API_URL THEMEPLAZA_BASE_URL  THEMEPLAZA_API_URL
 
-    bool capturing;
-    struct quirc* context;
-} qr_data;
+#define THEMEPLAZA_PAGE_FORMAT THEMEPLAZA_BASE_API_URL  "/list?page=%"  JSON_INTEGER_FORMAT  "&category=%i&query=%s"
+#define THEMEPLAZA_JSON_PAGE_COUNT   "pages"
+#define THEMEPLAZA_JSON_PAGE_IDS     "items"
 
-bool init_qr(EntryMode current_mode);
-void exit_qr(qr_data *data);
-void take_picture(void);
+#define THEMEPLAZA_JSON_ERROR_MESSAGE             "message"
+#define THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND   "No items found"
+
+
+#define THEMEPLAZA_ENTRY_FORMAT THEMEPLAZA_BASE_API_URL  "/query?item_id=%"  JSON_INTEGER_FORMAT
+#define THEMEPLAZA_JSON_ENTRY_NAME   "title"
+#define THEMEPLAZA_JSON_ENTRY_DESC   "description"
+#define THEMEPLAZA_JSON_ENTRY_AUTH   "author"
+
+#define THEMEPLAZA_DOWNLOAD_FORMAT   THEMEPLAZA_BASE_URL  "/download/%"  JSON_INTEGER_FORMAT
+#define THEMEPLAZA_PREVIEW_FORMAT    THEMEPLAZA_DOWNLOAD_FORMAT  "/preview"
+#define THEMEPLAZA_BGM_FORMAT        THEMEPLAZA_DOWNLOAD_FORMAT  "/bgm"
+#define THEMEPLAZA_ICON_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/preview/icon"
+
+bool themeplaza_browser(EntryMode mode);
+u32 http_get(const char *url, char ** filename, char ** buf);
 
 #endif

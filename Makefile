@@ -65,13 +65,13 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lcitro3d -lctrud -lm -lz
+LIBS	:= -ljansson -lcitro3d -lctrud -lm -lz
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(CTRULIB) $(DEVKITPRO)/portlibs/armv6k
+LIBDIRS	:= $(CTRULIB) $(PORTLIBS)
 
 
 #---------------------------------------------------------------------------------
