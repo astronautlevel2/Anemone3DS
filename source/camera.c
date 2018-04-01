@@ -216,14 +216,13 @@ void update_qr(qr_data *data)
 
                 if(r == ARCHIVE_OK)
                 {
-                    bool splash = false;
-                    bool theme = false;
+                    EntryMode mode = MODE_AMOUNT;
 
                     char * buf = NULL;
                     do {
                         if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
                         {
-                            theme = true;
+                            mode = MODE_THEMES;
                             break;
                         }
 
@@ -231,7 +230,7 @@ void update_qr(qr_data *data)
                         buf = NULL;
                         if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
                         {
-                            splash = true;
+                            mode = MODE_SPLASHES;
                             break;
                         }
 
@@ -239,7 +238,7 @@ void update_qr(qr_data *data)
                         buf = NULL;
                         if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
                         {
-                            splash = true;
+                            mode = MODE_SPLASHES;
                             break;
                         }
                     }
@@ -248,23 +247,10 @@ void update_qr(qr_data *data)
                     free(buf);
                     buf = NULL;
 
-                    char path_to_file[0x107] = {0};
-                    if(theme)
+                    if(mode != MODE_AMOUNT)
                     {
-                        strcpy(path_to_file, main_paths[MODE_THEMES]);
-                    }
-                    else if(splash)
-                    {
-                        strcpy(path_to_file, main_paths[MODE_SPLASHES]);
-                    }
-                    else
-                    {
-                        throw_error("Zip downloaded is neither a splash nor a theme.", ERROR_LEVEL_WARNING);
-                    }
-
-                    if(path_to_file[0] != '\0')
-                    {
-                        strcat(path_to_file, filename);
+                        char path_to_file[0x107] = {0};
+                        sprintf(path_to_file, "%s%s", main_paths[mode], filename);
                         char * extension = strrchr(path_to_file, '.');
                         if (extension == NULL || strcmp(extension, ".zip"))
                             strcat(path_to_file, ".zip");
@@ -272,6 +258,10 @@ void update_qr(qr_data *data)
                         remake_file(path_to_file, ArchiveSD, zip_size);
                         buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
                         data->success = true;
+                    }
+                    else
+                    {
+                        throw_error("Zip downloaded is neither\na splash nor a theme.", ERROR_LEVEL_WARNING);
                     }
                 }
                 else
