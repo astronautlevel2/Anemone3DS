@@ -392,12 +392,15 @@ int main(void)
                     }
                     else
                     {
-                        throw_error("Please connect to Wi-Fi before scanning QRs", ERROR_LEVEL_WARNING);
+                        throw_error("Please connect to Wi-Fi before scanning QR codes", ERROR_LEVEL_WARNING);
                     }
                 }
                 else
                 {
-                    throw_error("Your camera seems to have a problem, unable to scan QRs.", ERROR_LEVEL_WARNING);
+                    if(homebrew)
+                        throw_error("QR scanning doesnt work from the Homebrew\nLauncher, use the ThemePlaza browser instead.", ERROR_LEVEL_WARNING);
+                    else
+                        throw_error("Your camera seems to have a problem,\nunable to scan QR codes.", ERROR_LEVEL_WARNING);
                 }
 
                 continue;
