@@ -315,6 +315,7 @@ int main(void)
 
     bool qr_mode = false;
     bool install_mode = false;
+    bool extra_mode = false;
 
     while(aptMainLoop())
     {
@@ -343,6 +344,8 @@ int main(void)
         Instructions_s instructions = normal_instructions[current_mode];
         if(install_mode)
             instructions = install_instructions;
+        if(extra_mode)
+            instructions = extra_instructions;
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(TEXTURE_PREVIEW, preview_offset);
@@ -366,7 +369,7 @@ int main(void)
 
         if(kDown & KEY_START) quit = true;
 
-        if(!install_mode)
+        if(!install_mode && !extra_mode)
         {
             if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
             {
@@ -516,6 +519,38 @@ int main(void)
             }
             continue;
         }
+        else if(extra_mode)
+        {
+            if(kUp & KEY_X)
+                extra_mode = false;
+            if(!extra_mode)
+            {
+                if((kDown | kHeld) & KEY_DLEFT)
+                {
+                    browse_themeplaza:
+                    if(themeplaza_browser(current_mode))
+                    {
+                        current_mode = MODE_THEMES;
+                        load_lists(lists);
+                    }
+                }
+                else if((kDown | kHeld) & KEY_DUP)
+                {
+                    jump:
+                    jump_menu(current_list);
+
+                }
+                else if((kDown | kHeld) & KEY_DRIGHT)
+                {
+
+                }
+                else if((kDown | kHeld) & KEY_DDOWN)
+                {
+                    load_icons_first(current_list, false);
+                }
+            }
+            continue;
+        }
 
         // Actions
 
@@ -554,17 +589,7 @@ int main(void)
         }
         else if(kDown & KEY_X)
         {
-            switch(current_mode)
-            {
-                case MODE_THEMES:
-                    load_icons_first(current_list, false);
-                    break;
-                case MODE_SPLASHES:
-                    load_icons_first(current_list, false);
-                    break;
-                default:
-                    break;
-            }
+            extra_mode = true;
         }
         else if(kDown & KEY_SELECT)
         {
@@ -646,11 +671,7 @@ int main(void)
                     }
                     else if(BETWEEN(320-96, x, 320-72))
                     {
-                        if(themeplaza_browser(current_mode))
-                        {
-                            current_mode = MODE_THEMES;
-                            load_lists(lists);
-                        }
+                        goto browse_themeplaza;
                     }
                     else if(BETWEEN(320-72, x, 320-48))
                     {
@@ -673,7 +694,7 @@ int main(void)
                     }
                     else if(current_list->entries != NULL && BETWEEN(176, x, 320))
                     {
-                        jump_menu(current_list);
+                        goto jump;
                     }
                 }
             }

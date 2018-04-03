@@ -39,7 +39,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
                 L"\uE001 Queue shuffle theme"
             },
             {
-                L"\uE002 Reload broken icons",
+                L"\uE002 Hold for more",
                 L"\uE003 Preview theme"
             },
             {
@@ -60,7 +60,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
                 L"\uE001 Delete installed splash"
             },
             {
-                L"\uE002 Reload broken icons",
+                L"\uE002 Hold for more",
                 L"\uE003 Preview splash"
             },
             {
@@ -86,6 +86,29 @@ Instructions_s install_instructions = {
         {
             L"\uE07B BGM-only install",
             L"\uE07C No-BGM install"
+        },
+        {
+            NULL,
+            NULL
+        },
+        {
+            L"Exit",
+            NULL
+        }
+    }
+};
+
+Instructions_s extra_instructions = {
+    .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+    .info_line_color = COLOR_WHITE,
+    .instructions = {
+        {
+            L"\uE079 Jump in the list",
+            L"\uE07A Reload broken icons"
+        },
+        {
+            L"\uE07B Browse ThemePlaza",
+            NULL
         },
         {
             NULL,

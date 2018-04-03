@@ -39,7 +39,7 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
                 L"\uE001 Go back"
             },
             {
-                NULL,
+                L"\uE002 Hold for more",
                 L"\uE003 Preview theme"
             },
             {
@@ -60,7 +60,7 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
                 L"\uE001 Go back"
             },
             {
-                NULL,
+                L"\uE002 Hold for more",
                 L"\uE003 Preview splash"
             },
             {
@@ -71,6 +71,29 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
                 L"Exit",
                 NULL
             }
+        }
+    }
+};
+
+static Instructions_s extra_instructions = {
+    .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+    .info_line_color = COLOR_WHITE,
+    .instructions = {
+        {
+            L"\uE079 Jump to page",
+            L"\uE07A Search tags"
+        },
+        {
+            L"\uE07B Toggle splash/theme",
+            NULL
+        },
+        {
+            NULL,
+            NULL
+        },
+        {
+            L"Exit",
+            NULL
         }
     }
 };
@@ -408,6 +431,8 @@ bool themeplaza_browser(EntryMode mode)
     current_list->tp_search = strdup("");
     load_remote_list(current_list, 1, mode);
 
+    bool extra_mode = false;
+
     while(aptMainLoop())
     {
         if(current_list->entries == NULL)
@@ -416,7 +441,12 @@ bool themeplaza_browser(EntryMode mode)
         if(preview_mode)
             draw_preview(TEXTURE_REMOTE_PREVIEW, preview_offset);
         else
-            draw_grid_interface(current_list, browser_instructions[mode]);
+        {
+            Instructions_s instructions = browser_instructions[mode];
+            if(extra_mode)
+                instructions = extra_instructions;
+            draw_grid_interface(current_list, instructions);
+        }
         pp2d_end_draw();
 
         hidScanInput();
@@ -424,11 +454,47 @@ bool themeplaza_browser(EntryMode mode)
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
 
+
+
         if(kDown & KEY_START)
         {
+            exit:
             quit = true;
             downloaded = false;
             break;
+        }
+
+        if(extra_mode)
+        {
+            if(kUp & KEY_X)
+                extra_mode = false;
+            if(!extra_mode)
+            {
+                if((kDown | kHeld) & KEY_DLEFT)
+                {
+                    change_mode:
+                    mode++;
+                    mode %= MODE_AMOUNT;
+
+                    free(current_list->tp_search);
+                    current_list->tp_search = strdup("");
+
+                    load_remote_list(current_list, 1, mode);
+                }
+                else if((kDown | kHeld) & KEY_DUP)
+                {
+                    jump_menu(current_list);
+                }
+                else if((kDown | kHeld) & KEY_DRIGHT)
+                {
+
+                }
+                else if((kDown | kHeld) & KEY_DDOWN)
+                {
+                    search_menu(current_list);
+                }
+            }
+            continue;
         }
 
         int selected_entry = current_list->selected_entry;
@@ -458,7 +524,10 @@ bool themeplaza_browser(EntryMode mode)
             download_remote_entry(current_entry, mode);
             downloaded = true;
         }
-
+        else if(kDown & KEY_X)
+        {
+            extra_mode = true;
+        }
         else if(kDown & KEY_L)
         {
             load_remote_list(current_list, current_list->tp_current_page-1, mode);
@@ -540,9 +609,7 @@ bool themeplaza_browser(EntryMode mode)
                     }
                     else if(BETWEEN(320-72, x, 320-48))
                     {
-                        quit = true;
-                        downloaded = false;
-                        break;
+                        goto exit;
                     }
                     else if(BETWEEN(320-48, x, 320-24))
                     {
@@ -550,13 +617,7 @@ bool themeplaza_browser(EntryMode mode)
                     }
                     else if(BETWEEN(320-24, x, 320))
                     {
-                        mode++;
-                        mode %= MODE_AMOUNT;
-
-                        free(current_list->tp_search);
-                        current_list->tp_search = strdup("");
-
-                        load_remote_list(current_list, 1, mode);
+                        goto change_mode;
                     }
                 }
                 else if(BETWEEN(240-24, y, 240) && BETWEEN(176, x, 320))
