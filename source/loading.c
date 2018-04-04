@@ -104,18 +104,49 @@ static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
     free(image);
 }
 
-static int compare_entries(const void * a, const void * b)
+typedef int (*sort_comparator)(const void *, const void *);
+static int compare_entries_by_name(const void * a, const void * b)
 {
     Entry_s *entry_a = (Entry_s *)a;
     Entry_s *entry_b = (Entry_s *)b;
 
     return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
 }
-
-static void sort_list(Entry_List_s * list)
+static int compare_entries_by_author(const void * a, const void * b)
 {
-    if(list->entries != NULL)
+    Entry_s *entry_a = (Entry_s *)a;
+    Entry_s *entry_b = (Entry_s *)b;
+
+    return memcmp(entry_a->author, entry_b->author, 0x40*sizeof(u16));
+}
+static int compare_entries_by_filename(const void * a, const void * b)
+{
+    Entry_s *entry_a = (Entry_s *)a;
+    Entry_s *entry_b = (Entry_s *)b;
+
+    return memcmp(entry_a->path, entry_b->path, 0x106*sizeof(u16));
+}
+
+static void sort_list(Entry_List_s * list, sort_comparator compare_entries)
+{
+    if(list->entries != NULL && list->entries != NULL)
         qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
+}
+
+void sort_by_name(Entry_List_s * list)
+{
+    sort_list(list, compare_entries_by_name);
+    list->current_sort = SORT_NAME;
+}
+void sort_by_author(Entry_List_s * list)
+{
+    sort_list(list, compare_entries_by_author);
+    list->current_sort = SORT_AUTHOR;
+}
+void sort_by_filename(Entry_List_s * list)
+{
+    sort_list(list, compare_entries_by_filename);
+    list->current_sort = SORT_PATH;
 }
 
 Result load_entries(const char * loading_path, Entry_List_s * list)
@@ -164,8 +195,6 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
     }
 
     FSDIR_Close(dir_handle);
-
-    sort_list(list);
 
     return res;
 }

@@ -43,8 +43,9 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_ARROW_SIDE, "romfs:/arrow_side.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
     pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
-    pp2d_load_texture_png(TEXTURE_DOWNLOAD, "romfs:/download.png");
     pp2d_load_texture_png(TEXTURE_PREVIEW_ICON, "romfs:/preview.png");
+    pp2d_load_texture_png(TEXTURE_SORT, "romfs:/sort.png");
+    pp2d_load_texture_png(TEXTURE_DOWNLOAD, "romfs:/download.png");
     pp2d_load_texture_png(TEXTURE_BROWSE, "romfs:/browse.png");
     pp2d_load_texture_png(TEXTURE_LIST, "romfs:/list.png");
     pp2d_load_texture_png(TEXTURE_EXIT, "romfs:/exit.png");
@@ -433,6 +434,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
             break;
     }
 
+    pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, COLOR_WHITE);
     pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, COLOR_WHITE);
     pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, COLOR_WHITE);
     pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);

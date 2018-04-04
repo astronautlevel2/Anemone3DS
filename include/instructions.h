@@ -108,11 +108,11 @@ Instructions_s extra_instructions = {
         },
         {
             L"\uE07B Browse ThemePlaza",
-            NULL
+            L"\uE07C Sort by filename"
         },
         {
-            NULL,
-            NULL
+            L"\uE004 Sort by name",
+            L"\uE005 Sort by author"
         },
         {
             L"Exit",

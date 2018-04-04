@@ -187,6 +187,8 @@ static void load_lists(Entry_List_s * lists)
             if(current_list->entries_count > current_list->entries_loaded*ICONS_OFFSET_AMOUNT)
                 iconLoadingThread_arg.run_thread = true;
 
+            sort_by_name(current_list);
+
             DEBUG("total: %i\n", current_list->entries_count);
 
             current_list->texture_id_offset = texture_id_offset;
@@ -542,10 +544,24 @@ int main(void)
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
-
+                    sort_path:
+                    sort_by_filename(current_list);
+                    load_icons_first(current_list, false);
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
                 {
+                    load_icons_first(current_list, false);
+                }
+                else if(((kDown | kHeld)) & KEY_L)
+                {
+                    sort_name:
+                    sort_by_name(current_list);
+                    load_icons_first(current_list, false);
+                }
+                else if(((kDown | kHeld)) & KEY_R)
+                {
+                    sort_author:
+                    sort_by_author(current_list);
                     load_icons_first(current_list, false);
                 }
             }
@@ -664,6 +680,23 @@ int main(void)
                     if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
                         change_selected(current_list, -current_list->entries_per_screen_v);
+                    }
+                    else if(BETWEEN(320-144, x, 320-120))
+                    {
+                        switch(current_list->current_sort)
+                        {
+                            case SORT_NAME:
+                                goto sort_author;
+                                break;
+                            case SORT_AUTHOR:
+                                goto sort_path;
+                                break;
+                            case SORT_PATH:
+                                goto sort_name;
+                                break;
+                            default:
+                                break;
+                        }
                     }
                     else if(BETWEEN(320-120, x, 320-96))
                     {
