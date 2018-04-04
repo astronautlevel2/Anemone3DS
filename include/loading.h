@@ -38,6 +38,14 @@ enum ICON_IDS_OFFSET {
     ICONS_OFFSET_AMOUNT,
 };
 
+typedef enum {
+    SORT_NONE,
+
+    SORT_NAME,
+    SORT_AUTHOR,
+    SORT_PATH,
+} SortMode;
+
 typedef struct {
     u8 _padding1[4 + 2 + 2];
 
@@ -88,6 +96,8 @@ typedef struct {
     int entries_loaded;
     int entry_size;
 
+    SortMode current_sort;
+
     json_int_t tp_current_page;
     json_int_t tp_page_count;
     char * tp_search;
@@ -97,6 +107,10 @@ typedef struct {
     void ** thread_arg;
     volatile bool run_thread;
 } Thread_Arg_s;
+
+void sort_by_name(Entry_List_s * list);
+void sort_by_author(Entry_List_s * list);
+void sort_by_filename(Entry_List_s * list);
 
 void delete_entry(Entry_s * entry, bool is_file);
 Result load_entries(const char * loading_path, Entry_List_s * list);
