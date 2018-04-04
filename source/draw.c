@@ -408,10 +408,11 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
         pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
-        pp2d_draw_texture_blend(TEXTURE_EXIT, 320-120, 0, COLOR_WHITE);
-        pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-96, 0, COLOR_WHITE);
-        for(int i = 0; i < MODE_AMOUNT; i++)
-            pp2d_draw_textf(320-(24*(i+1))+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[i][0]);
+        pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, COLOR_WHITE);
+        pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, COLOR_WHITE);
+        pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
+        pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
+        pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][0]);
 
         return;
     }
