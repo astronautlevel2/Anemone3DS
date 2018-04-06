@@ -400,17 +400,6 @@ static void jump_menu(Entry_List_s * list)
     }
 }
 
-static bool validate_nsfw(const char * search)
-{
-    char * sketchy = strstr(search, "nsfw:sketchy");
-    char * nsfw = strstr(search, "nsfw:nsfw");
-
-    if(sketchy == NULL && nsfw == NULL)  // If user didn't search for anything nsfw, just continue loading
-        return true;
-
-    return true;
-}
-
 static void search_menu(Entry_List_s * list)
 {
     const int max_chars = 256;
@@ -428,13 +417,6 @@ static void search_menu(Entry_List_s * list)
     SwkbdButton button = swkbdInputText(&swkbd, search, max_chars);
     if(button == SWKBD_BUTTON_CONFIRM)
     {
-        if(!validate_nsfw(search))
-        {
-            free(search);
-            throw_error("PIN is invalid, cancelling search.", ERROR_LEVEL_WARNING);
-            return;
-        }
-
         free(list->tp_search);
         for(unsigned int i = 0; i < strlen(search); i++)
         {
