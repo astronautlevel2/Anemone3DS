@@ -311,8 +311,8 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
         strcat(path_to_file, ".zip");
 
     DEBUG("Saving to sd: %s\n", path_to_file);
-    remake_file(path_to_file, ArchiveSD, zip_size);
-    buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+    remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
+    buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
     free(zip_buf);
 }
 

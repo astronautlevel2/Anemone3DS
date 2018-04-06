@@ -178,23 +178,23 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
     return zip_to_buf(a, file_name, buf);
 }
 
-Result buf_to_file(u32 size, char *path, FS_Archive archive, char *buf)
+Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char *buf)
 {
     Handle handle;
     Result res = 0;
-    if (R_FAILED(res = FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_WRITE, 0))) return res;
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, archive, path, FS_OPEN_WRITE, 0))) return res;
     if (R_FAILED(res = FSFILE_Write(handle, NULL, 0, buf, size, FS_WRITE_FLUSH))) return res;
     if (R_FAILED(res = FSFILE_Close(handle))) return res;
     return 0;
 }
  
-void remake_file(char *path, FS_Archive archive, u32 size)
+void remake_file(FS_Path path, FS_Archive archive, u32 size)
 {
     Handle handle;
-    if (R_SUCCEEDED(FSUSER_OpenFile(&handle, archive, fsMakePath(PATH_ASCII, path), FS_OPEN_READ, 0)))
+    if (R_SUCCEEDED(FSUSER_OpenFile(&handle, archive, path, FS_OPEN_READ, 0)))
     {
         FSFILE_Close(handle);
-        FSUSER_DeleteFile(archive, fsMakePath(PATH_ASCII, path));
+        FSUSER_DeleteFile(archive, path);
     }
-    FSUSER_CreateFile(archive, fsMakePath(PATH_ASCII, path), 0, size);
+    FSUSER_CreateFile(archive, path, 0, size);
 }

@@ -255,8 +255,8 @@ void update_qr(qr_data *data)
                         if (extension == NULL || strcmp(extension, ".zip"))
                             strcat(path_to_file, ".zip");
 
-                        remake_file(path_to_file, ArchiveSD, zip_size);
-                        buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+                        remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
+                        buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
                         data->success = true;
                     }
                     else
