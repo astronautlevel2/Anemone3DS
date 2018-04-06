@@ -722,7 +722,7 @@ u32 http_get(const char *url, char ** filename, char ** buf)
     {
         httpcCloseContext(&context);
         if (new_url != NULL) free(new_url);
-        DEBUG("status_code\n");
+        DEBUG("status_code, %lu\n", status_code);
         return 0;
     }
 
@@ -820,5 +820,6 @@ u32 http_get(const char *url, char ** filename, char ** buf)
     httpcCloseContext(&context);
     free(new_url);
 
+    DEBUG("size: %lu\n", size);
     return size;
 }
