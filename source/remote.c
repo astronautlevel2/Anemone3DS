@@ -247,22 +247,33 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     free(page_json);
 }
 
-static char previous_preview_url[0x100] = {0};
+static u16 previous_path_preview[0x106] = {0};
 static bool load_remote_preview(Entry_List_s list, int * preview_offset)
 {
     Entry_s entry = list.entries[list.selected_entry];
 
-    char * preview_url = NULL;
-    asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry.tp_download_id);
-    if(!strncmp(previous_preview_url, preview_url, 0x100))
-    {
-        free(preview_url);
-        return true;
-    }
+    bool not_cached = true;
 
-    draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
+    if(!memcmp(&previous_path_preview, &entry.path, 0x106*sizeof(u16))) return true;
+
     char * preview_png = NULL;
-    u32 preview_size = http_get(preview_url, NULL, &preview_png);
+    u32 preview_size = load_data("/preview.png", entry, &preview_png);
+
+    not_cached = !preview_size;
+
+    if(not_cached)
+    {
+        free(preview_png);
+        preview_png = NULL;
+
+        char * preview_url = NULL;
+        asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry.tp_download_id);
+
+        draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
+
+        preview_size = http_get(preview_url, NULL, &preview_png);
+        free(preview_url);
+    }
 
     if(!preview_size)
     {
@@ -286,7 +297,7 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
         }
 
         // mark the new preview as loaded for optimisation
-        strncpy(previous_preview_url, preview_url, 0x100);
+        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
         // free the previously loaded preview. wont do anything if there wasnt one
         pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
 
@@ -301,7 +312,15 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
     }
 
     free(image);
-    free(preview_url);
+
+    if(not_cached)
+    {
+        u16 path[0x107] = {0};
+        strucat(path, entry.path);
+        struacat(path, "/preview.png");
+        remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, preview_size);
+        buf_to_file(preview_size, fsMakePath(PATH_UTF16, path), ArchiveSD, preview_png);
+    }
     free(preview_png);
 
     return ret;
