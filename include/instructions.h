@@ -98,27 +98,51 @@ Instructions_s install_instructions = {
     }
 };
 
-Instructions_s extra_instructions = {
-    .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
-    .info_line_color = COLOR_WHITE,
-    .instructions = {
-        {
-            L"\uE079 Jump in the list",
-            L"\uE07A Reload broken icons"
-        },
-        {
-            L"\uE07B Browse ThemePlaza",
-            L"\uE07C Sort by filename"
-        },
-        {
-            L"\uE004 Sort by name",
-            L"\uE005 Sort by author"
-        },
-        {
-            L"Exit",
-            NULL
+Instructions_s extra_instructions[3] = {
+    {
+        .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to sort",
+        .info_line_color = COLOR_WHITE,
+        .instructions = {
+            {
+                L"\uE079 Sort by name",
+                L"\uE07A Sort by author"
+            },
+            {
+                L"\uE07B Sort by filename",
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                L"Exit",
+                NULL
+            }
         }
-    }
+    },
+    {
+        .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+        .info_line_color = COLOR_WHITE,
+        .instructions = {
+            {
+                L"\uE079 Jump in the list",
+                L"\uE07A Reload broken icons"
+            },
+            {
+                L"\uE07B Browse ThemePlaza",
+                NULL,
+            },
+            {
+                L"\uE004 Sorting menu",
+                NULL
+            },
+            {
+                L"Exit",
+                NULL
+            }
+        }
+    },
 };
 
 #endif
