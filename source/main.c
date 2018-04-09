@@ -347,7 +347,19 @@ int main(void)
         if(install_mode)
             instructions = install_instructions;
         if(extra_mode)
-            instructions = extra_instructions;
+        {
+            int index = 1;
+            bool key_l = (kDown | kHeld) & KEY_L;
+            bool key_r = (kDown | kHeld) & KEY_R;
+            if(key_l ^ key_r)
+            {
+                if(key_l)
+                    index = 0;
+                // else if(key_r)  // uncomment when we use the right menu. we don't for now
+                    // index = 2;
+            }
+            instructions = extra_instructions[index];
+        }
 
         if(qr_mode) take_picture();
         else if(preview_mode) draw_preview(TEXTURE_PREVIEW, preview_offset);
@@ -527,42 +539,50 @@ int main(void)
                 extra_mode = false;
             if(!extra_mode)
             {
-                if((kDown | kHeld) & KEY_DLEFT)
+                bool key_l = (kDown | kHeld) & KEY_L;
+                bool key_r = (kDown | kHeld) & KEY_R;
+                if(!(key_l ^ key_r))
                 {
-                    browse_themeplaza:
-                    if(themeplaza_browser(current_mode))
+                    if((kDown | kHeld) & KEY_DLEFT)
                     {
-                        current_mode = MODE_THEMES;
-                        load_lists(lists);
+                        browse_themeplaza:
+                        if(themeplaza_browser(current_mode))
+                        {
+                            current_mode = MODE_THEMES;
+                            load_lists(lists);
+                        }
+                    }
+                    else if((kDown | kHeld) & KEY_DUP)
+                    {
+                        jump:
+                        jump_menu(current_list);
+
+                    }
+                    else if((kDown | kHeld) & KEY_DDOWN)
+                    {
+                        load_icons_first(current_list, false);
                     }
                 }
-                else if((kDown | kHeld) & KEY_DUP)
+                else if(key_l)
                 {
-                    jump:
-                    jump_menu(current_list);
-
-                }
-                else if((kDown | kHeld) & KEY_DRIGHT)
-                {
-                    sort_path:
-                    sort_by_filename(current_list);
-                    load_icons_first(current_list, false);
-                }
-                else if((kDown | kHeld) & KEY_DDOWN)
-                {
-                    load_icons_first(current_list, false);
-                }
-                else if(((kDown | kHeld)) & KEY_L)
-                {
-                    sort_name:
-                    sort_by_name(current_list);
-                    load_icons_first(current_list, false);
-                }
-                else if(((kDown | kHeld)) & KEY_R)
-                {
-                    sort_author:
-                    sort_by_author(current_list);
-                    load_icons_first(current_list, false);
+                    if((kDown | kHeld) & KEY_DLEFT)
+                    {
+                        sort_path:
+                        sort_by_filename(current_list);
+                        load_icons_first(current_list, false);
+                    }
+                    else if(((kDown | kHeld)) & KEY_DUP)
+                    {
+                        sort_name:
+                        sort_by_name(current_list);
+                        load_icons_first(current_list, false);
+                    }
+                    else if(((kDown | kHeld)) & KEY_DDOWN)
+                    {
+                        sort_author:
+                        sort_by_author(current_list);
+                        load_icons_first(current_list, false);
+                    }
                 }
             }
             continue;
