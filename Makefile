@@ -12,7 +12,7 @@ include $(DEVKITARM)/3ds_rules
 # Your values.
 APP_TITLE           :=	Anemone3DS
 APP_DESCRIPTION     :=	A complete theming tool for the 3DS
-APP_AUTHOR          :=	astronautlevel and daedreth
+APP_AUTHOR          :=	astronautlevel, daedreth and LiquidFenrir
 
 
 TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
