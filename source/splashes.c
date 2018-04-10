@@ -41,15 +41,15 @@ void splash_install(Entry_s splash)
     u32 size = load_data("/splash.bin", splash, &screen_buf);
     if(size != 0)
     {
-        remake_file("/luma/splash.bin", ArchiveSD, size);
-        buf_to_file(size, "/luma/splash.bin", ArchiveSD, screen_buf);
+        remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
+        buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
     }
 
     u32 bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
     if(bottom_size != 0)
     {
-        remake_file("/luma/splashbottom.bin", ArchiveSD, bottom_size);
-        buf_to_file(bottom_size, "/luma/splashbottom.bin", ArchiveSD, screen_buf);
+        remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
+        buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
     }
 
     if(size == 0 && bottom_size == 0)

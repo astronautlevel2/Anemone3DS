@@ -28,6 +28,7 @@
 #include "loading.h"
 #include "draw.h"
 #include "fs.h"
+#include "unicode.h"
 #include "pp2d/pp2d/pp2d.h"
 
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
@@ -85,7 +86,7 @@ static Instructions_s extra_instructions = {
         },
         {
             L"\uE07B Toggle splash/theme",
-            NULL
+            L"\uE07C Reload without cache"
         },
         {
             NULL,
@@ -98,60 +99,71 @@ static Instructions_s extra_instructions = {
     }
 };
 
-static void load_remote_entry(Entry_s * entry)
+static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cache)
 {
-    char * entry_json = NULL;
-    char * api_url = NULL;
-    asprintf(&api_url, THEMEPLAZA_ENTRY_FORMAT, entry->tp_download_id);
-    u32 json_len = http_get(api_url, NULL, &entry_json);
-    free(api_url);
+    bool not_cached = true;
+    char * smdh_buf = NULL;
+    u32 smdh_size = load_data("/info.smdh", *entry, &smdh_buf);
+    Icon_s * smdh = (Icon_s *)smdh_buf;
 
-    if(json_len)
+    not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
+
+    if(not_cached)
     {
-        json_error_t error;
-        json_t *root = json_loadb(entry_json, json_len, 0, &error);
-        if(root)
-        {
-            const char *key;
-            json_t *value;
-            json_object_foreach(root, key, value)
-            {
-                if(json_is_string(value))
-                {
-                    if(!strcmp(key, THEMEPLAZA_JSON_ENTRY_NAME))
-                    {
-                        utf8_to_utf16(entry->name, (u8*)json_string_value(value), 0x40);
-
-                    }
-                    else if(!strcmp(key, THEMEPLAZA_JSON_ENTRY_DESC))
-                        utf8_to_utf16(entry->desc, (u8*)json_string_value(value), 0x80);
-                    else if(!strcmp(key, THEMEPLAZA_JSON_ENTRY_AUTH))
-                        utf8_to_utf16(entry->author, (u8*)json_string_value(value), 0x40);
-                }
-            }
-        }
-        else
-            DEBUG("json error on line %d: %s\n", error.line, error.text);
-
-        json_decref(root);
+        free(smdh_buf);
+        smdh_buf = NULL;
+        char * api_url = NULL;
+        asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
+        smdh_size = http_get(api_url, NULL, &smdh_buf);
+        free(api_url);
+        smdh = (Icon_s *)smdh_buf;
     }
-    free(entry_json);
-}
 
-static void load_remote_icon(size_t textureID, json_int_t id)
-{
-    char * icon_data = NULL;
-    char * icon_url = NULL;
-    asprintf(&icon_url, THEMEPLAZA_ICON_FORMAT, id);
-    u32 icon_size = http_get(icon_url, NULL, &icon_data);
-    free(icon_url);
+    if(!smdh_size)
+    {
+        free(smdh_buf);
+        utf8_to_utf16(entry->name, (u8*)"No name", 0x80);
+        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
+        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
+        entry->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
+        return;
+    }
+
+    memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
+    memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
+    memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
+
+    const u32 width = 48, height = 48;
+    u32 *image = malloc(width*height*sizeof(u32));
+
+    for(u32 x = 0; x < width; x++)
+    {
+        for(u32 y = 0; y < height; y++)
+        {
+            unsigned int dest_pixel = (x + y*width);
+            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
+
+            image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
+        }
+    }
 
     pp2d_free_texture(textureID);
-    pp2d_load_texture_png_memory(textureID, icon_data, icon_size);
-    free(icon_data);
+    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
+    free(image);
+
+    if(not_cached)
+    {
+        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, entry->path), FS_ATTRIBUTE_DIRECTORY);
+        u16 path[0x107] = {0};
+        strucat(path, entry->path);
+        struacat(path, "/info.smdh");
+        remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_size);
+        buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
+    }
+    free(smdh_buf);
 }
 
-static void load_remote_entries(Entry_List_s * list, json_t *ids_array)
+static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ignore_cache)
 {
     list->entries_count = json_array_size(ids_array);
     free(list->entries);
@@ -167,15 +179,19 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array)
         size_t offset = i;
         Entry_s * current_entry = &list->entries[offset];
         current_entry->tp_download_id = json_integer_value(id);
-        load_remote_entry(current_entry);
-
         size_t textureID = list->texture_id_offset + i;
-        load_remote_icon(textureID, current_entry->tp_download_id);
+
+        char * entry_path = NULL;
+        asprintf(&entry_path, CACHE_PATH_FORMAT, current_entry->tp_download_id);
+        utf8_to_utf16(current_entry->path, (u8*)entry_path, 0x106);
+        free(entry_path);
+
+        load_remote_smdh(current_entry, textureID, ignore_cache);
         list->icons_ids[offset] = textureID;
     }
 }
 
-static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mode)
+static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mode, bool ignore_cache)
 {
     if(page > list->tp_page_count)
         page = 1;
@@ -215,7 +231,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
                 if(json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
                     list->tp_page_count = json_integer_value(value);
                 else if(json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
-                    load_remote_entries(list, value);
+                    load_remote_entries(list, value, ignore_cache);
                 else if(json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE) && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
                     throw_error("No results for this search.", ERROR_LEVEL_WARNING);
             }
@@ -231,22 +247,33 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     free(page_json);
 }
 
-static char previous_preview_url[0x100] = {0};
+static u16 previous_path_preview[0x106] = {0};
 static bool load_remote_preview(Entry_List_s list, int * preview_offset)
 {
     Entry_s entry = list.entries[list.selected_entry];
 
-    char * preview_url = NULL;
-    asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry.tp_download_id);
-    if(!strncmp(previous_preview_url, preview_url, 0x100))
-    {
-        free(preview_url);
-        return true;
-    }
+    bool not_cached = true;
 
-    draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
+    if(!memcmp(&previous_path_preview, &entry.path, 0x106*sizeof(u16))) return true;
+
     char * preview_png = NULL;
-    u32 preview_size = http_get(preview_url, NULL, &preview_png);
+    u32 preview_size = load_data("/preview.png", entry, &preview_png);
+
+    not_cached = !preview_size;
+
+    if(not_cached)
+    {
+        free(preview_png);
+        preview_png = NULL;
+
+        char * preview_url = NULL;
+        asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry.tp_download_id);
+
+        draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
+
+        preview_size = http_get(preview_url, NULL, &preview_png);
+        free(preview_url);
+    }
 
     if(!preview_size)
     {
@@ -270,7 +297,7 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
         }
 
         // mark the new preview as loaded for optimisation
-        strncpy(previous_preview_url, preview_url, 0x100);
+        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
         // free the previously loaded preview. wont do anything if there wasnt one
         pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
 
@@ -285,7 +312,15 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
     }
 
     free(image);
-    free(preview_url);
+
+    if(not_cached)
+    {
+        u16 path[0x107] = {0};
+        strucat(path, entry.path);
+        struacat(path, "/preview.png");
+        remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, preview_size);
+        buf_to_file(preview_size, fsMakePath(PATH_UTF16, path), ArchiveSD, preview_png);
+    }
     free(preview_png);
 
     return ret;
@@ -311,8 +346,8 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
         strcat(path_to_file, ".zip");
 
     DEBUG("Saving to sd: %s\n", path_to_file);
-    remake_file(path_to_file, ArchiveSD, zip_size);
-    buf_to_file(zip_size, path_to_file, ArchiveSD, zip_buf);
+    remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
+    buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
     free(zip_buf);
 }
 
@@ -361,7 +396,7 @@ static void jump_menu(Entry_List_s * list)
     {
         json_int_t newpage = (json_int_t)atoi(numbuf);
         if(newpage != list->tp_current_page)
-            load_remote_list(list, newpage, list->mode);
+            load_remote_list(list, newpage, list->mode, false);
     }
 }
 
@@ -389,7 +424,7 @@ static void search_menu(Entry_List_s * list)
                 search[i] = '+';
         }
         list->tp_search = search;
-        load_remote_list(list, 1, list->mode);
+        load_remote_list(list, 1, list->mode, false);
     }
     else
     {
@@ -429,7 +464,7 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s list = {0};
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
-    load_remote_list(current_list, 1, mode);
+    load_remote_list(current_list, 1, mode, false);
 
     bool extra_mode = false;
 
@@ -479,7 +514,7 @@ bool themeplaza_browser(EntryMode mode)
                     free(current_list->tp_search);
                     current_list->tp_search = strdup("");
 
-                    load_remote_list(current_list, 1, mode);
+                    load_remote_list(current_list, 1, mode, false);
                 }
                 else if((kDown | kHeld) & KEY_DUP)
                 {
@@ -487,7 +522,7 @@ bool themeplaza_browser(EntryMode mode)
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
-
+                    load_remote_list(current_list, current_list->tp_current_page, mode, true);
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
                 {
@@ -530,11 +565,11 @@ bool themeplaza_browser(EntryMode mode)
         }
         else if(kDown & KEY_L)
         {
-            load_remote_list(current_list, current_list->tp_current_page-1, mode);
+            load_remote_list(current_list, current_list->tp_current_page-1, mode, false);
         }
         else if(kDown & KEY_R)
         {
-            load_remote_list(current_list, current_list->tp_current_page+1, mode);
+            load_remote_list(current_list, current_list->tp_current_page+1, mode, false);
         }
 
         // Movement in the UI
@@ -628,11 +663,11 @@ bool themeplaza_browser(EntryMode mode)
                 {
                     if(BETWEEN(0, x, border))
                     {
-                        load_remote_list(current_list, current_list->tp_current_page-1, mode);
+                        load_remote_list(current_list, current_list->tp_current_page-1, mode, false);
                     }
                     else if(BETWEEN(320-border, x, 320))
                     {
-                        load_remote_list(current_list, current_list->tp_current_page+1, mode);
+                        load_remote_list(current_list, current_list->tp_current_page+1, mode, false);
                     }
                 }
             }
@@ -722,7 +757,7 @@ u32 http_get(const char *url, char ** filename, char ** buf)
     {
         httpcCloseContext(&context);
         if (new_url != NULL) free(new_url);
-        DEBUG("status_code\n");
+        DEBUG("status_code, %lu\n", status_code);
         return 0;
     }
 
@@ -820,5 +855,6 @@ u32 http_get(const char *url, char ** filename, char ** buf)
     httpcCloseContext(&context);
     free(new_url);
 
+    DEBUG("size: %lu\n", size);
     return size;
 }

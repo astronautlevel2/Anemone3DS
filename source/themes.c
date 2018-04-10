@@ -61,7 +61,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
         if(installmode & THEME_INSTALL_BODY)
         {
-            remake_file("/BodyCache_rd.bin", ArchiveThemeExt, BODY_CACHE_SIZE * MAX_SHUFFLE_THEMES);
+            remake_file(fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), ArchiveThemeExt, BODY_CACHE_SIZE * MAX_SHUFFLE_THEMES);
             FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
         }
 
@@ -101,8 +101,8 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     }
 
                     shuffle_music_sizes[shuffle_count] = music_size;
-                    remake_file(bgm_cache_path, ArchiveThemeExt, BGM_MAX_SIZE);
-                    buf_to_file(music_size, bgm_cache_path, ArchiveThemeExt, music);
+                    remake_file(fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, BGM_MAX_SIZE);
+                    buf_to_file(music_size, fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, music);
                     free(music);
                 }
 
@@ -116,7 +116,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
             {
                 char bgm_cache_path[26] = {0};
                 sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", i);
-                remake_file(bgm_cache_path, ArchiveThemeExt, BGM_MAX_SIZE);
+                remake_file(fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, BGM_MAX_SIZE);
             }
         }
 
@@ -140,7 +140,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
             }
 
-            res = buf_to_file(body_size, "/BodyCache.bin", ArchiveThemeExt, body); // Write body data to file
+            res = buf_to_file(body_size, fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, body); // Write body data to file
             free(body);
 
             if(R_FAILED(res)) return res;
@@ -156,7 +156,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
             }
 
-            res = buf_to_file(music_size, "/BgmCache.bin", ArchiveThemeExt, music);
+            res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
             free(music);
 
             if(R_FAILED(res)) return res;
@@ -195,7 +195,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     theme_manage->dlc_theme_content_index = 0xFF;
     theme_manage->use_theme_cache = 0x0200;
 
-    res = buf_to_file(0x800, "/ThemeManage.bin", ArchiveThemeExt, thememanage_buf);
+    res = buf_to_file(0x800, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, thememanage_buf);
     free(thememanage_buf);
     if(R_FAILED(res)) return res;
     //----------------------------------------
@@ -220,7 +220,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
         }
     }
 
-    res = buf_to_file(savedata_size, "/SaveData.dat", ArchiveHomeExt, savedata_buf);
+    res = buf_to_file(savedata_size, fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
     free(savedata_buf);
     if(R_FAILED(res)) return res;
     //----------------------------------------

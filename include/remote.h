@@ -41,15 +41,13 @@
 #define THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND   "No items found"
 
 
-#define THEMEPLAZA_ENTRY_FORMAT THEMEPLAZA_BASE_API_URL  "/query?item_id=%"  JSON_INTEGER_FORMAT
-#define THEMEPLAZA_JSON_ENTRY_NAME   "title"
-#define THEMEPLAZA_JSON_ENTRY_DESC   "description"
-#define THEMEPLAZA_JSON_ENTRY_AUTH   "author"
-
 #define THEMEPLAZA_DOWNLOAD_FORMAT   THEMEPLAZA_BASE_URL  "/download/%"  JSON_INTEGER_FORMAT
 #define THEMEPLAZA_PREVIEW_FORMAT    THEMEPLAZA_DOWNLOAD_FORMAT  "/preview"
 #define THEMEPLAZA_BGM_FORMAT        THEMEPLAZA_DOWNLOAD_FORMAT  "/bgm"
 #define THEMEPLAZA_ICON_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/preview/icon"
+#define THEMEPLAZA_SMDH_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/smdh"
+
+#define CACHE_PATH_FORMAT            "/3ds/"  APP_TITLE  "/cache/%"  JSON_INTEGER_FORMAT
 
 bool themeplaza_browser(EntryMode mode);
 u32 http_get(const char *url, char ** filename, char ** buf);
