@@ -23,10 +23,7 @@ After also adding [makerom](https://github.com/profi200/Project_CTR) and [banner
 This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additional terms 7b and 7c apply to this project.
 
 # Credits
-The following people contributed to Anemone3DS in some way. Without these people, Anemone3DS wouldn't exist, or wouldn't be as good as it is:
- * [Daedreth](https://github.com/daedreth), who wrote the initial implementation of theme installation code and SMDH parsing.
- * [LiquidFenrir](https://github.com/LiquidFenrir), who refactored a lot of my messy code and has been essential in development.
- * [Kenn (mattkenster)](https://github.com/mattkenster), for designing the GUI, a number of sprites used in the application, and drawing the banner and icon.
+The following people contributed to Anemone3DS in some way. Without these people, Anemone3DS wouldn't exist, or wouldn't be as good as it is: [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
 Special thanks go to these people who, whilst not directly contributing, helped immensely:
  * [Rinnegatamante](https://github.com/Rinnegatamante), whose code served as reference on theme installation.

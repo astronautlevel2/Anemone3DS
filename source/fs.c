@@ -1,6 +1,6 @@
 /*
 *   This file is part of Anemone3DS
-*   Copyright (C) 2016-2017 Alex Taber ("astronautlevel"), Dawid Eckert ("daedreth")
+*   Copyright (C) 2016-2018 Contributors in CONTRIBUTORS.md
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
