@@ -119,7 +119,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     memcpy(padded, music, music_size);
                     free(music);
 
-                    FSFILE_Write(bgm_cache_handle, NULL, 0, padded, BGM_MAX_SIZE, 0);
+                    FSFILE_Write(bgm_cache_handle, NULL, 0, padded, BGM_MAX_SIZE, FS_WRITE_FLUSH);
 
                     FSFILE_Close(bgm_cache_handle);
                     free(padded);
