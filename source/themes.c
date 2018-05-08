@@ -85,6 +85,11 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     shuffle_body_sizes[shuffle_count] = body_size;
                     FSFILE_Write(body_cache_handle, NULL, BODY_CACHE_SIZE * shuffle_count, body, body_size, FS_WRITE_FLUSH);
                     free(body);
+
+                    u8 * blank = calloc(BODY_CACHE_SIZE - body_size, sizeof(u8));
+                    if(blank)
+                        FSFILE_Write(body_cache_handle, NULL, (BODY_CACHE_SIZE * shuffle_count) + body_size, blank, BODY_CACHE_SIZE - body_size, FS_WRITE_FLUSH);
+                    free(blank);
                 }
 
                 if(installmode & THEME_INSTALL_BGM)
@@ -102,8 +107,19 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
                     shuffle_music_sizes[shuffle_count] = music_size;
                     remake_file(fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, BGM_MAX_SIZE);
-                    buf_to_file(music_size, fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, music);
+
+                    Handle bgm_cache_handle;
+                    FSUSER_OpenFile(&bgm_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, bgm_cache_path), FS_OPEN_WRITE, 0);
+
+                    FSFILE_Write(bgm_cache_handle, NULL, 0, music, music_size, FS_WRITE_FLUSH);
                     free(music);
+
+                    u8 * blank = calloc(BGM_MAX_SIZE - music_size, sizeof(u8));
+                    if(blank)
+                        FSFILE_Write(bgm_cache_handle, NULL, music_size, blank, BGM_MAX_SIZE - music_size, FS_WRITE_FLUSH);
+                    free(blank);
+
+                    FSFILE_Close(bgm_cache_handle);
                 }
 
                 shuffle_count++;
@@ -112,12 +128,15 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
         if(installmode & THEME_INSTALL_BGM)
         {
+            char * blank = calloc(BGM_MAX_SIZE, sizeof(char));
             for(int i = shuffle_count; i < MAX_SHUFFLE_THEMES; i++)
             {
                 char bgm_cache_path[26] = {0};
                 sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", i);
                 remake_file(fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, BGM_MAX_SIZE);
+                buf_to_file(BGM_MAX_SIZE, fsMakePath(PATH_ASCII, bgm_cache_path), ArchiveThemeExt, blank);
             }
+            free(blank);
         }
 
         if(installmode & THEME_INSTALL_BODY)
