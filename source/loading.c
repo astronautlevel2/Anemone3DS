@@ -470,7 +470,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
     ndspChnSetRate(0, 44100);
     ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // Tremor outputs ogg files in 16 bit PCM stereo
-	ndspChnSetMix(0, audio->mix); // See mix comment above
+    ndspChnSetMix(0, audio->mix); // See mix comment above
 
     FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
     if(file != NULL) 
@@ -494,6 +494,8 @@ Result load_audio(Entry_s entry, audio_s *audio)
         DEBUG("Success!");
         return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
     } else {
+        free(audio->filebuf);
+        free(audio);
         DEBUG("File not found!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }

@@ -204,6 +204,9 @@ void draw_install(InstallType type)
         case INSTALL_LOADING_REMOTE_PREVIEW:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading preview, please wait...");
             break;
+        case INSTALL_LOADING_REMOTE_BGM:
+            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading BGM, please wait...");
+            break;
         case INSTALL_SINGLE:
             pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
             break;

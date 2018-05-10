@@ -29,6 +29,7 @@
 #include "draw.h"
 #include "fs.h"
 #include "unicode.h"
+#include "music.h"
 #include "pp2d/pp2d/pp2d.h"
 
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
@@ -248,16 +249,14 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 }
 
 static u16 previous_path_preview[0x106] = {0};
-static bool load_remote_preview(Entry_List_s list, int * preview_offset)
+static bool load_remote_preview(Entry_s * entry, int * preview_offset)
 {
-    Entry_s entry = list.entries[list.selected_entry];
-
     bool not_cached = true;
 
-    if(!memcmp(&previous_path_preview, &entry.path, 0x106*sizeof(u16))) return true;
+    if(!memcmp(&previous_path_preview, entry->path, 0x106*sizeof(u16))) return true;
 
     char * preview_png = NULL;
-    u32 preview_size = load_data("/preview.png", entry, &preview_png);
+    u32 preview_size = load_data("/preview.png", *entry, &preview_png);
 
     not_cached = !preview_size;
 
@@ -267,7 +266,7 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
         preview_png = NULL;
 
         char * preview_url = NULL;
-        asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry.tp_download_id);
+        asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry->tp_download_id);
 
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
 
@@ -297,7 +296,7 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
         }
 
         // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
+        memcpy(&previous_path_preview, entry->path, 0x106*sizeof(u16));
         // free the previously loaded preview. wont do anything if there wasnt one
         pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
 
@@ -316,7 +315,7 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
     if(not_cached)
     {
         u16 path[0x107] = {0};
-        strucat(path, entry.path);
+        strucat(path, entry->path);
         struacat(path, "/preview.png");
         remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, preview_size);
         buf_to_file(preview_size, fsMakePath(PATH_UTF16, path), ArchiveSD, preview_png);
@@ -324,6 +323,39 @@ static bool load_remote_preview(Entry_List_s list, int * preview_offset)
     free(preview_png);
 
     return ret;
+}
+
+static u16 previous_path_bgm[0x106] = {0};
+static void load_remote_bgm(Entry_s * entry)
+{
+    if(!memcmp(&previous_path_bgm, entry->path, 0x106*sizeof(u16))) return;
+
+    char * bgm_ogg = NULL;
+    u32 bgm_size = load_data("/bgm.ogg", *entry, &bgm_ogg);
+
+    if(!bgm_size)
+    {
+        free(bgm_ogg);
+        bgm_ogg = NULL;
+
+        char * bgm_url = NULL;
+        asprintf(&bgm_url, THEMEPLAZA_BGM_FORMAT, entry->tp_download_id);
+
+        draw_install(INSTALL_LOADING_REMOTE_BGM);
+
+        bgm_size = http_get(bgm_url, NULL, &bgm_ogg);
+        free(bgm_url);
+
+        u16 path[0x107] = {0};
+        strucat(path, entry->path);
+        struacat(path, "/bgm.ogg");
+        remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, bgm_size);
+        buf_to_file(bgm_size, fsMakePath(PATH_UTF16, path), ArchiveSD, bgm_ogg);
+
+        memcpy(&previous_path_bgm, entry->path, 0x106*sizeof(u16));
+    }
+
+    free(bgm_ogg);
 }
 
 static void download_remote_entry(Entry_s * entry, EntryMode mode)
@@ -460,6 +492,7 @@ bool themeplaza_browser(EntryMode mode)
 
     bool preview_mode = false;
     int preview_offset = 0;
+    audio_s * audio = NULL;
 
     Entry_List_s list = {0};
     Entry_List_s * current_list = &list;
@@ -496,6 +529,8 @@ bool themeplaza_browser(EntryMode mode)
             exit:
             quit = true;
             downloaded = false;
+            if(audio)
+                audio->stop = true;
             break;
         }
 
@@ -539,14 +574,31 @@ bool themeplaza_browser(EntryMode mode)
         {
             toggle_preview:
             if(!preview_mode)
-                preview_mode = load_remote_preview(*current_list, &preview_offset);
+            {
+                preview_mode = load_remote_preview(current_entry, &preview_offset);
+                if(mode == MODE_THEMES)
+                {
+                    load_remote_bgm(current_entry);
+                    audio = calloc(1, sizeof(audio_s));
+                    load_audio(*current_entry, audio);
+                    play_audio(audio);
+                }
+            }
             else
+            {
                 preview_mode = false;
+                if(mode == MODE_THEMES && audio)
+                    audio->stop = true;
+            }
         }
         else if(kDown & KEY_B)
         {
             if(preview_mode)
+            {
                 preview_mode = false;
+                if(mode == MODE_THEMES && audio)
+                    audio->stop = true;
+            }
             else
                 break;
         }
@@ -630,6 +682,8 @@ bool themeplaza_browser(EntryMode mode)
                 if(preview_mode)
                 {
                     preview_mode = false;
+                    if(mode == MODE_THEMES && audio)
+                        audio->stop = true;
                     continue;
                 }
                 else if(y < 24)

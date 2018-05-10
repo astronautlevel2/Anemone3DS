@@ -435,20 +435,26 @@ int main(void)
                 if(!preview_mode)
                 {
                     preview_mode = load_preview(*current_list, &preview_offset);
-                    audio = calloc(sizeof(audio_s), 1);
-                    load_audio(current_list->entries[current_list->selected_entry], audio);
-                    play_audio(audio);
+                    if(current_mode == MODE_THEMES)
+                    {
+                        audio = calloc(1, sizeof(audio_s));
+                        load_audio(current_list->entries[current_list->selected_entry], audio);
+                        play_audio(audio);
+                    }
                 }
                 else
                 {
                     preview_mode = false;
-                    audio->stop = true;
+                    if(current_mode == MODE_THEMES && audio)
+                        audio->stop = true;
                 }
                 continue;
             }
             else if(preview_mode && kDown & (KEY_B | KEY_TOUCH))
             {
                 preview_mode = false;
+                if(current_mode == MODE_THEMES && audio)
+                    audio->stop = true;
                 continue;
             }
         }
