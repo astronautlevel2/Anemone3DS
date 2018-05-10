@@ -464,6 +464,11 @@ bool load_preview(Entry_List_s list, int * preview_offset)
 Result load_audio(Entry_s entry, audio_s *audio) 
 {
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
+    if (audio->filesize == 0) {
+        free(audio);
+        DEBUG("File not found!\n");
+        return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
 
     audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
 
@@ -496,7 +501,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
     } else {
         free(audio->filebuf);
         free(audio);
-        DEBUG("File not found!\n");
+        DEBUG("fmemopen failed!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
 }

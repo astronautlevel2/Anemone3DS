@@ -438,8 +438,8 @@ int main(void)
                     if(current_mode == MODE_THEMES)
                     {
                         audio = calloc(1, sizeof(audio_s));
-                        load_audio(current_list->entries[current_list->selected_entry], audio);
-                        play_audio(audio);
+                        Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
+                        if (R_SUCCEEDED(r)) play_audio(audio);
                     }
                 }
                 else
