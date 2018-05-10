@@ -30,6 +30,7 @@
 #include "common.h"
 #include "fs.h"
 #include "unicode.h"
+#include "loading.h"
 
 #include <tremor/ivorbisfile.h>
 #include <tremor/ivorbiscodec.h>
@@ -37,16 +38,17 @@
 #define BUF_TO_READ 40960 // How much data should be buffered at a time
 
 typedef struct {
-    char *filename;
     OggVorbis_File vf;
     ndspWaveBuf wave_buf[2];
     float mix[12];
     u8 buf_pos;
     long data_read;
     volatile bool stop;
+    char *filebuf;
+    u32 filesize;
 } audio_s;
 
-Result load_audio(u16 *, audio_s *);
+Result load_audio(Entry_s, audio_s *);
 Result play_audio(audio_s *);
 
 #endif

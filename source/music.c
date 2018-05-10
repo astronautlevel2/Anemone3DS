@@ -42,7 +42,7 @@ Result play_audio(audio_s *audio)
             ov_clear(&audio->vf);
             if (read == 0) // EoF
             { 
-                ov_open(fopen(audio->filename, "rb"), &audio->vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
+                ov_open(fmemopen(audio->filebuf, audio->filesize, "rb"), &audio->vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
             } else // Error :(
             { 
                 char error[100] = {0};
@@ -66,24 +66,17 @@ Result play_audio(audio_s *audio)
 
 void thread_audio(void* data) {
     audio_s *audio = (audio_s*)data;
-    DEBUG(audio->filename);
     while(!audio->stop) {
         play_audio(audio);
     }
+    free(audio->filebuf);
     free(audio);
 }
 
 // Initialize the audio struct
-Result load_audio(u16 *entry_path, audio_s *audio) 
+Result load_audio(Entry_s entry, audio_s *audio) 
 {
-    u16 path[0x106] = {0};
-    strucat(path, entry_path);
-    struacat(path, "/bgm.ogg");
-    
-    ssize_t len = strulen(path, 0x106);
-    char *cpath = calloc(sizeof(char), len*sizeof(u16));
-    utf16_to_utf8((u8*)cpath, path, len*sizeof(u16));
-    audio->filename = cpath;
+    audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
 
     audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
 
@@ -92,7 +85,7 @@ Result load_audio(u16 *entry_path, audio_s *audio)
     ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // Tremor outputs ogg files in 16 bit PCM stereo
 	ndspChnSetMix(0, audio->mix); // See mix comment above
 
-    FILE *file = fopen(cpath, "rb");
+    FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
     if(file != NULL) 
     {
         int e = ov_open(file, &audio->vf, NULL, 0);

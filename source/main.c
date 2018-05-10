@@ -436,7 +436,7 @@ int main(void)
                 {
                     preview_mode = load_preview(*current_list, &preview_offset);
                     audio = calloc(sizeof(audio_s), 1);
-                    load_audio(current_list->entries[current_list->selected_entry].path, audio);
+                    load_audio(current_list->entries[current_list->selected_entry], audio);
                 }
                 else
                 {
