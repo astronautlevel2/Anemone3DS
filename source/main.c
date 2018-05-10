@@ -286,9 +286,24 @@ static void change_selected(Entry_List_s * list, int change_value)
 static void toggle_shuffle(Entry_List_s * list)
 {
     Entry_s * current_entry = &list->entries[list->selected_entry];
-    if(current_entry->in_shuffle) list->shuffle_count--;
-    else list->shuffle_count++;
-    current_entry->in_shuffle = !current_entry->in_shuffle;
+    if(current_entry->in_shuffle)
+    {
+        if(current_entry->no_bgm_shuffle)
+        {
+            current_entry->in_shuffle = false;
+            current_entry->no_bgm_shuffle = false;
+            list->shuffle_count--;
+        }
+        else
+        {
+            current_entry->no_bgm_shuffle = true;
+        }
+    }
+    else 
+    {
+        current_entry->in_shuffle = true;
+        list->shuffle_count++;
+    }
 }
 
 int main(void)
