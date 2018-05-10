@@ -42,6 +42,7 @@ void init_screens(void)
     pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
     pp2d_load_texture_png(TEXTURE_ARROW_SIDE, "romfs:/arrow_side.png");
     pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
+    pp2d_load_texture_png(TEXTURE_SHUFFLE_NO_BGM, "romfs:/shuffle_no_bgm.png");
     pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
     pp2d_load_texture_png(TEXTURE_PREVIEW_ICON, "romfs:/preview.png");
     pp2d_load_texture_png(TEXTURE_SORT, "romfs:/sort.png");
@@ -478,8 +479,11 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
         pp2d_draw_wtext(list->entry_size+6, vertical_offset + 16, 0.55, 0.55, font_color, name);
 
-        if(current_entry->in_shuffle)
+        if(current_entry->no_bgm_shuffle)
+            pp2d_draw_texture_blend(TEXTURE_SHUFFLE_NO_BGM, 320-24-4, vertical_offset, font_color);
+        else if(current_entry->in_shuffle)
             pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, vertical_offset, font_color);
+
         if(current_entry->installed)
             pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, vertical_offset + 22, font_color);
 

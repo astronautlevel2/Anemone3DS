@@ -71,6 +71,7 @@ typedef struct {
     bool is_zip;
 
     bool in_shuffle;
+    bool no_bgm_shuffle;
     bool installed;
 
     json_int_t tp_download_id;

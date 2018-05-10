@@ -100,13 +100,22 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 {
                     char bgm_cache_path[26] = {0};
                     sprintf(bgm_cache_path, "/BgmCache_%.2i.bin", shuffle_count);
-                    music_size = load_data("/bgm.bcstm", *current_theme, &music);
 
-                    if(music_size > BGM_MAX_SIZE)
+                    if(current_theme->no_bgm_shuffle)
                     {
-                        free(music);
-                        DEBUG("bgm too big\n");
-                        return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+                        music = NULL;
+                        music_size = 0;
+                    }
+                    else
+                    {
+                        music_size = load_data("/bgm.bcstm", *current_theme, &music);
+
+                        if(music_size > BGM_MAX_SIZE)
+                        {
+                            free(music);
+                            DEBUG("bgm too big\n");
+                            return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+                        }
                     }
 
                     shuffle_music_sizes[shuffle_count] = music_size;
@@ -116,8 +125,11 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     FSUSER_OpenFile(&bgm_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, bgm_cache_path), FS_OPEN_WRITE, 0);
 
                     padded = calloc(BGM_MAX_SIZE, sizeof(char));
-                    memcpy(padded, music, music_size);
-                    free(music);
+                    if(!current_theme->no_bgm_shuffle)
+                    {
+                        memcpy(padded, music, music_size);
+                        free(music);
+                    }
 
                     FSFILE_Write(bgm_cache_handle, NULL, 0, padded, BGM_MAX_SIZE, FS_WRITE_FLUSH);
 
