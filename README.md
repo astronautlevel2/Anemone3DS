@@ -25,6 +25,8 @@ This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additi
 # Credits
 The following people contributed to Anemone3DS in some way. Without these people, Anemone3DS wouldn't exist, or wouldn't be as good as it is: [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
+Most of the icons under `romfs` are from the site [icons8.com](https://icons8.com) and are licensed under the [CC-BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/3.0/)
+
 Special thanks go to these people who, whilst not directly contributing, helped immensely:
  * [Rinnegatamante](https://github.com/Rinnegatamante), whose code served as reference on theme installation.
  * [SteveIce10](https://github.com/SteveIce10), whose QR code in FBI was essential.
