@@ -30,7 +30,6 @@
 #include "common.h"
 #include "fs.h"
 #include "unicode.h"
-#include "loading.h"
 
 #include <tremor/ivorbisfile.h>
 #include <tremor/ivorbiscodec.h>
@@ -48,7 +47,6 @@ typedef struct {
     u32 filesize;
 } audio_s;
 
-Result load_audio(Entry_s, audio_s *);
-Result play_audio(audio_s *);
+void play_audio(audio_s *);
 
 #endif

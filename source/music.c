@@ -25,9 +25,10 @@
 */
 
 #include "music.h"
+#include "loading.h"
 
 // Play a given audio struct
-Result play_audio(audio_s *audio) 
+Result update_audio(audio_s *audio) 
 {
     long size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
     char size_info[50] = {0};
@@ -67,48 +68,12 @@ Result play_audio(audio_s *audio)
 void thread_audio(void* data) {
     audio_s *audio = (audio_s*)data;
     while(!audio->stop) {
-        play_audio(audio);
+        update_audio(audio);
     }
     free(audio->filebuf);
     free(audio);
 }
 
-// Initialize the audio struct
-Result load_audio(Entry_s entry, audio_s *audio) 
-{
-    audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
-
-    audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
-
-    ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
-    ndspChnSetRate(0, 44100);
-    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // Tremor outputs ogg files in 16 bit PCM stereo
-	ndspChnSetMix(0, audio->mix); // See mix comment above
-
-    FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
-    if(file != NULL) 
-    {
-        int e = ov_open(file, &audio->vf, NULL, 0);
-        if (e < 0) 
-        {
-            char error[50];
-            sprintf(error, "Vorbis: %d\n", e);
-            DEBUG(error);
-            return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
-        }
-
-        vorbis_info *vi = ov_info(&audio->vf, -1);
-        ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
-
-        audio->wave_buf[0].nsamples = audio->wave_buf[1].nsamples = vi->rate / 4; // 4 bytes per sample, samples = rate (bytes) / 4
-        audio->wave_buf[0].status = audio->wave_buf[1].status = NDSP_WBUF_DONE; // Used in play to stop from writing to current buffer
-        audio->wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ); // Most vorbis packets should only be 4 KB at most (?) Possibly dangerous assumption
-        audio->wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
-        DEBUG("Success!");
-        threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, true);
-        return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
-    } else {
-        DEBUG("File not found!\n");
-        return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
-    }
+void play_audio(audio_s *audio) {
+    threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, true);
 }
