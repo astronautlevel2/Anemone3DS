@@ -30,6 +30,8 @@
 // Play a given audio struct
 Result update_audio(audio_s *audio) 
 {
+    svcCreateEvent(&audio->finished, RESET_STICKY);
+
     long size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
     char size_info[50] = {0};
     sprintf(size_info, "Audio Size: %ld\n", size);
@@ -70,6 +72,7 @@ void thread_audio(void* data) {
     while(!audio->stop) {
         update_audio(audio);
     }
+    svcSignalEvent(audio->finished);
     free(audio->filebuf);
     free(audio);
 }

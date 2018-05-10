@@ -136,6 +136,11 @@ void free_lists(void)
 
 void exit_function(bool power_pressed)
 {
+    if (audio) 
+    {
+        audio->stop = true;
+        svcWaitSynchronization(audio->finished, U64_MAX);
+    }
     free_lists();
     svcCloseHandle(update_icons_handle);
     exit_screens();
@@ -461,7 +466,11 @@ int main(void)
                 {
                     preview_mode = false;
                     if(current_mode == MODE_THEMES && audio)
+                    {
                         audio->stop = true;
+                        svcWaitSynchronization(audio->finished, U64_MAX);
+                        audio = NULL;
+                    }
                 }
                 continue;
             }
@@ -469,7 +478,11 @@ int main(void)
             {
                 preview_mode = false;
                 if(current_mode == MODE_THEMES && audio)
+                {
                     audio->stop = true;
+                    svcWaitSynchronization(audio->finished, U64_MAX);
+                    audio = NULL;
+                }
                 continue;
             }
         }

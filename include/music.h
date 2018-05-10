@@ -42,9 +42,11 @@ typedef struct {
     float mix[12];
     u8 buf_pos;
     long data_read;
-    volatile bool stop;
     char *filebuf;
     u32 filesize;
+    
+    volatile bool stop;
+    Handle finished;
 } audio_s;
 
 void play_audio(audio_s *);
