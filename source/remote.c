@@ -26,7 +26,6 @@
 
 #include "remote.h"
 #include "loading.h"
-#include "draw.h"
 #include "fs.h"
 #include "unicode.h"
 #include "music.h"
@@ -115,7 +114,7 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
         smdh_buf = NULL;
         char * api_url = NULL;
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
-        smdh_size = http_get(api_url, NULL, &smdh_buf);
+        smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE);
         free(api_url);
         smdh = (Icon_s *)smdh_buf;
     }
@@ -164,7 +163,7 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
     free(smdh_buf);
 }
 
-static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ignore_cache)
+static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ignore_cache, InstallType type)
 {
     list->entries_count = json_array_size(ids_array);
     free(list->entries);
@@ -177,6 +176,7 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
     json_t * id = NULL;
     json_array_foreach(ids_array, i, id)
     {
+        draw_loading_bar(i, list->entries_count, type);
         size_t offset = i;
         Entry_s * current_entry = &list->entries[offset];
         current_entry->tp_download_id = json_integer_value(id);
@@ -209,7 +209,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     char * page_json = NULL;
     char * api_url = NULL;
     asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode+1, list->tp_search);
-    u32 json_len = http_get(api_url, NULL, &page_json);
+    u32 json_len = http_get(api_url, NULL, &page_json, INSTALL_NONE);
     free(api_url);
 
     if(json_len)
@@ -232,7 +232,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
                 if(json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
                     list->tp_page_count = json_integer_value(value);
                 else if(json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
-                    load_remote_entries(list, value, ignore_cache);
+                    load_remote_entries(list, value, ignore_cache, loading_screen);
                 else if(json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE) && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
                     throw_error("No results for this search.", ERROR_LEVEL_WARNING);
             }
@@ -270,7 +270,7 @@ static bool load_remote_preview(Entry_s * entry, int * preview_offset)
 
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
 
-        preview_size = http_get(preview_url, NULL, &preview_png);
+        preview_size = http_get(preview_url, NULL, &preview_png, INSTALL_LOADING_REMOTE_PREVIEW);
         free(preview_url);
     }
 
@@ -343,7 +343,7 @@ static void load_remote_bgm(Entry_s * entry)
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
 
-        bgm_size = http_get(bgm_url, NULL, &bgm_ogg);
+        bgm_size = http_get(bgm_url, NULL, &bgm_ogg, INSTALL_LOADING_REMOTE_BGM);
         free(bgm_url);
 
         u16 path[0x107] = {0};
@@ -366,7 +366,7 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     char * zip_buf = NULL;
     char * filename = NULL;
     draw_install(INSTALL_DOWNLOAD);
-    u32 zip_size = http_get(download_url, &filename, &zip_buf);
+    u32 zip_size = http_get(download_url, &filename, &zip_buf, INSTALL_DOWNLOAD);
     free(download_url);
 
     char path_to_file[0x107] = {0};
@@ -756,7 +756,7 @@ bool themeplaza_browser(EntryMode mode)
     return downloaded;
 }
 
-u32 http_get(const char *url, char ** filename, char ** buf)
+u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type)
 {
     Result ret;
     httpcContext context;
@@ -879,6 +879,9 @@ u32 http_get(const char *url, char ** filename, char ** buf)
     do {
         ret = httpcDownloadData(&context, (*(u8**)buf) + size, 0x1000, &read_size);
         size += read_size;
+
+        if(content_size && install_type != INSTALL_NONE)
+            draw_loading_bar(size, content_size, install_type);
 
         if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
         {
