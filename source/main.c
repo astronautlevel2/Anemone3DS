@@ -343,7 +343,7 @@ int main(void)
     bool install_mode = false;
     bool extra_mode = false;
 
-    while(aptMainLoop())
+    while(true)
     {
         if(quit)
         {
