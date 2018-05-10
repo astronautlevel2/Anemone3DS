@@ -195,6 +195,11 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
             free(music);
 
             if(R_FAILED(res)) return res;
+        } else
+        {
+            music = calloc(BGM_MAX_SIZE, 1);
+            res = buf_to_file(BGM_MAX_SIZE, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
+            free(music);
         }
     }
 
