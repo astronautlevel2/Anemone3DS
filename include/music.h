@@ -24,42 +24,29 @@
 *         reasonable ways as different from the original version.
 */
 
+#ifndef MUSIC_H
+#define MUSIC_H
+
+#include "common.h"
+#include "fs.h"
 #include "unicode.h"
 
-ssize_t strulen(const u16 *input, ssize_t max_len)
-{
-    for (int i = 0; i < max_len; i++) if (input[i] == 0) return i;
-    return max_len;
-}
+#include <tremor/ivorbisfile.h>
+#include <tremor/ivorbiscodec.h>
 
-void struacat(u16 *input, const char *addition)
-{
-    ssize_t len = strulen(input, 0x106);
-    for (u16 i = len; i < strlen(addition) + len; i++) 
-    {
-        input[i] = addition[i - len];
-    }
-    input[strlen(addition) + len] = 0;
-}
+#define BUF_TO_READ 40960 // How much data should be buffered at a time
 
-void printu(u16 *input)
-{
-    ssize_t in_len = strulen(input, 0x106);
-    ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
-    wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
-    utf16_to_utf32((u32*)buf, input, buf_len);
-    char cbuf[0x106];
-    sprintf(cbuf, "%ls\n", buf);
-    DEBUG(cbuf);
-    free(buf);
-}
+typedef struct {
+    char *filename;
+    OggVorbis_File vf;
+    ndspWaveBuf wave_buf[2];
+    float mix[12];
+    u8 buf_pos;
+    long data_read;
+    volatile bool stop;
+} audio_s;
 
-u16 *strucat(u16 *destination, const u16 *source)
-{
-    ssize_t dest_len = strulen(destination, 0x106);
+Result load_audio(u16 *, audio_s *);
+Result play_audio(audio_s *);
 
-    ssize_t source_len = strulen(source, 0x106);
-
-    memcpy(&destination[dest_len], source, source_len * sizeof(u16));
-    return destination;
-}
+#endif

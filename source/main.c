@@ -30,12 +30,14 @@
 #include "splashes.h"
 #include "draw.h"
 #include "camera.h"
+#include "music.h"
 #include "remote.h"
 #include "instructions.h"
 #include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
 bool quit = false;
+audio_s * audio;
 static bool homebrew = false;
 static bool installed_themes = false;
 
@@ -75,6 +77,7 @@ static void init_services(void)
     cfguInit();
     ptmuInit();
     acInit();
+    ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
     httpcInit(0);
@@ -95,6 +98,7 @@ static void exit_services(void)
     if (old_time_limit != UINT32_MAX) APT_SetAppCpuTimeLimit(old_time_limit);
     httpcExit();
     acExit();
+    ndspExit();
 }
 
 static void stop_install_check(void)
@@ -362,7 +366,10 @@ int main(void)
         }
 
         if(qr_mode) take_picture();
-        else if(preview_mode) draw_preview(TEXTURE_PREVIEW, preview_offset);
+        else if(preview_mode) 
+        {
+            draw_preview(TEXTURE_PREVIEW, preview_offset);
+        }
         else {
             if(!iconLoadingThread_arg.run_thread)
             {
@@ -426,9 +433,16 @@ int main(void)
             {
                 toggle_preview:
                 if(!preview_mode)
+                {
                     preview_mode = load_preview(*current_list, &preview_offset);
+                    audio = calloc(sizeof(audio_s), 1);
+                    load_audio(current_list->entries[current_list->selected_entry].path, audio);
+                }
                 else
+                {
                     preview_mode = false;
+                    audio->stop = true;
+                }
                 continue;
             }
             else if(preview_mode && kDown & (KEY_B | KEY_TOUCH))
