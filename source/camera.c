@@ -276,6 +276,7 @@ void update_qr(qr_data *data)
 
             free(filename);
             free(zip_buf);
+            data->finished_update = true;
         }   
     }
 
@@ -286,13 +287,14 @@ bool init_qr(void)
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
     data->finished = false;
+    data->finished_update = false;
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);
 
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
     data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
 
-    while (!data->finished) update_qr(data);
+    while (!data->finished_update && !data->finished) update_qr(data);
 
     return (bool)data->success;
 }
