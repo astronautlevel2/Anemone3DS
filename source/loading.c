@@ -230,6 +230,9 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     for(int i = starti; i < endi; i++, id++)
     {
+        if(!silent)
+            draw_loading_bar(i - starti, endi-starti, INSTALL_LOADING_ICONS);
+
         int offset = i;
         if(offset < 0)
             offset += list->entries_count;

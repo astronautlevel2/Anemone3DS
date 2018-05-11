@@ -182,9 +182,8 @@ void draw_preview(ssize_t previewID, int preview_offset)
     pp2d_draw_texture_part(previewID, 0, 0, 40 + preview_offset, 240, 320, 240);
 }
 
-void draw_install(InstallType type)
+static void draw_install_handler(InstallType type)
 {
-    draw_base_interface();
     switch(type)
     {
         case INSTALL_LOADING_THEMES:
@@ -238,6 +237,25 @@ void draw_install(InstallType type)
         default:
             break;
     }
+}
+
+void draw_install(InstallType type)
+{
+    draw_base_interface();
+    draw_install_handler(type);
+    pp2d_end_draw();
+}
+
+void draw_loading_bar(u32 current, u32 max, InstallType type)
+{
+    draw_base_interface();
+    draw_install_handler(type);
+    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    double percent = 100*((double)current/(double)max);
+    u32 width = (u32)percent;
+    width *= 2;
+    pp2d_draw_rectangle(60-1, 110-1, 200+2, 20+2, COLOR_CURSOR);
+    pp2d_draw_rectangle(60, 110, width, 20, COLOR_ACCENT);
     pp2d_end_draw();
 }
 
