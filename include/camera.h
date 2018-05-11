@@ -34,7 +34,6 @@ typedef struct {
     u32 *texture_buffer;
     Handle mutex;
     volatile bool finished;
-    volatile bool finished_update;
     volatile bool success;
     Handle cancel;
 

@@ -56,7 +56,6 @@ void exit_qr(qr_data *data)
     free(data->camera_buffer);
     free(data->texture_buffer);
     quirc_destroy(data->context);
-    free(data);
 }
 
 void capture_cam_thread(void *arg) 
@@ -201,7 +200,6 @@ void update_qr(qr_data *data)
         if (!quirc_decode(&code, &scan_data))
         {
             exit_qr(data);
-            data->finished_update = true;
 
             draw_install(INSTALL_DOWNLOAD);
             char * zip_buf = NULL;
@@ -290,14 +288,15 @@ bool init_qr(void)
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
     data->finished = false;
-    data->finished_update = false;
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);
 
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
     data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
 
-    while (!data->finished_update && !data->finished) update_qr(data);
+    while (!data->finished) update_qr(data);
+    bool success = data->success;
+    free(data);
 
-    return (bool)data->success;
+    return success;
 }
