@@ -46,9 +46,11 @@ static u16 * camera_buf = NULL;
 
 void exit_qr(qr_data *data)
 {
+    DEBUG("Exiting QR");
     svcSignalEvent(data->cancel);
     while(!data->finished)
        svcSleepThread(1000000);
+    svcCloseHandle(data->cancel);
     data->capturing = false;
 
     free(data->camera_buffer);
@@ -87,6 +89,7 @@ void capture_cam_thread(void *arg)
         svcWaitSynchronizationN(&index, events, 3, false, U64_MAX);
         switch(index) {
             case 0:
+                DEBUG("Cancel event received\n");
                 cancel = true;
                 break;
             case 1:
