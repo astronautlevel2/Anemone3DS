@@ -501,6 +501,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
     } else {
         free(audio->filebuf);
         free(audio);
+        fclose(file);
         DEBUG("fmemopen failed!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }

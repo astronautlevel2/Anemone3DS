@@ -72,8 +72,11 @@ void thread_audio(void* data) {
     while(!audio->stop) {
         update_audio(audio);
     }
-    svcSignalEvent(audio->finished);
     free(audio->filebuf);
+    ov_clear(&audio->vf);
+    linearFree(audio->wave_buf[0].data_vaddr);
+    linearFree(audio->wave_buf[1].data_vaddr);
+    svcSignalEvent(audio->finished);
     free(audio);
 }
 
