@@ -76,6 +76,7 @@ void thread_audio(void* data) {
     ov_clear(&audio->vf);
     linearFree(audio->wave_buf[0].data_vaddr);
     linearFree(audio->wave_buf[1].data_vaddr);
+    while (audio->wave_buf[0].status != NDSP_WBUF_DONE || audio->wave_buf[1].status != NDSP_WBUF_DONE) svcSleepThread(1e7);
     svcSignalEvent(audio->finished);
     free(audio);
 }

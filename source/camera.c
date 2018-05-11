@@ -198,6 +198,7 @@ void update_qr(qr_data *data)
         if (!quirc_decode(&code, &scan_data))
         {
             exit_qr(data);
+            data->finished_update = true;
 
             draw_install(INSTALL_DOWNLOAD);
             char * zip_buf = NULL;
@@ -276,7 +277,6 @@ void update_qr(qr_data *data)
 
             free(filename);
             free(zip_buf);
-            data->finished_update = true;
         }   
     }
 
@@ -298,4 +298,3 @@ bool init_qr(void)
 
     return (bool)data->success;
 }
-
