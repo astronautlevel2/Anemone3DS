@@ -487,9 +487,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
         int e = ov_open(file, &audio->vf, NULL, 0);
         if (e < 0) 
         {
-            char error[50];
-            sprintf(error, "Vorbis: %d\n", e);
-            DEBUG(error);
+            DEBUG("Vorbis: %d\n", e);
             return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
         }
 

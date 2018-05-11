@@ -46,7 +46,7 @@ static u16 * camera_buf = NULL;
 
 void exit_qr(qr_data *data)
 {
-    DEBUG("Exiting QR");
+    DEBUG("Exiting QR\n");
     svcSignalEvent(data->cancel);
     while(!data->finished)
        svcSleepThread(1000000);

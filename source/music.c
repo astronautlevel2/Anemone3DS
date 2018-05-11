@@ -31,9 +31,7 @@
 Result update_audio(audio_s *audio) 
 {
     long size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
-    char size_info[50] = {0};
-    sprintf(size_info, "Audio Size: %ld\n", size);
-    DEBUG(size_info);
+    DEBUG("Audio Size: %ld\n", size);
     if (audio->wave_buf[audio->buf_pos].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
     { 
         size_t read = ov_read(&audio->vf, (char*)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, NULL); // read 1 vorbis packet into wave buffer
@@ -46,9 +44,7 @@ Result update_audio(audio_s *audio)
                 ov_open(fmemopen(audio->filebuf, audio->filesize, "rb"), &audio->vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
             } else // Error :(
             { 
-                char error[100] = {0};
-                sprintf(error, "Vorbis play error: %d\n", read);
-                DEBUG(error);
+                DEBUG("Vorbis play error: %d\n", read);
                 ndspChnReset(0);
                 return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
             }
