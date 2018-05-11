@@ -522,15 +522,17 @@ bool themeplaza_browser(EntryMode mode)
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
 
-
-
         if(kDown & KEY_START)
         {
             exit:
             quit = true;
             downloaded = false;
             if(audio)
+            {
                 audio->stop = true;
+                svcWaitSynchronization(audio->finished, U64_MAX);
+                audio = NULL;
+            }
             break;
         }
 
@@ -588,7 +590,11 @@ bool themeplaza_browser(EntryMode mode)
             {
                 preview_mode = false;
                 if(mode == MODE_THEMES && audio)
+                {
                     audio->stop = true;
+                    svcWaitSynchronization(audio->finished, U64_MAX);
+                    audio = NULL;
+                }
             }
         }
         else if(kDown & KEY_B)
@@ -597,7 +603,11 @@ bool themeplaza_browser(EntryMode mode)
             {
                 preview_mode = false;
                 if(mode == MODE_THEMES && audio)
+                {
                     audio->stop = true;
+                    svcWaitSynchronization(audio->finished, U64_MAX);
+                    audio = NULL;
+                }
             }
             else
                 break;
@@ -683,7 +693,11 @@ bool themeplaza_browser(EntryMode mode)
                 {
                     preview_mode = false;
                     if(mode == MODE_THEMES && audio)
+                    {
                         audio->stop = true;
+                        svcWaitSynchronization(audio->finished, U64_MAX);
+                        audio = NULL;
+                    }
                     continue;
                 }
                 else if(y < 24)

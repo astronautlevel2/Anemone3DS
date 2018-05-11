@@ -37,7 +37,7 @@
 #include <time.h>
 
 bool quit = false;
-audio_s * audio;
+audio_s * audio = NULL;
 static bool homebrew = false;
 static bool installed_themes = false;
 
@@ -136,7 +136,7 @@ void free_lists(void)
 
 void exit_function(bool power_pressed)
 {
-    if (audio) 
+    if(audio)
     {
         audio->stop = true;
         svcWaitSynchronization(audio->finished, U64_MAX);
