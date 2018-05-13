@@ -477,33 +477,44 @@ Result load_audio(Entry_s entry, audio_s *audio)
     svcCreateEvent(&audio->finished, RESET_STICKY);
     
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
-    ndspChnSetRate(0, 44100);
-    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // Tremor outputs ogg files in 16 bit PCM stereo
     ndspChnSetMix(0, audio->mix); // See mix comment above
 
     FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
+    DEBUG("Filesize: %lld\n", audio->filesize);
     if(file != NULL) 
     {
         int e = ov_open(file, &audio->vf, NULL, 0);
         if (e < 0) 
         {
             DEBUG("Vorbis: %d\n", e);
+            free(audio->filebuf);
+            free(audio);
+            fclose(file);
             return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
         }
 
         vorbis_info *vi = ov_info(&audio->vf, -1);
         ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
+        if (vi->channels == 2) {
+            DEBUG("Using stereo\n");
+            ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // 2 channels == Stereo
+        } else {
+            DEBUG("Invalid number of channels\n");
+            free(audio->filebuf);
+            free(audio);
+            fclose(file);
+            return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
+        }
 
         audio->wave_buf[0].nsamples = audio->wave_buf[1].nsamples = vi->rate / 4; // 4 bytes per sample, samples = rate (bytes) / 4
         audio->wave_buf[0].status = audio->wave_buf[1].status = NDSP_WBUF_DONE; // Used in play to stop from writing to current buffer
         audio->wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ); // Most vorbis packets should only be 4 KB at most (?) Possibly dangerous assumption
         audio->wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
-        DEBUG("Success!");
+        DEBUG("Success!\n");
         return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
     } else {
         free(audio->filebuf);
         free(audio);
-        fclose(file);
         DEBUG("fmemopen failed!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }

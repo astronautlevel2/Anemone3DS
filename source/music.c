@@ -30,11 +30,14 @@
 // Play a given audio struct
 Result update_audio(audio_s *audio) 
 {
-    long size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
+    long size = BUF_TO_READ - audio->data_read;
     DEBUG("Audio Size: %ld\n", size);
     if (audio->wave_buf[audio->buf_pos].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
     { 
-        size_t read = ov_read(&audio->vf, (char*)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, NULL); // read 1 vorbis packet into wave buffer
+        DEBUG("Attempting ov_read\n");
+        int bitstream;
+        size_t read = ov_read(&audio->vf, (char*)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
+        DEBUG("ov_read successful\n");
 
         if (read <= 0) // EoF or error
         { 

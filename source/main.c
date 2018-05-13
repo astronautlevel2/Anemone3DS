@@ -460,6 +460,7 @@ int main(void)
                         audio = calloc(1, sizeof(audio_s));
                         Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
                         if (R_SUCCEEDED(r)) play_audio(audio);
+                        else audio = NULL;
                     }
                 }
                 else
