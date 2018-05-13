@@ -30,7 +30,7 @@
 // Play a given audio struct
 Result update_audio(audio_s *audio) 
 {
-    long size = BUF_TO_READ - audio->data_read;
+    long size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
     DEBUG("Audio Size: %ld\n", size);
     if (audio->wave_buf[audio->buf_pos].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
     { 
