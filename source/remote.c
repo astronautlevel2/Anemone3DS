@@ -501,7 +501,7 @@ bool themeplaza_browser(EntryMode mode)
 
     bool extra_mode = false;
 
-    while(aptMainLoop())
+    while(true)
     {
         if(current_list->entries == NULL)
             break;
