@@ -167,7 +167,7 @@ void update_qr(qr_data *data)
     }
     for (int i = 0; i < 240 * 400; i++)
     {
-        data->texture_buffer[i] = RGB565_TO_ABGR8(data->camera_buffer[i]);
+        // data->texture_buffer[i] = RGB565_TO_ABGR8(data->camera_buffer[i]);
     }
     draw_base_interface();
     // pp2d_free_texture(TEXTURE_QR);

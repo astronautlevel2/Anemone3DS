@@ -66,7 +66,7 @@ static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
         memcpy(entry->name, fallback_name, 0x80);
         utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
         utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
-        entry->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
+        // entry->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
         return;
     }
 
@@ -95,7 +95,7 @@ static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
             unsigned int dest_pixel = (x + y*width);
             unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
 
-            image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
+            // image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
         }
     }
 
