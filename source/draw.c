@@ -120,7 +120,12 @@ void end_frame(void)
     C3D_FrameEnd(0);
 }
 
-static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
+static void draw_c2d_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
+{
+
+}
+
+static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, const char * text)
 {
     /*
     float prevY = y;
@@ -274,7 +279,7 @@ static void draw_install_handler(InstallType type)
     if(type != INSTALL_NONE)
     {
         C2D_Text * install_text = &text[type];
-        draw_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE], install_text);
+        draw_c2d_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE], install_text);
     }
 }
 
@@ -300,6 +305,7 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
 
 static void draw_instructions(Instructions_s instructions)
 {
+    /*
     // pp2d_draw_on(GFX_TOP, GFX_LEFT);
 
     if(instructions.info_line != NULL)
@@ -332,6 +338,7 @@ static void draw_instructions(Instructions_s instructions)
         // pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
         // pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, colors[COLOR_WHITE, select_line);
     }
+    */
 }
 
 static void draw_entry_info(Entry_s * entry)
@@ -537,12 +544,18 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         // pp2d_draw_wtext(list->entry_size+6, vertical_offset + 16, 0.55, 0.55, font_color, name);
 
         if(current_entry->no_bgm_shuffle)
+        {
             // pp2d_draw_texture_blend(TEXTURE_SHUFFLE_NO_BGM, 320-24-4, vertical_offset, font_color);
+        }
         else if(current_entry->in_shuffle)
+        {
             // pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, vertical_offset, font_color);
+        }
 
         if(current_entry->installed)
+        {
             // pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, vertical_offset + 22, font_color);
+        }
 
         if(!current_entry->placeholder_color)
         {
@@ -554,7 +567,9 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
             // pp2d_draw_texture(id, horizontal_offset, vertical_offset);
         }
         else
+        {
             // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
+        }
     }
 
     char entries_count_str[0x20] = {0};
