@@ -196,9 +196,13 @@ void throw_error(char* error, ErrorLevel level)
         error_text_x_pos_2 = 200 - (error_text_2.width*scale/2);
     }
 
+    float bottom_text_scale = 0.6f;
+    float bottom_text_x_pos = 0;
+
     switch(level)
     {
         case ERROR_LEVEL_ERROR:
+            bottom_text_x_pos = 200 - (text[TEXT_ERROR_QUIT].width*bottom_text_scale/2);
             while(true)
             {
                 hidScanInput();
@@ -209,24 +213,25 @@ void throw_error(char* error, ErrorLevel level)
                 if(second_line)
                     C2D_DrawText(&error_text_2, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_2, 125.0f, 0.5f, scale, scale, colors[COLOR_RED]);
 
-                C2D_DrawText(&text[TEXT_ERROR_QUIT], 0, bottom_text_x_pos, 150.0f, 0.5f, 0.6f, 0.6f);
+                C2D_DrawText(&text[TEXT_ERROR_QUIT], 0, bottom_text_x_pos, 150.0f, 0.5f, bottom_text_scale, bottom_text_scale);
                 end_frame();
 
                 if(kDown & KEY_A) break;
             }
             break;
         case ERROR_LEVEL_WARNING:
+            bottom_text_x_pos = 200 - (text[TEXT_ERROR_CONTINUE].width*bottom_text_scale/2);
             while(true)
             {
                 hidScanInput();
                 u32 kDown = hidKeysDown();
 
                 draw_base_interface();
-                C2D_DrawText(&error_text, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_1, 100.0f, 0.5f, 0.5f, 0.5f, colors[COLOR_YELLOW]);
+                C2D_DrawText(&error_text_1, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_1, 100.0f, 0.5f, 0.5f, 0.5f, colors[COLOR_YELLOW]);
                 if(second_line)
                     C2D_DrawText(&error_text_2, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_2, 100.0f, 0.5f, 0.5f, 0.5f, colors[COLOR_YELLOW]);
 
-                C2D_DrawText(&text[TEXT_ERROR_CONTINUE], 0, bottom_text_x_pos, 150.0f, 0.5f, 0.6f, 0.6f);
+                C2D_DrawText(&text[TEXT_ERROR_CONTINUE], 0, bottom_text_x_pos, 150.0f, 0.5f, bottom_text_scale, bottom_text_scale);
                 end_frame();
 
                 if(kDown & KEY_A) break;
@@ -243,7 +248,7 @@ bool draw_confirm(const char* conf_msg, Entry_List_s* list)
         Instructions_s instructions = {0};
         draw_interface(list, instructions);
         // pp2d_draw_on(GFX_TOP, GFX_LEFT);
-        draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.7, 0.7, colors[COLOR_YELLOW], conf_msg);
+        draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7, 0.7, colors[COLOR_YELLOW], conf_msg);
         // pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, colors[COLOR_WHITE], L"\uE000 Yes   \uE001 No");
         // pp2d_end_draw();
 
