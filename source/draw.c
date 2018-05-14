@@ -52,8 +52,8 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_VERSION], staticBuf, VERSION);
 
-    C2D_TextParse(&text[TEXT_THEME_MODE], "Theme mode", 
-    C2D_TextParse(&text[TEXT_SPLASH_MODE], "Splash mode", 
+    C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, "Theme mode");
+    C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, "Splash mode");
 
     C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, "No themes found");
     C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, "No splashes found");
@@ -122,6 +122,7 @@ void end_frame(void)
 
 static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
 {
+    /*
     float prevY = y;
     int offset = 0;
     while(true)
@@ -142,7 +143,7 @@ static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX,
             offset = nlinepos+1;
         }
     }
-    free(_text);
+    */
 }
 
 void draw_base_interface(void)
@@ -182,7 +183,7 @@ void throw_error(char* error, ErrorLevel level)
 {
     C2D_Text error_text_1, error_text_2;
 
-    bool second_line = C2D_TextParseLine(&error_text_1, dynamicBuf, error, 0) == '\0';
+    bool second_line = *C2D_TextParseLine(&error_text_1, dynamicBuf, error, 0) == '\0';
     C2D_TextOptimize(&error_text_1);
     float scale = 0.5f;
     float error_text_x_pos_1 = 200 - (error_text_1.width*scale/2);
