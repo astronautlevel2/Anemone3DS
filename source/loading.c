@@ -479,7 +479,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
     ndspChnSetMix(0, audio->mix); // See mix comment above
 
     FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
-    DEBUG("Filesize: %lld\n", audio->filesize);
+    DEBUG("Filesize: %ld\n", audio->filesize);
     if(file != NULL) 
     {
         int e = ov_open(file, &audio->vf, NULL, 0);
