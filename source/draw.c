@@ -132,7 +132,7 @@ static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX,
             nlinepos = nline-_text;
             _text[nlinepos] = '\0';
         }
-        pp2d_draw_text_center(target, prevY, scaleX, scaleY, color, _text+offset);
+        // pp2d_draw_text_center(target, prevY, scaleX, scaleY, color, _text+offset);
         if(nline == NULL) break;
         else
         {
@@ -148,15 +148,15 @@ void draw_base_interface(void)
 {
     start_frame();
     set_screen(top);
-    pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
+    // pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
 
 
-    pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
-    pp2d_draw_text(28, 1, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
-    pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
+    // pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
+    // pp2d_draw_text(28, 1, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
+    // pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
 
     #ifndef CITRA_MODE
     u8 battery_charging = 0;
@@ -240,10 +240,10 @@ bool draw_confirm(const char* conf_msg, Entry_List_s* list)
     {
         Instructions_s instructions = {0};
         draw_interface(list, instructions);
-        pp2d_draw_on(GFX_TOP, GFX_LEFT);
+        // pp2d_draw_on(GFX_TOP, GFX_LEFT);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.7, 0.7, COLOR_YELLOW, conf_msg);
-        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE000 Yes   \uE001 No");
-        pp2d_end_draw();
+        // pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, COLOR_WHITE, L"\uE000 Yes   \uE001 No");
+        // pp2d_end_draw();
 
         hidScanInput();
         u32 kDown = hidKeysDown();
@@ -256,10 +256,10 @@ bool draw_confirm(const char* conf_msg, Entry_List_s* list)
 
 void draw_preview(ssize_t previewID, int preview_offset)
 {
-    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
-    pp2d_draw_texture_part(previewID, 0, 0, preview_offset, 0, 400, 240);
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
-    pp2d_draw_texture_part(previewID, 0, 0, 40 + preview_offset, 240, 320, 240);
+    // pp2d_begin_draw(GFX_TOP, GFX_LEFT);
+    // pp2d_draw_texture_part(previewID, 0, 0, preview_offset, 0, 400, 240);
+    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    // pp2d_draw_texture_part(previewID, 0, 0, 40 + preview_offset, 240, 320, 240);
 }
 
 static void draw_install_handler(InstallType type)
@@ -282,7 +282,7 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
 {
     draw_base_interface();
     draw_install_handler(type);
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
     double percent = 100*((double)current/(double)max);
     u32 width = (u32)percent;
     width *= 2;
@@ -294,10 +294,10 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
 /*
 static void draw_instructions(Instructions_s instructions)
 {
-    pp2d_draw_on(GFX_TOP, GFX_LEFT);
+    // pp2d_draw_on(GFX_TOP, GFX_LEFT);
 
     if(instructions.info_line != NULL)
-        pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, instructions.info_line_color, instructions.info_line);
+        // pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, instructions.info_line_color, instructions.info_line);
 
     const int y_lines[BUTTONS_INFO_LINES-1] = {
         BUTTONS_Y_LINE_1,
@@ -308,23 +308,23 @@ static void draw_instructions(Instructions_s instructions)
     for(int i = 0; i < BUTTONS_INFO_LINES-1; i++)
     {
         if(instructions.instructions[i][0] != NULL)
-            pp2d_draw_wtext(BUTTONS_X_LEFT, y_lines[i], 0.6, 0.6, COLOR_WHITE, instructions.instructions[i][0]);
+            // pp2d_draw_wtext(BUTTONS_X_LEFT, y_lines[i], 0.6, 0.6, COLOR_WHITE, instructions.instructions[i][0]);
         if(instructions.instructions[i][1] != NULL)
-            pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, COLOR_WHITE, instructions.instructions[i][1]);
+            // pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, COLOR_WHITE, instructions.instructions[i][1]);
     }
 
     const wchar_t * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
     if(start_line != NULL)
     {
-        pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
-        pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, start_line);
+        // pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
+        // pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, start_line);
     }
 
     const wchar_t * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
     if(select_line != NULL)
     {
-        pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
-        pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, select_line);
+        // pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        // pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, select_line);
     }
 }
 */
@@ -336,12 +336,12 @@ static void draw_entry_info(Entry_s * entry)
 
     wchar_t author[0x41] = {0};
     utf16_to_utf32((u32*)author, entry->author, 0x40);
-    pp2d_draw_text(20, 35, 0.5, 0.5, COLOR_WHITE, "By ");
-    pp2d_draw_wtext_wrap(40, 35, 0.5, 0.5, COLOR_WHITE, wrap, author);
+    // pp2d_draw_text(20, 35, 0.5, 0.5, COLOR_WHITE, "By ");
+    // pp2d_draw_wtext_wrap(40, 35, 0.5, 0.5, COLOR_WHITE, wrap, author);
 
     wchar_t title[0x41] = {0};
     utf16_to_utf32((u32*)title, entry->name, 0x40);
-    pp2d_draw_wtext_wrap(20, 50, 0.7, 0.7, COLOR_WHITE, wrap, title);
+    // pp2d_draw_wtext_wrap(20, 50, 0.7, 0.7, COLOR_WHITE, wrap, title);
 
     int width = (int)pp2d_get_wtext_width(title, 0.7, 0.7);
     int height = (int)pp2d_get_wtext_height(title, 0.7, 0.7);
@@ -349,7 +349,7 @@ static void draw_entry_info(Entry_s * entry)
 
     wchar_t description[0x81] = {0};
     utf16_to_utf32((u32*)description, entry->desc, 0x80);
-    pp2d_draw_wtext_wrap(20, 50+count*height, 0.5, 0.5, COLOR_WHITE, wrap, description);
+    // pp2d_draw_wtext_wrap(20, 50+count*height, 0.5, 0.5, COLOR_WHITE, wrap, description);
 }
 */
 
@@ -363,7 +363,7 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
         "ThemePlaza Splash mode",
     };
 
-    pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
+    // pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
 
     // draw_instructions(instructions);
 
@@ -371,17 +371,17 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     Entry_s * current_entry = &list->entries[selected_entry];
     draw_entry_info(current_entry);
 
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
-    pp2d_draw_text(7, 3, 0.6, 0.6, COLOR_WHITE, "Search...");
+    // pp2d_draw_text(7, 3, 0.6, 0.6, COLOR_WHITE, "Search...");
 
-    pp2d_draw_texture_blend(TEXTURE_LIST, 320-96, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
-    pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][11]);
+    // pp2d_draw_texture_blend(TEXTURE_LIST, 320-96, 0, COLOR_WHITE);
+    // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
+    // pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
+    // pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][11]);
 
-    pp2d_draw_texture(TEXTURE_ARROW_SIDE, 3, 114);
-    pp2d_draw_texture_flip(TEXTURE_ARROW_SIDE, 308, 114, HORIZONTAL);
+    // pp2d_draw_texture(TEXTURE_ARROW_SIDE, 3, 114);
+    // pp2d_draw_texture_flip(TEXTURE_ARROW_SIDE, 308, 114, HORIZONTAL);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
@@ -405,18 +405,18 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
         if(!current_entry->placeholder_color)
         {
             ssize_t id = list->icons_ids[i];
-            pp2d_draw_texture(id, horizontal_offset, vertical_offset);
+            // pp2d_draw_texture(id, horizontal_offset, vertical_offset);
         }
         else
-            pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
+            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
 
         if(i == selected_entry)
         {
             unsigned int border_width = 3;
-            pp2d_draw_rectangle(horizontal_offset, vertical_offset, border_width, list->entry_size, COLOR_CURSOR);
-            pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, border_width, COLOR_CURSOR);
-            pp2d_draw_rectangle(horizontal_offset, vertical_offset+list->entry_size-border_width, list->entry_size, border_width, COLOR_CURSOR);
-            pp2d_draw_rectangle(horizontal_offset+list->entry_size-border_width, vertical_offset, border_width, list->entry_size, COLOR_CURSOR);
+            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, border_width, list->entry_size, COLOR_CURSOR);
+            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, border_width, COLOR_CURSOR);
+            // pp2d_draw_rectangle(horizontal_offset, vertical_offset+list->entry_size-border_width, list->entry_size, border_width, COLOR_CURSOR);
+            // pp2d_draw_rectangle(horizontal_offset+list->entry_size-border_width, vertical_offset, border_width, list->entry_size, COLOR_CURSOR);
         }
     }
 
@@ -424,14 +424,14 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     sprintf(entries_count_str, "/%"  JSON_INTEGER_FORMAT, list->tp_page_count);
     float x = 316;
     x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
-    pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, entries_count_str);
+    // pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%"  JSON_INTEGER_FORMAT, list->tp_current_page);
     x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
-    pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, selected_entry_str);
+    // pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, selected_entry_str);
 
-    pp2d_draw_text(176, 219, 0.6, 0.6, COLOR_WHITE, "Page:");
+    // pp2d_draw_text(176, 219, 0.6, 0.6, COLOR_WHITE, "Page:");
 }
 
 void draw_interface(Entry_List_s* list, Instructions_s instructions)
@@ -444,7 +444,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         "Splash mode",
     };
 
-    pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
+    // pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
 
     if(list->entries == NULL)
     {
@@ -452,27 +452,27 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
             "No themes found",
             "No splashes found",
         };
-        pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, COLOR_YELLOW, mode_found_string[current_mode]);
-        pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_YELLOW, "Press \uE005 to download from QR");
+        // pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, COLOR_YELLOW, mode_found_string[current_mode]);
+        // pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, COLOR_YELLOW, "Press \uE005 to download from QR");
         const char* mode_switch_string[MODE_AMOUNT] = {
             "Or \uE004 to switch to splashes",
             "Or \uE004 to switch to themes",
         };
-        pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, mode_switch_string[current_mode]);
-        pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, COLOR_YELLOW, "Or        to quit");
-        pp2d_texture_select(TEXTURE_START_BUTTON, 162, 173);
-        pp2d_texture_blend(COLOR_YELLOW);
-        pp2d_texture_scale(1.25, 1.4);
-        pp2d_texture_draw();
+        // pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, COLOR_YELLOW, mode_switch_string[current_mode]);
+        // pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, COLOR_YELLOW, "Or        to quit");
+        // pp2d_texture_select(TEXTURE_START_BUTTON, 162, 173);
+        // pp2d_texture_blend(COLOR_YELLOW);
+        // pp2d_texture_scale(1.25, 1.4);
+        // pp2d_texture_draw();
 
-        pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+        // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
-        pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, COLOR_WHITE);
-        pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, COLOR_WHITE);
-        pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, COLOR_WHITE);
-        pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
-        pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
-        pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][0]);
+        // pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, COLOR_WHITE);
+        // pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, COLOR_WHITE);
+        // pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, COLOR_WHITE);
+        // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
+        // pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
+        // pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][0]);
 
         return;
     }
@@ -483,30 +483,30 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     Entry_s * current_entry = &list->entries[selected_entry];
     draw_entry_info(current_entry);
 
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
 
     switch(current_mode)
     {
         case MODE_THEMES:
-            pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
+            // pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? COLOR_WHITE : COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
             break;
         default:
             break;
     }
 
-    pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
-    pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
-    pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][0]);
+    // pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, COLOR_WHITE);
+    // pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, COLOR_WHITE);
+    // pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, COLOR_WHITE);
+    // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, COLOR_WHITE);
+    // pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, COLOR_WHITE);
+    // pp2d_draw_textf(320-24+2.5, -3, 1, 1, COLOR_WHITE, "%c", mode_string[!list->mode][0]);
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
-        pp2d_draw_texture(TEXTURE_ARROW, 152, 4);
+        // pp2d_draw_texture(TEXTURE_ARROW, 152, 4);
     if(list->scroll + list->entries_loaded < list->entries_count)
-        pp2d_draw_texture_flip(TEXTURE_ARROW, 152, 220, VERTICAL);
+        // pp2d_draw_texture_flip(TEXTURE_ARROW, 152, 220, VERTICAL);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
@@ -528,18 +528,18 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         if(i == selected_entry)
         {
             font_color = COLOR_BLACK;
-            pp2d_draw_rectangle(0, vertical_offset, 320, list->entry_size, COLOR_CURSOR);
+            // pp2d_draw_rectangle(0, vertical_offset, 320, list->entry_size, COLOR_CURSOR);
         }
 
-        pp2d_draw_wtext(list->entry_size+6, vertical_offset + 16, 0.55, 0.55, font_color, name);
+        // pp2d_draw_wtext(list->entry_size+6, vertical_offset + 16, 0.55, 0.55, font_color, name);
 
         if(current_entry->no_bgm_shuffle)
-            pp2d_draw_texture_blend(TEXTURE_SHUFFLE_NO_BGM, 320-24-4, vertical_offset, font_color);
+            // pp2d_draw_texture_blend(TEXTURE_SHUFFLE_NO_BGM, 320-24-4, vertical_offset, font_color);
         else if(current_entry->in_shuffle)
-            pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, vertical_offset, font_color);
+            // pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, vertical_offset, font_color);
 
         if(current_entry->installed)
-            pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, vertical_offset + 22, font_color);
+            // pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, vertical_offset + 22, font_color);
 
         if(!current_entry->placeholder_color)
         {
@@ -548,22 +548,22 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
                 id = list->icons_ids[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
             else
                 id = list->icons_ids[i];
-            pp2d_draw_texture(id, horizontal_offset, vertical_offset);
+            // pp2d_draw_texture(id, horizontal_offset, vertical_offset);
         }
         else
-            pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
+            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
     }
 
     char entries_count_str[0x20] = {0};
     sprintf(entries_count_str, "/%i", list->entries_count);
     float x = 316;
     x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
-    pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, entries_count_str);
+    // pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%i", selected_entry + 1);
     x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
-    pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, selected_entry_str);
+    // pp2d_draw_text(x, 219, 0.6, 0.6, COLOR_WHITE, selected_entry_str);
 
-    pp2d_draw_text(176, 219, 0.6, 0.6, COLOR_WHITE, list->entries_count < 1000 ? "Selected:" : "Sel.:");
+    // pp2d_draw_text(176, 219, 0.6, 0.6, COLOR_WHITE, list->entries_count < 1000 ? "Selected:" : "Sel.:");
 }
