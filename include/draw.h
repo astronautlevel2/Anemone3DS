@@ -57,6 +57,52 @@ typedef enum {
 } InstallType;
 
 typedef enum {
+    // InstallType text
+    TEXT_INSTALL_LOADING_THEMES,
+    TEXT_INSTALL_LOADING_SPLASHES,
+    TEXT_INSTALL_LOADING_ICONS,
+
+    TEXT_INSTALL_SPLASH,
+    TEXT_INSTALL_SPLASH_DELETE,
+
+    TEXT_INSTALL_SINGLE,
+    TEXT_INSTALL_SHUFFLE,
+    TEXT_INSTALL_BGM,
+    TEXT_INSTALL_NO_BGM,
+
+    TEXT_INSTALL_DOWNLOAD,
+    TEXT_INSTALL_CHECKING_DOWNLOAD,
+    TEXT_INSTALL_ENTRY_DELETE,
+
+    TEXT_INSTALL_LOADING_REMOTE_THEMES,
+    TEXT_INSTALL_LOADING_REMOTE_SPLASHES,
+    TEXT_INSTALL_LOADING_REMOTE_PREVIEW,
+    TEXT_INSTALL_LOADING_REMOTE_BGM,
+
+    // Other text
+    TEXT_VERSION,
+
+    TEXT_THEME_MODE,
+    TEXT_SPLASH_MODE,
+
+    TEXT_NO_THEME_FOUND,
+    TEXT_NO_SPLASH_FOUND,
+
+    TEXT_SELECTED,
+
+    TEXT_THEMEPLAZA_THEME_MODE,
+    TEXT_THEMEPLAZA_SPLASH_MODE,
+
+    TEXT_SEARCH,
+    TEXT_PAGE,
+
+    TEXT_ERROR_QUIT,
+    TEXT_ERROR_CONTINUE,
+
+    TEXT_AMOUNT
+} Text;
+
+typedef enum {
     ERROR_LEVEL_ERROR,
     ERROR_LEVEL_WARNING,
 } ErrorLevel;
@@ -84,8 +130,18 @@ typedef struct {
     const wchar_t * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 
+extern C3D_RenderTarget* top;
+extern C3D_RenderTarget* bottom;
+extern C2D_TextBuf staticBuf, dynamicBuf;
+
+extern C2D_Text text[TEXT_AMOUNT];
+
 void init_screens(void);
 void exit_screens(void);
+
+void start_frame(void);
+void end_frame(void);
+void set_screen(C3D_RenderTarget * screen);
 
 void throw_error(char* error, ErrorLevel level);
 bool draw_confirm(const char* conf_msg, Entry_List_s* list);

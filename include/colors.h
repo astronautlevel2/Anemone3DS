@@ -27,17 +27,15 @@
 #ifndef COLORS_H
 #define COLORS_H
 
-#define ABGR8(a, b, g, r) ((((a)&0xFF)<<0) | (((b)&0xFF)<<8) | (((g)&0xFF)<<16) | (((r)&0xFF)<<24))
-#define RGBA8(r, g, b, a) ((((r)&0xFF)<<0) | (((g)&0xFF)<<8) | (((b)&0xFF)<<16) | (((a)&0xFF)<<24))
-
+#include "common.h"
 typedef enum {
-    COLOR_BACKGROUND = ABGR8(255, 32, 28, 35), //silver-y black
-    COLOR_ACCENT = RGBA8(55, 122, 168, 255),
-    COLOR_WHITE = RGBA8(255, 255, 255, 255),
-    COLOR_CURSOR = RGBA8(200, 200, 200, 255),
-    COLOR_BLACK = RGBA8(0, 0, 0, 255),
-    COLOR_RED = RGBA8(200, 0, 0, 255),
-    COLOR_YELLOW = RGBA8(239, 220, 11, 255),
+    COLOR_BACKGROUND = C2D_Color32(255, 32, 28, 35), //silver-y black
+    COLOR_ACCENT = C2D_Color32(55, 122, 168, 255),
+    COLOR_WHITE = C2D_Color32(255, 255, 255, 255),
+    COLOR_CURSOR = C2D_Color32(200, 200, 200, 255),
+    COLOR_BLACK = C2D_Color32(0, 0, 0, 255),
+    COLOR_RED = C2D_Color32(200, 0, 0, 255),
+    COLOR_YELLOW = C2D_Color32(239, 220, 11, 255),
 } Color;
 
 #endif

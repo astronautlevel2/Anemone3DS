@@ -29,7 +29,6 @@
 #include "fs.h"
 #include "unicode.h"
 #include "music.h"
-#include "pp2d/pp2d/pp2d.h"
 
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
     {
@@ -147,8 +146,8 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
         }
     }
 
-    pp2d_free_texture(textureID);
-    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
+    // pp2d_free_texture(textureID);
+    // pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
     free(image);
 
     if(not_cached)
@@ -298,9 +297,9 @@ static bool load_remote_preview(Entry_s * entry, int * preview_offset)
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, entry->path, 0x106*sizeof(u16));
         // free the previously loaded preview. wont do anything if there wasnt one
-        pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
+        // pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
 
-        pp2d_load_texture_memory(TEXTURE_REMOTE_PREVIEW, image, (u32)width, (u32)height);
+        // pp2d_load_texture_memory(TEXTURE_REMOTE_PREVIEW, image, (u32)width, (u32)height);
 
         *preview_offset = (width-400)/2;
         ret = true;
@@ -515,7 +514,7 @@ bool themeplaza_browser(EntryMode mode)
                 instructions = extra_instructions;
             draw_grid_interface(current_list, instructions);
         }
-        pp2d_end_draw();
+        end_frame();
 
         hidScanInput();
         u32 kDown = hidKeysDown();

@@ -29,11 +29,10 @@
 #include "themes.h"
 #include "splashes.h"
 #include "draw.h"
-#include "camera.h"
+// #include "camera.h"
 #include "music.h"
 #include "remote.h"
 #include "instructions.h"
-#include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
 bool quit = false;
@@ -406,7 +405,7 @@ int main(void)
             svcSleepThread(1e7);
         }
 
-        pp2d_end_draw();
+        end_frame();
 
         if(kDown & KEY_START) quit = true;
 
@@ -429,7 +428,8 @@ int main(void)
                     ACU_GetWifiStatus(&out);
                     if(out)
                     {
-                        if(init_qr())
+                        // if(init_qr())
+                        if(false)
                         {
                             load_lists(lists);
                         }

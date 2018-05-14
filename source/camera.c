@@ -27,7 +27,6 @@
 #include "camera.h"
 
 #include "quirc/quirc.h"
-#include "pp2d/pp2d/pp2d.h"
 
 #include "draw.h"
 #include "fs.h"
@@ -171,14 +170,14 @@ void update_qr(qr_data *data)
         data->texture_buffer[i] = RGB565_TO_ABGR8(data->camera_buffer[i]);
     }
     draw_base_interface();
-    pp2d_free_texture(TEXTURE_QR);
-    pp2d_load_texture_memory(TEXTURE_QR, data->texture_buffer, 400, 240);
+    // pp2d_free_texture(TEXTURE_QR);
+    // pp2d_load_texture_memory(TEXTURE_QR, data->texture_buffer, 400, 240);
 
-    pp2d_draw_texture(TEXTURE_QR, 0, 0);
+    // pp2d_draw_texture(TEXTURE_QR, 0, 0);
 
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
-    pp2d_draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
-    pp2d_end_draw();
+    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    // pp2d_draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
+    // pp2d_end_draw();
 
     int w;
     int h;

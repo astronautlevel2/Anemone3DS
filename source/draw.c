@@ -28,78 +28,99 @@
 #include "unicode.h"
 #include "colors.h"
 
-#include "pp2d/pp2d/pp2d.h"
-
 #include <time.h>
+
+C3D_RenderTarget* top;
+C3D_RenderTarget* bottom;
+C2D_TextBuf staticBuf, dynamicBuf;
+
+C2D_Text text[TEXT_AMOUNT];
 
 void init_screens(void)
 {
-    pp2d_init();
+    gfxInitDefault();
+    C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
+    C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
+    C2D_Prepare();
 
-    pp2d_set_screen_color(GFX_TOP, COLOR_BACKGROUND);
-    pp2d_set_screen_color(GFX_BOTTOM, COLOR_BACKGROUND);
+    top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
+    bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 
-    pp2d_load_texture_png(TEXTURE_ARROW, "romfs:/arrow.png");
-    pp2d_load_texture_png(TEXTURE_ARROW_SIDE, "romfs:/arrow_side.png");
-    pp2d_load_texture_png(TEXTURE_SHUFFLE, "romfs:/shuffle.png");
-    pp2d_load_texture_png(TEXTURE_SHUFFLE_NO_BGM, "romfs:/shuffle_no_bgm.png");
-    pp2d_load_texture_png(TEXTURE_INSTALLED, "romfs:/installed.png");
-    pp2d_load_texture_png(TEXTURE_PREVIEW_ICON, "romfs:/preview.png");
-    pp2d_load_texture_png(TEXTURE_SORT, "romfs:/sort.png");
-    pp2d_load_texture_png(TEXTURE_DOWNLOAD, "romfs:/download.png");
-    pp2d_load_texture_png(TEXTURE_BROWSE, "romfs:/browse.png");
-    pp2d_load_texture_png(TEXTURE_LIST, "romfs:/list.png");
-    pp2d_load_texture_png(TEXTURE_EXIT, "romfs:/exit.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_0, "romfs:/battery0.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_1, "romfs:/battery1.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_2, "romfs:/battery2.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_3, "romfs:/battery3.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_4, "romfs:/battery4.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_5, "romfs:/battery5.png");
-    pp2d_load_texture_png(TEXTURE_BATTERY_CHARGE, "romfs:/charging.png");
-    pp2d_load_texture_png(TEXTURE_SELECT_BUTTON, "romfs:/select.png");
-    pp2d_load_texture_png(TEXTURE_START_BUTTON, "romfs:/start.png");
+    staticBuf = C2D_TextBufNew(4096);
+    dynamicBuf = C2D_TextBufNew(4096);
+
+    C2D_TextParse(&text[TEXT_VERSION], staticBuf, VERSION);
+
+    C2D_TextParse(&text[TEXT_THEME_MODE], "Theme mode", 
+    C2D_TextParse(&text[TEXT_SPLASH_MODE], "Splash mode", 
+
+    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, "No themes found");
+    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, "No splashes found");
+
+    C2D_TextParse(&text[TEXT_SELECTED], staticBuf, "Selected:");
+
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Theme mode");
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Splash mode");
+
+    C2D_TextParse(&text[TEXT_SEARCH], staticBuf, "Search...");
+    C2D_TextParse(&text[TEXT_PAGE], staticBuf, "Page:");
+
+    C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, "Press \uE000 to quit.");
+    C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, "Press \uE000 to continue.");
+
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, "Loading themes, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, "Loading splashes, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, "Loading icons, please wait...");
+
+    C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, "Installing a splash...");
+    C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, "Deleting installed splash...");
+
+    C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, "Installing a single theme...");
+    C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, "Installing shuffle themes...");
+    C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, "Installing BGM-only theme...");
+    C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, "Installing theme without BGM...");
+
+    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, "Installing BGM-only theme...");
+    C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, "Checking downloaded file...");
+    C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, "Deleting from SD...");
+
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, "Downloading theme list, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, "Downloading splash list, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, "Downloading preview, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, "Downloading BGM, please wait...");
+
+    for(int i = 0; i < TEXT_AMOUNT; i++)
+        C2D_TextOptimize(&text[i]);
 }
 
 void exit_screens(void)
 {
-    pp2d_exit();
+    C2D_TextBufDelete(dynamicBuf);
+    C2D_TextBufDelete(staticBuf);
+
+    C2D_Fini();
+    C3D_Fini();
+    gfxExit();
 }
 
-void draw_base_interface(void)
+void set_screen(C3D_RenderTarget * screen)
 {
-    pp2d_begin_draw(GFX_TOP, GFX_LEFT);
-    pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
-
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-
-    pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
-    pp2d_draw_text(28, 1, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
-    pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
-
-    #ifndef CITRA_MODE
-    u8 battery_charging = 0;
-    PTMU_GetBatteryChargeState(&battery_charging);
-    u8 battery_status = 0;
-    PTMU_GetBatteryLevel(&battery_status);
-    pp2d_draw_texture(TEXTURE_BATTERY_0 + battery_status, 357, 2);
-
-    if(battery_charging)
-        pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
-    #endif
-
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
-    pp2d_draw_rectangle(0, 0, 320, 24, COLOR_ACCENT);
-    pp2d_draw_rectangle(0, 216, 320, 24, COLOR_ACCENT);
-    pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
-
-    pp2d_draw_on(GFX_TOP, GFX_LEFT);
+    C2D_TargetClear(screen, COLOR_BACKGROUND);
+    C2D_SceneBegin(screen);
 }
 
-static void draw_text_center(gfxScreen_t target, float y, float scaleX, float scaleY, u32 color, const char* text)
+void start_frame(void)
 {
-    char * _text = strdup(text);
+    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+}
+
+void end_frame(void)
+{
+    C3D_FrameEnd(0);
+}
+
+static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
+{
     float prevY = y;
     int offset = 0;
     while(true)
@@ -123,35 +144,94 @@ static void draw_text_center(gfxScreen_t target, float y, float scaleX, float sc
     free(_text);
 }
 
+void draw_base_interface(void)
+{
+    start_frame();
+    set_screen(top);
+    pp2d_draw_rectangle(0, 0, 400, 23, COLOR_ACCENT);
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+
+    pp2d_draw_textf(7, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_hour);
+    pp2d_draw_text(28, 1, 0.6, 0.6, COLOR_WHITE, (tm.tm_sec % 2 == 1) ? ":" : " ");
+    pp2d_draw_textf(34, 2, 0.6, 0.6, COLOR_WHITE, "%.2i", tm.tm_min);
+
+    #ifndef CITRA_MODE
+    u8 battery_charging = 0;
+    PTMU_GetBatteryChargeState(&battery_charging);
+    u8 battery_status = 0;
+    PTMU_GetBatteryLevel(&battery_status);
+    // pp2d_draw_texture(TEXTURE_BATTERY_0 + battery_status, 357, 2);
+
+    // if(battery_charging)
+        // pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
+    #endif
+
+    set_screen(bottom);
+    C2D_DrawRectSolid(0, 0, 0.5f, 320, 24, COLOR_ACCENT);
+    C2D_DrawRectSolid(0, 216, 0.5f, 320, 24, COLOR_ACCENT);
+    // pp2d_draw_text(7, 219, 0.6, 0.6, COLOR_WHITE, VERSION);
+
+    set_screen(top);
+}
+
 void throw_error(char* error, ErrorLevel level)
 {
+    C2D_Text error_text_1, error_text_2;
+
+    bool second_line = C2D_TextParseLine(&error_text_1, dynamicBuf, error, 0) == '\0';
+    C2D_TextOptimize(&error_text_1);
+    float scale = 0.5f;
+    float error_text_x_pos_1 = 200 - (error_text_1.width*scale/2);
+    float error_text_x_pos_2 = 0;
+
+    if(second_line)
+    {
+        C2D_TextParseLine(&error_text_2, dynamicBuf, error, 1);
+        C2D_TextOptimize(&error_text_2);
+        error_text_x_pos_2 = 200 - (error_text_2.width*scale/2);
+    }
+
     switch(level)
     {
         case ERROR_LEVEL_ERROR:
-            while(aptMainLoop())
+            while(true)
             {
                 hidScanInput();
                 u32 kDown = hidKeysDown();
+
                 draw_base_interface();
-                draw_text_center(GFX_TOP, 100, 0.6, 0.6, COLOR_RED, error);
-                pp2d_draw_wtext_center(GFX_TOP, 150, 0.6, 0.6, COLOR_WHITE, L"Press \uE000 to shut down.");
-                pp2d_end_draw();
+                C2D_DrawText(&error_text_1, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_1, 100.0f, 0.5f, scale, scale, COLOR_RED);
+                if(second_line)
+                    C2D_DrawText(&error_text_2, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_2, 125.0f, 0.5f, scale, scale, COLOR_RED);
+
+                C2D_DrawText(&text[TEXT_ERROR_QUIT], 0, bottom_text_x_pos, 150.0f, 0.5f, 0.6f, 0.6f);
+                end_frame();
+
                 if(kDown & KEY_A) break;
             }
             break;
         case ERROR_LEVEL_WARNING:
-            while(aptMainLoop())
+            while(true)
             {
                 hidScanInput();
                 u32 kDown = hidKeysDown();
+
                 draw_base_interface();
-                draw_text_center(GFX_TOP, 100, 0.6, 0.6, COLOR_YELLOW, error);
-                pp2d_draw_wtext_center(GFX_TOP, 150, 0.6, 0.6, COLOR_WHITE, L"Press \uE000 to continue.");
-                pp2d_end_draw();
+                C2D_DrawText(&error_text, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_1, 100.0f, 0.5f, 0.5f, 0.5f, COLOR_YELLOW);
+                if(second_line)
+                    C2D_DrawText(&error_text_2, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_2, 100.0f, 0.5f, 0.5f, 0.5f, COLOR_YELLOW);
+
+                C2D_DrawText(&text[TEXT_ERROR_CONTINUE], 0, bottom_text_x_pos, 150.0f, 0.5f, 0.6f, 0.6f);
+                end_frame();
+
                 if(kDown & KEY_A) break;
             }
             break;
     }
+    C2D_TextBufClear(dynamicBuf);
 }
 
 bool draw_confirm(const char* conf_msg, Entry_List_s* list)
@@ -184,58 +264,10 @@ void draw_preview(ssize_t previewID, int preview_offset)
 
 static void draw_install_handler(InstallType type)
 {
-    switch(type)
+    if(type != INSTALL_NONE)
     {
-        case INSTALL_LOADING_THEMES:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading themes, please wait...");
-            break;
-        case INSTALL_LOADING_SPLASHES:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading splashes, please wait...");
-            break;
-        case INSTALL_LOADING_ICONS:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Loading icons, please wait...");
-            break;
-        case INSTALL_LOADING_REMOTE_THEMES:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading theme list, please wait...");
-            break;
-        case INSTALL_LOADING_REMOTE_SPLASHES:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading splash list, please wait...");
-            break;
-        case INSTALL_LOADING_REMOTE_PREVIEW:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading preview, please wait...");
-            break;
-        case INSTALL_LOADING_REMOTE_BGM:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading BGM, please wait...");
-            break;
-        case INSTALL_SINGLE:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a single theme...");
-            break;
-        case INSTALL_SHUFFLE:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing shuffle themes...");
-            break;
-        case INSTALL_BGM:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing BGM-only theme...");
-            break;
-        case INSTALL_DOWNLOAD:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Downloading...");
-            break;
-        case INSTALL_CHECKING_DOWNLOAD:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Checking downloaded file...");
-            break;
-        case INSTALL_SPLASH:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing a splash...");
-            break;
-        case INSTALL_SPLASH_DELETE:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Deleting installed splash...");
-            break;
-        case INSTALL_ENTRY_DELETE:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Deleting from SD...");
-            break;
-        case INSTALL_NO_BGM:
-            pp2d_draw_text_center(GFX_TOP, 120, 0.8, 0.8, COLOR_WHITE, "Installing theme without BGM...");
-            break;
-        default:
-            break;
+        C2D_Text * install_text = &text[type];
+        draw_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, COLOR_WHITE, install_text);
     }
 }
 
@@ -243,7 +275,7 @@ void draw_install(InstallType type)
 {
     draw_base_interface();
     draw_install_handler(type);
-    pp2d_end_draw();
+    end_frame();
 }
 
 void draw_loading_bar(u32 current, u32 max, InstallType type)
@@ -254,11 +286,12 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
     double percent = 100*((double)current/(double)max);
     u32 width = (u32)percent;
     width *= 2;
-    pp2d_draw_rectangle(60-1, 110-1, 200+2, 20+2, COLOR_CURSOR);
-    pp2d_draw_rectangle(60, 110, width, 20, COLOR_ACCENT);
-    pp2d_end_draw();
+    C2D_DrawRectSolid(60-1, 110-1, 0.5f, 200+2, 20+2, COLOR_CURSOR);
+    C2D_DrawRectSolid(60, 110, 0.5f, width, 20, COLOR_ACCENT);
+    end_frame();
 }
 
+/*
 static void draw_instructions(Instructions_s instructions)
 {
     pp2d_draw_on(GFX_TOP, GFX_LEFT);
@@ -294,7 +327,9 @@ static void draw_instructions(Instructions_s instructions)
         pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, select_line);
     }
 }
+*/
 
+/*
 static void draw_entry_info(Entry_s * entry)
 {
     float wrap = 363;
@@ -316,6 +351,7 @@ static void draw_entry_info(Entry_s * entry)
     utf16_to_utf32((u32*)description, entry->desc, 0x80);
     pp2d_draw_wtext_wrap(20, 50+count*height, 0.5, 0.5, COLOR_WHITE, wrap, description);
 }
+*/
 
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 {
@@ -329,7 +365,7 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 
     pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, COLOR_WHITE, mode_string[current_mode]);
 
-    draw_instructions(instructions);
+    // draw_instructions(instructions);
 
     int selected_entry = list->selected_entry;
     Entry_s * current_entry = &list->entries[selected_entry];
@@ -441,7 +477,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         return;
     }
 
-    draw_instructions(instructions);
+    // draw_instructions(instructions);
 
     int selected_entry = list->selected_entry;
     Entry_s * current_entry = &list->entries[selected_entry];

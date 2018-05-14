@@ -28,6 +28,8 @@
 #define COMMON_H
 
 #include <3ds.h>
+#include <citro3d.h>
+#include <citro2d.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +42,7 @@
         POS(); \
         DEBUG(__VA_ARGS__)
 
-#define FASTSCROLL_WAIT 1.5e8
+#define FASTSCROLL_WAIT 1e8
 
 typedef enum {
     MODE_THEMES = 0,

@@ -25,7 +25,6 @@
 */
 
 #include "loading.h"
-#include "pp2d/pp2d/pp2d.h"
 #include "fs.h"
 #include "unicode.h"
 #include "music.h"
@@ -78,7 +77,7 @@ static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
 
 static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
 {
-    pp2d_free_texture(textureID);
+    // pp2d_free_texture(textureID);
 
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", entry, &info_buffer);
@@ -101,7 +100,7 @@ static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
     }
 
     free(info_buffer);
-    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
+    // pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
     free(image);
 }
 
@@ -445,9 +444,9 @@ bool load_preview(Entry_List_s list, int * preview_offset)
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
         // free the previously loaded preview. wont do anything if there wasnt one
-        pp2d_free_texture(TEXTURE_PREVIEW);
+        // pp2d_free_texture(TEXTURE_PREVIEW);
 
-        pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+        // pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
 
         *preview_offset = (width-400)/2;
         ret = true;
