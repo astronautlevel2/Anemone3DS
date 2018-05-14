@@ -29,7 +29,7 @@
 
 #include "common.h"
 typedef enum {
-    COLOR_BACKGROUND = C2D_Color32(255, 32, 28, 35), //silver-y black
+    COLOR_BACKGROUND = C2D_Color32(35, 28, 32, 255), //silver-y black
     COLOR_ACCENT = C2D_Color32(55, 122, 168, 255),
     COLOR_WHITE = C2D_Color32(255, 255, 255, 255),
     COLOR_CURSOR = C2D_Color32(200, 200, 200, 255),
