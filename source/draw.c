@@ -354,9 +354,9 @@ static void draw_entry_info(Entry_s * entry)
     utf16_to_utf32((u32*)title, entry->name, 0x40);
     // pp2d_draw_wtext_wrap(20, 50, 0.7, 0.7, colors[COLOR_WHITE, wrap, title);
 
-    int width = (int)pp2d_get_wtext_width(title, 0.7, 0.7);
-    int height = (int)pp2d_get_wtext_height(title, 0.7, 0.7);
-    int count = ((width - (width % (int)wrap))/wrap) + 1;
+    // int width = (int)pp2d_get_wtext_width(title, 0.7, 0.7);
+    // int height = (int)pp2d_get_wtext_height(title, 0.7, 0.7);
+    // int count = ((width - (width % (int)wrap))/wrap) + 1;
 
     wchar_t description[0x81] = {0};
     utf16_to_utf32((u32*)description, entry->desc, 0x80);
