@@ -291,7 +291,6 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
     end_frame();
 }
 
-/*
 static void draw_instructions(Instructions_s instructions)
 {
     // pp2d_draw_on(GFX_TOP, GFX_LEFT);
@@ -327,9 +326,7 @@ static void draw_instructions(Instructions_s instructions)
         // pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, COLOR_WHITE, select_line);
     }
 }
-*/
 
-/*
 static void draw_entry_info(Entry_s * entry)
 {
     float wrap = 363;
@@ -351,7 +348,6 @@ static void draw_entry_info(Entry_s * entry)
     utf16_to_utf32((u32*)description, entry->desc, 0x80);
     // pp2d_draw_wtext_wrap(20, 50+count*height, 0.5, 0.5, COLOR_WHITE, wrap, description);
 }
-*/
 
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 {
