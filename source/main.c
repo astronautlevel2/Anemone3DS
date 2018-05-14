@@ -29,7 +29,7 @@
 #include "themes.h"
 #include "splashes.h"
 #include "draw.h"
-// #include "camera.h"
+#include "camera.h"
 #include "music.h"
 #include "remote.h"
 #include "instructions.h"
@@ -428,8 +428,7 @@ int main(void)
                     ACU_GetWifiStatus(&out);
                     if(out)
                     {
-                        // if(init_qr())
-                        if(false)
+                        if(init_qr())
                         {
                             load_lists(lists);
                         }
