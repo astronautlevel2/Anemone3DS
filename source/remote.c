@@ -77,7 +77,6 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
 
 static Instructions_s extra_instructions = {
     .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
-    .info_line_color = COLOR_WHITE,
     .instructions = {
         {
             L"\uE079 Jump to page",

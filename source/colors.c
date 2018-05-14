@@ -24,26 +24,17 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COLORS_H
-#define COLORS_H
+#include "colors.h"
 
-#include "common.h"
+Color colors[COLOR_AMOUNT] = {0};
 
-typedef u32 Color;
-
-enum {
-    COLOR_BACKGROUND, //silver-y black
-    COLOR_ACCENT,
-    COLOR_WHITE,
-    COLOR_CURSOR,
-    COLOR_BLACK,
-    COLOR_RED,
-    COLOR_YELLOW,
-
-    COLOR_AMOUNT,
-} Colors_e;
-
-extern Color colors[COLOR_AMOUNT];
-void init_colors(void);
-
-#endif
+void init_colors(void)
+{
+    colors[COLOR_BACKGROUND] = C2D_Color32(35, 28, 32, 255); //silver-y black
+    colors[COLOR_ACCENT] = C2D_Color32(55, 122, 168, 255);
+    colors[COLOR_WHITE] = C2D_Color32(255, 255, 255, 255);
+    colors[COLOR_CURSOR] = C2D_Color32(200, 200, 200, 255);
+    colors[COLOR_BLACK] = C2D_Color32(0, 0, 0, 255);
+    colors[COLOR_RED] = C2D_Color32(200, 0, 0, 255);
+    colors[COLOR_YELLOW] = C2D_Color32(239, 220, 11, 255);
+}

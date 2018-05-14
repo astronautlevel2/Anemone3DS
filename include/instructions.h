@@ -77,7 +77,6 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
 
 Instructions_s install_instructions = {
     .info_line = L"Release \uE000 to cancel or hold \uE006 and release \uE000 to install",
-    .info_line_color = COLOR_WHITE,
     .instructions = {
         {
             L"\uE079 Normal install",
@@ -101,7 +100,6 @@ Instructions_s install_instructions = {
 Instructions_s extra_instructions[3] = {
     {
         .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to sort",
-        .info_line_color = COLOR_WHITE,
         .instructions = {
             {
                 L"\uE079 Sort by name",
@@ -123,7 +121,6 @@ Instructions_s extra_instructions[3] = {
     },
     {
         .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
-        .info_line_color = COLOR_WHITE,
         .instructions = {
             {
                 L"\uE079 Jump in the list",
