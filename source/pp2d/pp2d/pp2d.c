@@ -113,8 +113,7 @@ void pp2d_draw_rectangle(int x, int y, int width, int height, u32 color)
 {
 	C3D_TexEnv* env = C3D_GetTexEnv(0);
 	C3D_TexEnvSrc(env, C3D_Both, GPU_CONSTANT, GPU_CONSTANT, 0);
-	C3D_TexEnvOpRgb(env, 0, 0, 0);
-	C3D_TexEnvOpAlpha(env, 0, 0, 0);
+	C3D_TexEnvOp(env, C3D_Both, 0, 0, 0);
 	C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
 	C3D_TexEnvColor(env, color);
 	
@@ -332,15 +331,15 @@ Result pp2d_init(void)
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 	
 	topLeft = C3D_RenderTargetCreate(SCREEN_HEIGHT, TOP_WIDTH, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
-	C3D_RenderTargetClear(topLeft, C3D_CLEAR_ALL, BACKGROUND_COLOR, 0);
+	C3D_RenderTargetSetClear(topLeft, C3D_CLEAR_ALL, BACKGROUND_COLOR, 0);
 	C3D_RenderTargetSetOutput(topLeft, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 	
 	topRight = C3D_RenderTargetCreate(SCREEN_HEIGHT, TOP_WIDTH, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
-	C3D_RenderTargetClear(topRight, C3D_CLEAR_ALL, BACKGROUND_COLOR, 0);
+	C3D_RenderTargetSetClear(topRight, C3D_CLEAR_ALL, BACKGROUND_COLOR, 0);
 	C3D_RenderTargetSetOutput(topRight, GFX_TOP, GFX_RIGHT, DISPLAY_TRANSFER_FLAGS);
 	
 	bot = C3D_RenderTargetCreate(SCREEN_HEIGHT, BOTTOM_WIDTH, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
-	C3D_RenderTargetClear(bot, C3D_CLEAR_ALL, BACKGROUND_COLOR, 0);
+	C3D_RenderTargetSetClear(bot, C3D_CLEAR_ALL, BACKGROUND_COLOR, 0);
 	C3D_RenderTargetSetOutput(bot, GFX_BOTTOM, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 	
 	res = fontEnsureMapped();
@@ -607,12 +606,12 @@ void pp2d_set_screen_color(gfxScreen_t target, u32 color)
 {
 	if (target == GFX_TOP)
 	{
-		C3D_RenderTargetClear(topLeft, C3D_CLEAR_ALL, color, 0);
-		C3D_RenderTargetClear(topRight, C3D_CLEAR_ALL, color, 0);
+		C3D_RenderTargetSetClear(topLeft, C3D_CLEAR_ALL, color, 0);
+		C3D_RenderTargetSetClear(topRight, C3D_CLEAR_ALL, color, 0);
 	}
 	else
 	{
-		C3D_RenderTargetClear(bot, C3D_CLEAR_ALL, color, 0);
+		C3D_RenderTargetSetClear(bot, C3D_CLEAR_ALL, color, 0);
 	}
 }
 
@@ -627,8 +626,7 @@ static void pp2d_set_text_color(u32 color)
 	C3D_TexEnv* env = C3D_GetTexEnv(0);
 	C3D_TexEnvSrc(env, C3D_RGB, GPU_CONSTANT, 0, 0);
 	C3D_TexEnvSrc(env, C3D_Alpha, GPU_TEXTURE0, GPU_CONSTANT, 0);
-	C3D_TexEnvOpRgb(env, 0, 0, 0);
-	C3D_TexEnvOpAlpha(env, 0, 0, 0);
+	C3D_TexEnvOp(env, C3D_Both, 0, 0, 0);
 	C3D_TexEnvFunc(env, C3D_RGB, GPU_REPLACE);
 	C3D_TexEnvFunc(env, C3D_Alpha, GPU_MODULATE);
 	C3D_TexEnvColor(env, color);
@@ -777,8 +775,7 @@ void pp2d_texture_draw(void)
 	C3D_TexBind(0, &textures[id].tex);
 	C3D_TexEnv* env = C3D_GetTexEnv(0);
 	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_CONSTANT, 0);
-	C3D_TexEnvOpRgb(env, 0, 0, 0);
-	C3D_TexEnvOpAlpha(env, 0, 0, 0);
+	C3D_TexEnvOp(env, C3D_Both, 0, 0, 0);
 	C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
 	C3D_TexEnvColor(env, textureData.color);
 
