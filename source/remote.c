@@ -653,28 +653,6 @@ bool themeplaza_browser(EntryMode mode)
             change_selected(current_list, 1);
         }
 
-        // Fast scroll using circle pad
-        else if(kHeld & KEY_CPAD_UP)
-        {
-            change_selected(current_list, -1);
-            svcSleepThread(FASTSCROLL_WAIT);
-        }
-        else if(kHeld & KEY_CPAD_DOWN)
-        {
-            change_selected(current_list, 1);
-            svcSleepThread(FASTSCROLL_WAIT);
-        }
-        else if(kHeld & KEY_CPAD_LEFT)
-        {
-            change_selected(current_list, -current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT);
-        }
-        else if(kHeld & KEY_CPAD_RIGHT)
-        {
-            change_selected(current_list, current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT);
-        }
-
         touch:
         if((kDown | kHeld) & KEY_TOUCH)
         {
