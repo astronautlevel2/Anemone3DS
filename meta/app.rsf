@@ -6,7 +6,7 @@ BasicInfo:
   Logo                    : Homebrew # Nintendo / Licensed / Distributed / iQue / iQueForSystem
 
 TitleInfo:
-  UniqueId                : 0xAFEN
+  UniqueId                : 0xBAFE0
   Category                : Application
   
 CardInfo:
