@@ -181,7 +181,6 @@ static void load_lists(Entry_List_s * lists)
             loading_screen = INSTALL_LOADING_SPLASHES;
 
         draw_install(loading_screen);
-        draw_install(loading_screen);
 
         Entry_List_s * current_list = &lists[i];
         current_list->mode = i;
@@ -189,7 +188,9 @@ static void load_lists(Entry_List_s * lists)
         current_list->entries_per_screen_h = 1;
         current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
         current_list->entry_size = entry_size[i];
+        DEBUG("before\n");
         Result res = load_entries(main_paths[i], current_list);
+        DEBUG("after\n");
         if(R_SUCCEEDED(res))
         {
             if(current_list->entries_count > current_list->entries_loaded*ICONS_OFFSET_AMOUNT)
@@ -325,6 +326,8 @@ int main(void)
     };
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
+
+    draw_confirm("Hello", NULL);
 
     #ifndef CITRA_MODE
     if(R_SUCCEEDED(archive_result))

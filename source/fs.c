@@ -126,15 +126,20 @@ static u32 zip_to_buf(struct archive *a, char *file_name, char ** buf)
     bool found = false;
     u64 file_size = 0;
 
+    DEBUG("while lop\n");
     while(!found && archive_read_next_header(a, &entry) == ARCHIVE_OK)
     {
         found = !strcasecmp(archive_entry_pathname(entry), file_name);
     }
 
+    DEBUG("check\n");
     if(found)
     {
+        DEBUG("archive_entry_size\n");
         file_size = archive_entry_size(entry);
+        DEBUG("calloc\n");
         *buf = calloc(file_size, sizeof(char));
+        DEBUG("archive_read_data\n");
         archive_read_data(a, *buf, file_size);
     }
     else
@@ -142,8 +147,10 @@ static u32 zip_to_buf(struct archive *a, char *file_name, char ** buf)
         DEBUG("Couldn't find file in zip\n");
     }
 
+    DEBUG("archive_read_free\n");
     archive_read_free(a);
 
+    DEBUG("return\n");
     return (u32)file_size;
 }
 
@@ -164,13 +171,17 @@ u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char 
 
 u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
 {
+    DEBUG("unicode yet again\n");
     ssize_t len = strulen(zip_path, 0x106);
     char *path = calloc(sizeof(char), len*sizeof(u16));
     utf16_to_utf8((u8*)path, zip_path, len*sizeof(u16));
 
+    DEBUG("archive_read_new\n");
     struct archive *a = archive_read_new();
+    DEBUG("archive_read_support_format_zip\n");
     archive_read_support_format_zip(a);
 
+    DEBUG("archive_read_open_filename\n");
     int r = archive_read_open_filename(a, path, 0x4000);
     if(r != ARCHIVE_OK)
     {
@@ -178,6 +189,7 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
         return 0;
     }
 
+    DEBUG("zip_to_buf\n");
     return zip_to_buf(a, file_name, buf);
 }
 
