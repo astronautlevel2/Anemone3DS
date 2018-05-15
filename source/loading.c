@@ -30,6 +30,8 @@
 #include "music.h"
 #include "draw.h"
 
+#include "lodepng/lodepng.h"
+
 void delete_entry(Entry_s * entry, bool is_file)
 {
     if(is_file)

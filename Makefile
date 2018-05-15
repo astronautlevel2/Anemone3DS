@@ -18,7 +18,7 @@ APP_AUTHOR          :=	Anemone3DS Team
 TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
 OUTDIR              :=	out
 BUILD               :=	build
-SOURCES             :=	source source/pp2d/pp2d source/quirc
+SOURCES             :=	source source/lodepng source/quirc
 INCLUDES            :=	include
 ROMFS               :=	romfs
 

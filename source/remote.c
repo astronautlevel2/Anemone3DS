@@ -30,6 +30,8 @@
 #include "unicode.h"
 #include "music.h"
 
+#include "lodepng/lodepng.h"
+
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
     {
         .info_line = NULL,
