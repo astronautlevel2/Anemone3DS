@@ -63,7 +63,7 @@ LOGO                :=	meta/logo.bin
 
 # If left blank, makerom will use default values (0xff3ff and CTR-P-CTAP, respectively)
 # Be careful if UNIQUE_ID is the same as other apps: it will overwrite the previously installed one
-UNIQUE_ID           :=	0xAFEN
+UNIQUE_ID           :=	0xBAFE0
 PRODUCT_CODE        :=	CTR-P-ANEM
 
 # Don't really need to change this
