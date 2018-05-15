@@ -433,12 +433,12 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     char entries_count_str[0x20] = {0};
     sprintf(entries_count_str, "/%"  JSON_INTEGER_FORMAT, list->tp_page_count);
     float x = 316;
-    x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
+    // x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
     // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE, entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%"  JSON_INTEGER_FORMAT, list->tp_current_page);
-    x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
+    // x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
     // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE, selected_entry_str);
 
     // pp2d_draw_text(176, 219, 0.6, 0.6, colors[COLOR_WHITE, "Page:");
@@ -575,12 +575,12 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     char entries_count_str[0x20] = {0};
     sprintf(entries_count_str, "/%i", list->entries_count);
     float x = 316;
-    x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
+    // x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
     // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE], entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%i", selected_entry + 1);
-    x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
+    // x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
     // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE, selected_entry_str);
 
     // pp2d_draw_text(176, 219, 0.6, 0.6, colors[COLOR_WHITE, list->entries_count < 1000 ? "Selected:" : "Sel.:");
