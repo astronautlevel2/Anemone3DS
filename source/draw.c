@@ -65,6 +65,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, "Or        to quit");
 
+    C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, "By ");
     C2D_TextParse(&text[TEXT_SELECTED], staticBuf, "Selected:");
 
     C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Theme mode");
@@ -158,7 +159,7 @@ static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX,
     C2D_Text text_arr[MAX_LINES];
     float offsets_arr[MAX_LINES];
     int actual_lines = 0;
-    char * end = text - 1;
+    const char * end = text - 1;
 
     do {
         end = C2D_TextParseLine(&text_arr[actual_lines], dynamicBuf, end + 1, actual_lines);
@@ -213,7 +214,6 @@ void draw_base_interface(void)
         C2D_DrawText(&separator, C2D_WithColor, 28, 1, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
     C2D_DrawText(&minutes, C2D_WithColor, 34, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
 
-    /*
     #ifndef CITRA_MODE
     u8 battery_charging = 0;
     PTMU_GetBatteryChargeState(&battery_charging);
@@ -224,7 +224,6 @@ void draw_base_interface(void)
     // if(battery_charging)
         // pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
     #endif
-    */
 
     set_screen(bottom);
 
@@ -365,24 +364,18 @@ static void draw_instructions(Instructions_s instructions)
 
 static void draw_entry_info(Entry_s * entry)
 {
-    float wrap = 363;
+    char author[0x41] = {0};
+    utf16_to_utf8((u8*)author, entry->author, 0x40);
+    draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], &text[TEXT_BY_AUTHOR]);
+    draw_text(40, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], author);
 
-    wchar_t author[0x41] = {0};
-    utf16_to_utf32((u32*)author, entry->author, 0x40);
-    // pp2d_draw_text(20, 35, 0.5, 0.5, colors[COLOR_WHITE, "By ");
-    // pp2d_draw_wtext_wrap(40, 35, 0.5, 0.5, colors[COLOR_WHITE, wrap, author);
+    char title[0x41] = {0};
+    utf16_to_utf8((u8*)title, entry->name, 0x40);
+    draw_text(20, 50, 0.5, 0.7, 0.7, colors[COLOR_WHITE], title);
 
-    wchar_t title[0x41] = {0};
-    utf16_to_utf32((u32*)title, entry->name, 0x40);
-    // pp2d_draw_wtext_wrap(20, 50, 0.7, 0.7, colors[COLOR_WHITE, wrap, title);
-
-    // int width = (int)pp2d_get_wtext_width(title, 0.7, 0.7);
-    // int height = (int)pp2d_get_wtext_height(title, 0.7, 0.7);
-    // int count = ((width - (width % (int)wrap))/wrap) + 1;
-
-    wchar_t description[0x81] = {0};
-    utf16_to_utf32((u32*)description, entry->desc, 0x80);
-    // pp2d_draw_wtext_wrap(20, 50+count*height, 0.5, 0.5, colors[COLOR_WHITE, wrap, description);
+    char description[0x81] = {0};
+    utf16_to_utf8((u8*)description, entry->desc, 0x80);
+    // draw_text_wrap(20, 363, 50+count*height, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description);
 }
 
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)

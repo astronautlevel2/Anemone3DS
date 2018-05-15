@@ -97,6 +97,7 @@ typedef enum {
 
     TEXT_OR_START_TO_QUIT,
 
+    TEXT_BY_AUTHOR,
     TEXT_SELECTED,
 
     TEXT_THEMEPLAZA_THEME_MODE,
