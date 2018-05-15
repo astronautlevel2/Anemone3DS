@@ -31,6 +31,8 @@
 #include "loading.h"
 #include "colors.h"
 
+#define MAX_LINES 10
+
 typedef enum {
     INSTALL_LOADING_THEMES,
     INSTALL_LOADING_SPLASHES,
@@ -98,6 +100,8 @@ typedef enum {
 
     TEXT_ERROR_QUIT,
     TEXT_ERROR_CONTINUE,
+
+    TEXT_CONFIRM_YES_NO,
 
     TEXT_AMOUNT
 } Text;

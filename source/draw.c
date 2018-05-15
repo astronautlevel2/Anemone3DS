@@ -69,6 +69,8 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, "Press \uE000 to quit.");
     C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, "Press \uE000 to continue.");
 
+    C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, "\uE000 Yes   \uE001 No");
+
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, "Loading themes, please wait...");
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, "Loading splashes, please wait...");
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, "Loading icons, please wait...");
@@ -106,65 +108,105 @@ void exit_screens(void)
 
 void set_screen(C3D_RenderTarget * screen)
 {
-    C2D_TargetClear(screen, colors[COLOR_BACKGROUND]);
     C2D_SceneBegin(screen);
 }
 
 void start_frame(void)
 {
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+    C2D_TargetClear(top, colors[COLOR_BACKGROUND]);
+    C2D_TargetClear(bottom, colors[COLOR_BACKGROUND]);
 }
 
 void end_frame(void)
 {
+    C2D_TextBufClear(dynamicBuf);
     C3D_FrameEnd(0);
+}
+
+static void draw_c2d_text(float x, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
+{
+    C2D_DrawText(text, C2D_WithColor, x, y, z, scaleX, scaleY, color);
+}
+
+static void draw_text(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text)
+{
+    C2D_Text c2d_text;
+    C2D_TextParse(&c2d_text, dynamicBuf, text);
+    C2D_TextOptimize(&c2d_text);
+    C2D_DrawText(&c2d_text, C2D_WithColor, x, y, z, scaleX, scaleY, color);
 }
 
 static void draw_c2d_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
 {
+    float width = 0;
+    C2D_TextGetDimensions(text, scaleX, scaleY, &width, NULL);
+    float offset = (target == GFX_TOP ? 400 : 320)/2 - width/2;
 
+    C2D_DrawText(text, C2D_WithColor, offset, y, z, scaleX, scaleY, color);
 }
 
 static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, const char * text)
 {
-    /*
-    float prevY = y;
-    int offset = 0;
-    while(true)
+    C2D_Text text_arr[MAX_LINES];
+    float offsets_arr[MAX_LINES];
+    int actual_lines = 0;
+    char * end = text - 1;
+
+    do {
+        end = C2D_TextParseLine(&text_arr[actual_lines], dynamicBuf, end + 1, actual_lines);
+        actual_lines++;
+    } while(*end == '\n');
+
+    for(int i = 0; i < actual_lines; i++)
     {
-        char *nline = strchr(_text+offset, '\n');
-        int nlinepos = 0;
-        if(nline != NULL)
-        {
-            nlinepos = nline-_text;
-            _text[nlinepos] = '\0';
-        }
-        // pp2d_draw_text_center(target, prevY, scaleX, scaleY, color, _text+offset);
-        if(nline == NULL) break;
-        else
-        {
-            prevY += pp2d_get_text_height(_text+offset, scaleX, scaleY);
-            _text[nlinepos] = '\n';
-            offset = nlinepos+1;
-        }
+        C2D_TextOptimize(&text_arr[i]);
+        float width = 0;
+        C2D_TextGetDimensions(&text_arr[i], scaleX, scaleY, &width, NULL);
+        offsets_arr[i] = (target == GFX_TOP ? 400 : 320)/2 - width/2;
     }
-    */
+
+    for(int i = 0; i < actual_lines; i++)
+    {
+        C2D_DrawText(&text_arr[i], C2D_WithColor, offsets_arr[i], y, z, scaleX, scaleY, color);
+    }
 }
 
 void draw_base_interface(void)
 {
     start_frame();
     set_screen(top);
-    // pp2d_draw_rectangle(0, 0, 400, 23, colors[COLOR_ACCENT]);
+
+    C2D_DrawRectSolid(0, 0, 0.5f, 400, 23, colors[COLOR_ACCENT]);
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
 
+    char string_hours[3] = {0};
+    sprintf(string_hours, "%.2i", tm.tm_hour);
 
-    // pp2d_draw_textf(7, 2, 0.6, 0.6, colors[COLOR_WHITE], "%.2i", tm.tm_hour);
-    // pp2d_draw_text(28, 1, 0.6, 0.6, colors[COLOR_WHITE], (tm.tm_sec % 2 == 1) ? ":" : " ");
-    // pp2d_draw_textf(34, 2, 0.6, 0.6, colors[COLOR_WHITE], "%.2i", tm.tm_min);
+    C2D_Text hours, separator, minutes;
+    C2D_TextParse(&hours, dynamicBuf, string_hours);
+    C2D_TextOptimize(&hours);
 
+    if(tm.tm_sec % 2 == 1)
+    {
+        C2D_TextParse(&separator, dynamicBuf, ":");
+        C2D_TextOptimize(&separator);
+    }
+
+    char string_minutes[3] = {0};
+    sprintf(string_minutes, "%.2i", tm.tm_min);
+
+    C2D_TextParse(&minutes, dynamicBuf, string_minutes);
+    C2D_TextOptimize(&minutes);
+
+    C2D_DrawText(&hours, C2D_WithColor, 7, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
+    if(tm.tm_sec % 2 == 1)
+        C2D_DrawText(&separator, C2D_WithColor, 28, 1, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
+    C2D_DrawText(&minutes, C2D_WithColor, 34, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
+
+    /*
     #ifndef CITRA_MODE
     u8 battery_charging = 0;
     PTMU_GetBatteryChargeState(&battery_charging);
@@ -175,87 +217,61 @@ void draw_base_interface(void)
     // if(battery_charging)
         // pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
     #endif
+    */
 
     set_screen(bottom);
+
     C2D_DrawRectSolid(0, 0, 0.5f, 320, 24, colors[COLOR_ACCENT]);
     C2D_DrawRectSolid(0, 216, 0.5f, 320, 24, colors[COLOR_ACCENT]);
-    // pp2d_draw_text(7, 219, 0.6, 0.6, colors[COLOR_WHITE], VERSION);
+    C2D_DrawText(&text[TEXT_VERSION], C2D_WithColor, 7, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
 
     set_screen(top);
 }
 
 void throw_error(char* error, ErrorLevel level)
 {
-    C2D_Text error_text_1, error_text_2;
-
-    bool second_line = *C2D_TextParseLine(&error_text_1, dynamicBuf, error, 0) == '\0';
-    C2D_TextOptimize(&error_text_1);
-    float scale = 0.5f;
-    float error_text_x_pos_1 = 200 - (error_text_1.width*scale/2);
-    float error_text_x_pos_2 = 0;
-
-    if(second_line)
-    {
-        C2D_TextParseLine(&error_text_2, dynamicBuf, error, 1);
-        C2D_TextOptimize(&error_text_2);
-        error_text_x_pos_2 = 200 - (error_text_2.width*scale/2);
-    }
-
-    float bottom_text_scale = 0.6f;
-    float bottom_text_x_pos = 0;
+    Text bottom_text = TEXT_AMOUNT;
+    Color text_color = COLOR_WHITE;
 
     switch(level)
     {
         case ERROR_LEVEL_ERROR:
-            bottom_text_x_pos = 200 - (text[TEXT_ERROR_QUIT].width*bottom_text_scale/2);
-            while(true)
-            {
-                hidScanInput();
-                u32 kDown = hidKeysDown();
-
-                draw_base_interface();
-                C2D_DrawText(&error_text_1, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_1, 100.0f, 0.5f, scale, scale, colors[COLOR_RED]);
-                if(second_line)
-                    C2D_DrawText(&error_text_2, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_2, 125.0f, 0.5f, scale, scale, colors[COLOR_RED]);
-
-                C2D_DrawText(&text[TEXT_ERROR_QUIT], 0, bottom_text_x_pos, 150.0f, 0.5f, bottom_text_scale, bottom_text_scale);
-                end_frame();
-
-                if(kDown & KEY_A) break;
-            }
+            bottom_text = TEXT_ERROR_QUIT;
+            text_color = COLOR_RED;
             break;
         case ERROR_LEVEL_WARNING:
-            bottom_text_x_pos = 200 - (text[TEXT_ERROR_CONTINUE].width*bottom_text_scale/2);
-            while(true)
-            {
-                hidScanInput();
-                u32 kDown = hidKeysDown();
-
-                draw_base_interface();
-                C2D_DrawText(&error_text_1, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_1, 100.0f, 0.5f, 0.5f, 0.5f, colors[COLOR_YELLOW]);
-                if(second_line)
-                    C2D_DrawText(&error_text_2, C2D_AtBaseline | C2D_WithColor, error_text_x_pos_2, 100.0f, 0.5f, 0.5f, 0.5f, colors[COLOR_YELLOW]);
-
-                C2D_DrawText(&text[TEXT_ERROR_CONTINUE], 0, bottom_text_x_pos, 150.0f, 0.5f, bottom_text_scale, bottom_text_scale);
-                end_frame();
-
-                if(kDown & KEY_A) break;
-            }
+            bottom_text = TEXT_ERROR_CONTINUE;
+            text_color = COLOR_YELLOW;
             break;
+        default:
+            return;
     }
-    C2D_TextBufClear(dynamicBuf);
+
+    while(true)
+    {
+        hidScanInput();
+        u32 kDown = hidKeysDown();
+
+        draw_base_interface();
+        draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[text_color], error);
+        draw_c2d_text_center(GFX_TOP, 150, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[bottom_text]);
+        end_frame();
+
+        if(kDown & KEY_A) break;
+    }
 }
 
 bool draw_confirm(const char* conf_msg, Entry_List_s* list)
 {
-    while(aptMainLoop())
+    while(true)
     {
         Instructions_s instructions = {0};
-        draw_interface(list, instructions);
-        // pp2d_draw_on(GFX_TOP, GFX_LEFT);
-        draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7, 0.7, colors[COLOR_YELLOW], conf_msg);
-        // pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.6, 0.6, colors[COLOR_WHITE], L"\uE000 Yes   \uE001 No");
-        // pp2d_end_draw();
+        // draw_interface(list, instructions);
+        draw_base_interface();
+        // set_screen(top);
+        draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
+        draw_c2d_text_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
+        end_frame();
 
         hidScanInput();
         u32 kDown = hidKeysDown();
@@ -294,7 +310,7 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
 {
     draw_base_interface();
     draw_install_handler(type);
-    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    set_screen(bottom);
     double percent = 100*((double)current/(double)max);
     u32 width = (u32)percent;
     width *= 2;
