@@ -273,9 +273,8 @@ bool draw_confirm(const char* conf_msg, Entry_List_s* list)
     while(true)
     {
         Instructions_s instructions = {0};
-        // draw_interface(list, instructions);
-        draw_base_interface();
-        // set_screen(top);
+        draw_interface(list, instructions);
+        set_screen(top);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
         draw_c2d_text_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
         end_frame();

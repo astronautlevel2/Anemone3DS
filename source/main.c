@@ -325,8 +325,6 @@ int main(void)
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
 
-    draw_confirm("Hello", NULL);
-
     #ifndef CITRA_MODE
     if(R_SUCCEEDED(archive_result))
         load_lists(lists);
