@@ -42,20 +42,16 @@ void delete_entry(Entry_s * entry, bool is_file)
 
 u32 load_data(char * filename, Entry_s entry, char ** buf)
 {
-    DEBUG("zip check\n");
     if(entry.is_zip)
     {
-        DEBUG("zip_file_to_buf\n");
         return zip_file_to_buf(filename+1, entry.path, buf); //the first character will always be '/' because of the other case
     }
     else
     {
-        DEBUG("unicode again\n");
         u16 path[0x106] = {0};
         strucat(path, entry.path);
         struacat(path, filename);
 
-        DEBUG("file_to_buf\n");
         return file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, buf);
     }
 }
@@ -63,14 +59,11 @@ u32 load_data(char * filename, Entry_s entry, char ** buf)
 static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
 {
     char *info_buffer = NULL;
-    DEBUG("load_data\n");
     u64 size = load_data("/info.smdh", *entry, &info_buffer);
     Icon_s * smdh = (Icon_s *)info_buffer;
 
-    DEBUG("size check\n");
     if(!size)
     {
-        DEBUG("fallback\n");
         free(info_buffer);
         memcpy(entry->name, fallback_name, 0x80);
         utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
@@ -79,7 +72,6 @@ static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
         return;
     }
 
-    DEBUG("memcpy\n");
     memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
     memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
     memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
@@ -162,7 +154,6 @@ void sort_by_filename(Entry_List_s * list)
 Result load_entries(const char * loading_path, Entry_List_s * list)
 {
     Handle dir_handle;
-    DEBUG("FSUSER_OpenDirectory\n");
     Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, loading_path));
     if(R_FAILED(res))
     {
@@ -172,21 +163,17 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
     u32 entries_read = 1;
 
-    DEBUG("while\n");
     while(entries_read)
     {
         FS_DirectoryEntry dir_entry = {0};
-        DEBUG("FSDIR_Read\n");
         res = FSDIR_Read(dir_handle, &entries_read, 1, &dir_entry);
         if(R_FAILED(res) || entries_read == 0)
             break;
 
-        DEBUG("check folder/zip\n");
         if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP")) 
             continue;
 
         list->entries_count++;
-        DEBUG("realloc\n");
         Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
         if(new_list == NULL)
         {
@@ -199,24 +186,18 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
         else
             list->entries = new_list;
 
-        DEBUG("magic and memset\n");
         Entry_s * current_entry = &(list->entries[list->entries_count-1]);
         memset(current_entry, 0, sizeof(Entry_s));
 
-        DEBUG("unicode\n");
         struacat(current_entry->path, loading_path);
         strucat(current_entry->path, dir_entry.name);
 
-        DEBUG("parse_smdh\n");
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
         parse_smdh(current_entry, dir_entry.name);
-        DEBUG("entry done\n");
     }
 
-    DEBUG("FSDIR_Close\n");
     FSDIR_Close(dir_handle);
 
-    DEBUG("return\n");
     return res;
 }
 
