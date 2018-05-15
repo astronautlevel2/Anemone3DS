@@ -55,8 +55,15 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, "Theme mode");
     C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, "Splash mode");
 
-    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, "No themes found");
-    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, "No splashes found");
+    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, "No theme found");
+    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, "No splash found");
+
+    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, "Press \uE005 to download from QR");
+
+    C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, "Or \uE004 to switch to splashes");
+    C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, "Or \uE004 to switch to themes");
+
+    C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, "Or        to quit");
 
     C2D_TextParse(&text[TEXT_SELECTED], staticBuf, "Selected:");
 
@@ -465,27 +472,31 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     draw_base_interface();
     EntryMode current_mode = list->mode;
 
-    const char* mode_string[MODE_AMOUNT] = {
-        "Theme mode",
-        "Splash mode",
+    C2D_Text* mode_string[MODE_AMOUNT] = {
+        &text[TEXT_THEME_MODE],
+        &text[TEXT_SPLASH_MODE],
     };
 
-    // pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, colors[COLOR_WHITE, mode_string[current_mode]);
+    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
 
     if(list->entries == NULL)
     {
-        const char* mode_found_string[MODE_AMOUNT] = {
-            "No themes found",
-            "No splashes found",
+        C2D_Text* mode_found_string[MODE_AMOUNT] = {
+            &text[TEXT_NO_THEME_FOUND],
+            &text[TEXT_NO_SPLASH_FOUND],
         };
-        // pp2d_draw_text_center(GFX_TOP, 80, 0.7, 0.7, colors[COLOR_YELLOW, mode_found_string[current_mode]);
-        // pp2d_draw_text_center(GFX_TOP, 110, 0.7, 0.7, colors[COLOR_YELLOW, "Press \uE005 to download from QR");
-        const char* mode_switch_string[MODE_AMOUNT] = {
-            "Or \uE004 to switch to splashes",
-            "Or \uE004 to switch to themes",
+
+        draw_c2d_text_center(GFX_TOP, 80, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_found_string[current_mode]);
+        draw_c2d_text_center(GFX_TOP, 110, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_DOWNLOAD_FROM_QR]);
+
+        C2D_Text* mode_switch_string[MODE_AMOUNT] = {
+            &text[TEXT_SWITCH_TO_SPLASHES],
+            &text[TEXT_SWITCH_TO_THEMES],
         };
-        // pp2d_draw_text_center(GFX_TOP, 140, 0.7, 0.7, colors[COLOR_YELLOW, mode_switch_string[current_mode]);
-        // pp2d_draw_text_center(GFX_TOP, 170, 0.7, 0.7, colors[COLOR_YELLOW, "Or        to quit");
+
+        draw_c2d_text_center(GFX_TOP, 140, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_switch_string[current_mode]);
+        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_OR_START_TO_QUIT]);
+
         // pp2d_texture_select(TEXTURE_START_BUTTON, 162, 173);
         // pp2d_texture_blend(colors[COLOR_YELLOW);
         // pp2d_texture_scale(1.25, 1.4);
