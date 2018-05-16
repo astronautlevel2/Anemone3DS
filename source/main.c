@@ -126,8 +126,8 @@ void free_lists(void)
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * current_list = &lists[i];
+        // free_icons(current_list);
         free(current_list->entries);
-        free(current_list->icons_ids);
         memset(current_list, 0, sizeof(Entry_List_s));
     }
     exit_thread();
@@ -169,8 +169,6 @@ static void start_thread(void)
 
 static void load_lists(Entry_List_s * lists)
 {
-    ssize_t texture_id_offset = TEXTURE_ICON;
-
     free_lists();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
@@ -198,10 +196,7 @@ static void load_lists(Entry_List_s * lists)
 
             DEBUG("total: %i\n", current_list->entries_count);
 
-            current_list->texture_id_offset = texture_id_offset;
             load_icons_first(current_list, false);
-
-            texture_id_offset += current_list->entries_loaded*ICONS_OFFSET_AMOUNT;
 
             void (*install_check_function)(void*) = NULL;
             if(i == MODE_THEMES)
@@ -386,7 +381,7 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) 
         {
-            draw_preview(TEXTURE_PREVIEW, preview_offset);
+            // draw_preview(TEXTURE_PREVIEW, preview_offset);
         }
         else {
             if(!iconLoadingThread_arg.run_thread)

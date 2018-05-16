@@ -56,15 +56,35 @@ u32 load_data(char * filename, Entry_s entry, char ** buf)
     }
 }
 
-static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
+// Function taken and adapted from https://github.com/BernardoGiordano/Checkpoint/blob/master/3ds/source/title.cpp
+C2D_Image * loadTextureIcon(Icon_s *icon)
 {
-    char *info_buffer = NULL;
-    u64 size = load_data("/info.smdh", *entry, &info_buffer);
-    Icon_s * smdh = (Icon_s *)info_buffer;
+    if(icon == NULL)
+        return NULL;
 
-    if(!size)
+    C2D_Image * image = calloc(1, sizeof(C2D_Image));
+    C3D_Tex* tex = (C3D_Tex*)malloc(sizeof(C3D_Tex));
+    static const Tex3DS_SubTexture subt3x = { 48, 48, 0.0f, 48/64.0f, 48/64.0f, 0.0f };
+    image->tex = tex;
+    image->subtex = &subt3x;
+    C3D_TexInit(image->tex, 64, 64, GPU_RGB565);
+
+    u16* dest = (u16*)image->tex->data + (64-48)*64;
+    u16* src = icon->big_icon;
+    for (int j = 0; j < 48; j += 8)
     {
-        free(info_buffer);
+        memcpy(dest, src, 48*8*sizeof(u16));
+        src += 48*8;
+        dest += 64*8;
+    }
+
+    return image;
+}
+
+void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
+{
+    if(icon == NULL)
+    {
         memcpy(entry->name, fallback_name, 0x80);
         utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
         utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
@@ -72,38 +92,37 @@ static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
         return;
     }
 
-    memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
-    memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
-    memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
+    memcpy(entry->name, icon->name, 0x40*sizeof(u16));
+    memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
+    memcpy(entry->author, icon->author, 0x40*sizeof(u16));
 }
 
-static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
+static void parse_entry_smdh(Entry_s * entry, const u16 * fallback_name)
+{
+    char *info_buffer = NULL;
+    u64 size = load_data("/info.smdh", *entry, &info_buffer);
+
+    if(!size)
+    {
+        free(info_buffer);
+        info_buffer = NULL;
+    }
+
+    Icon_s * smdh = (Icon_s *)info_buffer;
+
+    parse_smdh(smdh, entry, fallback_name);
+}   
+
+static C2D_Image * load_entry_icon(Entry_s entry)
 {
     // pp2d_free_texture(textureID);
 
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", entry, &info_buffer);
-    if(!size) return;
+    if(!size) return NULL;
 
     Icon_s * smdh = (Icon_s *)info_buffer;
-
-    const u32 width = 48, height = 48;
-    u32 *image = malloc(width*height*sizeof(u32));
-
-    for(u32 x = 0; x < width; x++)
-    {
-        for(u32 y = 0; y < height; y++)
-        {
-            unsigned int dest_pixel = (x + y*width);
-            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
-
-            // image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
-        }
-    }
-
-    free(info_buffer);
-    // pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
-    free(image);
+    return loadTextureIcon(smdh);
 }
 
 typedef int (*sort_comparator)(const void *, const void *);
@@ -193,7 +212,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
         strucat(current_entry->path, dir_entry.name);
 
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-        parse_smdh(current_entry, dir_entry.name);
+        parse_entry_smdh(current_entry, dir_entry.name);
     }
 
     FSDIR_Close(dir_handle);
@@ -224,12 +243,11 @@ void load_icons_first(Entry_List_s * list, bool silent)
         endi = starti + list->entries_loaded*ICONS_OFFSET_AMOUNT;
     }
 
-    list->icons_ids = calloc(endi-starti, sizeof(ssize_t));
+    list->icons = calloc(endi-starti, sizeof(C2D_Image*));
 
-    ssize_t * icons_ids = list->icons_ids;
-    ssize_t id = list->texture_id_offset;
+    C2D_Image ** icons = list->icons;
 
-    for(int i = starti; i < endi; i++, id++)
+    for(int i = starti; i < endi; i++)
     {
         if(!silent)
             draw_loading_bar(i - starti, endi-starti, INSTALL_LOADING_ICONS);
@@ -241,9 +259,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
             offset -= list->entries_count;
 
         Entry_s current_entry = list->entries[offset];
-        load_smdh_icon(current_entry, id);
-
-        icons_ids[i-starti] = id;
+        icons[i-starti] = load_entry_icon(current_entry);
     }
 }
 
@@ -347,8 +363,9 @@ static void load_icons(Entry_List_s * current_list)
     #define FIRST(arr) arr[0]
     #define LAST(arr) arr[current_list->entries_loaded*ICONS_OFFSET_AMOUNT - 1]
 
-    ssize_t * icons_ids = current_list->icons_ids;
+    C2D_Image ** icons = current_list->icons;
 
+    /*
     for(int i = starti; i != endi; i++, ctr++)
     {
         ssize_t id = 0;
@@ -388,6 +405,7 @@ static void load_icons(Entry_List_s * current_list)
         ssize_t id = ids[i];
         load_smdh_icon(current_entry, id);
     }
+    */
 
     free(entries);
     free(ids);

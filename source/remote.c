@@ -99,12 +99,26 @@ static Instructions_s extra_instructions = {
     }
 };
 
-static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cache)
+static void free_icons(Entry_List_s * list)
+{
+    if(list != NULL)
+    {
+        if(list->icons != NULL)
+        {
+            for(int i = 0; i < list->entries_count; i++)
+            {
+                free(list->icons[i]);
+            }
+            free(list->icons);
+        }
+    }
+}
+
+static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
 {
     bool not_cached = true;
     char * smdh_buf = NULL;
     u32 smdh_size = load_data("/info.smdh", *entry, &smdh_buf);
-    Icon_s * smdh = (Icon_s *)smdh_buf;
 
     not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
 
@@ -116,40 +130,21 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
         smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE);
         free(api_url);
-        smdh = (Icon_s *)smdh_buf;
     }
-
+    
     if(!smdh_size)
     {
         free(smdh_buf);
-        utf8_to_utf16(entry->name, (u8*)"No name", 0x80);
-        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
-        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
-        // entry->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
-        return;
+        smdh_buf = NULL;
     }
-
-    memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
-    memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
-    memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
-
-    const u32 width = 48, height = 48;
-    u32 *image = malloc(width*height*sizeof(u32));
-
-    for(u32 x = 0; x < width; x++)
-    {
-        for(u32 y = 0; y < height; y++)
-        {
-            unsigned int dest_pixel = (x + y*width);
-            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
-
-            // image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
-        }
-    }
-
-    // pp2d_free_texture(textureID);
-    // pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
-    free(image);
+    
+    Icon_s * smdh = (Icon_s *)smdh_buf;
+    
+    u16 fallback_name[0x81] = {0};
+    utf8_to_utf16(fallback_name, (u8*)"No name", 0x80);
+    
+    parse_smdh(smdh, entry, fallback_name);
+    C2D_Image * image = loadTextureIcon(smdh);
 
     if(not_cached)
     {
@@ -161,15 +156,17 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
         buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
     }
     free(smdh_buf);
+    
+    return image;
 }
 
 static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ignore_cache, InstallType type)
 {
+    free_icons(list);
     list->entries_count = json_array_size(ids_array);
     free(list->entries);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
-    free(list->icons_ids);
-    list->icons_ids = calloc(list->entries_count, sizeof(ssize_t));
+    list->icons = calloc(list->entries_count, sizeof(ssize_t));
     list->entries_loaded = list->entries_count;
 
     size_t i = 0;
@@ -180,15 +177,13 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
         size_t offset = i;
         Entry_s * current_entry = &list->entries[offset];
         current_entry->tp_download_id = json_integer_value(id);
-        size_t textureID = list->texture_id_offset + i;
 
         char * entry_path = NULL;
         asprintf(&entry_path, CACHE_PATH_FORMAT, current_entry->tp_download_id);
         utf8_to_utf16(current_entry->path, (u8*)entry_path, 0x106);
         free(entry_path);
 
-        load_remote_smdh(current_entry, textureID, ignore_cache);
-        list->icons_ids[offset] = textureID;
+        list->icons[offset] = load_remote_smdh(current_entry, ignore_cache);
     }
 }
 
@@ -214,7 +209,6 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 
     if(json_len)
     {
-        list->texture_id_offset = TEXTURE_REMOTE_ICONS;
         list->tp_current_page = page;
         list->mode = mode;
         list->entry_size = entry_size[mode];
@@ -507,7 +501,9 @@ bool themeplaza_browser(EntryMode mode)
             break;
 
         if(preview_mode)
-            draw_preview(TEXTURE_REMOTE_PREVIEW, preview_offset);
+        {
+            // draw_preview(TEXTURE_REMOTE_PREVIEW, preview_offset);
+        }
         else
         {
             Instructions_s instructions = browser_instructions[mode];
@@ -741,8 +737,8 @@ bool themeplaza_browser(EntryMode mode)
         }
     }
 
+    free_icons(current_list);
     free(current_list->entries);
-    free(current_list->icons_ids);
     free(current_list->tp_search);
 
     return downloaded;

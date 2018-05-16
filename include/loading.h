@@ -81,8 +81,7 @@ typedef struct {
     Entry_s * entries;
     int entries_count;
 
-    ssize_t texture_id_offset;
-    ssize_t * icons_ids;
+    C2D_Image ** icons;
 
     int previous_scroll;
     int scroll;
@@ -109,6 +108,9 @@ typedef struct {
     void ** thread_arg;
     volatile bool run_thread;
 } Thread_Arg_s;
+
+C2D_Image * loadTextureIcon(Icon_s *icon);
+void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name);
 
 void sort_by_name(Entry_List_s * list);
 void sort_by_author(Entry_List_s * list);

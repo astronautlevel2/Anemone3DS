@@ -298,13 +298,13 @@ bool draw_confirm(const char* conf_msg, Entry_List_s* list)
     return false;
 }
 
-void draw_preview(ssize_t previewID, int preview_offset)
-{
+// void draw_preview(ssize_t previewID, int preview_offset)
+// {
     // pp2d_begin_draw(GFX_TOP, GFX_LEFT);
     // pp2d_draw_texture_part(previewID, 0, 0, preview_offset, 0, 400, 240);
     // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
     // pp2d_draw_texture_part(previewID, 0, 0, 40 + preview_offset, 240, 320, 240);
-}
+// }
 
 static void draw_install_handler(InstallType type)
 {
@@ -442,7 +442,7 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 
         if(!current_entry->placeholder_color)
         {
-            ssize_t id = list->icons_ids[i];
+            // ssize_t id = list->icons_ids[i];
             // pp2d_draw_texture(id, horizontal_offset, vertical_offset);
         }
         else
@@ -548,9 +548,9 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
-    if(list->scroll > 0)
+    // if(list->scroll > 0)
         // pp2d_draw_texture(TEXTURE_ARROW, 152, 4);
-    if(list->scroll + list->entries_loaded < list->entries_count)
+    // if(list->scroll + list->entries_loaded < list->entries_count)
         // pp2d_draw_texture_flip(TEXTURE_ARROW, 152, 220, VERTICAL);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
@@ -559,8 +559,8 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
         current_entry = &list->entries[i];
 
-        wchar_t name[0x41] = {0};
-        utf16_to_utf32((u32*)name, current_entry->name, 0x40);
+        char name[0x41] = {0};
+        utf16_to_utf8((u8*)name, current_entry->name, 0x40);
 
         int vertical_offset = i - list->scroll;
         int horizontal_offset = 0;
@@ -573,10 +573,10 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         if(i == selected_entry)
         {
             font_color = colors[COLOR_BLACK];
-            // pp2d_draw_rectangle(0, vertical_offset, 320, list->entry_size, colors[COLOR_CURSOR);
+            C2D_DrawRectSolid(0, vertical_offset, 0.5f, 320, list->entry_size, colors[COLOR_CURSOR]);
         }
 
-        // pp2d_draw_wtext(list->entry_size+6, vertical_offset + 16, 0.55, 0.55, font_color, name);
+        draw_text(list->entry_size+6, vertical_offset + 16, 0.5f, 0.55, 0.55, font_color, name);
 
         if(current_entry->no_bgm_shuffle)
         {
@@ -594,16 +594,16 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
         if(!current_entry->placeholder_color)
         {
-            ssize_t id = 0;
-            if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
-                id = list->icons_ids[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
-            else
-                id = list->icons_ids[i];
-            // pp2d_draw_texture(id, horizontal_offset, vertical_offset);
+            // ssize_t id = 0;
+            // if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
+                // id = list->icons_ids[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
+            // else
+                // id = list->icons_ids[i];
+            // C2D_DrawImageAt(icon(k), selectorX(k) + 1, selectorY(k) + 1, 0.5f, NULL, 1.0f, 1.0f);
         }
         else
         {
-            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
+            C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, list->entry_size, list->entry_size, current_entry->placeholder_color);
         }
     }
 
