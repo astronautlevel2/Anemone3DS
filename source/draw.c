@@ -594,12 +594,12 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
         if(!current_entry->placeholder_color)
         {
-            // ssize_t id = 0;
-            // if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
-                // id = list->icons_ids[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
-            // else
-                // id = list->icons_ids[i];
-            // C2D_DrawImageAt(icon(k), selectorX(k) + 1, selectorY(k) + 1, 0.5f, NULL, 1.0f, 1.0f);
+            C2D_Image * image = NULL;
+            if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
+                image = list->icons[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
+            else
+                image = list->icons[i];
+            C2D_DrawImageAt(*image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);
         }
         else
         {
