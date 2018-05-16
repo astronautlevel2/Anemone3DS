@@ -4,20 +4,17 @@ A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.\
 To-do list here: https://trello.com/b/F1YSa1VK
 
 # Dependencies
- * devkitPro, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
+ * devkitARM, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
  * zlib, jansson, libvorbisidec, and libarchive, which can be retrieved from [devkitPro pacman](https://devkitpro.org/viewtopic.php?f=13&t=8702).
  * A recent build of [makerom](https://github.com/profi200/Project_CTR) and the latest release of [bannertool](https://github.com/Steveice10/bannertool). These must be added to your PATH.  
  A 64-bit Windows binary of makerom is available [here](https://hm892.s-ul.eu/U0Irkqih).
- * ~~[pp2d](https://github.com/BernardoGiordano/pp2d), which is included in the repo if you do a git clone --recursive.~~  
- Due to circumstances surrounding the privacy settings on the pp2d repo, the source files are now included directly within the repo.
- * Git needs to be on your PATH (this is usually only manual under Windows).
 
 # Building
-First of all, make sure devkitPro is properly installed and added to your PATH.  
+First of all, make sure devkitARM is properly installed - `$DEVKITPRO` and `$DEVKITARM` should be set to `/opt/devkitpro` and `$DEVKITPRO/devkitARM`, respectively.  
 After that, open the directory you want to clone the repo into, and execute  
 `git clone https://github.com/astronautlevel2/Anemone3DS` (or any other cloning method).  
-To install zlib, jansson and libarchive, begin by following the instructions found above ([here](https://devkitpro.org/viewtopic.php?f=13&t=8702)) on the devkitPro forums, and then install the dkP packages `3ds-zlib`, `3ds-jansson` and `3ds-libarchive`.  
-After also adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built files will be in `/out/`.
+To install zlib, jansson, libvorbisidec, and libarchive, begin by following the instructions found above ([here](https://devkitpro.org/viewtopic.php?f=13&t=8702)) on the devkitPro forums, and then install the dkP packages `3ds-zlib`, `3ds-jansson`, `3ds-libvorbisidec`, and `3ds-libarchive` using `[sudo] pacman -S <package-name>`.  
+After adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built binaries will be in `/out/`.
 
 # License
 This project is licensed under the GNU GPLv3. See LICENSE.md for details. Additional terms 7b and 7c apply to this project.
