@@ -158,7 +158,7 @@ void set_screen(C3D_RenderTarget * screen);
 void throw_error(char* error, ErrorLevel level);
 bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
-// void draw_preview(C2D_Image * image, int preview_offset);
+void draw_preview(C2D_Image preview, int preview_offset);
 
 void draw_install(InstallType type);
 void draw_loading_bar(u32 current, u32 max, InstallType type);

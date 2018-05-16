@@ -120,13 +120,24 @@ static void exit_thread(void)
     }
 }
 
+static void free_icons(Entry_List_s * list)
+{
+    int amount = list->entries_count;
+    if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
+        amount = list->entries_loaded*ICONS_OFFSET_AMOUNT;
+
+    for(int i = 0; i < amount; i++)
+        free(list->icons[i]);
+    free(list->icons);
+}
+
 void free_lists(void)
 {
     stop_install_check();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * current_list = &lists[i];
-        // free_icons(current_list);
+        free_icons(current_list);
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
     }

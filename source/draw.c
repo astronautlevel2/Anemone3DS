@@ -298,13 +298,14 @@ bool draw_confirm(const char* conf_msg, Entry_List_s* list)
     return false;
 }
 
-// void draw_preview(ssize_t previewID, int preview_offset)
-// {
-    // pp2d_begin_draw(GFX_TOP, GFX_LEFT);
-    // pp2d_draw_texture_part(previewID, 0, 0, preview_offset, 0, 400, 240);
-    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
-    // pp2d_draw_texture_part(previewID, 0, 0, 40 + preview_offset, 240, 320, 240);
-// }
+void draw_preview(C2D_Image preview, int preview_offset)
+{
+    start_frame();
+    set_screen(top);
+    C2D_DrawImageAt(preview, -preview_offset, 0, 0.5f, NULL, 1.0f, 1.0f);
+    set_screen(bottom);
+    C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, 1.0f, 1.0f);
+}
 
 static void draw_install_handler(InstallType type)
 {
@@ -442,19 +443,19 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 
         if(!current_entry->placeholder_color)
         {
-            // ssize_t id = list->icons_ids[i];
-            // pp2d_draw_texture(id, horizontal_offset, vertical_offset);
+            C2D_Image * image = list->icons[i];
+            C2D_DrawImageAt(*image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);
         }
         else
-            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, list->entry_size, current_entry->placeholder_color);
+            C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, list->entry_size, list->entry_size, current_entry->placeholder_color);
 
         if(i == selected_entry)
         {
             unsigned int border_width = 3;
-            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, border_width, list->entry_size, colors[COLOR_CURSOR);
-            // pp2d_draw_rectangle(horizontal_offset, vertical_offset, list->entry_size, border_width, colors[COLOR_CURSOR);
-            // pp2d_draw_rectangle(horizontal_offset, vertical_offset+list->entry_size-border_width, list->entry_size, border_width, colors[COLOR_CURSOR);
-            // pp2d_draw_rectangle(horizontal_offset+list->entry_size-border_width, vertical_offset, border_width, list->entry_size, colors[COLOR_CURSOR);
+            C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, border_width, list->entry_size, colors[COLOR_CURSOR]);
+            C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, list->entry_size, border_width, colors[COLOR_CURSOR]);
+            C2D_DrawRectSolid(horizontal_offset, vertical_offset+list->entry_size-border_width, 0.5f, list->entry_size, border_width, colors[COLOR_CURSOR]);
+            C2D_DrawRectSolid(horizontal_offset+list->entry_size-border_width, vertical_offset, 0.5f, border_width, list->entry_size, colors[COLOR_CURSOR]);
         }
     }
 

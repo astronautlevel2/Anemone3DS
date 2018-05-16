@@ -131,18 +131,18 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE);
         free(api_url);
     }
-    
+
     if(!smdh_size)
     {
         free(smdh_buf);
         smdh_buf = NULL;
     }
-    
+
     Icon_s * smdh = (Icon_s *)smdh_buf;
-    
+
     u16 fallback_name[0x81] = {0};
     utf8_to_utf16(fallback_name, (u8*)"No name", 0x80);
-    
+
     parse_smdh(smdh, entry, fallback_name);
     C2D_Image * image = loadTextureIcon(smdh);
 
@@ -156,7 +156,7 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
     }
     free(smdh_buf);
-    
+
     return image;
 }
 
@@ -166,7 +166,7 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
     list->entries_count = json_array_size(ids_array);
     free(list->entries);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
-    list->icons = calloc(list->entries_count, sizeof(ssize_t));
+    list->icons = calloc(list->entries_count, sizeof(C2D_Image*));
     list->entries_loaded = list->entries_count;
 
     size_t i = 0;
@@ -174,8 +174,7 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
     json_array_foreach(ids_array, i, id)
     {
         draw_loading_bar(i, list->entries_count, type);
-        size_t offset = i;
-        Entry_s * current_entry = &list->entries[offset];
+        Entry_s * current_entry = &list->entries[i];
         current_entry->tp_download_id = json_integer_value(id);
 
         char * entry_path = NULL;
@@ -183,7 +182,7 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
         utf8_to_utf16(current_entry->path, (u8*)entry_path, 0x106);
         free(entry_path);
 
-        list->icons[offset] = load_remote_smdh(current_entry, ignore_cache);
+        list->icons[i] = load_remote_smdh(current_entry, ignore_cache);
     }
 }
 
