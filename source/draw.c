@@ -32,7 +32,7 @@
 
 C3D_RenderTarget* top;
 C3D_RenderTarget* bottom;
-C2D_TextBuf staticBuf, dynamicBuf;
+C2D_TextBuf staticBuf, dynamicBuf, widthBuf;
 
 C2D_Text text[TEXT_AMOUNT];
 
@@ -49,6 +49,7 @@ void init_screens(void)
 
     staticBuf = C2D_TextBufNew(4096);
     dynamicBuf = C2D_TextBufNew(4096);
+    widthBuf = C2D_TextBufNew(4096);
 
     C2D_TextParse(&text[TEXT_VERSION], staticBuf, VERSION);
 
@@ -67,9 +68,10 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, "By ");
     C2D_TextParse(&text[TEXT_SELECTED], staticBuf, "Selected:");
+    C2D_TextParse(&text[TEXT_SELECTED_SHORT], staticBuf, "Sel.:");
 
     C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Theme mode");
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Splash mode");
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, "ThemePlaza Splash mode");
 
     C2D_TextParse(&text[TEXT_SEARCH], staticBuf, "Search...");
     C2D_TextParse(&text[TEXT_PAGE], staticBuf, "Page:");
@@ -106,6 +108,7 @@ void init_screens(void)
 
 void exit_screens(void)
 {
+    C2D_TextBufDelete(widthBuf);
     C2D_TextBufDelete(dynamicBuf);
     C2D_TextBufDelete(staticBuf);
 
@@ -129,7 +132,15 @@ void start_frame(void)
 void end_frame(void)
 {
     C2D_TextBufClear(dynamicBuf);
+    C2D_TextBufClear(widthBuf);
     C3D_FrameEnd(0);
+}
+
+static void get_text_dimensions(const char * text, float scaleX, float scaleY, float * width, float * height)
+{
+    C2D_Text c2d_text;
+    C2D_TextParse(&c2d_text, widthBuf, text);
+    C2D_TextGetDimensions(&c2d_text, scaleX, scaleY, width, height);
 }
 
 static void draw_c2d_text(float x, float y, float z, float scaleX, float scaleY, Color color, C2D_Text * text)
@@ -385,22 +396,22 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     draw_base_interface();
     EntryMode current_mode = list->mode;
 
-    const char* mode_string[MODE_AMOUNT] = {
-        "ThemePlaza Theme mode",
-        "ThemePlaza Splash mode",
+    C2D_Text* mode_string[MODE_AMOUNT] = {
+        &text[TEXT_THEMEPLAZA_THEME_MODE],
+        &text[TEXT_THEMEPLAZA_SPLASH_MODE],
     };
 
-    // pp2d_draw_text_center(GFX_TOP, 4, 0.5, 0.5, colors[COLOR_WHITE, mode_string[current_mode]);
+    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
 
-    // draw_instructions(instructions);
+    draw_instructions(instructions);
 
     int selected_entry = list->selected_entry;
     Entry_s * current_entry = &list->entries[selected_entry];
     draw_entry_info(current_entry);
 
-    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    set_screen(bottom);
 
-    // pp2d_draw_text(7, 3, 0.6, 0.6, colors[COLOR_WHITE, "Search...");
+    draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_SEARCH]);
 
     // pp2d_draw_texture_blend(TEXTURE_LIST, 320-96, 0, colors[COLOR_WHITE);
     // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, colors[COLOR_WHITE);
@@ -450,15 +461,18 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     char entries_count_str[0x20] = {0};
     sprintf(entries_count_str, "/%"  JSON_INTEGER_FORMAT, list->tp_page_count);
     float x = 316;
-    // x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
-    // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE, entries_count_str);
+    float width = 0;
+    get_text_dimensions(entries_count_str, 0.6, 0.6, &width, NULL);
+    x -= width;
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%"  JSON_INTEGER_FORMAT, list->tp_current_page);
-    // x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
-    // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE, selected_entry_str);
+    get_text_dimensions(selected_entry_str, 0.6, 0.6, &width, NULL);
+    x -= width;
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], selected_entry_str);
 
-    // pp2d_draw_text(176, 219, 0.6, 0.6, colors[COLOR_WHITE, "Page:");
+    draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_PAGE]);
 }
 
 void draw_interface(Entry_List_s* list, Instructions_s instructions)
@@ -508,13 +522,13 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         return;
     }
 
-    // draw_instructions(instructions);
+    draw_instructions(instructions);
 
     int selected_entry = list->selected_entry;
     Entry_s * current_entry = &list->entries[selected_entry];
     draw_entry_info(current_entry);
 
-    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+    set_screen(bottom);
 
     switch(current_mode)
     {
@@ -596,13 +610,19 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
     char entries_count_str[0x20] = {0};
     sprintf(entries_count_str, "/%i", list->entries_count);
     float x = 316;
-    // x -= pp2d_get_text_width(entries_count_str, 0.6, 0.6);
-    // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE], entries_count_str);
+    float width = 0;
+    get_text_dimensions(entries_count_str, 0.6, 0.6, &width, NULL);
+    x -= width;
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%i", selected_entry + 1);
-    // x -= pp2d_get_text_width(selected_entry_str, 0.6, 0.6);
-    // pp2d_draw_text(x, 219, 0.6, 0.6, colors[COLOR_WHITE, selected_entry_str);
+    get_text_dimensions(selected_entry_str, 0.6, 0.6, &width, NULL);
+    x -= width;
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], selected_entry_str);
 
-    // pp2d_draw_text(176, 219, 0.6, 0.6, colors[COLOR_WHITE, list->entries_count < 1000 ? "Selected:" : "Sel.:");
+    if(list->entries_count < 10000)
+        draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED]);
+    else
+        draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED_SHORT]);
 }
