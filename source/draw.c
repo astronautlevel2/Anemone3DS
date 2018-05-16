@@ -367,7 +367,9 @@ static void draw_entry_info(Entry_s * entry)
     char author[0x41] = {0};
     utf16_to_utf8((u8*)author, entry->author, 0x40);
     draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], &text[TEXT_BY_AUTHOR]);
-    draw_text(40, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], author);
+    float width = 0;
+    C2D_TextGetDimensions(&text[TEXT_BY_AUTHOR], 0.5, 0.5, &width, NULL);
+    draw_text(20+width, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], author);
 
     char title[0x41] = {0};
     utf16_to_utf8((u8*)title, entry->name, 0x40);
