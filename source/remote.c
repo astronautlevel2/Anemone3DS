@@ -315,10 +315,7 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
                 u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
                 u32 src = (j * width + i) * 4;
 
-                memcpy(preview_image->tex->data + dst + 3, image + src + 0, sizeof(u8));
-                memcpy(preview_image->tex->data + dst + 2, image + src + 1, sizeof(u8));
-                memcpy(preview_image->tex->data + dst + 1, image + src + 2, sizeof(u8));
-                memcpy(preview_image->tex->data + dst + 0, image + src + 3, sizeof(u8));
+                memcpy(preview_image->tex->data + dst, image + src, sizeof(u32));
             }
         }
 
