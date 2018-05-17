@@ -470,8 +470,8 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
         subt3x->width = width;
         subt3x->height = height;
         subt3x->left = 0.0f;
-        subt3x->top = width/512.0f;
-        subt3x->right = height/512.0f;
+        subt3x->top = height/512.0f;
+        subt3x->right = width/512.0f;
         subt3x->bottom = 0.0f;
         preview_image->subtex = subt3x;
 

@@ -300,8 +300,8 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
         subt3x->width = width;
         subt3x->height = height;
         subt3x->left = 0.0f;
-        subt3x->top = width/512.0f;
-        subt3x->right = height/512.0f;
+        subt3x->top = height/512.0f;
+        subt3x->right = width/512.0f;
         subt3x->bottom = 0.0f;
         preview_image->subtex = subt3x;
 

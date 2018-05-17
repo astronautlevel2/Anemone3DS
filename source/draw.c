@@ -302,9 +302,9 @@ void draw_preview(C2D_Image preview, int preview_offset)
 {
     start_frame();
     set_screen(top);
-    C2D_DrawImageAt(preview, -preview_offset, 0, 0.5f, NULL, 1.0f, 1.0f);
+    C2D_DrawImageAt(preview, -preview_offset, 32, 0.5f, NULL, 1.0f, 1.0f);
     set_screen(bottom);
-    C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, 1.0f, 1.0f);
+    C2D_DrawImageAt(preview, -(preview_offset+40), -240+32, 0.5f, NULL, 1.0f, 1.0f);
 }
 
 static void draw_install_handler(InstallType type)
