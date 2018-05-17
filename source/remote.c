@@ -279,14 +279,14 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
 
     if((lodepng_decode32(&image, &width, &height, (u8*)preview_png, preview_size)) == 0) // no error
     {
-        // for(u32 i = 0; i < width; i++)
-        // {
-            // for(u32 j = 0; j < height; j++)
-            // {
-                // u32* pixel = (u32*)(image + (i + j*width) * 4);
-                // *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR, needed for pp2d
-            // }
-        // }
+        for(u32 i = 0; i < width; i++)
+        {
+            for(u32 j = 0; j < height; j++)
+            {
+                u32* pixel = (u32*)(image + (i + j*width) * 4);
+                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR
+            }
+        }
 
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, entry->path, 0x106*sizeof(u16));
@@ -307,13 +307,19 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
 
         C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
 
-        u32* dest = (u32*)preview_image->tex->data + (512-width)*512;
-        u32* src = (u32*)image;
-        for(unsigned int j = 0; j < height; j += 8)
+        memset(preview_image->tex->data, 0, preview_image->tex->size);
+        for (u32 i = 0; i < width; i++) 
         {
-            memcpy(dest, src, width*8*sizeof(u32));
-            src += width*8;
-            dest += 512*8;
+            for (u32 j = 0; j < height; j++) 
+            {
+                u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
+                u32 src = (j * width + i) * 4;
+
+                memcpy(preview_image->tex->data + dst + 3, image + src + 0, sizeof(u8));
+                memcpy(preview_image->tex->data + dst + 2, image + src + 1, sizeof(u8));
+                memcpy(preview_image->tex->data + dst + 1, image + src + 2, sizeof(u8));
+                memcpy(preview_image->tex->data + dst + 0, image + src + 3, sizeof(u8));
+            }
         }
 
         *preview_offset = (width-400)/2;
@@ -760,7 +766,7 @@ bool themeplaza_browser(EntryMode mode)
 
     free(preview.tex);
     free((Tex3DS_SubTexture*)preview.subtex);
-    
+
     free_icons(current_list);
     free(current_list->entries);
     free(current_list->tp_search);

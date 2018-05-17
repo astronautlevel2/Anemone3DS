@@ -346,13 +346,13 @@ int main(void)
     bool qr_mode = false;
     bool install_mode = false;
     bool extra_mode = false;
+    C2D_Image preview = {0};
 
     while(true)
     {
         if(quit)
         {
-            exit_function(false);
-            return 0;
+            break;
         }
 
         #ifndef CITRA_MODE
@@ -392,7 +392,7 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) 
         {
-            // draw_preview(TEXTURE_PREVIEW, preview_offset);
+            draw_preview(preview, preview_offset);
         }
         else {
             if(!iconLoadingThread_arg.run_thread)
@@ -458,7 +458,7 @@ int main(void)
                 toggle_preview:
                 if(!preview_mode)
                 {
-                    preview_mode = load_preview(*current_list, &preview_offset);
+                    preview_mode = load_preview(*current_list, &preview, &preview_offset);
                     if(current_mode == MODE_THEMES)
                     {
                         audio = calloc(1, sizeof(audio_s));
@@ -824,6 +824,10 @@ int main(void)
         }
     }
 
-    exit_function(true);
+    free(preview.tex);
+    free((Tex3DS_SubTexture*)preview.subtex);
+
+    exit_function(false);
+
     return 0;
 }

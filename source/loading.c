@@ -425,7 +425,7 @@ void load_icons_thread(void * void_arg)
 }
 
 static u16 previous_path_preview[0x106] = {0};
-bool load_preview(Entry_List_s list, int * preview_offset)
+bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset)
 {
     if(list.entries == NULL) return false;
 
@@ -454,17 +454,40 @@ bool load_preview(Entry_List_s list, int * preview_offset)
             for(u32 j = 0; j < height; j++)
             {
                 u32* pixel = (u32*)(image + (i + j*width) * 4);
-                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR, needed for pp2d
+                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR
             }
         }
 
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
-        // free the previously loaded preview. wont do anything if there wasnt one
-        // pp2d_free_texture(TEXTURE_PREVIEW);
 
-        // pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
+        free(preview_image->tex);
+        C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+        preview_image->tex = tex;
 
+        free((Tex3DS_SubTexture*)preview_image->subtex);
+        Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
+        subt3x->width = width;
+        subt3x->height = height;
+        subt3x->left = 0.0f;
+        subt3x->top = width/512.0f;
+        subt3x->right = height/512.0f;
+        subt3x->bottom = 0.0f;
+        preview_image->subtex = subt3x;
+
+        C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
+
+        memset(preview_image->tex->data, 0, preview_image->tex->size);
+        for (u32 i = 0; i < width; i++) 
+        {
+            for (u32 j = 0; j < height; j++) 
+            {
+                u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
+                u32 src = (j * width + i) * 4;
+
+                memcpy(preview_image->tex->data + dst, image + src, sizeof(u32));
+            }
+        }
         *preview_offset = (width-400)/2;
         ret = true;
     }
