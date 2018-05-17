@@ -115,8 +115,6 @@ static void parse_entry_smdh(Entry_s * entry, const u16 * fallback_name)
 
 static C2D_Image * load_entry_icon(Entry_s entry)
 {
-    // pp2d_free_texture(textureID);
-
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", entry, &info_buffer);
     if(!size) return NULL;
@@ -263,16 +261,16 @@ void load_icons_first(Entry_List_s * list, bool silent)
     }
 }
 
-static void reverse(ssize_t a[], int sz) {
+static void reverse(C2D_Image * a[], int sz) {
     int i, j;
     for (i = 0, j = sz; i < j; i++, j--) {
-        ssize_t tmp = a[i];
+        C2D_Image * tmp = a[i];
         a[i] = a[j];
         a[j] = tmp;
     }
 }
 
-static void rotate(ssize_t array[], int size, int amt) {
+static void rotate(C2D_Image * array[], int size, int amt) {
     if (amt < 0)
         amt = size + amt;
     reverse(array, size-amt-1);
@@ -358,29 +356,28 @@ static void load_icons(Entry_List_s * current_list)
 
     int ctr = 0;
     Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
-    ssize_t * ids = calloc(abs(delta), sizeof(ssize_t));
+    C2D_Image *** images = calloc(abs(delta), sizeof(C2D_Image**));
 
     #define FIRST(arr) arr[0]
     #define LAST(arr) arr[current_list->entries_loaded*ICONS_OFFSET_AMOUNT - 1]
 
     C2D_Image ** icons = current_list->icons;
 
-    /*
     for(int i = starti; i != endi; i++, ctr++)
     {
-        ssize_t id = 0;
+        C2D_Image ** image = NULL;
         int offset = i;
 
-        rotate(icons_ids, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
+        rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
 
         if(delta > 0)
         {
-            id = LAST(icons_ids);
+            image = &LAST(icons);
             offset += current_list->entries_loaded*ICONS_UNDER - delta;
         }
         else
         {
-            id = FIRST(icons_ids);
+            image = &FIRST(icons);
             offset -= current_list->entries_loaded*ICONS_VISIBLE;
             i -= 2; //i-- twice to counter the i++, needed only for this case
         }
@@ -391,7 +388,7 @@ static void load_icons(Entry_List_s * current_list)
             offset -= current_list->entries_count;
 
         entries[ctr] = &current_list->entries[offset];
-        ids[ctr] = id;
+        images[ctr] = image;
     }
 
     #undef FIRST
@@ -402,13 +399,13 @@ static void load_icons(Entry_List_s * current_list)
     for(int i = 0; i < abs(delta); i++)
     {
         Entry_s current_entry = *entries[i];
-        ssize_t id = ids[i];
-        load_smdh_icon(current_entry, id);
+        C2D_Image** image = images[i];
+        free(*image);
+        *image = load_entry_icon(current_entry);
     }
-    */
 
     free(entries);
-    free(ids);
+    free(images);
 
     current_list->previous_scroll = current_list->scroll;
 }
