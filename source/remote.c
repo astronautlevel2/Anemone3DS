@@ -242,7 +242,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 }
 
 static u16 previous_path_preview[0x106] = {0};
-static bool load_remote_preview(Entry_s * entry, int * preview_offset)
+static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int * preview_offset)
 {
     bool not_cached = true;
 
@@ -279,21 +279,42 @@ static bool load_remote_preview(Entry_s * entry, int * preview_offset)
 
     if((lodepng_decode32(&image, &width, &height, (u8*)preview_png, preview_size)) == 0) // no error
     {
-        for(u32 i = 0; i < width; i++)
-        {
-            for(u32 j = 0; j < height; j++)
-            {
-                u32* pixel = (u32*)(image + (i + j*width) * 4);
-                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR, needed for pp2d
-            }
-        }
+        // for(u32 i = 0; i < width; i++)
+        // {
+            // for(u32 j = 0; j < height; j++)
+            // {
+                // u32* pixel = (u32*)(image + (i + j*width) * 4);
+                // *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR, needed for pp2d
+            // }
+        // }
 
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, entry->path, 0x106*sizeof(u16));
-        // free the previously loaded preview. wont do anything if there wasnt one
-        // pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
 
-        // pp2d_load_texture_memory(TEXTURE_REMOTE_PREVIEW, image, (u32)width, (u32)height);
+        free(preview_image->tex);
+        C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+        preview_image->tex = tex;
+
+        free((Tex3DS_SubTexture*)preview_image->subtex);
+        Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
+        subt3x->width = width;
+        subt3x->height = height;
+        subt3x->left = 0.0f;
+        subt3x->top = width/512.0f;
+        subt3x->right = height/512.0f;
+        subt3x->bottom = 0.0f;
+        preview_image->subtex = subt3x;
+
+        C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
+
+        u32* dest = (u32*)preview_image->tex->data + (512-width)*512;
+        u32* src = (u32*)image;
+        for(unsigned int j = 0; j < height; j += 8)
+        {
+            memcpy(dest, src, width*8*sizeof(u32));
+            src += width*8;
+            dest += 512*8;
+        }
 
         *preview_offset = (width-400)/2;
         ret = true;
@@ -491,6 +512,7 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
     load_remote_list(current_list, 1, mode, false);
+    C2D_Image preview = {0};
 
     bool extra_mode = false;
 
@@ -501,7 +523,7 @@ bool themeplaza_browser(EntryMode mode)
 
         if(preview_mode)
         {
-            // draw_preview(TEXTURE_REMOTE_PREVIEW, preview_offset);
+            draw_preview(preview, preview_offset);
         }
         else
         {
@@ -572,7 +594,7 @@ bool themeplaza_browser(EntryMode mode)
             toggle_preview:
             if(!preview_mode)
             {
-                preview_mode = load_remote_preview(current_entry, &preview_offset);
+                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset);
                 if(mode == MODE_THEMES)
                 {
                     load_remote_bgm(current_entry);
@@ -736,6 +758,9 @@ bool themeplaza_browser(EntryMode mode)
         }
     }
 
+    free(preview.tex);
+    free((Tex3DS_SubTexture*)preview.subtex);
+    
     free_icons(current_list);
     free(current_list->entries);
     free(current_list->tp_search);

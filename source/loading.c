@@ -63,7 +63,7 @@ C2D_Image * loadTextureIcon(Icon_s *icon)
         return NULL;
 
     C2D_Image * image = calloc(1, sizeof(C2D_Image));
-    C3D_Tex* tex = (C3D_Tex*)malloc(sizeof(C3D_Tex));
+    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
     static const Tex3DS_SubTexture subt3x = { 48, 48, 0.0f, 48/64.0f, 48/64.0f, 0.0f };
     image->tex = tex;
     image->subtex = &subt3x;
