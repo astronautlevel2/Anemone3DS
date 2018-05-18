@@ -30,7 +30,7 @@
 #include "music.h"
 #include "draw.h"
 
-#include "lodepng/lodepng.h"
+#include <png.h>
 
 void delete_entry(Entry_s * entry, bool is_file)
 {
@@ -424,6 +424,75 @@ void load_icons_thread(void * void_arg)
     while(arg->run_thread);
 }
 
+bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset)
+{
+    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+    png_infop info = png_create_info_struct(png);
+
+    if(setjmp(png_jmpbuf(png)))
+    {
+        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
+        png_destroy_read_struct(&png, &info, NULL);
+        return false;
+    }
+
+    FILE * fp = fmemopen(buf, size, "rb");
+    png_init_io(png, fp);
+    png_read_info(png, info);
+
+    int width = png_get_image_width(png, info);
+    int height = png_get_image_height(png, info);
+
+    //output ABGR
+    png_set_bgr(png);
+    png_set_swap_alpha(png);
+
+    png_bytep * row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+    for(int y = 0; y < height; y++) {
+        row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
+    }
+
+    png_read_image(png, row_pointers);
+
+    fclose(fp);
+    png_destroy_read_struct(&png, &info, NULL);
+
+    if(preview_image->tex)
+        C3D_TexDelete(preview_image->tex);
+
+    free(preview_image->tex);
+    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+    preview_image->tex = tex;
+
+    free((Tex3DS_SubTexture*)preview_image->subtex);
+    Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
+    subt3x->width = width;
+    subt3x->height = height;
+    subt3x->left = 0.0f;
+    subt3x->top = height/512.0f;
+    subt3x->right = width/512.0f;
+    subt3x->bottom = 0.0f;
+    preview_image->subtex = subt3x;
+
+    C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
+
+    memset(preview_image->tex->data, 0, preview_image->tex->size);
+    for(int j = 0; j < height; j++) {
+        png_bytep row = row_pointers[j];
+        for(int i = 0; i < width; i++) {
+            png_bytep px = &(row[i * 4]);
+            u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
+
+            memcpy(preview_image->tex->data + dst, px, sizeof(u32));
+        }
+    }
+
+    *preview_offset = (width-400)/2;
+
+    return true;
+}
+
 static u16 previous_path_preview[0x106] = {0};
 bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset)
 {
@@ -443,65 +512,14 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
         return false;
     }
 
-    bool ret = false;
-    u8 * image = NULL;
-    unsigned int width = 0, height = 0;
+    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset);
+    free(preview_buffer);
 
-    if((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error
+    if(ret)
     {
-        for(u32 i = 0; i < width; i++)
-        {
-            for(u32 j = 0; j < height; j++)
-            {
-                u32* pixel = (u32*)(image + (i + j*width) * 4);
-                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR
-            }
-        }
-
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
-
-        if(preview_image->tex)
-            C3D_TexDelete(preview_image->tex);
-
-        free(preview_image->tex);
-        C3D_Tex* tex = malloc(sizeof(C3D_Tex));
-        preview_image->tex = tex;
-
-        free((Tex3DS_SubTexture*)preview_image->subtex);
-        Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
-        subt3x->width = width;
-        subt3x->height = height;
-        subt3x->left = 0.0f;
-        subt3x->top = height/512.0f;
-        subt3x->right = width/512.0f;
-        subt3x->bottom = 0.0f;
-        preview_image->subtex = subt3x;
-
-        C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
-
-        memset(preview_image->tex->data, 0, preview_image->tex->size);
-        for (u32 i = 0; i < width; i++) 
-        {
-            for (u32 j = 0; j < height; j++) 
-            {
-                u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
-                u32 src = (j * width + i) * 4;
-
-                memcpy(preview_image->tex->data + dst, image + src, sizeof(u32));
-            }
-        }
-
-        *preview_offset = (width-400)/2;
-        ret = true;
     }
-    else
-    {
-        throw_error("Corrupted/invalid preview.png", ERROR_LEVEL_WARNING);
-    }
-
-    free(image);
-    free(preview_buffer);
 
     return ret;
 }

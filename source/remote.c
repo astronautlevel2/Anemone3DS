@@ -30,8 +30,6 @@
 #include "unicode.h"
 #include "music.h"
 
-#include "lodepng/lodepng.h"
-
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
     {
         .info_line = NULL,
@@ -273,63 +271,9 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
         return false;
     }
 
-    bool ret = false;
-    u8 * image = NULL;
-    unsigned int width = 0, height = 0;
+    bool ret = load_preview_from_buffer(preview_png, preview_size, preview_image, preview_offset);
 
-    if((lodepng_decode32(&image, &width, &height, (u8*)preview_png, preview_size)) == 0) // no error
-    {
-        for(u32 i = 0; i < width; i++)
-        {
-            for(u32 j = 0; j < height; j++)
-            {
-                u32* pixel = (u32*)(image + (i + j*width) * 4);
-                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR
-            }
-        }
-
-        // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, entry->path, 0x106*sizeof(u16));
-
-        free(preview_image->tex);
-        C3D_Tex* tex = malloc(sizeof(C3D_Tex));
-        preview_image->tex = tex;
-
-        free((Tex3DS_SubTexture*)preview_image->subtex);
-        Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
-        subt3x->width = width;
-        subt3x->height = height;
-        subt3x->left = 0.0f;
-        subt3x->top = height/512.0f;
-        subt3x->right = width/512.0f;
-        subt3x->bottom = 0.0f;
-        preview_image->subtex = subt3x;
-
-        C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
-
-        memset(preview_image->tex->data, 0, preview_image->tex->size);
-        for (u32 i = 0; i < width; i++) 
-        {
-            for (u32 j = 0; j < height; j++) 
-            {
-                u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
-                u32 src = (j * width + i) * 4;
-
-                memcpy(preview_image->tex->data + dst, image + src, sizeof(u32));
-            }
-        }
-
-        *preview_offset = (width-400)/2;
-        ret = true;
-    }
-    else
-    {
-        throw_error("Corrupted/invalid preview.png", ERROR_LEVEL_WARNING);
-    }
-
-    free(image);
-
-    if(not_cached)
+    if(ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
     {
         u16 path[0x107] = {0};
         strucat(path, entry->path);
@@ -337,6 +281,7 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
         remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, preview_size);
         buf_to_file(preview_size, fsMakePath(PATH_UTF16, path), ArchiveSD, preview_png);
     }
+
     free(preview_png);
 
     return ret;
