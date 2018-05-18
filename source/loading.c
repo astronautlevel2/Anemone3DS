@@ -479,7 +479,7 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 
     png_read_update_info(png, info);
 
-    png_bytep * row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+    png_bytep * row_pointers = malloc(sizeof(png_bytep) * height);
     for(int y = 0; y < height; y++) {
         row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
     }
@@ -501,14 +501,15 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
     subt3x->width = width;
     subt3x->height = height;
     subt3x->left = 0.0f;
-    subt3x->top = height/512.0f;
+    subt3x->top = 1.0f;
     subt3x->right = width/512.0f;
-    subt3x->bottom = 0.0f;
+    subt3x->bottom = 1.0-(height/512.0f);
     preview_image->subtex = subt3x;
 
     C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
 
     memset(preview_image->tex->data, 0, preview_image->tex->size);
+
     for(int j = 0; j < height; j++) {
         png_bytep row = row_pointers[j];
         for(int i = 0; i < width; i++) {
