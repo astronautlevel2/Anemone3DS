@@ -461,6 +461,9 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
         // mark the new preview as loaded for optimisation
         memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
 
+        if(preview_image->tex)
+            C3D_TexDelete(preview_image->tex);
+
         free(preview_image->tex);
         C3D_Tex* tex = malloc(sizeof(C3D_Tex));
         preview_image->tex = tex;
@@ -488,6 +491,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
                 memcpy(preview_image->tex->data + dst, image + src, sizeof(u32));
             }
         }
+
         *preview_offset = (width-400)/2;
         ret = true;
     }
