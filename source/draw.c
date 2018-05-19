@@ -432,10 +432,10 @@ static void draw_entry_info(Entry_s * entry)
     char title[0x41] = {0};
     utf16_to_utf8((u8*)title, entry->name, 0x40);
     draw_text(20, 50, 0.5, 0.7, 0.7, colors[COLOR_WHITE], title);
-	
+
     char description[0x81] = {0};
     utf16_to_utf8((u8*)description, entry->desc, 0x80);
-	draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description, 363);
+    draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description, 363);
 }
 
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
