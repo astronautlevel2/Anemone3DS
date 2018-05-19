@@ -432,12 +432,23 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 
     if(setjmp(png_jmpbuf(png)))
     {
-        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
         png_destroy_read_struct(&png, &info, NULL);
         return false;
     }
 
     FILE * fp = fmemopen(buf, size, "rb");
+
+    char header[8];
+    fread(header, 1, 8, fp);
+
+    if(png_sig_cmp(header, 0, 8))
+    {
+        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
+        png_destroy_read_struct(&png, &info, NULL);
+        fclose(fp);
+        return false;
+    }
+
     png_init_io(png, fp);
     png_read_info(png, info);
 
