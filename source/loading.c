@@ -438,7 +438,7 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 
     FILE * fp = fmemopen(buf, size, "rb");
 
-    char header[8];
+    unsigned char header[8];
     fread(header, 1, 8, fp);
 
     if(png_sig_cmp(header, 0, 8))
