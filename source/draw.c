@@ -377,53 +377,53 @@ static void draw_instructions(Instructions_s instructions)
 // implementation detail - if max_width <= 0, does nothing (for sanity)
 static void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width)
 {
-	if (max_width <= 0)
-		return;
+    if (max_width <= 0)
+        return;
 
-	int length = strlen(text) + 1;
-	char result[length];
-	memset(result, 0, length);
-	int idx = 0;
+    int length = strlen(text) + 1;
+    char result[length];
+    memset(result, 0, length);
+    int idx = 0;
 
-	float current_width = 0;
+    float current_width = 0;
 
-	while (*text)
-	{
-		ssize_t consumed;
-		u32 codepoint;
-		
-		if ((consumed = decode_utf8(&codepoint, (unsigned char*)text)) == -1)
-			break;
-		float character_width = scaleX * (fontGetCharWidthInfo(fontGlyphIndexFromCodePoint(codepoint))->charWidth);
-		if ((current_width += character_width) > max_width)
-		{
-			char* last_space = NULL;
-			for (int i = idx; i >= 0; i--)
-			{
-				if (result[i] == ' ')
-				{
-					last_space = &result[i];
-					break;
-				}
-			}
-			if (last_space != NULL)
-				*last_space = '\n';
-			else
-				result[idx++] = '\n';
-			current_width = 0;
-		}
-		memcpy(&result[idx], text, consumed);
-		idx += consumed;
-		text += consumed;
-	}
+    while (*text)
+    {
+        ssize_t consumed;
+        u32 codepoint;
+        
+        if ((consumed = decode_utf8(&codepoint, (unsigned char*)text)) == -1)
+            break;
+        float character_width = scaleX * (fontGetCharWidthInfo(fontGlyphIndexFromCodePoint(codepoint))->charWidth);
+        if ((current_width += character_width) > max_width)
+        {
+            char* last_space = NULL;
+            for (int i = idx; i >= 0; i--)
+            {
+                if (result[i] == ' ')
+                {
+                    last_space = &result[i];
+                    break;
+                }
+            }
+            if (last_space != NULL)
+                *last_space = '\n';
+            else
+                result[idx++] = '\n';
+            current_width = 0;
+        }
+        memcpy(&result[idx], text, consumed);
+        idx += consumed;
+        text += consumed;
+    }
 
-	draw_text(x, y, z, scaleX, scaleY, color, result);
+    draw_text(x, y, z, scaleX, scaleY, color, result);
 }
 
 static void draw_entry_info(Entry_s * entry)
 {
     char author[0x41] = {0};
-	utf16_to_utf8((u8*)author, entry->author, 0x40);
+    utf16_to_utf8((u8*)author, entry->author, 0x40);
     draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], &text[TEXT_BY_AUTHOR]);
     float width = 0;
     C2D_TextGetDimensions(&text[TEXT_BY_AUTHOR], 0.5, 0.5, &width, NULL);
