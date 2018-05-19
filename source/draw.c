@@ -387,26 +387,36 @@ static void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY
 
     float current_width = 0;
 
-    while (*text)
+    while(*text)
     {
         ssize_t consumed;
         u32 codepoint;
-        
-        if ((consumed = decode_utf8(&codepoint, (unsigned char*)text)) == -1)
+
+        if(*text == '\n')
+            current_width = 0;
+
+        if(*text == '\r')
+        {
+            text++;
+            continue;
+        }
+
+        if((consumed = decode_utf8(&codepoint, (unsigned char*)text)) == -1)
             break;
+
         float character_width = scaleX * (fontGetCharWidthInfo(fontGlyphIndexFromCodePoint(codepoint))->charWidth);
-        if ((current_width += character_width) > max_width)
+        if((current_width += character_width) > max_width)
         {
             char* last_space = NULL;
-            for (int i = idx; i >= 0; i--)
+            for(int i = idx; i >= 0; i--)
             {
-                if (result[i] == ' ')
+                if(result[i] == ' ')
                 {
                     last_space = &result[i];
                     break;
                 }
             }
-            if (last_space != NULL)
+            if(last_space != NULL)
                 *last_space = '\n';
             else
                 result[idx++] = '\n';
