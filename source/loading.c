@@ -426,6 +426,12 @@ void load_icons_thread(void * void_arg)
 
 bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset)
 {
+    if(size < 8 || png_sig_cmp(buf, 0, 8))
+    {
+        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
+        return false;
+    }
+
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
     png_infop info = png_create_info_struct(png);
@@ -437,17 +443,6 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
     }
 
     FILE * fp = fmemopen(buf, size, "rb");
-
-    unsigned char header[8];
-    fread(header, 1, 8, fp);
-
-    if(png_sig_cmp(header, 0, 8))
-    {
-        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
-        png_destroy_read_struct(&png, &info, NULL);
-        fclose(fp);
-        return false;
-    }
 
     png_init_io(png, fp);
     png_read_info(png, info);
