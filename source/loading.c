@@ -495,14 +495,12 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
     fclose(fp);
     png_destroy_read_struct(&png, &info, NULL);
 
-    if(preview_image->tex)
-        C3D_TexDelete(preview_image->tex);
 
-    free(preview_image->tex);
+    free_preview(*preview_image);
+
     C3D_Tex* tex = malloc(sizeof(C3D_Tex));
     preview_image->tex = tex;
 
-    free((Tex3DS_SubTexture*)preview_image->subtex);
     Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
     subt3x->width = width;
     subt3x->height = height;
@@ -560,6 +558,14 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
     }
 
     return ret;
+}
+
+void free_preview(C2D_Image preview)
+{
+    if(preview.tex)
+        C3D_TexDelete(preview.tex);
+    free(preview.tex);
+    free((Tex3DS_SubTexture*)preview.subtex);
 }
 
 // Initialize the audio struct

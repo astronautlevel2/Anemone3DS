@@ -105,6 +105,7 @@ static void free_icons(Entry_List_s * list)
         {
             for(int i = 0; i < list->entries_count; i++)
             {
+                C3D_TexDelete(list->icons[i]->tex);
                 free(list->icons[i]);
             }
             free(list->icons);
@@ -706,8 +707,7 @@ bool themeplaza_browser(EntryMode mode)
         }
     }
 
-    free(preview.tex);
-    free((Tex3DS_SubTexture*)preview.subtex);
+    free_preview(preview);
 
     free_icons(current_list);
     free(current_list->entries);

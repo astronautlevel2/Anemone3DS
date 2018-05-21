@@ -127,7 +127,10 @@ static void free_icons(Entry_List_s * list)
         amount = list->entries_loaded*ICONS_OFFSET_AMOUNT;
 
     for(int i = 0; i < amount; i++)
+    {
+        C3D_TexDelete(list->icons[i]->tex);
         free(list->icons[i]);
+    }
     free(list->icons);
 }
 
@@ -824,8 +827,7 @@ int main(void)
         }
     }
 
-    free(preview.tex);
-    free((Tex3DS_SubTexture*)preview.subtex);
+    free_preview(preview);
 
     exit_function(false);
 
