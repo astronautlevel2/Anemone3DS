@@ -377,7 +377,7 @@ static void draw_instructions(Instructions_s instructions)
 // implementation detail - if max_width <= 0, does nothing (for sanity)
 static void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width)
 {
-    if (max_width <= 0)
+    if(max_width <= 0)
         return;
 
     int length = strlen(text) + 1;
