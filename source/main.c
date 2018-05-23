@@ -42,7 +42,7 @@ static bool installed_themes = false;
 
 static Thread iconLoadingThread = {0};
 static Thread_Arg_s iconLoadingThread_arg = {0};
-static Handle update_icons_handle;
+static Handle update_icons_mutex;
 
 static Thread installCheckThreads[MODE_AMOUNT] = {0};
 static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
@@ -114,7 +114,8 @@ static void exit_thread(void)
     {
         DEBUG("exiting thread\n");
         iconLoadingThread_arg.run_thread = false;
-        svcSignalEvent(update_icons_handle);
+        svcReleaseMutex(update_icons_mutex);
+        svcWaitSynchronization(update_icons_mutex, U64_MAX);
         threadJoin(iconLoadingThread, U64_MAX);
         threadFree(iconLoadingThread);
     }
@@ -156,7 +157,7 @@ void exit_function(bool power_pressed)
         svcWaitSynchronization(audio->finished, U64_MAX);
     }
     free_lists();
-    svcCloseHandle(update_icons_handle);
+    svcCloseHandle(update_icons_mutex);
     exit_screens();
     exit_services();
 
@@ -325,12 +326,12 @@ int main(void)
     init_services();
     init_screens();
 
-    svcCreateEvent(&update_icons_handle, RESET_ONESHOT);
+    svcCreateMutex(&update_icons_mutex, true);
 
     static Entry_List_s * current_list = NULL;
     void * iconLoadingThread_args_void[] = {
         &current_list,
-        &update_icons_handle,
+        &update_icons_mutex,
     };
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
@@ -406,12 +407,11 @@ int main(void)
             }
             else
             {
-                svcSignalEvent(update_icons_handle);
-                svcSleepThread(1e7);
+                svcReleaseMutex(update_icons_mutex);
+                svcWaitSynchronization(update_icons_mutex, U64_MAX);
             }
 
             draw_interface(current_list, instructions);
-            svcSleepThread(1e7);
         }
 
         end_frame();
