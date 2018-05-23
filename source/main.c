@@ -129,6 +129,7 @@ static void free_icons(Entry_List_s * list)
     for(int i = 0; i < amount; i++)
     {
         C3D_TexDelete(list->icons[i]->tex);
+        free(list->icons[i]->tex);
         free(list->icons[i]);
     }
     free(list->icons);

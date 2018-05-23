@@ -356,28 +356,25 @@ static void load_icons(Entry_List_s * current_list)
 
     int ctr = 0;
     Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
-    C2D_Image *** images = calloc(abs(delta), sizeof(C2D_Image**));
-
-    #define FIRST(arr) arr[0]
-    #define LAST(arr) arr[current_list->entries_loaded*ICONS_OFFSET_AMOUNT - 1]
+    int * indexes = calloc(abs(delta), sizeof(int));
 
     C2D_Image ** icons = current_list->icons;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
-        C2D_Image ** image = NULL;
+        int index = 0;
         int offset = i;
 
         rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
 
         if(delta > 0)
         {
-            image = &LAST(icons);
+            index = current_list->entries_loaded*ICONS_OFFSET_AMOUNT - delta + i - starti;
             offset += current_list->entries_loaded*ICONS_UNDER - delta;
         }
         else
         {
-            image = &FIRST(icons);
+            index = 0 - delta - 1 + i - starti;
             offset -= current_list->entries_loaded*ICONS_VISIBLE;
             i -= 2; //i-- twice to counter the i++, needed only for this case
         }
@@ -388,24 +385,27 @@ static void load_icons(Entry_List_s * current_list)
             offset -= current_list->entries_count;
 
         entries[ctr] = &current_list->entries[offset];
-        images[ctr] = image;
+        indexes[ctr] = index;
     }
 
-    #undef FIRST
-    #undef LAST
     #undef SIGN
 
     svcSleepThread(1e6);
     for(int i = 0; i < abs(delta); i++)
     {
-        Entry_s current_entry = *entries[i];
-        C2D_Image** image = images[i];
-        free(*image);
-        *image = load_entry_icon(current_entry);
+        Entry_s * current_entry = entries[i];
+        int index = indexes[i];
+
+        C2D_Image * image = icons[index];
+        C3D_TexDelete(image->tex);
+        free(image->tex);
+        free(image);
+
+        icons[index] = load_entry_icon(*current_entry);
     }
 
     free(entries);
-    free(images);
+    free(indexes);
 
     current_list->previous_scroll = current_list->scroll;
 }
