@@ -407,7 +407,7 @@ int main(void)
             else
             {
                 svcSignalEvent(update_icons_handle);
-                svcSleepThread(5e6);
+                svcSleepThread(1e7);
             }
 
             draw_interface(current_list, instructions);
