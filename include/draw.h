@@ -163,6 +163,10 @@ void draw_preview(C2D_Image preview, int preview_offset);
 void draw_install(InstallType type);
 void draw_loading_bar(u32 current, u32 max, InstallType type);
 
+void draw_text(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text);
+void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width);
+void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * text, float max_scale, float min_scale, float max_width);
+
 void draw_base_interface(void);
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions);
 void draw_interface(Entry_List_s* list, Instructions_s instructions);
