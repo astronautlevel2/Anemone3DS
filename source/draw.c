@@ -28,6 +28,8 @@
 #include "unicode.h"
 #include "colors.h"
 
+#include "sprites.h"
+
 #include <time.h>
 
 C3D_RenderTarget* top;
@@ -35,7 +37,14 @@ C3D_RenderTarget* bottom;
 C2D_TextBuf staticBuf, dynamicBuf;
 static C2D_TextBuf widthBuf;
 
+static C2D_SpriteSheet spritesheet;
+static C2D_Sprite sprite_shuffle, sprite_shuffle_no_bgm, sprite_installed, sprite_start, sprite_select;
+
 C2D_Text text[TEXT_AMOUNT];
+static const char * mode_switch_char[MODE_AMOUNT] = {
+    "S",
+    "T",
+};
 
 void init_screens(void)
 {
@@ -47,6 +56,20 @@ void init_screens(void)
 
     top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
+
+    spritesheet = C2D_SpriteSheetLoad("romfs:/gfx/sprites.t3x");
+    C2D_SpriteFromSheet(&sprite_shuffle, spritesheet, sprites_shuffle_idx);
+    C2D_SpriteSetDepth(&sprite_shuffle, 0.6f);
+    C2D_SpriteFromSheet(&sprite_shuffle_no_bgm, spritesheet, sprites_shuffle_no_bgm_idx);
+    C2D_SpriteSetDepth(&sprite_shuffle_no_bgm, 0.6f);
+
+    C2D_SpriteFromSheet(&sprite_installed, spritesheet, sprites_installed_idx);
+    C2D_SpriteSetDepth(&sprite_installed, 0.6f);
+
+    C2D_SpriteFromSheet(&sprite_start, spritesheet, sprites_start_idx);
+    C2D_SpriteSetDepth(&sprite_start, 0.5f);
+    C2D_SpriteFromSheet(&sprite_select, spritesheet, sprites_select_idx);
+    C2D_SpriteSetDepth(&sprite_select, 0.5f);
 
     staticBuf = C2D_TextBufNew(4096);
     dynamicBuf = C2D_TextBufNew(4096);
@@ -135,6 +158,11 @@ void end_frame(void)
     C2D_TextBufClear(dynamicBuf);
     C2D_TextBufClear(widthBuf);
     C3D_FrameEnd(0);
+}
+
+static void draw_image(int image_id, float x, float y)
+{
+    C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, image_id), x, y, 0.6f, NULL, 1.0f, 1.0f);
 }
 
 static void get_text_dimensions(const char * text, float scaleX, float scaleY, float * width, float * height)
@@ -231,10 +259,10 @@ void draw_base_interface(void)
     PTMU_GetBatteryChargeState(&battery_charging);
     u8 battery_status = 0;
     PTMU_GetBatteryLevel(&battery_status);
-    // pp2d_draw_texture(TEXTURE_BATTERY_0 + battery_status, 357, 2);
+    draw_image(sprites_battery0_idx + battery_status, 357, 2);
 
-    // if(battery_charging)
-        // pp2d_draw_texture(TEXTURE_BATTERY_CHARGE, 357, 2);
+    if(battery_charging)
+        draw_image(sprites_charging_idx, 357, 2);
     #endif
 
     set_screen(bottom);
@@ -356,17 +384,22 @@ static void draw_instructions(Instructions_s instructions)
             draw_text_wrap_scaled(BUTTONS_X_RIGHT, y_lines[i], 0.5, colors[COLOR_WHITE], instructions.instructions[i][1], 0.6, 0, BUTTONS_X_MAX-2);
     }
 
+    C2D_ImageTint white_tint;
+    C2D_PlainImageTint(&white_tint, colors[COLOR_WHITE], 1.0f);
+
     const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
     if(start_line != NULL)
     {
-        // pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_SpriteSetPos(&sprite_start, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_DrawSpriteTinted(&sprite_start, &white_tint);
         draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
     }
 
     const char * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
     if(select_line != NULL)
     {
-        // pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_SpriteSetPos(&sprite_select, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_DrawSpriteTinted(&sprite_select, &white_tint);
         draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], select_line, 0.6, 0, BUTTONS_X_MAX-2);
     }
 }
@@ -491,13 +524,14 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 
     draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_SEARCH]);
 
-    // pp2d_draw_texture_blend(TEXTURE_LIST, 320-96, 0, colors[COLOR_WHITE);
-    // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, colors[COLOR_WHITE);
-    // pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, colors[COLOR_WHITE);
-    // pp2d_draw_textf(320-24+2.5, -3, 1, 1, colors[COLOR_WHITE, "%c", mode_string[!list->mode][11]);
+    draw_image(sprites_list_idx, 320-96, 0);
+    draw_image(sprites_exit_idx, 320-72, 0);
+    draw_image(sprites_preview_idx, 320-48, 0);
 
-    // pp2d_draw_texture(TEXTURE_ARROW_SIDE, 3, 114);
-    // pp2d_draw_texture_flip(TEXTURE_ARROW_SIDE, 308, 114, HORIZONTAL);
+    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+
+    draw_image(sprites_arrow_left_idx, 3, 114);
+    draw_image(sprites_arrow_right_idx, 308, 114);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
@@ -583,19 +617,22 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         draw_c2d_text_center(GFX_TOP, 140, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_switch_string[current_mode]);
         draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_OR_START_TO_QUIT]);
 
-        // pp2d_texture_select(TEXTURE_START_BUTTON, 162, 173);
-        // pp2d_texture_blend(colors[COLOR_YELLOW);
-        // pp2d_texture_scale(1.25, 1.4);
-        // pp2d_texture_draw();
+        C2D_ImageTint yellow_tint;
+        C2D_PlainImageTint(&yellow_tint, colors[COLOR_YELLOW], 1.0f);
+        C2D_SpriteSetPos(&sprite_start, 162, 173);
+        C2D_SpriteSetScale(&sprite_start, 1.25f, 1.4f);
+        C2D_DrawSpriteTinted(&sprite_start, &yellow_tint);
+        C2D_SpriteSetScale(&sprite_start, 1.0f, 1.0f);
 
-        // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
+        set_screen(bottom);
 
-        // pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, colors[COLOR_WHITE);
-        // pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, colors[COLOR_WHITE);
-        // pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, colors[COLOR_WHITE);
-        // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, colors[COLOR_WHITE);
-        // pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, colors[COLOR_WHITE);
-        // pp2d_draw_textf(320-24+2.5, -3, 1, 1, colors[COLOR_WHITE, "%c", mode_string[!list->mode][0]);
+        draw_image(sprites_sort_idx, 320-144, 0);
+        draw_image(sprites_download_idx, 320-120, 0);
+        draw_image(sprites_browse_idx, 320-96, 0);
+        draw_image(sprites_exit_idx, 320-72, 0);
+        draw_image(sprites_preview_idx, 320-48, 0);
+
+        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
 
         return;
     }
@@ -608,28 +645,28 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
     set_screen(bottom);
 
-    switch(current_mode)
+    if(current_mode == MODE_THEMES)
     {
-        case MODE_THEMES:
-            // pp2d_draw_textf(7, 3, 0.6, 0.6, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? colors[COLOR_WHITE : colors[COLOR_RED, "Shuffle: %i/10", list->shuffle_count);
-            break;
-        default:
-            break;
+        char * shuffle_count_string = NULL;
+        asprintf(&shuffle_count_string, "Shuffle: %i/10", list->shuffle_count);
+        draw_text(7, 3, 0.6, 0.6, 0.6f, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? colors[COLOR_WHITE] : colors[COLOR_RED], shuffle_count_string);
+        free(shuffle_count_string);
     }
 
-    // pp2d_draw_texture_blend(TEXTURE_SORT, 320-144, 0, colors[COLOR_WHITE);
-    // pp2d_draw_texture_blend(TEXTURE_DOWNLOAD, 320-120, 0, colors[COLOR_WHITE);
-    // pp2d_draw_texture_blend(TEXTURE_BROWSE, 320-96, 0, colors[COLOR_WHITE);
-    // pp2d_draw_texture_blend(TEXTURE_EXIT, 320-72, 0, colors[COLOR_WHITE);
-    // pp2d_draw_texture_blend(TEXTURE_PREVIEW_ICON, 320-48, 0, colors[COLOR_WHITE);
-    // pp2d_draw_textf(320-24+2.5, -3, 1, 1, colors[COLOR_WHITE, "%c", mode_string[!list->mode][0]);
+    draw_image(sprites_sort_idx, 320-144, 0);
+    draw_image(sprites_download_idx, 320-120, 0);
+    draw_image(sprites_browse_idx, 320-96, 0);
+    draw_image(sprites_exit_idx, 320-72, 0);
+    draw_image(sprites_preview_idx, 320-48, 0);
+
+    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
-    // if(list->scroll > 0)
-        // pp2d_draw_texture(TEXTURE_ARROW, 152, 4);
-    // if(list->scroll + list->entries_loaded < list->entries_count)
-        // pp2d_draw_texture_flip(TEXTURE_ARROW, 152, 220, VERTICAL);
+    if(list->scroll > 0)
+        draw_image(sprites_arrow_up_idx, 152, 4);
+    if(list->scroll + list->entries_loaded < list->entries_count)
+        draw_image(sprites_arrow_down_idx, 152, 220);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
@@ -656,18 +693,24 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
         draw_text(list->entry_size+6, vertical_offset + 16, 0.5f, 0.55, 0.55, font_color, name);
 
+        C2D_ImageTint tint;
+        C2D_PlainImageTint(&tint, font_color, 1.0f);
+
         if(current_entry->no_bgm_shuffle)
         {
-            // pp2d_draw_texture_blend(TEXTURE_SHUFFLE_NO_BGM, 320-24-4, vertical_offset, font_color);
+            C2D_SpriteSetPos(&sprite_shuffle_no_bgm, 320-24-4, vertical_offset);
+            C2D_DrawSpriteTinted(&sprite_shuffle_no_bgm, &tint);
         }
         else if(current_entry->in_shuffle)
         {
-            // pp2d_draw_texture_blend(TEXTURE_SHUFFLE, 320-24-4, vertical_offset, font_color);
+            C2D_SpriteSetPos(&sprite_shuffle, 320-24-4, vertical_offset);
+            C2D_DrawSpriteTinted(&sprite_shuffle, &tint);
         }
 
         if(current_entry->installed)
         {
-            // pp2d_draw_texture_blend(TEXTURE_INSTALLED, 320-24-4, vertical_offset + 22, font_color);
+            C2D_SpriteSetPos(&sprite_installed, 320-24-4, vertical_offset + 22);
+            C2D_DrawSpriteTinted(&sprite_installed, &tint);
         }
 
         if(!current_entry->placeholder_color)
