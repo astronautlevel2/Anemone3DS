@@ -44,8 +44,8 @@ BUILD               :=	build
 SOURCES             :=	source source/lodepng source/quirc
 INCLUDES            :=	include
 ROMFS               :=	romfs
-# GRAPHICS            :=	gfx
-# GFXBUILD            :=  $(BUILD)
+GRAPHICS            :=	assets
+GFXBUILD            :=	$(ROMFS)/gfx
 
 
 # Path to the files
