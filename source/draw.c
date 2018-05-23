@@ -148,7 +148,7 @@ static void draw_c2d_text(float x, float y, float z, float scaleX, float scaleY,
     C2D_DrawText(text, C2D_WithColor, x, y, z, scaleX, scaleY, color);
 }
 
-static void draw_text(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text)
+void draw_text(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text)
 {
     C2D_Text c2d_text;
     C2D_TextParse(&c2d_text, dynamicBuf, text);
@@ -374,14 +374,14 @@ static void draw_instructions(Instructions_s instructions)
     */
 }
 
-// implementation detail - if max_width <= 0, does nothing (for sanity)
-static void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width)
+void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width)
 {
+    // sanity check
     if(max_width <= 0)
         return;
 
     int length = strlen(text) + 1;
-    char result[length];
+    char result[length]; // of note is that, if `text` has no spaces in it and needs to be wrapped, this can and will overflow (!!)
     memset(result, 0, length);
     int idx = 0;
 
@@ -428,6 +428,29 @@ static void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY
     }
 
     draw_text(x, y, z, scaleX, scaleY, color, result);
+}
+
+void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * text, float max_scale, float min_scale, float max_width)
+{
+    // sanity check
+    if(max_scale < 0 || min_scale < 0)
+        return;
+
+    float width = 0;
+    get_text_dimensions(text, max_scale, max_scale, &width, NULL);
+
+    if(width < max_width)
+    {
+        draw_text(x, y, z, max_scale, max_scale, color, text);
+    }
+    else if((float scale = max_width / width) >= min_scale)
+    {
+        draw_text(x, y, z, scale, scale, color, text);
+    }
+    else
+    {
+        draw_text_wrap(x, y, z, min_scale, min_scale, color, text, max_width);
+    }
 }
 
 static void draw_entry_info(Entry_s * entry)
