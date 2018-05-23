@@ -135,11 +135,12 @@ enum {
 
     BUTTONS_X_LEFT = 20,
     BUTTONS_X_RIGHT = 200,
+    BUTTONS_X_MAX = 380,
 } ButtonPos;
 
 typedef struct {
-    const wchar_t * info_line;
-    const wchar_t * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
+    const char * info_line;
+    const char * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 
 extern C3D_RenderTarget* top;

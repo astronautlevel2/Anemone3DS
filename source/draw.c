@@ -32,7 +32,8 @@
 
 C3D_RenderTarget* top;
 C3D_RenderTarget* bottom;
-C2D_TextBuf staticBuf, dynamicBuf, widthBuf;
+C2D_TextBuf staticBuf, dynamicBuf;
+static C2D_TextBuf widthBuf;
 
 C2D_Text text[TEXT_AMOUNT];
 
@@ -338,11 +339,8 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
 
 static void draw_instructions(Instructions_s instructions)
 {
-    /*
-    // pp2d_draw_on(GFX_TOP, GFX_LEFT);
-
     if(instructions.info_line != NULL)
-        // pp2d_draw_wtext_center(GFX_TOP, BUTTONS_Y_INFO, 0.55, 0.55, instructions.info_line_color, instructions.info_line);
+        draw_text_center(GFX_TOP, BUTTONS_Y_INFO, 0.5, 0.55, 0.55, colors[COLOR_WHITE], instructions.info_line);
 
     const int y_lines[BUTTONS_INFO_LINES-1] = {
         BUTTONS_Y_LINE_1,
@@ -353,25 +351,24 @@ static void draw_instructions(Instructions_s instructions)
     for(int i = 0; i < BUTTONS_INFO_LINES-1; i++)
     {
         if(instructions.instructions[i][0] != NULL)
-            // pp2d_draw_wtext(BUTTONS_X_LEFT, y_lines[i], 0.6, 0.6, colors[COLOR_WHITE, instructions.instructions[i][0]);
+            draw_text_wrap_scaled(BUTTONS_X_LEFT, y_lines[i], 0.5, colors[COLOR_WHITE], instructions.instructions[i][0], 0.6, 0, BUTTONS_X_RIGHT-2);
         if(instructions.instructions[i][1] != NULL)
-            // pp2d_draw_wtext(BUTTONS_X_RIGHT, y_lines[i], 0.6, 0.6, colors[COLOR_WHITE, instructions.instructions[i][1]);
+            draw_text_wrap_scaled(BUTTONS_X_RIGHT, y_lines[i], 0.5, colors[COLOR_WHITE], instructions.instructions[i][1], 0.6, 0, BUTTONS_X_MAX-2);
     }
 
     const wchar_t * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
     if(start_line != NULL)
     {
         // pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
-        // pp2d_draw_wtext(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, colors[COLOR_WHITE, start_line);
+        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
     }
 
     const wchar_t * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
     if(select_line != NULL)
     {
         // pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
-        // pp2d_draw_wtext(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.6, 0.6, colors[COLOR_WHITE, select_line);
+        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], select_line, 0.6, 0, BUTTONS_X_MAX-2);
     }
-    */
 }
 
 void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width)
@@ -438,12 +435,13 @@ void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * 
 
     float width = 0;
     get_text_dimensions(text, max_scale, max_scale, &width, NULL);
+    float scale = max_width / width;
 
     if(width < max_width)
     {
         draw_text(x, y, z, max_scale, max_scale, color, text);
     }
-    else if((float scale = max_width / width) >= min_scale)
+    else if(scale >= min_scale)
     {
         draw_text(x, y, z, scale, scale, color, text);
     }

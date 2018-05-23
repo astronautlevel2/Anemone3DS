@@ -35,19 +35,19 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
         .info_line = NULL,
         .instructions = {
             {
-                L"\uE000 Download theme",
-                L"\uE001 Go back"
+                "\uE000 Download theme",
+                "\uE001 Go back"
             },
             {
-                L"\uE002 Hold for more",
-                L"\uE003 Preview theme"
+                "\uE002 Hold for more",
+                "\uE003 Preview theme"
             },
             {
-                L"\uE004 Previous page",
-                L"\uE005 Next page"
+                "\uE004 Previous page",
+                "\uE005 Next page"
             },
             {
-                L"Exit",
+                "Exit",
                 NULL
             }
         }
@@ -56,19 +56,19 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
         .info_line = NULL,
         .instructions = {
             {
-                L"\uE000 Download splash",
-                L"\uE001 Go back"
+                "\uE000 Download splash",
+                "\uE001 Go back"
             },
             {
-                L"\uE002 Hold for more",
-                L"\uE003 Preview splash"
+                "\uE002 Hold for more",
+                "\uE003 Preview splash"
             },
             {
-                L"\uE004 Previous page",
-                L"\uE005 Next page"
+                "\uE004 Previous page",
+                "\uE005 Next page"
             },
             {
-                L"Exit",
+                "Exit",
                 NULL
             }
         }
@@ -76,22 +76,22 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
 };
 
 static Instructions_s extra_instructions = {
-    .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+    .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
     .instructions = {
         {
-            L"\uE079 Jump to page",
-            L"\uE07A Search tags"
+            "\uE079 Jump to page",
+            "\uE07A Search tags"
         },
         {
-            L"\uE07B Toggle splash/theme",
-            L"\uE07C Reload without cache"
+            "\uE07B Toggle splash/theme",
+            "\uE07C Reload without cache"
         },
         {
             NULL,
             NULL
         },
         {
-            L"Exit",
+            "Exit",
             NULL
         }
     }
@@ -380,7 +380,7 @@ static void jump_menu(Entry_List_s * list)
     sprintf(numbuf, "Which page do you want to jump to?");
     swkbdSetHintText(&swkbd, numbuf);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cance", false);
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
     swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->tp_page_count);
@@ -405,7 +405,7 @@ static void search_menu(Entry_List_s * list)
     swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
     swkbdSetHintText(&swkbd, "Which tags do you want to search for?");
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cance", false);
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Search", true);
     swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
 
