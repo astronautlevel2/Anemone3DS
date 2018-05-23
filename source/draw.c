@@ -356,14 +356,14 @@ static void draw_instructions(Instructions_s instructions)
             draw_text_wrap_scaled(BUTTONS_X_RIGHT, y_lines[i], 0.5, colors[COLOR_WHITE], instructions.instructions[i][1], 0.6, 0, BUTTONS_X_MAX-2);
     }
 
-    const wchar_t * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
+    const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
     if(start_line != NULL)
     {
         // pp2d_draw_texture(TEXTURE_START_BUTTON, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
         draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
     }
 
-    const wchar_t * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
+    const char * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
     if(select_line != NULL)
     {
         // pp2d_draw_texture(TEXTURE_SELECT_BUTTON, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
@@ -505,8 +505,8 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
 
         current_entry = &list->entries[i];
 
-        wchar_t name[0x41] = {0};
-        utf16_to_utf32((u32*)name, current_entry->name, 0x40);
+        char name[0x41] = {0};
+        utf16_to_utf8((u8*)name, current_entry->name, 0x40);
 
         int vertical_offset = 0;
         int horizontal_offset = i - list->scroll;
