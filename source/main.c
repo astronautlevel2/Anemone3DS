@@ -708,10 +708,12 @@ int main(void)
         else if(kDown & KEY_LEFT)
         {
             change_selected(current_list, -current_list->entries_per_screen_v);
+            svcSleepThread(FASTSCROLL_WAIT*5);
         }
         else if(kDown & KEY_RIGHT)
         {
             change_selected(current_list, current_list->entries_per_screen_v);
+            svcSleepThread(FASTSCROLL_WAIT*5);
         }
 
         // Fast scroll using circle pad
@@ -728,12 +730,12 @@ int main(void)
         else if(kHeld & KEY_CPAD_LEFT)
         {
             change_selected(current_list, -current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT);
+            svcSleepThread(FASTSCROLL_WAIT*5);
         }
         else if(kHeld & KEY_CPAD_RIGHT)
         {
             change_selected(current_list, current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT);
+            svcSleepThread(FASTSCROLL_WAIT*5);
         }
 
         // Movement using the touchscreen
