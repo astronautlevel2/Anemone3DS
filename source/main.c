@@ -43,6 +43,7 @@ static bool installed_themes = false;
 static Thread iconLoadingThread = {0};
 static Thread_Arg_s iconLoadingThread_arg = {0};
 static Handle update_icons_mutex;
+static bool released = false;
 
 static Thread installCheckThreads[MODE_AMOUNT] = {0};
 static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
@@ -320,6 +321,13 @@ static void toggle_shuffle(Entry_List_s * list)
     }
 }
 
+static inline void wait_scroll(void)
+{
+    released = true;
+    svcReleaseMutex(update_icons_mutex);
+    svcSleepThread(FASTSCROLL_WAIT);
+}
+
 int main(void)
 {
     srand(time(NULL));
@@ -407,11 +415,18 @@ int main(void)
             }
             else
             {
-                svcReleaseMutex(update_icons_mutex);
+                if(!released)
+                {
+                    svcReleaseMutex(update_icons_mutex);
+                    released = true;
+                }
                 svcWaitSynchronization(update_icons_mutex, U64_MAX);
             }
 
             draw_interface(current_list, instructions);
+
+            svcSleepThread(1e7);
+            released = false;
         }
 
         end_frame();
@@ -708,34 +723,32 @@ int main(void)
         else if(kDown & KEY_LEFT)
         {
             change_selected(current_list, -current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT*5);
         }
         else if(kDown & KEY_RIGHT)
         {
             change_selected(current_list, current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT*5);
         }
 
         // Fast scroll using circle pad
         else if(kHeld & KEY_CPAD_UP)
         {
             change_selected(current_list, -1);
-            svcSleepThread(FASTSCROLL_WAIT);
+            wait_scroll();
         }
         else if(kHeld & KEY_CPAD_DOWN)
         {
             change_selected(current_list, 1);
-            svcSleepThread(FASTSCROLL_WAIT);
+            wait_scroll();
         }
         else if(kHeld & KEY_CPAD_LEFT)
         {
             change_selected(current_list, -current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT*5);
+            wait_scroll();
         }
         else if(kHeld & KEY_CPAD_RIGHT)
         {
             change_selected(current_list, current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT*5);
+            wait_scroll();
         }
 
         // Movement using the touchscreen

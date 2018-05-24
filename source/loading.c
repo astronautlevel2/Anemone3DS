@@ -390,14 +390,17 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     }
 
     #undef SIGN
-    
-    if(abs(delta) < 5)
+
+    if(abs(delta) < 4)
     {
         svcReleaseMutex(mutex);
         released = true;
     }
 
-    for(int i = 0; i < abs(delta); i++)
+    svcSleepThread(1e7);
+    starti = 0;
+    endi = abs(delta);
+    for(int i = starti; i < endi; i++)
     {
         Entry_s * current_entry = entries[i];
         int index = indexes[i];
@@ -408,6 +411,12 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
         free(image);
 
         icons[index] = load_entry_icon(*current_entry);
+
+        if(!released && i > endi/2)
+        {
+            svcReleaseMutex(mutex);
+            released = true;
+        }
     }
 
     free(entries);
