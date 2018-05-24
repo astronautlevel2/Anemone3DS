@@ -329,15 +329,15 @@ void handle_scrolling(Entry_List_s * list)
     //----------------------------------------------------------------
 }
 
-static void load_icons(Entry_List_s * current_list)
+static bool load_icons(Entry_List_s * current_list, Handle mutex)
 {
     if(current_list == NULL || current_list->entries == NULL)
-        return;
+        return false;
 
     handle_scrolling(current_list);
 
     if(current_list->entries_count <= current_list->entries_loaded*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
-        return; // return if the list is one that doesnt need swapping, or if nothing changed
+        return false; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
 
@@ -357,6 +357,7 @@ static void load_icons(Entry_List_s * current_list)
     int ctr = 0;
     Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
     int * indexes = calloc(abs(delta), sizeof(int));
+    bool released = false;
 
     C2D_Image ** icons = current_list->icons;
 
@@ -389,8 +390,13 @@ static void load_icons(Entry_List_s * current_list)
     }
 
     #undef SIGN
+    
+    if(abs(delta) < 5)
+    {
+        svcReleaseMutex(mutex);
+        released = true;
+    }
 
-    svcSleepThread(1e6);
     for(int i = 0; i < abs(delta); i++)
     {
         Entry_s * current_entry = entries[i];
@@ -408,18 +414,21 @@ static void load_icons(Entry_List_s * current_list)
     free(indexes);
 
     current_list->previous_scroll = current_list->scroll;
+
+    return released;
 }
 
 void load_icons_thread(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
-    Handle update_request = *(Handle *)arg->thread_arg[1];
+    Handle mutex = *(Handle *)arg->thread_arg[1];
     do
     {
-        svcWaitSynchronization(update_request, U64_MAX);
-        svcClearEvent(update_request);
+        svcWaitSynchronization(mutex, U64_MAX);
         volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_arg[0];
-        load_icons((Entry_List_s *)current_list);
+        bool released = load_icons((Entry_List_s *)current_list, mutex);
+        if(!released)
+            svcReleaseMutex(mutex);
     }
     while(arg->run_thread);
 }
