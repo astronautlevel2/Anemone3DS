@@ -468,13 +468,13 @@ void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * 
 
     float width = 0;
     get_text_dimensions(text, max_scale, max_scale, &width, NULL);
-    float scale = max_width / width;
+    float scale = 0;
 
     if(width < max_width)
     {
         draw_text(x, y, z, max_scale, max_scale, color, text);
     }
-    else if(scale >= min_scale)
+    else if((scale = max_width / width) >= min_scale)
     {
         draw_text(x, y, z, scale, scale, color, text);
     }
