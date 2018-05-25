@@ -5,7 +5,7 @@ To-do list here: https://trello.com/b/F1YSa1VK
 
 # Dependencies
  * devkitARM, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
- * citro2d, zlib, jansson, libvorbisidec, libpng, and libarchive, which can be retrieved from [devkitPro pacman](https://devkitpro.org/viewtopic.php?f=13&t=8702).
+ * zlib, jansson, libvorbisidec, libpng, and libarchive, which can be retrieved from [devkitPro pacman](https://devkitpro.org/viewtopic.php?f=13&t=8702).
  * A recent build of [makerom](https://github.com/profi200/Project_CTR) and the latest release of [bannertool](https://github.com/Steveice10/bannertool). These must be added to your PATH.  
  A 64-bit Windows binary of makerom is available [here](https://hm892.s-ul.eu/U0Irkqih).
 
@@ -13,7 +13,7 @@ To-do list here: https://trello.com/b/F1YSa1VK
 First of all, make sure devkitARM is properly installed - `$DEVKITPRO` and `$DEVKITARM` should be set to `/opt/devkitpro` and `$DEVKITPRO/devkitARM`, respectively.  
 After that, open the directory you want to clone the repo into, and execute  
 `git clone https://github.com/astronautlevel2/Anemone3DS` (or any other cloning method).  
-To install the prerequisite libraries, begin by ensuring devkitPro pacman is installed, and then install the dkP packages `citro2d`, `3ds-zlib`, `3ds-jansson`, `3ds-libvorbisidec`, `3ds-libpng`, and `3ds-libarchive` using `[sudo] [dkp-]pacman -S <package-name>`.  
+To install the prerequisite libraries, begin by ensuring devkitPro pacman (and the base install group, `3ds-dev`) is installed, and then install the dkP packages `3ds-zlib`, `3ds-jansson`, `3ds-libvorbisidec`, `3ds-libpng`, and `3ds-libarchive` using `[sudo] [dkp-]pacman -S <package-name>`.  
 After adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built binaries will be in `/out/`.
 
 # License
