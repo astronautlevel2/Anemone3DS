@@ -293,7 +293,7 @@ void throw_error(char* error, ErrorLevel level)
             return;
     }
 
-    while(true)
+    while(aptMainLoop())
     {
         hidScanInput();
         u32 kDown = hidKeysDown();
@@ -309,7 +309,7 @@ void throw_error(char* error, ErrorLevel level)
 
 bool draw_confirm(const char* conf_msg, Entry_List_s* list)
 {
-    while(true)
+    while(aptMainLoop())
     {
         Instructions_s instructions = {0};
         draw_interface(list, instructions);

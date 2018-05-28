@@ -80,6 +80,7 @@ static void init_services(void)
     ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
+    // aptSetHomeAllowed(false);
     httpcInit(0);
     archive_result = open_archives();
     if(envIsHomebrew())
@@ -361,11 +362,13 @@ int main(void)
     bool extra_mode = false;
     C2D_Image preview = {0};
 
-    while(true)
+    while(aptMainLoop())
     {
         if(quit)
         {
-            break;
+            free_preview(preview);
+            exit_function(false);
+            return 0;
         }
 
         #ifndef CITRA_MODE
@@ -844,8 +847,8 @@ int main(void)
     }
 
     free_preview(preview);
-
-    exit_function(false);
+    // aptSetHomeAllowed(true);
+    exit_function(true);
 
     return 0;
 }
