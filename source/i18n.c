@@ -40,7 +40,7 @@ void i18n_set(u8 language)
     if(file == NULL)
     {
         DEBUG(filename);
-        DEBUG(" missing\n")
+        DEBUG(" missing\n");
         return;
     }
 
