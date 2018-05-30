@@ -25,7 +25,6 @@
 */
 
 #include "draw.h"
-#include "unicode.h"
 #include "colors.h"
 
 #include "sprites.h"
@@ -41,6 +40,7 @@ static C2D_SpriteSheet spritesheet;
 static C2D_Sprite sprite_shuffle, sprite_shuffle_no_bgm, sprite_installed, sprite_start, sprite_select;
 
 C2D_Text text[TEXT_AMOUNT];
+
 static const char * mode_switch_char[MODE_AMOUNT] = {
     "S",
     "T",
@@ -76,58 +76,10 @@ void init_screens(void)
     widthBuf = C2D_TextBufNew(4096);
 
     C2D_TextParse(&text[TEXT_VERSION], staticBuf, VERSION);
-
-    C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, "Theme mode");
-    C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, "Splash mode");
-
-    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, "No theme found");
-    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, "No splash found");
-
-    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, "Press \uE005 to download from QR");
-
-    C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, "Or \uE004 to switch to splashes");
-    C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, "Or \uE004 to switch to themes");
-
-    C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, "Or        to quit");
-
-    C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, "By ");
-    C2D_TextParse(&text[TEXT_SELECTED], staticBuf, "Selected:");
-    C2D_TextParse(&text[TEXT_SELECTED_SHORT], staticBuf, "Sel.:");
-
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Theme mode");
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, "ThemePlaza Splash mode");
-
-    C2D_TextParse(&text[TEXT_SEARCH], staticBuf, "Search...");
-    C2D_TextParse(&text[TEXT_PAGE], staticBuf, "Page:");
-
-    C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, "Press \uE000 to quit.");
-    C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, "Press \uE000 to continue.");
-
-    C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, "\uE000 Yes   \uE001 No");
-
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, "Loading themes, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, "Loading splashes, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, "Loading icons, please wait...");
-
-    C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, "Installing a splash...");
-    C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, "Deleting installed splash...");
-
-    C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, "Installing a single theme...");
-    C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, "Installing shuffle themes...");
-    C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, "Installing BGM-only theme...");
-    C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, "Installing theme without BGM...");
-
-    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, "Installing BGM-only theme...");
-    C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, "Checking downloaded file...");
-    C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, "Deleting from SD...");
-
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, "Downloading theme list, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, "Downloading splash list, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, "Downloading preview, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, "Downloading BGM, please wait...");
-
-    for(int i = 0; i < TEXT_AMOUNT; i++)
-        C2D_TextOptimize(&text[i]);
+    C2D_TextOptimize(&text[TEXT_VERSION]);
+    u8 lang;
+    CFGU_GetSystemLanguage(&lang);
+    i18n_set(lang);
 }
 
 void exit_screens(void)

@@ -58,7 +58,7 @@ dkms.conf
 # Build files
 build/
 out/
-romfs/
+romfs/gfx/
 
 # Sublime stuff
 .clang_complete
