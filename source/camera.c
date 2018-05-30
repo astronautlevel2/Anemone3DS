@@ -46,8 +46,9 @@ void exit_qr(qr_data *data)
     data->capturing = false;
 
     free(data->camera_buffer);
-    // free(data->texture_buffer);
+    free(data->tex);
     quirc_destroy(data->context);
+    free(data);
 }
 
 void capture_cam_thread(void *arg) 
