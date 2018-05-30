@@ -126,6 +126,36 @@ void capture_cam_thread(void *arg)
     data->finished = true;
 }
 
+void update_ui(void *arg)
+{
+    qr_data* data = (qr_data*) arg;
+    while (!data->finished)
+    {
+        draw_base_interface();
+
+        // Untiled texture loading code adapted from FBI
+        for(u32 x = 0; x < 400 && !data->finished; x++) {
+            for(u32 y = 0; y < 256 && !data->finished; y++) {
+                u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3))) * sizeof(u16);
+                u32 srcPos = (y * 400 + x) * sizeof(u16);
+
+                memcpy(&((u8*) data->image.tex->data)[dstPos], &((u8*) data->camera_buffer)[srcPos], sizeof(u16));
+            }
+        }
+
+        if (data->finished)
+        {
+            end_frame();
+        }
+
+        C2D_DrawImageAt(data->image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
+
+        set_screen(bottom);
+        draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
+        end_frame();
+    }
+}
+
 bool start_capture_cam(qr_data *data) 
 {
     data->mutex = 0;
@@ -134,6 +164,11 @@ bool start_capture_cam(qr_data *data)
     svcCreateMutex(&data->mutex, false);
     if(threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, true) == NULL)
         return false;
+    if(threadCreate(update_ui, data, 0x10000, 0x1A, 1, true) == NULL)
+    {
+        exit_qr(data);
+        return false;
+    }
     return true;
 }
 
@@ -159,24 +194,6 @@ void update_qr(qr_data *data)
         exit_qr(data);
         return;
     }
-
-    draw_base_interface();
-
-    // Untiled texture loading code adapted from FBI
-    for(u32 x = 0; x < 400; x++) {
-        for(u32 y = 0; y < 256; y++) {
-            u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3))) * sizeof(u16);
-            u32 srcPos = (y * 400 + x) * sizeof(u16);
-
-            memcpy(&((u8*) data->image.tex->data)[dstPos], &((u8*) data->camera_buffer)[srcPos], sizeof(u16));
-        }
-    }
-
-    C2D_DrawImageAt(data->image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
-
-    set_screen(bottom);
-    draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
-    end_frame();
 
     int w;
     int h;
