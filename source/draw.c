@@ -194,7 +194,7 @@ static void draw_c2d_text_center(gfxScreen_t target, float y, float z, float sca
     C2D_DrawText(text, C2D_WithColor, offset, y, z, scaleX, scaleY, color);
 }
 
-static void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, const char * text)
+void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, const char * text)
 {
     C2D_Text text_arr[MAX_LINES];
     float offsets_arr[MAX_LINES];

@@ -31,7 +31,8 @@
 
 typedef struct {
     u16 *camera_buffer;
-    u32 *texture_buffer;
+    C2D_Image image;
+    C3D_Tex *tex;
     Handle mutex;
     volatile bool finished;
     volatile bool success;

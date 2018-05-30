@@ -36,13 +36,6 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-/*
-static u32 transfer_size;
-static Handle event;
-static struct quirc* context;
-static u16 * camera_buf = NULL;
-*/
-
 void exit_qr(qr_data *data)
 {
     DEBUG("Exiting QR\n");
@@ -53,7 +46,7 @@ void exit_qr(qr_data *data)
     data->capturing = false;
 
     free(data->camera_buffer);
-    free(data->texture_buffer);
+    // free(data->texture_buffer);
     quirc_destroy(data->context);
 }
 
@@ -165,19 +158,24 @@ void update_qr(qr_data *data)
         exit_qr(data);
         return;
     }
-    for (int i = 0; i < 240 * 400; i++)
-    {
-        // data->texture_buffer[i] = RGB565_TO_ABGR8(data->camera_buffer[i]);
-    }
+
     draw_base_interface();
-    // pp2d_free_texture(TEXTURE_QR);
-    // pp2d_load_texture_memory(TEXTURE_QR, data->texture_buffer, 400, 240);
 
-    // pp2d_draw_texture(TEXTURE_QR, 0, 0);
+    // Untiled texture loading code adapted from FBI
+    for(u32 x = 0; x < 400; x++) {
+        for(u32 y = 0; y < 256; y++) {
+            u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3))) * sizeof(u16);
+            u32 srcPos = (y * 400 + x) * sizeof(u16);
 
-    // pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
-    // pp2d_draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
-    // pp2d_end_draw();
+            memcpy(&((u8*) data->image.tex->data)[dstPos], &((u8*) data->camera_buffer)[srcPos], sizeof(u16));
+        }
+    }
+
+    C2D_DrawImageAt(data->image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
+
+    set_screen(bottom);
+    draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
+    end_frame();
 
     int w;
     int h;
@@ -287,11 +285,17 @@ bool init_qr(void)
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
     data->finished = false;
+    
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);
 
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
-    data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
+
+    data->tex = (C3D_Tex*)malloc(sizeof(C3D_Tex));
+    static const Tex3DS_SubTexture subt3x = { 512, 256, 0.0f, 1.0f, 1.0f, 0.0f };
+    data->image = (C2D_Image){ data->tex, &subt3x };
+    C3D_TexInit(data->image.tex, 512, 256, GPU_RGB565);
+    C3D_TexSetFilter(data->image.tex, GPU_LINEAR, GPU_LINEAR);
 
     while (!data->finished) update_qr(data);
     bool success = data->success;
