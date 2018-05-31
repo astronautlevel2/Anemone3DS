@@ -133,6 +133,7 @@ void update_ui(void *arg)
         draw_base_interface();
 
         // Untiled texture loading code adapted from FBI
+        svcWaitSynchronization(data->mutex, U64_MAX);
         for(u32 x = 0; x < 400 && !data->finished; x++) {
             for(u32 y = 0; y < 256 && !data->finished; y++) {
                 u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3))) * sizeof(u16);
@@ -141,6 +142,8 @@ void update_ui(void *arg)
                 memcpy(&((u8*) data->image.tex->data)[dstPos], &((u8*) data->camera_buffer)[srcPos], sizeof(u16));
             }
         }
+
+        svcReleaseMutex(data->mutex);
 
         if (data->finished)
         {
@@ -197,14 +200,12 @@ void update_qr(qr_data *data)
     int w;
     int h;
     u8 *image = (u8*) quirc_begin(data->context, &w, &h);
-    svcWaitSynchronization(data->mutex, U64_MAX);
     for (ssize_t x = 0; x < w; x++) {
         for (ssize_t y = 0; y < h; y++) {
             u16 px = data->camera_buffer[y * 400 + x];
             image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
     }
-    svcReleaseMutex(data->mutex);
     quirc_end(data->context);
     if(quirc_count(data->context) > 0)
     {
