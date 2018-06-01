@@ -475,7 +475,7 @@ int main(void)
 
                 continue;
             }
-            else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
+            else if(!qr_mode && kDown & KEY_Y && current_list->entries != NULL) //toggle preview mode
             {
                 toggle_preview:
                 if(!preview_mode)
