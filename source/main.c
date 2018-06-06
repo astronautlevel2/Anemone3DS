@@ -36,6 +36,7 @@
 #include <time.h>
 
 bool quit = false;
+bool dspfirm = false;
 audio_s * audio = NULL;
 static bool homebrew = false;
 static bool installed_themes = false;
@@ -77,7 +78,7 @@ static void init_services(void)
     cfguInit();
     ptmuInit();
     acInit();
-    ndspInit();
+    dspfirm = !ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
     // aptSetHomeAllowed(false);
@@ -481,7 +482,7 @@ int main(void)
                 if(!preview_mode)
                 {
                     preview_mode = load_preview(*current_list, &preview, &preview_offset);
-                    if(current_mode == MODE_THEMES)
+                    if(current_mode == MODE_THEMES && dspfirm)
                     {
                         audio = calloc(1, sizeof(audio_s));
                         Result r = load_audio(current_list->entries[current_list->selected_entry], audio);

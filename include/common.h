@@ -56,5 +56,6 @@ extern const int entries_per_screen_v[MODE_AMOUNT];
 extern const int entries_per_screen_h[MODE_AMOUNT];
 extern const int entry_size[MODE_AMOUNT];
 extern bool quit;
+extern bool dspfirm;
 
 #endif
