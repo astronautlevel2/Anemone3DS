@@ -545,18 +545,18 @@ bool themeplaza_browser(EntryMode mode)
             if(!preview_mode)
             {
                 preview_mode = load_remote_preview(current_entry, &preview, &preview_offset);
-                if(mode == MODE_THEMES)
+                if(mode == MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_s));
-                    load_audio(*current_entry, audio);
-                    play_audio(audio);
+                    if(R_FAILED(load_audio(*current_entry, audio))) audio = NULL;
+                    if(audio != NULL) play_audio(audio);
                 }
             }
             else
             {
                 preview_mode = false;
-                if(mode == MODE_THEMES && audio)
+                if(mode == MODE_THEMES && audio != NULL)
                 {
                     audio->stop = true;
                     svcWaitSynchronization(audio->finished, U64_MAX);
@@ -569,7 +569,7 @@ bool themeplaza_browser(EntryMode mode)
             if(preview_mode)
             {
                 preview_mode = false;
-                if(mode == MODE_THEMES && audio)
+                if(mode == MODE_THEMES && audio != NULL)
                 {
                     audio->stop = true;
                     svcWaitSynchronization(audio->finished, U64_MAX);

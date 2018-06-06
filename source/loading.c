@@ -592,7 +592,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
     if (audio->filesize == 0) {
         free(audio);
-        DEBUG("File not found!\n");
+        DEBUG("<load_audio> File not found!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
 
@@ -603,13 +603,13 @@ Result load_audio(Entry_s entry, audio_s *audio)
     ndspChnSetMix(0, audio->mix); // See mix comment above
 
     FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
-    DEBUG("Filesize: %ld\n", audio->filesize);
+    DEBUG("<load_audio> Filesize: %ld\n", audio->filesize);
     if(file != NULL) 
     {
         int e = ov_open(file, &audio->vf, NULL, 0);
         if (e < 0) 
         {
-            DEBUG("Vorbis: %d\n", e);
+            DEBUG("<load_audio> Vorbis: %d\n", e);
             free(audio->filebuf);
             free(audio);
             fclose(file);
@@ -619,10 +619,10 @@ Result load_audio(Entry_s entry, audio_s *audio)
         vorbis_info *vi = ov_info(&audio->vf, -1);
         ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
         if (vi->channels == 2) {
-            DEBUG("Using stereo\n");
+            DEBUG("<load_audio> Using stereo\n");
             ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // 2 channels == Stereo
         } else {
-            DEBUG("Invalid number of channels\n");
+            DEBUG("<load_audio> Invalid number of channels\n");
             free(audio->filebuf);
             free(audio);
             fclose(file);
@@ -633,12 +633,12 @@ Result load_audio(Entry_s entry, audio_s *audio)
         audio->wave_buf[0].status = audio->wave_buf[1].status = NDSP_WBUF_DONE; // Used in play to stop from writing to current buffer
         audio->wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ); // Most vorbis packets should only be 4 KB at most (?) Possibly dangerous assumption
         audio->wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
-        DEBUG("Success!\n");
+        DEBUG("<load_audio> Success!\n");
         return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
     } else {
         free(audio->filebuf);
         free(audio);
-        DEBUG("fmemopen failed!\n");
+        DEBUG("<load_audio> fmemopen failed!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
 }
