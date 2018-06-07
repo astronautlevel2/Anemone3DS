@@ -14,6 +14,7 @@ First of all, make sure devkitARM is properly installed - `$DEVKITPRO` and `$DEV
 After that, open the directory you want to clone the repo into, and execute  
 `git clone https://github.com/astronautlevel2/Anemone3DS` (or any other cloning method).  
 To install the prerequisite libraries, begin by ensuring devkitPro pacman (and the base install group, `3ds-dev`) is installed, and then install the dkP packages `3ds-jansson`, `3ds-libvorbisidec`, `3ds-libpng`, and `3ds-libarchive` using `[sudo] [dkp-]pacman -S <package-name>`.  
+
 After adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built binaries will be in `/out/`.
 
 # License
