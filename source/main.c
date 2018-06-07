@@ -482,12 +482,18 @@ int main(void)
                 if(!preview_mode)
                 {
                     preview_mode = load_preview(*current_list, &preview, &preview_offset);
-                    if(current_mode == MODE_THEMES && dspfirm)
+                    if(preview_mode)
                     {
-                        audio = calloc(1, sizeof(audio_s));
-                        Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
-                        if (R_SUCCEEDED(r)) play_audio(audio);
-                        else audio = NULL;
+                        end_frame();
+                        draw_preview(preview, preview_offset);
+                        end_frame();
+                        if(current_mode == MODE_THEMES && dspfirm)
+                        {
+                            audio = calloc(1, sizeof(audio_s));
+                            Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
+                            if (R_SUCCEEDED(r)) play_audio(audio);
+                            else audio = NULL;
+                        }
                     }
                 }
                 else
