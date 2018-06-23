@@ -10,9 +10,9 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
 # Your values.
-APP_TITLE           :=	Anemone3DS
-APP_DESCRIPTION     :=	A complete theming tool for the 3DS
-APP_AUTHOR          :=	Anemone3DS Team
+APP_TITLE           :=	Profesnal Theems
+APP_DESCRIPTION     :=	ooh, an cluod
+APP_AUTHOR          :=	Multimegamander
 
 
 TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
@@ -33,13 +33,13 @@ BANNER_IMAGE        :=	meta/banner.png
 RSF_PATH            :=	meta/app.rsf
 
 # If left blank, makerom will use the default Homebrew logo
-LOGO                :=	meta/logo.bin
+LOGO                :=	meta/logo.bcma.lz
 
 
 # If left blank, makerom will use default values (0xff3ff and CTR-P-CTAP, respectively)
 # Be careful if UNIQUE_ID is the same as other apps: it will overwrite the previously installed one
 UNIQUE_ID           :=	0xBAFE0
-PRODUCT_CODE        :=	CTR-P-ANEM
+PRODUCT_CODE        :=	CTR-P-PROF
 
 # Don't really need to change this
 ICON_FLAGS          :=	nosavebackups,visible

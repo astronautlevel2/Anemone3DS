@@ -1,4 +1,4 @@
-![# Anemone3DS](https://github.com/astronautlevel2/Anemone3DS/blob/master/meta/banner.png)
+![# Anemone3DS](https://github.com/Multimegamander/Profesnal-Theems/blob/master/meta/banner.png)
 
 A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.\
 To-do list here: https://trello.com/b/F1YSa1VK
