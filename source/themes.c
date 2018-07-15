@@ -125,7 +125,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     FSUSER_OpenFile(&bgm_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, bgm_cache_path), FS_OPEN_WRITE, 0);
 
                     padded = calloc(BGM_MAX_SIZE, sizeof(char));
-                    if(!current_theme->no_bgm_shuffle)
+                    if(!current_theme->no_bgm_shuffle && music_size)
                     {
                         memcpy(padded, music, music_size);
                         free(music);
