@@ -200,4 +200,7 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
         FSUSER_DeleteFile(archive, path);
     }
     FSUSER_CreateFile(archive, path, 0, size);
+    char *buf = calloc(size, 1);
+    buf_to_file(size, path, archive, buf);
+    free(buf);
 }

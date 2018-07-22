@@ -191,6 +191,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
             }
 
+            remake_file(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, BGM_MAX_SIZE);
             res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
             free(music);
 
