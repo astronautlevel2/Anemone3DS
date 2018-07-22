@@ -30,14 +30,14 @@
 // Play a given audio struct
 Result update_audio(audio_s *audio) 
 {
-    long size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
-    DEBUG("Audio Size: %ld\n", size);
+    u32 size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
+    DEBUG("<update_audio> Audio Size: %ld\n", size);
     if (audio->wave_buf[audio->buf_pos].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
     { 
-        DEBUG("Attempting ov_read\n");
+        DEBUG("<update_audio> Attempting ov_read\n");
         int bitstream;
-        size_t read = ov_read(&audio->vf, (char*)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
-        DEBUG("ov_read successful\n");
+        u32 read = ov_read(&audio->vf, (char*)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
+        DEBUG("<update_audio> ov_read successful\n");
 
         if (read <= 0) // EoF or error
         { 
@@ -47,7 +47,7 @@ Result update_audio(audio_s *audio)
                 ov_open(fmemopen(audio->filebuf, audio->filesize, "rb"), &audio->vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
             } else // Error :(
             { 
-                DEBUG("Vorbis play error: %d\n", read);
+                DEBUG("<update_audio> Vorbis play error: %ld\n", read);
                 ndspChnReset(0);
                 return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
             }
@@ -71,8 +71,8 @@ void thread_audio(void* data) {
     }
     free(audio->filebuf);
     ov_clear(&audio->vf);
-    linearFree(audio->wave_buf[0].data_vaddr);
-    linearFree(audio->wave_buf[1].data_vaddr);
+    linearFree((void*)audio->wave_buf[0].data_vaddr);
+    linearFree((void*)audio->wave_buf[1].data_vaddr);
     while (audio->wave_buf[0].status != NDSP_WBUF_DONE || audio->wave_buf[1].status != NDSP_WBUF_DONE) svcSleepThread(1e7);
     svcSignalEvent(audio->finished);
     svcSleepThread(1e8);

@@ -81,8 +81,7 @@ typedef struct {
     Entry_s * entries;
     int entries_count;
 
-    ssize_t texture_id_offset;
-    ssize_t * icons_ids;
+    C2D_Image ** icons;
 
     int previous_scroll;
     int scroll;
@@ -110,13 +109,18 @@ typedef struct {
     volatile bool run_thread;
 } Thread_Arg_s;
 
+C2D_Image * loadTextureIcon(Icon_s *icon);
+void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name);
+
 void sort_by_name(Entry_List_s * list);
 void sort_by_author(Entry_List_s * list);
 void sort_by_filename(Entry_List_s * list);
 
 void delete_entry(Entry_s * entry, bool is_file);
 Result load_entries(const char * loading_path, Entry_List_s * list);
-bool load_preview(Entry_List_s list, int * preview_offset);
+bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset);
+bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset);
+void free_preview(C2D_Image preview_image);
 Result load_audio(Entry_s, audio_s *);
 void load_icons_first(Entry_List_s * current_list, bool silent);
 void handle_scrolling(Entry_List_s * list);

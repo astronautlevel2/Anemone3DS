@@ -24,26 +24,17 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef CAMERA_H
-#define CAMERA_H
+#include "colors.h"
 
-#include "common.h"
+Color colors[COLOR_AMOUNT] = {0};
 
-typedef struct {
-    u16 *camera_buffer;
-    C2D_Image image;
-    C3D_Tex *tex;
-    Handle mutex;
-    volatile bool finished;
-    volatile bool success;
-    Handle cancel;
-
-    bool capturing;
-    struct quirc* context;
-} qr_data;
-
-bool init_qr(void);
-void exit_qr(qr_data *data);
-void take_picture(void);
-
-#endif
+void init_colors(void)
+{
+    colors[COLOR_BACKGROUND] = C2D_Color32(35, 28, 32, 255); //silver-y black
+    colors[COLOR_ACCENT] = C2D_Color32(55, 122, 168, 255);
+    colors[COLOR_WHITE] = C2D_Color32(255, 255, 255, 255);
+    colors[COLOR_CURSOR] = C2D_Color32(200, 200, 200, 255);
+    colors[COLOR_BLACK] = C2D_Color32(0, 0, 0, 255);
+    colors[COLOR_RED] = C2D_Color32(200, 0, 0, 255);
+    colors[COLOR_YELLOW] = C2D_Color32(239, 220, 11, 255);
+}

@@ -29,26 +29,25 @@
 #include "fs.h"
 #include "unicode.h"
 #include "music.h"
-#include "pp2d/pp2d/pp2d.h"
 
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
     {
         .info_line = NULL,
         .instructions = {
             {
-                L"\uE000 Download theme",
-                L"\uE001 Go back"
+                "\uE000 Download theme",
+                "\uE001 Go back"
             },
             {
-                L"\uE002 Hold for more",
-                L"\uE003 Preview theme"
+                "\uE002 Hold for more",
+                "\uE003 Preview theme"
             },
             {
-                L"\uE004 Previous page",
-                L"\uE005 Next page"
+                "\uE004 Previous page",
+                "\uE005 Next page"
             },
             {
-                L"Exit",
+                "Exit",
                 NULL
             }
         }
@@ -57,19 +56,19 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
         .info_line = NULL,
         .instructions = {
             {
-                L"\uE000 Download splash",
-                L"\uE001 Go back"
+                "\uE000 Download splash",
+                "\uE001 Go back"
             },
             {
-                L"\uE002 Hold for more",
-                L"\uE003 Preview splash"
+                "\uE002 Hold for more",
+                "\uE003 Preview splash"
             },
             {
-                L"\uE004 Previous page",
-                L"\uE005 Next page"
+                "\uE004 Previous page",
+                "\uE005 Next page"
             },
             {
-                L"Exit",
+                "Exit",
                 NULL
             }
         }
@@ -77,34 +76,49 @@ static Instructions_s browser_instructions[MODE_AMOUNT] = {
 };
 
 static Instructions_s extra_instructions = {
-    .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
-    .info_line_color = COLOR_WHITE,
+    .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
     .instructions = {
         {
-            L"\uE079 Jump to page",
-            L"\uE07A Search tags"
+            "\uE079 Jump to page",
+            "\uE07A Search tags"
         },
         {
-            L"\uE07B Toggle splash/theme",
-            L"\uE07C Reload without cache"
+            "\uE07B Toggle splash/theme",
+            "\uE07C Reload without cache"
         },
         {
             NULL,
             NULL
         },
         {
-            L"Exit",
+            "Exit",
             NULL
         }
     }
 };
 
-static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cache)
+static void free_icons(Entry_List_s * list)
+{
+    if(list != NULL)
+    {
+        if(list->icons != NULL)
+        {
+            for(int i = 0; i < list->entries_count; i++)
+            {
+                C3D_TexDelete(list->icons[i]->tex);
+                free(list->icons[i]->tex);
+                free(list->icons[i]);
+            }
+            free(list->icons);
+        }
+    }
+}
+
+static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
 {
     bool not_cached = true;
     char * smdh_buf = NULL;
     u32 smdh_size = load_data("/info.smdh", *entry, &smdh_buf);
-    Icon_s * smdh = (Icon_s *)smdh_buf;
 
     not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
 
@@ -116,40 +130,21 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
         smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE);
         free(api_url);
-        smdh = (Icon_s *)smdh_buf;
     }
 
     if(!smdh_size)
     {
         free(smdh_buf);
-        utf8_to_utf16(entry->name, (u8*)"No name", 0x80);
-        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
-        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
-        entry->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
-        return;
+        smdh_buf = NULL;
     }
 
-    memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
-    memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
-    memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
+    Icon_s * smdh = (Icon_s *)smdh_buf;
 
-    const u32 width = 48, height = 48;
-    u32 *image = malloc(width*height*sizeof(u32));
+    u16 fallback_name[0x81] = {0};
+    utf8_to_utf16(fallback_name, (u8*)"No name", 0x80);
 
-    for(u32 x = 0; x < width; x++)
-    {
-        for(u32 y = 0; y < height; y++)
-        {
-            unsigned int dest_pixel = (x + y*width);
-            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
-
-            image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
-        }
-    }
-
-    pp2d_free_texture(textureID);
-    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
-    free(image);
+    parse_smdh(smdh, entry, fallback_name);
+    C2D_Image * image = loadTextureIcon(smdh);
 
     if(not_cached)
     {
@@ -161,15 +156,17 @@ static void load_remote_smdh(Entry_s * entry, size_t textureID, bool ignore_cach
         buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
     }
     free(smdh_buf);
+
+    return image;
 }
 
 static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ignore_cache, InstallType type)
 {
+    free_icons(list);
     list->entries_count = json_array_size(ids_array);
     free(list->entries);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
-    free(list->icons_ids);
-    list->icons_ids = calloc(list->entries_count, sizeof(ssize_t));
+    list->icons = calloc(list->entries_count, sizeof(C2D_Image*));
     list->entries_loaded = list->entries_count;
 
     size_t i = 0;
@@ -177,18 +174,15 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
     json_array_foreach(ids_array, i, id)
     {
         draw_loading_bar(i, list->entries_count, type);
-        size_t offset = i;
-        Entry_s * current_entry = &list->entries[offset];
+        Entry_s * current_entry = &list->entries[i];
         current_entry->tp_download_id = json_integer_value(id);
-        size_t textureID = list->texture_id_offset + i;
 
         char * entry_path = NULL;
         asprintf(&entry_path, CACHE_PATH_FORMAT, current_entry->tp_download_id);
         utf8_to_utf16(current_entry->path, (u8*)entry_path, 0x106);
         free(entry_path);
 
-        load_remote_smdh(current_entry, textureID, ignore_cache);
-        list->icons_ids[offset] = textureID;
+        list->icons[i] = load_remote_smdh(current_entry, ignore_cache);
     }
 }
 
@@ -214,7 +208,6 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 
     if(json_len)
     {
-        list->texture_id_offset = TEXTURE_REMOTE_ICONS;
         list->tp_current_page = page;
         list->mode = mode;
         list->entry_size = entry_size[mode];
@@ -249,7 +242,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 }
 
 static u16 previous_path_preview[0x106] = {0};
-static bool load_remote_preview(Entry_s * entry, int * preview_offset)
+static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int * preview_offset)
 {
     bool not_cached = true;
 
@@ -280,39 +273,9 @@ static bool load_remote_preview(Entry_s * entry, int * preview_offset)
         return false;
     }
 
-    bool ret = false;
-    u8 * image = NULL;
-    unsigned int width = 0, height = 0;
+    bool ret = load_preview_from_buffer(preview_png, preview_size, preview_image, preview_offset);
 
-    if((lodepng_decode32(&image, &width, &height, (u8*)preview_png, preview_size)) == 0) // no error
-    {
-        for(u32 i = 0; i < width; i++)
-        {
-            for(u32 j = 0; j < height; j++)
-            {
-                u32* pixel = (u32*)(image + (i + j*width) * 4);
-                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR, needed for pp2d
-            }
-        }
-
-        // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, entry->path, 0x106*sizeof(u16));
-        // free the previously loaded preview. wont do anything if there wasnt one
-        pp2d_free_texture(TEXTURE_REMOTE_PREVIEW);
-
-        pp2d_load_texture_memory(TEXTURE_REMOTE_PREVIEW, image, (u32)width, (u32)height);
-
-        *preview_offset = (width-400)/2;
-        ret = true;
-    }
-    else
-    {
-        throw_error("Corrupted/invalid preview.png", ERROR_LEVEL_WARNING);
-    }
-
-    free(image);
-
-    if(not_cached)
+    if(ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
     {
         u16 path[0x107] = {0};
         strucat(path, entry->path);
@@ -320,6 +283,7 @@ static bool load_remote_preview(Entry_s * entry, int * preview_offset)
         remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, preview_size);
         buf_to_file(preview_size, fsMakePath(PATH_UTF16, path), ArchiveSD, preview_png);
     }
+
     free(preview_png);
 
     return ret;
@@ -417,7 +381,7 @@ static void jump_menu(Entry_List_s * list)
     sprintf(numbuf, "Which page do you want to jump to?");
     swkbdSetHintText(&swkbd, numbuf);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cance", false);
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
     swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->tp_page_count);
@@ -442,7 +406,7 @@ static void search_menu(Entry_List_s * list)
     swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
     swkbdSetHintText(&swkbd, "Which tags do you want to search for?");
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cance", false);
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Search", true);
     swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
 
@@ -498,16 +462,19 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
     load_remote_list(current_list, 1, mode, false);
+    C2D_Image preview = {0};
 
     bool extra_mode = false;
 
-    while(true)
+    while(aptMainLoop())
     {
         if(current_list->entries == NULL)
             break;
 
         if(preview_mode)
-            draw_preview(TEXTURE_REMOTE_PREVIEW, preview_offset);
+        {
+            draw_preview(preview, preview_offset);
+        }
         else
         {
             Instructions_s instructions = browser_instructions[mode];
@@ -515,7 +482,7 @@ bool themeplaza_browser(EntryMode mode)
                 instructions = extra_instructions;
             draw_grid_interface(current_list, instructions);
         }
-        pp2d_end_draw();
+        end_frame();
 
         hidScanInput();
         u32 kDown = hidKeysDown();
@@ -577,19 +544,19 @@ bool themeplaza_browser(EntryMode mode)
             toggle_preview:
             if(!preview_mode)
             {
-                preview_mode = load_remote_preview(current_entry, &preview_offset);
-                if(mode == MODE_THEMES)
+                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset);
+                if(mode == MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_s));
-                    load_audio(*current_entry, audio);
-                    play_audio(audio);
+                    if(R_FAILED(load_audio(*current_entry, audio))) audio = NULL;
+                    if(audio != NULL) play_audio(audio);
                 }
             }
             else
             {
                 preview_mode = false;
-                if(mode == MODE_THEMES && audio)
+                if(mode == MODE_THEMES && audio != NULL)
                 {
                     audio->stop = true;
                     svcWaitSynchronization(audio->finished, U64_MAX);
@@ -602,7 +569,7 @@ bool themeplaza_browser(EntryMode mode)
             if(preview_mode)
             {
                 preview_mode = false;
-                if(mode == MODE_THEMES && audio)
+                if(mode == MODE_THEMES && audio != NULL)
                 {
                     audio->stop = true;
                     svcWaitSynchronization(audio->finished, U64_MAX);
@@ -741,8 +708,10 @@ bool themeplaza_browser(EntryMode mode)
         }
     }
 
+    free_preview(preview);
+
+    free_icons(current_list);
     free(current_list->entries);
-    free(current_list->icons_ids);
     free(current_list->tp_search);
 
     return downloaded;

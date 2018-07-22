@@ -27,7 +27,6 @@
 #include "camera.h"
 
 #include "quirc/quirc.h"
-#include "pp2d/pp2d/pp2d.h"
 
 #include "draw.h"
 #include "fs.h"
@@ -36,13 +35,6 @@
 
 #include <archive.h>
 #include <archive_entry.h>
-
-/*
-static u32 transfer_size;
-static Handle event;
-static struct quirc* context;
-static u16 * camera_buf = NULL;
-*/
 
 void exit_qr(qr_data *data)
 {
@@ -54,7 +46,7 @@ void exit_qr(qr_data *data)
     data->capturing = false;
 
     free(data->camera_buffer);
-    free(data->texture_buffer);
+    free(data->tex);
     quirc_destroy(data->context);
 }
 
@@ -133,6 +125,39 @@ void capture_cam_thread(void *arg)
     data->finished = true;
 }
 
+void update_ui(void *arg)
+{
+    qr_data* data = (qr_data*) arg;
+    while (!data->finished)
+    {
+        draw_base_interface();
+
+        // Untiled texture loading code adapted from FBI
+        svcWaitSynchronization(data->mutex, U64_MAX);
+        for(u32 x = 0; x < 400 && !data->finished; x++) {
+            for(u32 y = 0; y < 256 && !data->finished; y++) {
+                u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3))) * sizeof(u16);
+                u32 srcPos = (y * 400 + x) * sizeof(u16);
+
+                memcpy(&((u8*) data->image.tex->data)[dstPos], &((u8*) data->camera_buffer)[srcPos], sizeof(u16));
+            }
+        }
+
+        svcReleaseMutex(data->mutex);
+
+        if (data->finished)
+        {
+            end_frame();
+        }
+
+        C2D_DrawImageAt(data->image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
+
+        set_screen(bottom);
+        draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
+        end_frame();
+    }
+}
+
 bool start_capture_cam(qr_data *data) 
 {
     data->mutex = 0;
@@ -141,6 +166,11 @@ bool start_capture_cam(qr_data *data)
     svcCreateMutex(&data->mutex, false);
     if(threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, true) == NULL)
         return false;
+    if(threadCreate(update_ui, data, 0x10000, 0x1A, 1, true) == NULL)
+    {
+        exit_qr(data);
+        return false;
+    }
     return true;
 }
 
@@ -166,31 +196,16 @@ void update_qr(qr_data *data)
         exit_qr(data);
         return;
     }
-    for (int i = 0; i < 240 * 400; i++)
-    {
-        data->texture_buffer[i] = RGB565_TO_ABGR8(data->camera_buffer[i]);
-    }
-    draw_base_interface();
-    pp2d_free_texture(TEXTURE_QR);
-    pp2d_load_texture_memory(TEXTURE_QR, data->texture_buffer, 400, 240);
-
-    pp2d_draw_texture(TEXTURE_QR, 0, 0);
-
-    pp2d_draw_on(GFX_BOTTOM, GFX_LEFT);
-    pp2d_draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, RGBA8(255, 255, 255, 255), "Press \uE005 To Quit");
-    pp2d_end_draw();
 
     int w;
     int h;
     u8 *image = (u8*) quirc_begin(data->context, &w, &h);
-    svcWaitSynchronization(data->mutex, U64_MAX);
     for (ssize_t x = 0; x < w; x++) {
         for (ssize_t y = 0; y < h; y++) {
             u16 px = data->camera_buffer[y * 400 + x];
             image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
     }
-    svcReleaseMutex(data->mutex);
     quirc_end(data->context);
     if(quirc_count(data->context) > 0)
     {
@@ -288,11 +303,17 @@ bool init_qr(void)
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
     data->finished = false;
+    
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);
 
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
-    data->texture_buffer = calloc(1, 400 * 240 * sizeof(u32));
+
+    data->tex = (C3D_Tex*)malloc(sizeof(C3D_Tex));
+    static const Tex3DS_SubTexture subt3x = { 512, 256, 0.0f, 1.0f, 1.0f, 0.0f };
+    data->image = (C2D_Image){ data->tex, &subt3x };
+    C3D_TexInit(data->image.tex, 512, 256, GPU_RGB565);
+    C3D_TexSetFilter(data->image.tex, GPU_LINEAR, GPU_LINEAR);
 
     while (!data->finished) update_qr(data);
     bool success = data->success;

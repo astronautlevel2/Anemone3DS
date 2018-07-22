@@ -35,20 +35,20 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
         .info_line = NULL,
         .instructions = {
             {
-                L"\uE000 Hold to install",
-                L"\uE001 Queue shuffle theme"
+                "\uE000 Hold to install",
+                "\uE001 Queue shuffle theme"
             },
             {
-                L"\uE002 Hold for more",
-                L"\uE003 Preview theme"
+                "\uE002 Hold for more",
+                "\uE003 Preview theme"
             },
             {
-                L"\uE004 Switch to splashes",
-                L"\uE005 Scan QR code"
+                "\uE004 Switch to splashes",
+                "\uE005 Scan QR code"
             },
             {
-                L"Exit",
-                L"Delete from SD"
+                "Exit",
+                "Delete from SD"
             }
         }
     },
@@ -56,43 +56,42 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
         .info_line = NULL,
         .instructions = {
             {
-                L"\uE000 Install splash",
-                L"\uE001 Delete installed splash"
+                "\uE000 Install splash",
+                "\uE001 Delete installed splash"
             },
             {
-                L"\uE002 Hold for more",
-                L"\uE003 Preview splash"
+                "\uE002 Hold for more",
+                "\uE003 Preview splash"
             },
             {
-                L"\uE004 Switch to themes",
-                L"\uE005 Scan QR code"
+                "\uE004 Switch to themes",
+                "\uE005 Scan QR code"
             },
             {
-                L"Exit",
-                L"Delete from SD"
+                "Exit",
+                "Delete from SD"
             }
         }
     }
 };
 
 Instructions_s install_instructions = {
-    .info_line = L"Release \uE000 to cancel or hold \uE006 and release \uE000 to install",
-    .info_line_color = COLOR_WHITE,
+    .info_line = "Release \uE000 to cancel or hold \uE006 and release \uE000 to install",
     .instructions = {
         {
-            L"\uE079 Normal install",
-            L"\uE07A Shuffle install"
+            "\uE079 Normal install",
+            "\uE07A Shuffle install"
         },
         {
-            L"\uE07B BGM-only install",
-            L"\uE07C No-BGM install"
+            "\uE07B BGM-only install",
+            "\uE07C No-BGM install"
         },
         {
             NULL,
             NULL
         },
         {
-            L"Exit",
+            "Exit",
             NULL
         }
     }
@@ -100,15 +99,14 @@ Instructions_s install_instructions = {
 
 Instructions_s extra_instructions[3] = {
     {
-        .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to sort",
-        .info_line_color = COLOR_WHITE,
+        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to sort",
         .instructions = {
             {
-                L"\uE079 Sort by name",
-                L"\uE07A Sort by author"
+                "\uE079 Sort by name",
+                "\uE07A Sort by author"
             },
             {
-                L"\uE07B Sort by filename",
+                "\uE07B Sort by filename",
                 NULL
             },
             {
@@ -116,29 +114,28 @@ Instructions_s extra_instructions[3] = {
                 NULL
             },
             {
-                L"Exit",
+                "Exit",
                 NULL
             }
         }
     },
     {
-        .info_line = L"Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
-        .info_line_color = COLOR_WHITE,
+        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
         .instructions = {
             {
-                L"\uE079 Jump in the list",
-                L"\uE07A Reload broken icons"
+                "\uE079 Jump in the list",
+                "\uE07A Reload broken icons"
             },
             {
-                L"\uE07B Browse ThemePlaza",
+                "\uE07B Browse ThemePlaza",
                 NULL,
             },
             {
-                L"\uE004 Sorting menu",
+                "\uE004 Sorting menu",
                 NULL
             },
             {
-                L"Exit",
+                "Exit",
                 NULL
             }
         }

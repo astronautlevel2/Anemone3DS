@@ -33,17 +33,18 @@
 #include "music.h"
 #include "remote.h"
 #include "instructions.h"
-#include "pp2d/pp2d/pp2d.h"
 #include <time.h>
 
 bool quit = false;
+bool dspfirm = false;
 audio_s * audio = NULL;
 static bool homebrew = false;
 static bool installed_themes = false;
 
 static Thread iconLoadingThread = {0};
 static Thread_Arg_s iconLoadingThread_arg = {0};
-static Handle update_icons_handle;
+static Handle update_icons_mutex;
+static bool released = false;
 
 static Thread installCheckThreads[MODE_AMOUNT] = {0};
 static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
@@ -77,9 +78,10 @@ static void init_services(void)
     cfguInit();
     ptmuInit();
     acInit();
-    ndspInit();
+    dspfirm = !ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
+    // aptSetHomeAllowed(false);
     httpcInit(0);
     archive_result = open_archives();
     if(envIsHomebrew())
@@ -115,10 +117,26 @@ static void exit_thread(void)
     {
         DEBUG("exiting thread\n");
         iconLoadingThread_arg.run_thread = false;
-        svcSignalEvent(update_icons_handle);
+        svcReleaseMutex(update_icons_mutex);
+        svcWaitSynchronization(update_icons_mutex, U64_MAX);
         threadJoin(iconLoadingThread, U64_MAX);
         threadFree(iconLoadingThread);
     }
+}
+
+static void free_icons(Entry_List_s * list)
+{
+    int amount = list->entries_count;
+    if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
+        amount = list->entries_loaded*ICONS_OFFSET_AMOUNT;
+
+    for(int i = 0; i < amount; i++)
+    {
+        C3D_TexDelete(list->icons[i]->tex);
+        free(list->icons[i]->tex);
+        free(list->icons[i]);
+    }
+    free(list->icons);
 }
 
 void free_lists(void)
@@ -127,8 +145,8 @@ void free_lists(void)
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * current_list = &lists[i];
+        free_icons(current_list);
         free(current_list->entries);
-        free(current_list->icons_ids);
         memset(current_list, 0, sizeof(Entry_List_s));
     }
     exit_thread();
@@ -142,7 +160,7 @@ void exit_function(bool power_pressed)
         svcWaitSynchronization(audio->finished, U64_MAX);
     }
     free_lists();
-    svcCloseHandle(update_icons_handle);
+    svcCloseHandle(update_icons_mutex);
     exit_screens();
     exit_services();
 
@@ -170,8 +188,6 @@ static void start_thread(void)
 
 static void load_lists(Entry_List_s * lists)
 {
-    ssize_t texture_id_offset = TEXTURE_ICON;
-
     free_lists();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
@@ -181,7 +197,6 @@ static void load_lists(Entry_List_s * lists)
         else if(i == MODE_SPLASHES)
             loading_screen = INSTALL_LOADING_SPLASHES;
 
-        draw_install(loading_screen);
         draw_install(loading_screen);
 
         Entry_List_s * current_list = &lists[i];
@@ -200,10 +215,7 @@ static void load_lists(Entry_List_s * lists)
 
             DEBUG("total: %i\n", current_list->entries_count);
 
-            current_list->texture_id_offset = texture_id_offset;
             load_icons_first(current_list, false);
-
-            texture_id_offset += current_list->entries_loaded*ICONS_OFFSET_AMOUNT;
 
             void (*install_check_function)(void*) = NULL;
             if(i == MODE_THEMES)
@@ -311,18 +323,25 @@ static void toggle_shuffle(Entry_List_s * list)
     }
 }
 
+static inline void wait_scroll(void)
+{
+    released = true;
+    svcReleaseMutex(update_icons_mutex);
+    svcSleepThread(FASTSCROLL_WAIT);
+}
+
 int main(void)
 {
     srand(time(NULL));
     init_services();
     init_screens();
 
-    svcCreateEvent(&update_icons_handle, RESET_ONESHOT);
+    svcCreateMutex(&update_icons_mutex, true);
 
     static Entry_List_s * current_list = NULL;
     void * iconLoadingThread_args_void[] = {
         &current_list,
-        &update_icons_handle,
+        &update_icons_mutex,
     };
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
@@ -342,11 +361,13 @@ int main(void)
     bool qr_mode = false;
     bool install_mode = false;
     bool extra_mode = false;
+    C2D_Image preview = {0};
 
-    while(true)
+    while(aptMainLoop())
     {
         if(quit)
         {
+            free_preview(preview);
             exit_function(false);
             return 0;
         }
@@ -388,7 +409,7 @@ int main(void)
         if(qr_mode) take_picture();
         else if(preview_mode) 
         {
-            draw_preview(TEXTURE_PREVIEW, preview_offset);
+            draw_preview(preview, preview_offset);
         }
         else {
             if(!iconLoadingThread_arg.run_thread)
@@ -398,15 +419,21 @@ int main(void)
             }
             else
             {
-                svcSignalEvent(update_icons_handle);
-                svcSleepThread(5e6);
+                if(!released)
+                {
+                    svcReleaseMutex(update_icons_mutex);
+                    released = true;
+                }
+                svcWaitSynchronization(update_icons_mutex, U64_MAX);
             }
 
             draw_interface(current_list, instructions);
+
             svcSleepThread(1e7);
+            released = false;
         }
 
-        pp2d_end_draw();
+        end_frame();
 
         if(kDown & KEY_START) quit = true;
 
@@ -449,18 +476,24 @@ int main(void)
 
                 continue;
             }
-            else if(!qr_mode && kDown & KEY_Y) //toggle preview mode
+            else if(!qr_mode && kDown & KEY_Y && current_list->entries != NULL) //toggle preview mode
             {
                 toggle_preview:
                 if(!preview_mode)
                 {
-                    preview_mode = load_preview(*current_list, &preview_offset);
-                    if(current_mode == MODE_THEMES)
+                    preview_mode = load_preview(*current_list, &preview, &preview_offset);
+                    if(preview_mode)
                     {
-                        audio = calloc(1, sizeof(audio_s));
-                        Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
-                        if (R_SUCCEEDED(r)) play_audio(audio);
-                        else audio = NULL;
+                        end_frame();
+                        draw_preview(preview, preview_offset);
+                        end_frame();
+                        if(current_mode == MODE_THEMES && dspfirm)
+                        {
+                            audio = calloc(1, sizeof(audio_s));
+                            Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
+                            if (R_SUCCEEDED(r)) play_audio(audio);
+                            else audio = NULL;
+                        }
                     }
                 }
                 else
@@ -710,22 +743,22 @@ int main(void)
         else if(kHeld & KEY_CPAD_UP)
         {
             change_selected(current_list, -1);
-            svcSleepThread(FASTSCROLL_WAIT);
+            wait_scroll();
         }
         else if(kHeld & KEY_CPAD_DOWN)
         {
             change_selected(current_list, 1);
-            svcSleepThread(FASTSCROLL_WAIT);
+            wait_scroll();
         }
         else if(kHeld & KEY_CPAD_LEFT)
         {
             change_selected(current_list, -current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT);
+            wait_scroll();
         }
         else if(kHeld & KEY_CPAD_RIGHT)
         {
             change_selected(current_list, current_list->entries_per_screen_v);
-            svcSleepThread(FASTSCROLL_WAIT);
+            wait_scroll();
         }
 
         // Movement using the touchscreen
@@ -820,6 +853,9 @@ int main(void)
         }
     }
 
+    free_preview(preview);
+    // aptSetHomeAllowed(true);
     exit_function(true);
+
     return 0;
 }

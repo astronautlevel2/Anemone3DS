@@ -25,11 +25,12 @@
 */
 
 #include "loading.h"
-#include "pp2d/pp2d/pp2d.h"
 #include "fs.h"
 #include "unicode.h"
 #include "music.h"
 #include "draw.h"
+
+#include <png.h>
 
 void delete_entry(Entry_s * entry, bool is_file)
 {
@@ -55,54 +56,71 @@ u32 load_data(char * filename, Entry_s entry, char ** buf)
     }
 }
 
-static void parse_smdh(Entry_s * entry, const u16 * fallback_name)
+// Function taken and adapted from https://github.com/BernardoGiordano/Checkpoint/blob/master/3ds/source/title.cpp
+C2D_Image * loadTextureIcon(Icon_s *icon)
+{
+    if(icon == NULL)
+        return NULL;
+
+    C2D_Image * image = calloc(1, sizeof(C2D_Image));
+    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+    static const Tex3DS_SubTexture subt3x = { 48, 48, 0.0f, 48/64.0f, 48/64.0f, 0.0f };
+    image->tex = tex;
+    image->subtex = &subt3x;
+    C3D_TexInit(image->tex, 64, 64, GPU_RGB565);
+
+    u16* dest = (u16*)image->tex->data + (64-48)*64;
+    u16* src = icon->big_icon;
+    for (int j = 0; j < 48; j += 8)
+    {
+        memcpy(dest, src, 48*8*sizeof(u16));
+        src += 48*8;
+        dest += 64*8;
+    }
+
+    return image;
+}
+
+void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
+{
+    if(icon == NULL)
+    {
+        memcpy(entry->name, fallback_name, 0x80);
+        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
+        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
+        entry->placeholder_color = C2D_Color32(rand() % 255, rand() % 255, rand() % 255, 255);
+        return;
+    }
+
+    memcpy(entry->name, icon->name, 0x40*sizeof(u16));
+    memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
+    memcpy(entry->author, icon->author, 0x40*sizeof(u16));
+}
+
+static void parse_entry_smdh(Entry_s * entry, const u16 * fallback_name)
 {
     char *info_buffer = NULL;
     u64 size = load_data("/info.smdh", *entry, &info_buffer);
-    Icon_s * smdh = (Icon_s *)info_buffer;
 
     if(!size)
     {
         free(info_buffer);
-        memcpy(entry->name, fallback_name, 0x80);
-        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
-        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
-        entry->placeholder_color = RGBA8(rand() % 255, rand() % 255, rand() % 255, 255);
-        return;
+        info_buffer = NULL;
     }
-
-    memcpy(entry->name, smdh->name, 0x40*sizeof(u16));
-    memcpy(entry->desc, smdh->desc, 0x80*sizeof(u16));
-    memcpy(entry->author, smdh->author, 0x40*sizeof(u16));
-}
-
-static void load_smdh_icon(Entry_s entry, const ssize_t textureID)
-{
-    pp2d_free_texture(textureID);
-
-    char *info_buffer = NULL;
-    u64 size = load_data("/info.smdh", entry, &info_buffer);
-    if(!size) return;
 
     Icon_s * smdh = (Icon_s *)info_buffer;
 
-    const u32 width = 48, height = 48;
-    u32 *image = malloc(width*height*sizeof(u32));
+    parse_smdh(smdh, entry, fallback_name);
+}   
 
-    for(u32 x = 0; x < width; x++)
-    {
-        for(u32 y = 0; y < height; y++)
-        {
-            unsigned int dest_pixel = (x + y*width);
-            unsigned int source_pixel = (((y >> 3) * (width >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
+static C2D_Image * load_entry_icon(Entry_s entry)
+{
+    char *info_buffer = NULL;
+    u64 size = load_data("/info.smdh", entry, &info_buffer);
+    if(!size) return NULL;
 
-            image[dest_pixel] = RGB565_TO_ABGR8(smdh->big_icon[source_pixel]);
-        }
-    }
-
-    free(info_buffer);
-    pp2d_load_texture_memory(textureID, (u8*)image, (u32)width, (u32)height);
-    free(image);
+    Icon_s * smdh = (Icon_s *)info_buffer;
+    return loadTextureIcon(smdh);
 }
 
 typedef int (*sort_comparator)(const void *, const void *);
@@ -192,7 +210,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
         strucat(current_entry->path, dir_entry.name);
 
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-        parse_smdh(current_entry, dir_entry.name);
+        parse_entry_smdh(current_entry, dir_entry.name);
     }
 
     FSDIR_Close(dir_handle);
@@ -223,12 +241,11 @@ void load_icons_first(Entry_List_s * list, bool silent)
         endi = starti + list->entries_loaded*ICONS_OFFSET_AMOUNT;
     }
 
-    list->icons_ids = calloc(endi-starti, sizeof(ssize_t));
+    list->icons = calloc(endi-starti, sizeof(C2D_Image*));
 
-    ssize_t * icons_ids = list->icons_ids;
-    ssize_t id = list->texture_id_offset;
+    C2D_Image ** icons = list->icons;
 
-    for(int i = starti; i < endi; i++, id++)
+    for(int i = starti; i < endi; i++)
     {
         if(!silent)
             draw_loading_bar(i - starti, endi-starti, INSTALL_LOADING_ICONS);
@@ -240,22 +257,20 @@ void load_icons_first(Entry_List_s * list, bool silent)
             offset -= list->entries_count;
 
         Entry_s current_entry = list->entries[offset];
-        load_smdh_icon(current_entry, id);
-
-        icons_ids[i-starti] = id;
+        icons[i-starti] = load_entry_icon(current_entry);
     }
 }
 
-static void reverse(ssize_t a[], int sz) {
+static void reverse(C2D_Image * a[], int sz) {
     int i, j;
     for (i = 0, j = sz; i < j; i++, j--) {
-        ssize_t tmp = a[i];
+        C2D_Image * tmp = a[i];
         a[i] = a[j];
         a[j] = tmp;
     }
 }
 
-static void rotate(ssize_t array[], int size, int amt) {
+static void rotate(C2D_Image * array[], int size, int amt) {
     if (amt < 0)
         amt = size + amt;
     reverse(array, size-amt-1);
@@ -314,15 +329,15 @@ void handle_scrolling(Entry_List_s * list)
     //----------------------------------------------------------------
 }
 
-static void load_icons(Entry_List_s * current_list)
+static bool load_icons(Entry_List_s * current_list, Handle mutex)
 {
     if(current_list == NULL || current_list->entries == NULL)
-        return;
+        return false;
 
     handle_scrolling(current_list);
 
     if(current_list->entries_count <= current_list->entries_loaded*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
-        return; // return if the list is one that doesnt need swapping, or if nothing changed
+        return false; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
 
@@ -341,28 +356,26 @@ static void load_icons(Entry_List_s * current_list)
 
     int ctr = 0;
     Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
-    ssize_t * ids = calloc(abs(delta), sizeof(ssize_t));
+    int * indexes = calloc(abs(delta), sizeof(int));
+    bool released = false;
 
-    #define FIRST(arr) arr[0]
-    #define LAST(arr) arr[current_list->entries_loaded*ICONS_OFFSET_AMOUNT - 1]
-
-    ssize_t * icons_ids = current_list->icons_ids;
+    C2D_Image ** icons = current_list->icons;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
-        ssize_t id = 0;
+        int index = 0;
         int offset = i;
 
-        rotate(icons_ids, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
+        rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
 
         if(delta > 0)
         {
-            id = LAST(icons_ids);
+            index = current_list->entries_loaded*ICONS_OFFSET_AMOUNT - delta + i - starti;
             offset += current_list->entries_loaded*ICONS_UNDER - delta;
         }
         else
         {
-            id = FIRST(icons_ids);
+            index = 0 - delta - 1 + i - starti;
             offset -= current_list->entries_loaded*ICONS_VISIBLE;
             i -= 2; //i-- twice to counter the i++, needed only for this case
         }
@@ -373,43 +386,169 @@ static void load_icons(Entry_List_s * current_list)
             offset -= current_list->entries_count;
 
         entries[ctr] = &current_list->entries[offset];
-        ids[ctr] = id;
+        indexes[ctr] = index;
     }
 
-    #undef FIRST
-    #undef LAST
     #undef SIGN
 
-    svcSleepThread(1e6);
-    for(int i = 0; i < abs(delta); i++)
+    if(abs(delta) < 4)
     {
-        Entry_s current_entry = *entries[i];
-        ssize_t id = ids[i];
-        load_smdh_icon(current_entry, id);
+        svcReleaseMutex(mutex);
+        released = true;
+    }
+
+    svcSleepThread(1e7);
+    starti = 0;
+    endi = abs(delta);
+    for(int i = starti; i < endi; i++)
+    {
+        Entry_s * current_entry = entries[i];
+        int index = indexes[i];
+
+        C2D_Image * image = icons[index];
+        C3D_TexDelete(image->tex);
+        free(image->tex);
+        free(image);
+
+        icons[index] = load_entry_icon(*current_entry);
+
+        if(!released && i > endi/2)
+        {
+            svcReleaseMutex(mutex);
+            released = true;
+        }
     }
 
     free(entries);
-    free(ids);
+    free(indexes);
 
     current_list->previous_scroll = current_list->scroll;
+
+    return released;
 }
 
 void load_icons_thread(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
-    Handle update_request = *(Handle *)arg->thread_arg[1];
+    Handle mutex = *(Handle *)arg->thread_arg[1];
     do
     {
-        svcWaitSynchronization(update_request, U64_MAX);
-        svcClearEvent(update_request);
+        svcWaitSynchronization(mutex, U64_MAX);
         volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_arg[0];
-        load_icons((Entry_List_s *)current_list);
+        bool released = load_icons((Entry_List_s *)current_list, mutex);
+        if(!released)
+            svcReleaseMutex(mutex);
     }
     while(arg->run_thread);
 }
 
+bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset)
+{
+    if(size < 8 || png_sig_cmp(buf, 0, 8))
+    {
+        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
+        return false;
+    }
+
+    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+    png_infop info = png_create_info_struct(png);
+
+    if(setjmp(png_jmpbuf(png)))
+    {
+        png_destroy_read_struct(&png, &info, NULL);
+        return false;
+    }
+
+    FILE * fp = fmemopen(buf, size, "rb");
+
+    png_init_io(png, fp);
+    png_read_info(png, info);
+
+    int width = png_get_image_width(png, info);
+    int height = png_get_image_height(png, info);
+
+    png_byte color_type = png_get_color_type(png, info);
+    png_byte bit_depth  = png_get_bit_depth(png, info);
+
+    // Read any color_type into 8bit depth, ABGR format.
+    // See http://www.libpng.org/pub/png/libpng-manual.txt
+
+    if(bit_depth == 16)
+        png_set_strip_16(png);
+
+    if(color_type == PNG_COLOR_TYPE_PALETTE)
+        png_set_palette_to_rgb(png);
+
+    // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16bit depth.
+    if(color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+        png_set_expand_gray_1_2_4_to_8(png);
+
+    if(png_get_valid(png, info, PNG_INFO_tRNS))
+        png_set_tRNS_to_alpha(png);
+
+    // These color_type don't have an alpha channel then fill it with 0xff.
+    if(color_type == PNG_COLOR_TYPE_RGB ||
+       color_type == PNG_COLOR_TYPE_GRAY ||
+       color_type == PNG_COLOR_TYPE_PALETTE)
+        png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+
+    if(color_type == PNG_COLOR_TYPE_GRAY ||
+       color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+        png_set_gray_to_rgb(png);
+
+    //output ABGR
+    png_set_bgr(png);
+    png_set_swap_alpha(png);
+
+    png_read_update_info(png, info);
+
+    png_bytep * row_pointers = malloc(sizeof(png_bytep) * height);
+    for(int y = 0; y < height; y++) {
+        row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
+    }
+
+    png_read_image(png, row_pointers);
+
+    fclose(fp);
+    png_destroy_read_struct(&png, &info, NULL);
+
+
+    free_preview(*preview_image);
+
+    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+    preview_image->tex = tex;
+
+    Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
+    subt3x->width = width;
+    subt3x->height = height;
+    subt3x->left = 0.0f;
+    subt3x->top = 1.0f;
+    subt3x->right = width/512.0f;
+    subt3x->bottom = 1.0-(height/512.0f);
+    preview_image->subtex = subt3x;
+
+    C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
+
+    memset(preview_image->tex->data, 0, preview_image->tex->size);
+
+    for(int j = 0; j < height; j++) {
+        png_bytep row = row_pointers[j];
+        for(int i = 0; i < width; i++) {
+            png_bytep px = &(row[i * 4]);
+            u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
+
+            memcpy(preview_image->tex->data + dst, px, sizeof(u32));
+        }
+    }
+
+    *preview_offset = (width-400)/2;
+
+    return true;
+}
+
 static u16 previous_path_preview[0x106] = {0};
-bool load_preview(Entry_List_s list, int * preview_offset)
+bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset)
 {
     if(list.entries == NULL) return false;
 
@@ -427,40 +566,24 @@ bool load_preview(Entry_List_s list, int * preview_offset)
         return false;
     }
 
-    bool ret = false;
-    u8 * image = NULL;
-    unsigned int width = 0, height = 0;
-
-    if((lodepng_decode32(&image, &width, &height, (u8*)preview_buffer, size)) == 0) // no error
-    {
-        for(u32 i = 0; i < width; i++)
-        {
-            for(u32 j = 0; j < height; j++)
-            {
-                u32* pixel = (u32*)(image + (i + j*width) * 4);
-                *pixel = __builtin_bswap32(*pixel); //swap from RGBA to ABGR, needed for pp2d
-            }
-        }
-
-        // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
-        // free the previously loaded preview. wont do anything if there wasnt one
-        pp2d_free_texture(TEXTURE_PREVIEW);
-
-        pp2d_load_texture_memory(TEXTURE_PREVIEW, image, (u32)width, (u32)height);
-
-        *preview_offset = (width-400)/2;
-        ret = true;
-    }
-    else
-    {
-        throw_error("Corrupted/invalid preview.png", ERROR_LEVEL_WARNING);
-    }
-
-    free(image);
+    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset);
     free(preview_buffer);
 
+    if(ret)
+    {
+        // mark the new preview as loaded for optimisation
+        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
+    }
+
     return ret;
+}
+
+void free_preview(C2D_Image preview)
+{
+    if(preview.tex)
+        C3D_TexDelete(preview.tex);
+    free(preview.tex);
+    free((Tex3DS_SubTexture*)preview.subtex);
 }
 
 // Initialize the audio struct
@@ -469,24 +592,24 @@ Result load_audio(Entry_s entry, audio_s *audio)
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
     if (audio->filesize == 0) {
         free(audio);
-        DEBUG("File not found!\n");
+        DEBUG("<load_audio> File not found!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
 
     audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
     svcCreateEvent(&audio->finished, RESET_STICKY);
-    
+
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
     ndspChnSetMix(0, audio->mix); // See mix comment above
 
     FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
-    DEBUG("Filesize: %lld\n", audio->filesize);
+    DEBUG("<load_audio> Filesize: %ld\n", audio->filesize);
     if(file != NULL) 
     {
         int e = ov_open(file, &audio->vf, NULL, 0);
         if (e < 0) 
         {
-            DEBUG("Vorbis: %d\n", e);
+            DEBUG("<load_audio> Vorbis: %d\n", e);
             free(audio->filebuf);
             free(audio);
             fclose(file);
@@ -496,10 +619,10 @@ Result load_audio(Entry_s entry, audio_s *audio)
         vorbis_info *vi = ov_info(&audio->vf, -1);
         ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
         if (vi->channels == 2) {
-            DEBUG("Using stereo\n");
+            DEBUG("<load_audio> Using stereo\n");
             ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // 2 channels == Stereo
         } else {
-            DEBUG("Invalid number of channels\n");
+            DEBUG("<load_audio> Invalid number of channels\n");
             free(audio->filebuf);
             free(audio);
             fclose(file);
@@ -510,12 +633,12 @@ Result load_audio(Entry_s entry, audio_s *audio)
         audio->wave_buf[0].status = audio->wave_buf[1].status = NDSP_WBUF_DONE; // Used in play to stop from writing to current buffer
         audio->wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ); // Most vorbis packets should only be 4 KB at most (?) Possibly dangerous assumption
         audio->wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
-        DEBUG("Success!\n");
+        DEBUG("<load_audio> Success!\n");
         return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
     } else {
         free(audio->filebuf);
         free(audio);
-        DEBUG("fmemopen failed!\n");
+        DEBUG("<load_audio> fmemopen failed!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
 }

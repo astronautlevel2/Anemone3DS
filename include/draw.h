@@ -31,6 +31,8 @@
 #include "loading.h"
 #include "colors.h"
 
+#define MAX_LINES 10
+
 typedef enum {
     INSTALL_LOADING_THEMES,
     INSTALL_LOADING_SPLASHES,
@@ -57,6 +59,63 @@ typedef enum {
 } InstallType;
 
 typedef enum {
+    // InstallType text
+    TEXT_INSTALL_LOADING_THEMES,
+    TEXT_INSTALL_LOADING_SPLASHES,
+    TEXT_INSTALL_LOADING_ICONS,
+
+    TEXT_INSTALL_SPLASH,
+    TEXT_INSTALL_SPLASH_DELETE,
+
+    TEXT_INSTALL_SINGLE,
+    TEXT_INSTALL_SHUFFLE,
+    TEXT_INSTALL_BGM,
+    TEXT_INSTALL_NO_BGM,
+
+    TEXT_INSTALL_DOWNLOAD,
+    TEXT_INSTALL_CHECKING_DOWNLOAD,
+    TEXT_INSTALL_ENTRY_DELETE,
+
+    TEXT_INSTALL_LOADING_REMOTE_THEMES,
+    TEXT_INSTALL_LOADING_REMOTE_SPLASHES,
+    TEXT_INSTALL_LOADING_REMOTE_PREVIEW,
+    TEXT_INSTALL_LOADING_REMOTE_BGM,
+
+    // Other text
+    TEXT_VERSION,
+
+    TEXT_THEME_MODE,
+    TEXT_SPLASH_MODE,
+
+    TEXT_NO_THEME_FOUND,
+    TEXT_NO_SPLASH_FOUND,
+
+    TEXT_DOWNLOAD_FROM_QR,
+
+    TEXT_SWITCH_TO_SPLASHES,
+    TEXT_SWITCH_TO_THEMES,
+
+    TEXT_OR_START_TO_QUIT,
+
+    TEXT_BY_AUTHOR,
+    TEXT_SELECTED,
+    TEXT_SELECTED_SHORT,
+
+    TEXT_THEMEPLAZA_THEME_MODE,
+    TEXT_THEMEPLAZA_SPLASH_MODE,
+
+    TEXT_SEARCH,
+    TEXT_PAGE,
+
+    TEXT_ERROR_QUIT,
+    TEXT_ERROR_CONTINUE,
+
+    TEXT_CONFIRM_YES_NO,
+
+    TEXT_AMOUNT
+} Text;
+
+typedef enum {
     ERROR_LEVEL_ERROR,
     ERROR_LEVEL_WARNING,
 } ErrorLevel;
@@ -76,24 +135,39 @@ enum {
 
     BUTTONS_X_LEFT = 20,
     BUTTONS_X_RIGHT = 200,
+    BUTTONS_X_MAX = 380,
 } ButtonPos;
 
 typedef struct {
-    const wchar_t * info_line;
-    Color info_line_color;
-    const wchar_t * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
+    const char * info_line;
+    const char * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
+
+extern C3D_RenderTarget* top;
+extern C3D_RenderTarget* bottom;
+extern C2D_TextBuf staticBuf, dynamicBuf;
+
+extern C2D_Text text[TEXT_AMOUNT];
 
 void init_screens(void);
 void exit_screens(void);
 
+void start_frame(void);
+void end_frame(void);
+void set_screen(C3D_RenderTarget * screen);
+
 void throw_error(char* error, ErrorLevel level);
 bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
-void draw_preview(ssize_t previewID, int preview_offset);
+void draw_preview(C2D_Image preview, int preview_offset);
 
 void draw_install(InstallType type);
 void draw_loading_bar(u32 current, u32 max, InstallType type);
+
+void draw_text(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text);
+void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color color, const char * text, float max_width);
+void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * text, float max_scale, float min_scale, float max_width);
+void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, const char * text);
 
 void draw_base_interface(void);
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions);
