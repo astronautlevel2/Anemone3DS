@@ -683,6 +683,14 @@ int main(void)
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH);
                     splash_install(*current_entry);
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * splash = &current_list->entries[i];
+                        if(splash == current_entry)
+                            splash->installed = true;
+                        else
+                            splash->installed = false;
+                    }
                     break;
                 default:
                     break;
