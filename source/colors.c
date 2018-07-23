@@ -31,10 +31,10 @@ Color colors[COLOR_AMOUNT] = {0};
 void init_colors(void)
 {
     colors[COLOR_BACKGROUND] = C2D_Color32(35, 28, 32, 255); //silver-y black
-    colors[COLOR_ACCENT] = C2D_Color32(55, 122, 168, 255);
+    colors[COLOR_ACCENT] = C2D_Color32(12, 58, 111, 255);
     colors[COLOR_WHITE] = C2D_Color32(255, 255, 255, 255);
     colors[COLOR_CURSOR] = C2D_Color32(200, 200, 200, 255);
     colors[COLOR_BLACK] = C2D_Color32(0, 0, 0, 255);
-    colors[COLOR_RED] = C2D_Color32(200, 0, 0, 255);
+    colors[COLOR_RED] = C2D_Color32(229, 66, 66, 255);
     colors[COLOR_YELLOW] = C2D_Color32(239, 220, 11, 255);
 }
