@@ -449,9 +449,11 @@ int main(void)
             else if(!qr_mode && !preview_mode && kDown & KEY_R) //toggle QR mode
             {
                 enable_qr:
+                draw_base_interface();
+                draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], "Loading QR Scanner...");
+                end_frame();
                 if(R_SUCCEEDED(camInit()))
                 {
-                    camExit();
                     u32 out;
                     ACU_GetWifiStatus(&out);
                     if(out)

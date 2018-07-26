@@ -58,7 +58,6 @@ void capture_cam_thread(void *arg)
     u32 transferUnit;
 
     u16 *buffer = calloc(1, 400 * 240 * sizeof(u16));
-    camInit();
     CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
     CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
     CAMU_SetFrameRate(SELECT_OUT1, FRAME_RATE_30);
@@ -73,6 +72,7 @@ void capture_cam_thread(void *arg)
     CAMU_ClearBuffer(PORT_CAM1);
     CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), (s16) transferUnit);
     CAMU_StartCapture(PORT_CAM1);
+    svcSignalEvent(data->started);
     bool cancel = false;
     while (!cancel) 
     {
@@ -128,6 +128,7 @@ void capture_cam_thread(void *arg)
 void update_ui(void *arg)
 {
     qr_data* data = (qr_data*) arg;
+
     while (!data->finished)
     {
         draw_base_interface();
@@ -166,6 +167,7 @@ bool start_capture_cam(qr_data *data)
     svcCreateMutex(&data->mutex, false);
     if(threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, true) == NULL)
         return false;
+    svcWaitSynchronization(data->started, U64_MAX);
     if(threadCreate(update_ui, data, 0x10000, 0x1A, 1, true) == NULL)
     {
         exit_qr(data);
@@ -303,6 +305,7 @@ bool init_qr(void)
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
     data->finished = false;
+    svcCreateEvent(&data->started, RESET_STICKY);
     
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);

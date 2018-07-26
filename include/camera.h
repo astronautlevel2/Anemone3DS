@@ -37,6 +37,7 @@ typedef struct {
     volatile bool finished;
     volatile bool success;
     Handle cancel;
+    Handle started;
 
     bool capturing;
     struct quirc* context;
