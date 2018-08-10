@@ -117,7 +117,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, "Installing BGM-only theme...");
     C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, "Installing theme without BGM...");
 
-    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, "Installing BGM-only theme...");
+    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, "Downloading...");
     C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, "Checking downloaded file...");
     C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, "Deleting from SD...");
 
