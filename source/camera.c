@@ -58,6 +58,7 @@ void capture_cam_thread(void *arg)
     u32 transferUnit;
 
     u16 *buffer = calloc(1, 400 * 240 * sizeof(u16));
+    camInit();
     CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
     CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
     CAMU_SetFrameRate(SELECT_OUT1, FRAME_RATE_30);

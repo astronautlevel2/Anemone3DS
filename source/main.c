@@ -454,6 +454,7 @@ int main(void)
                 end_frame();
                 if(R_SUCCEEDED(camInit()))
                 {
+                    camExit();
                     u32 out;
                     ACU_GetWifiStatus(&out);
                     if(out)
