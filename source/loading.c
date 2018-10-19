@@ -345,18 +345,19 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     if(abs(delta) >= current_list->entries_count - current_list->entries_loaded*(ICONS_OFFSET_AMOUNT-1))
         delta = -SIGN(delta) * (current_list->entries_count - abs(delta));
 
+    int absdelta = abs(delta);
     int starti = current_list->scroll;
-    int endi = starti + abs(delta);
+    int endi = starti + absdelta;
 
     if(delta < 0)
     {
-        endi -= abs(delta) + 1;
-        starti += abs(delta) - 1;
+        endi -= absdelta + 1;
+        starti += absdelta - 1;
     }
 
     int ctr = 0;
-    Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
-    int * indexes = calloc(abs(delta), sizeof(int));
+    Entry_s ** entries = calloc(absdelta, sizeof(Entry_s *));
+    int * indexes = calloc(absdelta, sizeof(int));
     bool released = false;
 
     C2D_Image ** icons = current_list->icons;
@@ -389,18 +390,38 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
         indexes[ctr] = index;
     }
 
-    #undef SIGN
-
-    if(abs(delta) < 4)
+    static int cutoff[] = {
+        0, // absdelta = 1
+        0, // absdelta = 2
+        0, // absdelta = 3
+        0, // absdelta = 4
+        1, // absdelta = 5, 1 visible to be replaced before allowing drawing
+        2, // absdelta = 6, 2 visible to be replaced before allowing drawing
+        3, // absdelta = 7, 3 visible to be replaced before allowing drawing
+    };
+    int actual_cutoff = cutoff[absdelta-1];
+    if(actual_cutoff == 0)
     {
         svcReleaseMutex(mutex);
         released = true;
+        svcSleepThread(1e7);
     }
 
-    svcSleepThread(1e7);
-    starti = 0;
-    endi = abs(delta);
-    for(int i = starti; i < endi; i++)
+    if(delta > 0)
+    {
+        starti = 0;
+        endi = absdelta;
+    }
+    else
+    {
+        starti = absdelta-1;
+        endi = -1;
+    }
+
+    int change = SIGN(delta);
+    #undef SIGN
+
+    for(int i = starti; i != endi; i += change)
     {
         Entry_s * current_entry = entries[i];
         int index = indexes[i];
@@ -412,10 +433,11 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
 
         icons[index] = load_entry_icon(*current_entry);
 
-        if(!released && i > endi/2)
+        if(!released && i == actual_cutoff)
         {
             svcReleaseMutex(mutex);
             released = true;
+            svcSleepThread(1e7);
         }
     }
 
