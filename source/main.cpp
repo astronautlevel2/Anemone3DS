@@ -24,49 +24,50 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#include "Anemone3DS.h"
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+int __stacksize__ = 64 * 1024;
+bool have_sound = false;
+bool running = true;
+bool power_pressed = true;
 
-#include <filesystem>
-namespace fs = std::filesystem;
+/*
+Image::Image(u16 w, u16 h, GPU_TEXCOLOR format) : w(w), h(h)
+{
+    this->image = new C2D_Image;
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+    this->image->tex = new C3D_Tex;
+    u16 w_nextPow2 = nextPow2(w);
+    u16 h_nextPow2 = nextPow2(h);
+    C3D_TexInit(this->image->tex, w_nextPow2, h_nextPow2, format);
 
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
+    Tex3DS_SubTexture* subtex = new Tex3DS_SubTexture;
+    subtex->width = w;
+    subtex->height = h;
+    subtex->left = 0.0f;
+    subtex->top = 1.0f;
+    subtex->right = static_cast<float>(w) / w_nextPow2;
+    subtex->bottom = 1.0f - (static_cast<float>(h) / h_nextPow2);
+    this->image->subtex = subtex;
+}
 
-#include "sprites.h"
+Image::~Image()
+{
+    C3D_TexDelete(this->image->tex);
+    delete this->image->tex;
+    delete this->image->subtex;
+    delete this->image;
+}
+*/
 
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
+int main(int argc, char* argv[])
+{
+    auto anemone = new Anemone3DS;
 
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
+    while(aptMainLoop() && running)
+        anemone->update();
 
-struct Image {
-    u16 w, h;
-    C2D_Image* image;
-    
-    Image(u16 w, u16 h, GPU_TEXCOLOR format);
-    virtual ~Image();
-};
+    delete anemone;
 
-#endif
+    return 0;
+}

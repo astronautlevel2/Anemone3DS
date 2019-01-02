@@ -24,49 +24,68 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef ENTRY_H
+#define ENTRY_H
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+#include "common.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
-
-#include "sprites.h"
-
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
-
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
-
-struct Image {
-    u16 w, h;
+struct EntryIcon {
     C2D_Image* image;
-    
-    Image(u16 w, u16 h, GPU_TEXCOLOR format);
-    virtual ~Image();
+
+    EntryIcon();
+    EntryIcon(u16* pixels);
+    ~EntryIcon();
+};
+
+struct BadgeIcon : public EntryIcon {
+    BadgeIcon(const fs::path& path);
+};
+
+struct PreviewImage {
+    C2D_Image* image;
+    bool ready = false;
+
+    PreviewImage();
+    PreviewImage(char* png_buf, u32 png_size);
+    ~PreviewImage();
+    virtual void draw() const;
+};
+
+struct BadgePreviewImage : PreviewImage{
+    BadgePreviewImage(const fs::path& path);
+    void draw() const;
+};
+
+class Entry {
+    public:
+        Entry(const fs::path& path, bool is_zip);
+        void draw() const;
+
+        EntryIcon* load_icon() const;
+        PreviewImage* load_preview() const;
+
+        void delete_entry();
+        u32 get_file(const std::string& file_path, char** buf) const;
+
+        std::string title, description, author;
+        fs::path path;
+        u32 color = 0;
+        
+        enum EntryState {
+            STATE_NONE = 0,
+            
+            STATE_SHUFFLE = BIT(0),
+            STATE_SHUFFLE_NO_BGM = BIT(1),
+        };
+        u32 state = STATE_NONE;  // marked for shuffle, multi-install, etc...
+
+    private:
+        bool is_zip;
+};
+
+class RemoteEntry : public Entry {
+    public:
+        RemoteEntry(int entry_id);
 };
 
 #endif

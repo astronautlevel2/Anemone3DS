@@ -1,0 +1,17 @@
+Theme extdata does not exist!#nSet a default theme from the home menu.
+Badge extdata does not exist!#nDownload and install badge arcade.
+Please connect to Wi-Fi before scanning QR codes
+QR scanning doesnt work from the Homebrew#nLauncher, use the ThemePlaza browser instead.
+Your camera seems to have a problem,#nunable to scan QR codes.
+File downloaded isn't a zip.
+Download failed.
+Invalid preview.png
+No preview found.
+You don't have enough themes selected.
+You have too many themes selected.
+Couldn't download ThemePlaza data.#nMake sure WiFi is on.
+No results for this search.
+Target is not valid!
+No splash.bin or splashbottom.bin found.#nIs this a splash?
+Splashes are disabled in Luma Config
+No body_LZ.bin found - is this a theme?

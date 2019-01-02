@@ -41,8 +41,8 @@ APP_AUTHOR          :=	Anemone3DS Team
 TARGET              :=	$(subst $e ,_,$(notdir $(APP_TITLE)))
 OUTDIR              :=	out
 BUILD               :=	build
-SOURCES             :=	source source/quirc
-INCLUDES            :=	include
+SOURCES             :=	source source/quirc source/menus
+INCLUDES            :=	include include/menus
 ROMFS               :=	romfs
 GRAPHICS            :=	assets
 GFXBUILD            :=	$(ROMFS)/gfx
@@ -78,6 +78,8 @@ ifeq ($(strip $(NOGIT)),)
     ifeq ($(strip $(VERSION_BUILD)),)
         VERSION_BUILD := 0
     endif
+else
+    VERSION           :=  nogit
 endif
 
 #---------------------------------------------------------------------------------
@@ -85,21 +87,21 @@ endif
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -Wextra -O2 -mword-relocations \
+CFLAGS	:=	-g -Og -Wall -mword-relocations \
 			-ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -D_GNU_SOURCE -DVERSION="\"$(VERSION)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(VERSION)\"" -DAPP_TITLE="\"$(APP_TITLE)\""
-ifneq ($(strip $(CITRA_MODE)),)
-	CFLAGS += -DCITRA_MODE
+CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -D_GNU_SOURCE -D__POSIX_VISIBLE="200809" -DVERSION="\"$(VERSION)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(VERSION)\"" -DAPP_TITLE="\"$(APP_TITLE)\""
+ifneq ($(strip $(RELEASE)),)
+	CFLAGS += -DRELEASE
 endif
 
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lpng -lvorbisidec -logg -larchive -ljansson -lcitro2d -lcitro3d -lctrud -lm -lz
+LIBS	:= -lvorbisidec -logg -lpng -larchive -lz -ljansson -lcitro2dd -lcitro3dd -lctrud -lstdc++fs -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

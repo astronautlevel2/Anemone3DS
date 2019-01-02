@@ -1,0 +1,578 @@
+/*
+*   This file is part of Anemone3DS
+*   Copyright (C) 2016-2018 Contributors in CONTRIBUTORS.md
+*
+*   This program is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*   the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*   Additional Terms 7.b and 7.c of GPLv3 apply to this file:
+*       * Requiring preservation of specified reasonable legal notices or
+*         author attributions in that material or in the Appropriate Legal
+*         Notices displayed by works containing it.
+*       * Prohibiting misrepresentation of the origin of that material,
+*         or requiring that modified versions of such material be marked in
+*         reasonable ways as different from the original version.
+*/
+
+#include "menu.h"
+
+Instructions normal_actions_instructions = {
+    INSTRUCTION_A_FOR_ACTION_MODE,
+    INSTRUCTION_B_FOR_QR_SCANNER,
+    INSTRUCTION_X_FOR_EXTRA_MODE,
+    INSTRUCTION_Y_FOR_PREVIEW,
+    INSTRUCTION_UP_TO_MOVE_UP,
+    INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
+    INSTRUCTION_DOWN_TO_MOVE_DOWN,
+    INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
+};
+
+MenuBase::MenuBase(const std::string& loading_path, int icon_size, u32 background_color) : background_color(background_color), path(loading_path), icon_size(icon_size)
+{
+
+}
+
+bool MenuBase::in_preview()
+{
+    return this->preview.get() != nullptr;
+}
+
+MenuActionReturn MenuBase::exit_mode_controls()
+{
+    this->current_actions_down.pop();
+    this->current_actions_held.pop();
+    if(!this->in_instructions)
+        this->instructions_stack.pop();
+    return RETURN_NONE;
+}
+
+MenuActionReturn MenuBase::load_preview()
+{
+    static const KeysActions exit_preview_actions_down{
+        {KEY_A, std::bind(&MenuBase::exit_preview, this)},
+        {KEY_B, std::bind(&MenuBase::exit_preview, this)},
+        {KEY_X, std::bind(&MenuBase::exit_preview, this)},
+        {KEY_Y, std::bind(&MenuBase::exit_preview, this)},
+        {KEY_L, std::bind(&MenuBase::exit_preview, this)},
+        {KEY_R, std::bind(&MenuBase::exit_preview, this)},
+        {KEY_TOUCH, std::bind(&MenuBase::exit_preview, this)},
+    };
+
+    static const KeysActions exit_preview_actions_held{};
+
+    if(this->entries.size())
+    {
+        Entry* current_entry_ptr = this->entries[this->selected_entry].get();
+        if(current_entry_ptr == this->selected_entry_for_previous_preview)
+        {
+            this->preview = std::move(this->previous_preview);
+            this->current_actions_down.push(&exit_preview_actions_down);
+            this->current_actions_held.push(&exit_preview_actions_held);
+        }
+        else
+        {
+            std::unique_ptr<PreviewImage> new_preview(current_entry_ptr->load_preview());
+            if(new_preview->ready)
+            {
+                this->preview = std::move(new_preview);
+                this->selected_entry_for_previous_preview = current_entry_ptr;
+
+                this->current_actions_down.push(&exit_preview_actions_down);
+                this->current_actions_held.push(&exit_preview_actions_held);
+            }
+        }
+    }
+
+    return RETURN_NONE;
+}
+
+MenuActionReturn MenuBase::exit_preview()
+{
+    this->previous_preview = std::move(this->preview);
+    this->exit_mode_controls();
+    return RETURN_NONE;
+}
+
+void MenuBase::change_selected_entry(int delta)
+{
+    if(abs(delta) >= this->entries.size())
+        return;
+
+    this->previous_selected_entry = this->selected_entry;
+
+    ssize_t new_selected = this->selected_entry + delta;
+    if(new_selected < 0)
+    {
+        this->selected_entry = this->entries.size() + new_selected;
+    }
+    else
+    {
+        this->selected_entry += delta;
+    }
+
+    this->change = delta;
+    this->selected_entry %= this->entries.size();
+}
+
+void MenuBase::toggle_instructions_mode()
+{
+    if(this->in_instructions)
+    {
+        this->exit_mode_controls();
+        this->in_instructions = false;
+    }
+    else
+    {
+        static const KeysActions instructions_actions_down{
+            {KEY_L, std::bind(&MenuBase::set_instruction_screen_to_left, this)},
+            {KEY_R, std::bind(&MenuBase::set_instruction_screen_to_right, this)},
+            // {KEY_TOUCH, std::bind(&MenuBase::instructions_handle_touch, this)},
+        };
+
+        static const KeysActions instructions_actions_held{};
+
+        this->current_actions_down.push(&instructions_actions_down);
+        this->current_actions_held.push(&instructions_actions_held);
+
+        this->in_instructions = true;
+        this->instruction_screen_right = false;
+    }
+}
+
+void MenuBase::draw_instructions()
+{
+    const Instructions* current_instructions = this->instructions_stack.top();
+    static constexpr float instructions_scale = 0.8f;
+
+    float l_width, r_width, l_height, r_height;
+    get_text_dimensions(TEXT_GENERAL, TEXT_L, &l_width, &l_height, 0.6f, 0.6f);
+    get_text_dimensions(TEXT_GENERAL, TEXT_R, &r_width, &r_height, 0.6f, 0.6f);
+
+    float y = BARS_SIZE;
+    static const float step = (240.0f - BARS_SIZE*2.0f)/4.0f;
+    float height;
+    int start = this->instruction_screen_right ? 0 : 4;
+    C2D_DrawRectSolid(this->instruction_screen_right ? 320.0f/2.0f : 0.0f, 0.0f, 0.25f, 320.0f/2.0f, BARS_SIZE, COLOR_CURSOR);
+    draw_text(TEXT_GENERAL, TEXT_L, this->instruction_screen_right ? COLOR_CURSOR : COLOR_BLACK, (320.0f/2.0f*0.5f) - l_width/2.0f, (BARS_SIZE - l_height)/2.0f, 0.5f, 0.6f, 0.6f);
+    draw_text(TEXT_GENERAL, TEXT_R, this->instruction_screen_right ? COLOR_BLACK : COLOR_CURSOR, (320.0f/2.0f*1.5f) - r_width/2.0f, (BARS_SIZE - r_height)/2.0f, 0.5f, 0.6f, 0.6f);
+    for(int i = start; i < start + 4; ++i,  y += step)
+    {
+        get_text_dimensions(TEXT_INSTRUCTIONS, current_instructions->array[i], nullptr, &height, instructions_scale, instructions_scale);
+        draw_text_centered(TEXT_INSTRUCTIONS, current_instructions->array[i], COLOR_WHITE, y + (step - height)/2.0f, 0.5f, instructions_scale, instructions_scale);
+    }
+}
+
+MenuActionReturn MenuBase::set_instruction_screen_to_left()
+{
+    this->instruction_screen_right = false;
+    return RETURN_NONE;
+}
+
+MenuActionReturn MenuBase::set_instruction_screen_to_right()
+{
+    this->instruction_screen_right = true;
+    return RETURN_NONE;
+}
+
+Menu::Menu(const std::string& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu):
+MenuBase(loading_path, icon_size, background_color),
+icons_per_screen(icons_per_screen),
+icons(icons_per_screen*3),
+mode_indicator_id(mode_indicator_id),
+previous_mode_indicator_id(previous_mode_indicator_id),
+next_mode_indicator_id(next_mode_indicator_id)
+{
+    draw_install(static_cast<InstallType>(mode_indicator_id));
+    for(const fs::directory_entry& p : fs::directory_iterator(loading_path))
+    {
+        if(badge_menu)
+        {
+            if(p.is_regular_file() && p.path().extension() == ".png")
+            {
+                this->entries.push_back(std::move(std::make_unique<Entry>(p.path(), true)));
+            }
+        }
+        else
+        {
+            if(p.is_regular_file() && p.path().extension() == ".zip")
+            {
+                this->entries.push_back(std::move(std::make_unique<Entry>(p.path(), true)));
+            }
+            else if(p.is_directory())
+            {
+                this->entries.push_back(std::move(std::make_unique<Entry>(p.path(), false)));
+            }
+        }
+    }
+
+    DEBUG("got %zd entries.\n", this->entries.size());
+    this->entries.shrink_to_fit();
+    this->sort(SORT_NAME);
+}
+
+void Menu::load_icons()
+{
+    if(this->entries.size() <= this->icons.size())
+    {
+        size_t i = 0;
+        for(const auto& entry : this->entries)
+        {
+            draw_loading_bar(i, this->entries.size(), INSTALL_LOADING_ICONS);
+            this->icons[i++] = std::move(std::unique_ptr<EntryIcon>(entry->load_icon()));
+        }
+    }
+    else
+    {
+        for(size_t i = 0; i < this->icons_per_screen; i++)
+        {
+            draw_loading_bar(i, this->icons_per_screen, INSTALL_LOADING_ICONS);
+            this->icons[i] = std::move(std::unique_ptr<EntryIcon>(this->entries[this->entries.size() - this->icons_per_screen + i]->load_icon()));
+            this->icons[i + this->icons_per_screen] = std::move(std::unique_ptr<EntryIcon>(this->entries[i]->load_icon()));
+            this->icons[i + this->icons_per_screen*2] = std::move(std::unique_ptr<EntryIcon>(this->entries[this->icons_per_screen + i]->load_icon()));
+        }
+    }
+}
+
+void Menu::scroll_icons(const Handle* scroll_ready_to_draw_event)
+{
+    if(this->entries.size() <= this->icons.size())
+    {
+        this->scroll = this->new_scroll;
+        this->previous_selected_entry = this->selected_entry;
+
+        if(scroll_ready_to_draw_event)
+            svcSignalEvent(*scroll_ready_to_draw_event);
+
+        return;
+    }
+
+    #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
+    int delta = this->scroll - this->new_scroll;
+    if(abs(delta) > this->icons_per_screen)
+        delta = -SIGN(delta) * (this->entries.size() - abs(delta));
+
+    this->scroll = this->new_scroll;
+    this->previous_selected_entry = this->selected_entry;
+
+    if(delta > 0)  // scroll went up -> rotate right to make icons from above visible
+    {
+        auto begin = this->icons.rbegin();
+        auto step = this->icons.rbegin() + delta;
+        auto end = this->icons.rend();
+
+        std::rotate(begin, step, end);
+    }
+    else  // scroll went down -> rotate left to make icons from under visible
+    {
+        auto begin = this->icons.begin();
+        auto step = this->icons.begin() + (-delta);
+        auto end = this->icons.end();
+
+        std::rotate(begin, step, end);
+    }
+
+    if(abs(delta) <= this->icons_per_screen)
+    {
+        svcSignalEvent(*scroll_ready_to_draw_event);
+        // even though it shouldn't happen anyway, ensure the event can't be signaled a second time in the loop
+        scroll_ready_to_draw_event = nullptr;
+    }
+
+    const int step = -SIGN(delta);
+    const int icon_pos = delta < 0 ? static_cast<int>(this->icons.size()) : -1;
+    int entry_pos;
+    if(delta < 0)
+
+    {
+        entry_pos = this->scroll + this->icons_per_screen*2 + delta;
+        if(static_cast<size_t>(entry_pos) >= this->entries.size())
+        {
+            entry_pos %= this->entries.size();
+        }
+    }
+    else
+    {
+        entry_pos = this->scroll - this->icons_per_screen + delta;
+        if(entry_pos < 0)
+        {
+            entry_pos += this->entries.size();
+        }
+    }
+
+    for(int i = delta; i != 0; i += step)
+    {
+        // In certain conditions (scrolling a page near the ends with scroll not being minimal or maximum), you can end up with more than 1 page to reload
+        // So only allow it to draw once you've reached the end of the visible page and enter the invisible one, to make it seem faster
+        if(scroll_ready_to_draw_event && abs(delta - i) == this->icons_per_screen)
+        {
+            svcSignalEvent(*scroll_ready_to_draw_event);
+            // even though the condition should only be true once, ensure the event can't be signaled a second time in the loop
+            scroll_ready_to_draw_event = nullptr;
+        }
+
+        this->icons[icon_pos + i].reset(this->entries[entry_pos]->load_icon());
+
+        entry_pos += step;
+        if(entry_pos == -1)
+        {
+            entry_pos = this->entries.size() - 1;
+        }
+        else if(static_cast<size_t>(entry_pos) == this->entries.size())
+        {
+            entry_pos = 0;
+        }
+    }
+
+    #undef SIGN
+}
+
+bool Menu::needs_thread()
+{
+    return this->entries.size() > this->icons.size();
+}
+
+void Menu::draw()
+{
+    if(this->in_preview())
+    {
+        this->preview->draw();
+        return;
+    }
+
+    draw_basic_interface();
+    switch_screen(GFX_TOP);
+    draw_text_centered(TEXT_GENERAL, this->mode_indicator_id, COLOR_WHITE, (BARS_SIZE - 30*0.6f)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
+    draw_text_centered(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, COLOR_WHITE, 240 - BARS_SIZE + (BARS_SIZE - 30*0.6f)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
+
+    if(this->entries.size())
+    {
+        this->entries[this->selected_entry]->draw();
+    }
+    else
+    {
+        static constexpr float y_start = 60.0f;
+        static constexpr float not_found_scale = 0.7f;
+        static constexpr float y_step = 2 + 30*not_found_scale;
+
+        static const float space_width = get_text_width(TEXT_GENERAL, TEXT_SPACE, not_found_scale);
+        static const float or_width = get_text_width(TEXT_GENERAL, TEXT_NOT_FOUND_OR, not_found_scale);
+        static const float l_width = get_text_width(TEXT_GENERAL, TEXT_L, not_found_scale);
+        static const float r_width = get_text_width(TEXT_GENERAL, TEXT_R, not_found_scale);
+        static const float to_switch_to_width = get_text_width(TEXT_GENERAL, TEXT_NOT_FOUND_TO_SWITCH_TO, not_found_scale);
+
+        float y = y_start;
+        draw_text_centered(TEXT_GENERAL, static_cast<TextID>(this->mode_indicator_id + MODES_AMOUNT), COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
+
+        y += y_step;
+        draw_text_centered(TEXT_GENERAL, TEXT_NOT_FOUND_PRESS_FOR_QR, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
+
+        float total_width, x;
+
+        y += y_step;
+        total_width = 0.0f,
+        total_width += or_width;
+        total_width += space_width;
+        total_width += l_width;
+        total_width += space_width;
+        total_width += to_switch_to_width;
+        total_width += space_width;
+        total_width += get_text_width(TEXT_GENERAL, this->previous_mode_indicator_id, not_found_scale);
+        x = (400.0f - total_width)/2.0f;
+
+        draw_text(TEXT_GENERAL, TEXT_NOT_FOUND_OR, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+        x += or_width + space_width;
+        draw_text(TEXT_GENERAL, TEXT_L, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+        x += l_width + space_width;
+        draw_text(TEXT_GENERAL, TEXT_NOT_FOUND_TO_SWITCH_TO, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+        x += to_switch_to_width + space_width;
+        draw_text(TEXT_GENERAL, this->previous_mode_indicator_id, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+
+        y += y_step;
+        total_width = 0.0f,
+        total_width += or_width;
+        total_width += space_width;
+        total_width += r_width;
+        total_width += space_width;
+        total_width += to_switch_to_width;
+        total_width += space_width;
+        total_width += get_text_width(TEXT_GENERAL, this->next_mode_indicator_id, not_found_scale);
+        x = (400.0f - total_width)/2.0f;
+
+        draw_text(TEXT_GENERAL, TEXT_NOT_FOUND_OR, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+        x += or_width + space_width;
+        draw_text(TEXT_GENERAL, TEXT_R, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+        x += r_width + space_width;
+        draw_text(TEXT_GENERAL, TEXT_NOT_FOUND_TO_SWITCH_TO, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+        x += to_switch_to_width + space_width;
+        draw_text(TEXT_GENERAL, this->next_mode_indicator_id, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
+
+        y += y_step;
+        draw_text_centered(TEXT_GENERAL, TEXT_NOT_START_TO_QUIT, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
+    }
+
+    switch_screen(GFX_BOTTOM);
+    if(this->entries.size())
+    {
+        float y = BARS_SIZE;
+        for(size_t i = 0; i < this->icons_per_screen; i++, y += this->icon_size)
+        {
+            u32 text_color = COLOR_WHITE;
+            size_t actual_i = i + this->scroll;
+            if(actual_i == this->selected_entry)
+            {
+                text_color = COLOR_BLACK;
+                C2D_DrawRectSolid(0.0f, y, 0.1f, 320.0f, this->icon_size, COLOR_CURSOR);
+            }
+
+            const auto& current_entry = this->entries[actual_i];
+            if(!current_entry->color)
+            {
+                C2D_Image * image = NULL;
+                if(this->entries.size() <= this->icons.size())
+                    image =  this->icons[i]->image;
+                else
+                    image = this->icons[i + this->icons_per_screen]->image;
+                C2D_DrawImageAt(*image, 0.0f, y, 0.2f);
+            }
+            else
+            {
+                C2D_DrawRectSolid(0.0f, y, 0.2f, this->icon_size, this->icon_size, current_entry->color);
+            }
+
+            draw_text(current_entry->title, text_color, this->icon_size + 6, y + (this->icon_size - 30.0f)/2.0f, 0.2f, 0.55f, 0.55f);
+        }
+
+        // Draw entries list
+        std::string selected_entry_str = std::to_string(this->selected_entry + 1) + "/" + std::to_string(this->entries.size());
+        float x = 316;
+        float width = 0;
+        get_text_dimensions(selected_entry_str, &width, nullptr, 0.6f, 0.6f);
+        x -= width;
+        draw_text(selected_entry_str, COLOR_WHITE, x, 219, 0.2f, 0.6f, 0.6f);
+        draw_text(TEXT_GENERAL, this->entries.size() > 999 ? TEXT_MENU_SELECTED_SHORT : TEXT_MENU_SELECTED, COLOR_WHITE, 176, 219, 0.2f, 0.6f, 0.6f);
+    }
+}
+
+void Menu::calculate_new_scroll()
+{
+    if(this->previous_selected_entry != this->selected_entry && this->entries.size() > this->icons_per_screen)
+    {
+        const size_t max_scroll = this->entries.size() - this->icons_per_screen;
+        this->new_scroll = this->scroll;
+
+        if(this->previous_selected_entry < this->icons_per_screen && this->selected_entry >= max_scroll)
+        {
+            this->new_scroll = max_scroll;
+        }
+        else if(this->previous_selected_entry >= max_scroll && this->selected_entry < this->icons_per_screen)
+        {
+            this->new_scroll = 0;
+        }
+        else if(this->selected_entry >= this->scroll + this->icons_per_screen || this->selected_entry < this->scroll)
+        {
+            this->new_scroll = this->scroll + this->change;
+        }
+
+        if(this->new_scroll > max_scroll)
+            this->new_scroll = max_scroll;
+
+        this->should_scroll = this->new_scroll != this->scroll;
+    }
+}
+
+MenuActionReturn Menu::sort(SortType sort_type)
+{
+    std::array<std::function<bool(const std::unique_ptr<Entry>&, const std::unique_ptr<Entry>&)>, SORTS_AMOUNT> sorting_functions{
+        [](const std::unique_ptr<Entry>& a, const std::unique_ptr<Entry>& b) { return a->title < b->title; },
+        [](const std::unique_ptr<Entry>& a, const std::unique_ptr<Entry>& b) { return a->author < b->author; },
+        [](const std::unique_ptr<Entry>& a, const std::unique_ptr<Entry>& b) { return a->path < b->path; },
+    };
+    std::sort(this->entries.begin(), this->entries.end(), sorting_functions[sort_type]);
+    this->load_icons();
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::select_previous_entry()
+{
+    this->change_selected_entry(-1);
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::select_previous_page()
+{
+    this->change_selected_entry(-this->icons_per_screen);
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::select_next_entry()
+{
+    this->change_selected_entry(1);
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::select_next_page()
+{
+    this->change_selected_entry(this->icons_per_screen);
+    return RETURN_NONE;
+}
+
+
+MenuActionReturn Menu::select_previous_entry_fast()
+{
+    this->change_selected_entry(-1);
+    return RETURN_MOVE_SLEEP;
+}
+
+MenuActionReturn Menu::select_previous_page_fast()
+{
+    this->change_selected_entry(-this->icons_per_screen);
+    return RETURN_MOVE_SLEEP;
+}
+
+MenuActionReturn Menu::select_next_entry_fast()
+{
+    this->change_selected_entry(1);
+    return RETURN_MOVE_SLEEP;
+}
+
+MenuActionReturn Menu::select_next_page_fast()
+{
+    this->change_selected_entry(this->icons_per_screen);
+    return RETURN_MOVE_SLEEP;
+}
+
+
+MenuActionReturn Menu::change_to_previous_mode()
+{
+    return RETURN_CHANGE_TO_PREVIOUS_MODE;
+}
+
+MenuActionReturn Menu::change_to_next_mode()
+{
+    return RETURN_CHANGE_TO_NEXT_MODE;
+}
+
+MenuActionReturn Menu::change_to_extra_mode()
+{
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::change_to_qr_scanner()
+{
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::handle_touch()
+{
+    return RETURN_NONE;
+}

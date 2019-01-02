@@ -28,22 +28,28 @@
 #define COLORS_H
 
 #include "common.h"
+#include "text_enums.h"
 
-typedef u32 Color;
+static constexpr u32 COLOR_WHITE = C2D_Color32f(1,1,1,1);
+static constexpr u32 COLOR_BLACK = C2D_Color32f(0,0,0,1);
 
-enum {
-    COLOR_BACKGROUND, //silver-y black
-    COLOR_ACCENT,
-    COLOR_WHITE,
-    COLOR_CURSOR,
-    COLOR_BLACK,
-    COLOR_RED,
-    COLOR_YELLOW,
+static constexpr u32 COLOR_BARS = C2D_Color32(15,16,24,255);
+static constexpr u32 COLOR_CURSOR = C2D_Color32(200, 200, 200, 255);
 
-    COLOR_AMOUNT,
-} Colors_e;
+static constexpr u32 COLOR_THEME_BG = C2D_Color32(20,32,50,255);
+static constexpr u32 COLOR_SPLASH_BG = C2D_Color32(26,42,67,255);
+static constexpr u32 COLOR_BADGE_BG = C2D_Color32(32,52,83,255);
 
-extern Color colors[COLOR_AMOUNT];
-void init_colors(void);
+static constexpr u32 COLOR_INFO = COLOR_WHITE;
+static constexpr u32 COLOR_WARNING = C2D_Color32(239, 220, 11, 255);
+static constexpr u32 COLOR_ERROR = C2D_Color32(229, 66, 66, 255);
+static constexpr u32 COLOR_ERROR_CRITICAL = C2D_Color32(200, 10, 10, 255);
+
+static constexpr u32 COLOR_ERROR_TEXT[ERROR_LEVEL_AMOUNT] = {
+    COLOR_INFO,
+    COLOR_WARNING,
+    COLOR_ERROR,
+    COLOR_ERROR_CRITICAL,
+};
 
 #endif

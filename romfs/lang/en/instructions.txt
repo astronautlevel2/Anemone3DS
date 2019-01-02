@@ -1,0 +1,28 @@
+|||| All lines beginning with '|' are comment lines, and can be safely removed
+||| Text objects - translate these exactly
+||| #n represents a newline
+||| #<c> represents the same console button as <c>, except:
+||| #Du, #Dd, #Dl, #Dr, #Dn -> D-pad up, down, left, right, neutral
+#B to go back
+| General normal mode
+#A to enter action mode
+#B to enter QR scanner
+#X to enter extra mode
+#Y for preview
+#Du to move cursor up
+#Dl to move cursor up a page
+#Dd to move cursor down
+#Dr to move cursor down a page
+| General extra mode
+INSTRUCTION_A_FOR_SORTING_MODE
+INSTRUCTION_X_FOR_DELETING_ENTRY
+INSTRUCTION_Y_FOR_ENTERING_BROWSER
+| General extra mode
+INSTRUCTION_A_FOR_SORTING_FILENAME
+INSTRUCTION_X_FOR_SORTING_AUTHOR
+INSTRUCTION_Y_FOR_SORTING_NAME
+
+| Themeplaza normal mode
+#A to download highlighted
+#Dl to move cursor left
+#Dr to move cursor right

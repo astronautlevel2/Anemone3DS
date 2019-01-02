@@ -24,49 +24,55 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef ANEMONE3DS_H
+#define ANEMONE3DS_H
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+#include "common.h"
+#include "menu.h"
+// #include "audio.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
+class Anemone3DS
+{
+    public:
+        Anemone3DS();
+        ~Anemone3DS();
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+        void update();
 
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
+        void scroll_thread_function();
 
-#include "sprites.h"
+    private:
+        void init_services();
+        void init_menus();
+        void init_threads();
 
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
+        void exit_threads();
+        void exit_menus();
+        void exit_services();
 
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
+        void draw();
 
-struct Image {
-    u16 w, h;
-    C2D_Image* image;
-    
-    Image(u16 w, u16 h, GPU_TEXCOLOR format);
-    virtual ~Image();
+        void select_previous_menu();
+        void select_next_menu();
+        void select_menu(MenuType menu);
+        void move_schedule_sleep();
+        void set_menu();  // Actually sets the current menu
+        void handle_action_return(MenuActionReturn action_result);
+
+        bool installed_theme, running_from_hax;
+
+        MenuBase* current_menu = nullptr;
+
+        size_t selected_menu;
+        std::array<std::unique_ptr<Menu>, MODES_AMOUNT> menus;
+
+        // std::unique_ptr<RemoteMenu> browser_menu;
+
+        bool sleep_scheduled = false;
+        Thread scroll_thread;
+        std::array<Thread, MODES_AMOUNT> install_check_thread;
+
+        u32 old_time_limit;
 };
 
 #endif

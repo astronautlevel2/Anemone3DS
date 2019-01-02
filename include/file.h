@@ -24,49 +24,34 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef FILE_H
+#define FILE_H
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+#include "common.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
+enum Archive {
+    SD_CARD,
+    HOME_EXTDATA,
+    THEME_EXTDATA,
+    BADGE_EXTDATA,
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
-
-#include "sprites.h"
-
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
-
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
-
-struct Image {
-    u16 w, h;
-    C2D_Image* image;
-    
-    Image(u16 w, u16 h, GPU_TEXCOLOR format);
-    virtual ~Image();
+    ACHIVE_AMOUNT
 };
+
+extern Result theme_result, badge_result;
+Result open_archives();
+Result close_archives();
+
+// For both of these functions, if allocation fails, buf is unmodified
+// If file couldn't be opened, buf is unmodified
+u32 file_to_buf(FS_Path path, Archive archive, char** buf);
+// If zip couldn't be opened, buf is unmodified
+u32 zip_file_to_buf(const char* filename, const std::string& zip_path, char** buf);
+
+bool check_file_is_zip(const void* zip_buf, size_t zip_size);
+bool check_file_in_zip(const char* filename, const void* zip_buf, size_t zip_size);
+
+Result buf_to_file(FS_Path path, Archive archive, u32 size, const void* buf);
+void remake_file(FS_Path path, Archive archive, u32 size);
 
 #endif
