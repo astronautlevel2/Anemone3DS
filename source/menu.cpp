@@ -122,6 +122,9 @@ MenuActionReturn MenuBase::exit_instructions()
 
 void MenuBase::toggle_instructions_mode()
 {
+    if(!this->entries.size())
+        return RETURN_NONE;
+
     if(this->in_instructions)
     {
         this->exit_instructions();
@@ -567,6 +570,9 @@ void Menu::calculate_new_scroll()
 
 MenuActionReturn Menu::sort(SortType sort_type)
 {
+    if(!this->entries.size())
+        return RETURN_NONE;
+
     if(this->sort_type == sort_type)
         return RETURN_NONE;
 
@@ -655,6 +661,9 @@ MenuActionReturn Menu::change_to_next_mode()
 
 MenuActionReturn Menu::change_to_extra_mode()
 {
+    if(!this->entries.size())
+        return RETURN_NONE;
+
     static const KeysActions extra_actions_down{
         {KEY_A, std::bind(&Menu::change_to_sorting_mode, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
@@ -714,6 +723,7 @@ static SwkbdCallbackResult jump_entry_menu_callback(void* entries_count, const c
     }
     return SWKBD_CALLBACK_OK;
 }
+
 MenuActionReturn Menu::handle_touch()
 {
     touchPosition touch;
@@ -740,6 +750,9 @@ MenuActionReturn Menu::handle_touch()
     {
         if(touch.px >= 176)
         {
+            if(!this->entries.size())
+                return RETURN_NONE;
+
             SwkbdState swkbd;
 
             size_t entries_count = this->entries.size();
@@ -777,6 +790,9 @@ MenuActionReturn Menu::handle_touch()
     }
     else
     {
+        if(!this->entries.size())
+            return RETURN_NONE;
+
         u16 y = touch.py - bars_size;
         this->previous_selected_entry = this->selected_entry = this->scroll + (y / this->icon_size);
     }
@@ -785,6 +801,9 @@ MenuActionReturn Menu::handle_touch()
 
 MenuActionReturn Menu::change_to_sorting_mode()
 {
+    if(!this->entries.size())
+        return RETURN_NONE;
+
     static const KeysActions sorting_actions_down{
         {KEY_A, std::bind(&Menu::sort, this, SORT_FILENAME)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
