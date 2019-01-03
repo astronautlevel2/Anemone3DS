@@ -516,18 +516,41 @@ void Menu::calculate_new_scroll()
         const size_t max_scroll = this->entries.size() - this->icons_per_screen;
         this->new_scroll = this->scroll;
 
-        if(this->previous_selected_entry < this->icons_per_screen && this->selected_entry >= max_scroll)
+        if(this->entries.size() >= this->icons_per_screen*2 + 1)
         {
-            this->new_scroll = max_scroll;
+            if(this->previous_selected_entry < this->icons_per_screen && this->selected_entry >= max_scroll)
+            {
+                this->new_scroll = max_scroll;
+            }
+            else if(this->previous_selected_entry >= max_scroll && this->selected_entry < this->icons_per_screen)
+            {
+                this->new_scroll = 0;
+            }
+            else if(this->selected_entry >= this->scroll + this->icons_per_screen || this->selected_entry < this->scroll)
+            {
+                this->new_scroll = this->scroll + this->change;
+            }
         }
-        else if(this->previous_selected_entry >= max_scroll && this->selected_entry < this->icons_per_screen)
+        else  // No page scrolling allowed, easier
         {
-            this->new_scroll = 0;
+            if(this->selected_entry < this->scroll && this->previous_selected_entry >= 1 && this->selected_entry == this->previous_selected_entry - 1)
+            {
+                this->new_scroll = this->scroll - 1;
+            }
+            else if(this->selected_entry == this->scroll + this->icons_per_screen && this->selected_entry == this->previous_selected_entry + 1)
+            {
+                this->new_scroll = this->scroll + 1;
+            }
+            else if(this->selected_entry == this->entries.size() - 1 && this->previous_selected_entry == 0)
+            {
+                this->new_scroll = max_scroll;
+            }
+            else if(this->selected_entry == 0 && this->previous_selected_entry == this->entries.size() - 1)
+            {
+                this->new_scroll = 0;
+            }
         }
-        else if(this->selected_entry >= this->scroll + this->icons_per_screen || this->selected_entry < this->scroll)
-        {
-            this->new_scroll = this->scroll + this->change;
-        }
+
 
         if(this->new_scroll > max_scroll)
             this->new_scroll = max_scroll;
@@ -556,7 +579,8 @@ MenuActionReturn Menu::select_previous_entry()
 
 MenuActionReturn Menu::select_previous_page()
 {
-    this->change_selected_entry(-this->icons_per_screen);
+    if(this->entries.size() >= this->icons_per_screen*2 + 1)
+        this->change_selected_entry(-this->icons_per_screen);
     return RETURN_NONE;
 }
 
@@ -568,7 +592,8 @@ MenuActionReturn Menu::select_next_entry()
 
 MenuActionReturn Menu::select_next_page()
 {
-    this->change_selected_entry(this->icons_per_screen);
+    if(this->entries.size() >= this->icons_per_screen*2 + 1)
+        this->change_selected_entry(this->icons_per_screen);
     return RETURN_NONE;
 }
 
@@ -581,6 +606,9 @@ MenuActionReturn Menu::select_previous_entry_fast()
 
 MenuActionReturn Menu::select_previous_page_fast()
 {
+    if(this->entries.size() < this->icons_per_screen*2 + 1)
+        return RETURN_NONE;
+
     this->change_selected_entry(-this->icons_per_screen);
     return RETURN_MOVE_SLEEP;
 }
@@ -593,6 +621,9 @@ MenuActionReturn Menu::select_next_entry_fast()
 
 MenuActionReturn Menu::select_next_page_fast()
 {
+    if(this->entries.size() < this->icons_per_screen*2 + 1)
+        return RETURN_NONE;
+
     this->change_selected_entry(this->icons_per_screen);
     return RETURN_MOVE_SLEEP;
 }
