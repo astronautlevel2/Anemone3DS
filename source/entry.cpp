@@ -366,10 +366,15 @@ void Entry::draw() const
 {
     static constexpr float x = 20.0f;
     float y = 35.0f;
+    float height, width;
+    get_text_dimensions(TEXT_GENERAL, TEXT_ENTRY_BY, &width, &height, 0.5f, 0.5f);
     draw_text(TEXT_GENERAL, TEXT_ENTRY_BY, COLOR_WHITE, x, y, 0.2f, 0.5f, 0.5f);
-    draw_text(this->author, COLOR_WHITE, x + get_text_width(TEXT_GENERAL, TEXT_ENTRY_BY, 0.5f), y, 0.2f, 0.5f, 0.5f);
-    y += 30*0.5f + 2.0f;
+    draw_text(this->author, COLOR_WHITE, x + width, y, 0.2f, 0.5f, 0.5f);
+    y += height + 2.0f;
+    get_text_dimensions(this->title, nullptr, &height, 0.7f, 0.7f);
     draw_text(this->title, COLOR_WHITE, x, y, 0.2f, 0.7f, 0.7f);
+    y += height + 8.0f;
+    C2D_DrawRectSolid(12.0f, y, 0.2f, 400.0f - 12.0f*2.0f, 1.0f, COLOR_CURSOR);
 }
 
 u32 Entry::get_file(const std::string& file_path, char** buf) const

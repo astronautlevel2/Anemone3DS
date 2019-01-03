@@ -51,7 +51,7 @@ MenuActionReturn MenuBase::exit_mode_controls()
 {
     this->current_actions_down.pop();
     this->current_actions_held.pop();
-    if(!this->in_instructions)
+    if(!this->in_instructions && !this->in_preview())
         this->instructions_stack.pop();
     return RETURN_NONE;
 }
@@ -72,7 +72,7 @@ MenuActionReturn MenuBase::load_preview()
 
     if(this->entries.size())
     {
-        Entry* current_entry_ptr = this->entries[this->selected_entry].get();
+        const Entry* current_entry_ptr = this->entries[this->selected_entry].get();
         if(current_entry_ptr == this->selected_entry_for_previous_preview)
         {
             this->preview = std::move(this->previous_preview);
@@ -98,8 +98,8 @@ MenuActionReturn MenuBase::load_preview()
 
 MenuActionReturn MenuBase::exit_preview()
 {
-    this->previous_preview = std::move(this->preview);
     this->exit_mode_controls();
+    this->previous_preview = std::move(this->preview);
     return RETURN_NONE;
 }
 
@@ -124,19 +124,26 @@ void MenuBase::change_selected_entry(int delta)
     this->selected_entry %= this->entries.size();
 }
 
+MenuActionReturn MenuBase::exit_instructions()
+{
+    this->exit_mode_controls();
+    this->in_instructions = false;
+    return RETURN_NONE;
+}
+
 void MenuBase::toggle_instructions_mode()
 {
     if(this->in_instructions)
     {
-        this->exit_mode_controls();
-        this->in_instructions = false;
+        this->exit_instructions();
     }
     else
     {
         static const KeysActions instructions_actions_down{
             {KEY_L, std::bind(&MenuBase::set_instruction_screen_to_left, this)},
             {KEY_R, std::bind(&MenuBase::set_instruction_screen_to_right, this)},
-            // {KEY_TOUCH, std::bind(&MenuBase::instructions_handle_touch, this)},
+            {KEY_B, std::bind(&MenuBase::exit_instructions, this)},
+            {KEY_TOUCH, std::bind(&MenuBase::instructions_handle_touch, this)},
         };
 
         static const KeysActions instructions_actions_held{};
@@ -162,7 +169,7 @@ void MenuBase::draw_instructions()
     static const float step = (240.0f - BARS_SIZE*2.0f)/4.0f;
     float height;
     int start = this->instruction_screen_right ? 0 : 4;
-    C2D_DrawRectSolid(this->instruction_screen_right ? 320.0f/2.0f : 0.0f, 0.0f, 0.25f, 320.0f/2.0f, BARS_SIZE, COLOR_CURSOR);
+    C2D_DrawRectSolid((this->instruction_screen_right ? 320.0f/2.0f : 0.0f) + 2.0f, 2.0f, 0.25f, 320.0f/2.0f - 2.0f*2.0f, BARS_SIZE - 2.0f*2.0f, COLOR_CURSOR);
     draw_text(TEXT_GENERAL, TEXT_L, this->instruction_screen_right ? COLOR_CURSOR : COLOR_BLACK, (320.0f/2.0f*0.5f) - l_width/2.0f, (BARS_SIZE - l_height)/2.0f, 0.5f, 0.6f, 0.6f);
     draw_text(TEXT_GENERAL, TEXT_R, this->instruction_screen_right ? COLOR_BLACK : COLOR_CURSOR, (320.0f/2.0f*1.5f) - r_width/2.0f, (BARS_SIZE - r_height)/2.0f, 0.5f, 0.6f, 0.6f);
     for(int i = start; i < start + 4; ++i,  y += step)
@@ -170,6 +177,10 @@ void MenuBase::draw_instructions()
         get_text_dimensions(TEXT_INSTRUCTIONS, current_instructions->array[i], nullptr, &height, instructions_scale, instructions_scale);
         draw_text_centered(TEXT_INSTRUCTIONS, current_instructions->array[i], COLOR_WHITE, y + (step - height)/2.0f, 0.5f, instructions_scale, instructions_scale);
     }
+
+    C2D_DrawRectSolid(2.0f, 240.0f - BARS_SIZE + 2.0f, 0.25f, 320.0f - 2.0f*2.0f, BARS_SIZE - 2.0f*2.0f, COLOR_CURSOR);
+    get_text_dimensions(TEXT_GENERAL, TEXT_INFO_EXIT_INSTRUCTIONS, nullptr, &height, 0.6f, 0.6f);
+    draw_text_centered(TEXT_GENERAL, TEXT_INFO_EXIT_INSTRUCTIONS, COLOR_BLACK, 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f, 0.5f, 0.6f, 0.6f);
 }
 
 MenuActionReturn MenuBase::set_instruction_screen_to_left()
@@ -181,6 +192,29 @@ MenuActionReturn MenuBase::set_instruction_screen_to_left()
 MenuActionReturn MenuBase::set_instruction_screen_to_right()
 {
     this->instruction_screen_right = true;
+    return RETURN_NONE;
+}
+
+MenuActionReturn MenuBase::instructions_handle_touch()
+{
+    touchPosition touch;
+    hidTouchRead(&touch);
+    u16 bars_size = static_cast<u16>(BARS_SIZE);
+    if(touch.py < bars_size)
+    {
+        if(touch.px < 320/2)
+        {
+            this->set_instruction_screen_to_left();
+        }
+        else
+        {
+            this->set_instruction_screen_to_right();
+        }
+    }
+    else if(touch.py >= 240 - bars_size)
+    {
+        this->exit_instructions();
+    }
     return RETURN_NONE;
 }
 
@@ -292,7 +326,6 @@ void Menu::scroll_icons(const Handle* scroll_ready_to_draw_event)
     const int icon_pos = delta < 0 ? static_cast<int>(this->icons.size()) : -1;
     int entry_pos;
     if(delta < 0)
-
     {
         entry_pos = this->scroll + this->icons_per_screen*2 + delta;
         if(static_cast<size_t>(entry_pos) >= this->entries.size())
@@ -302,13 +335,14 @@ void Menu::scroll_icons(const Handle* scroll_ready_to_draw_event)
     }
     else
     {
-        entry_pos = this->scroll - this->icons_per_screen + delta;
+        entry_pos = this->scroll - this->icons_per_screen + delta - 1;
         if(entry_pos < 0)
         {
             entry_pos += this->entries.size();
         }
     }
 
+    // DEBUG("delta: %d, entry_pos: %d, icon_pos: %d\n", delta, entry_pos, icon_pos);
     for(int i = delta; i != 0; i += step)
     {
         // In certain conditions (scrolling a page near the ends with scroll not being minimal or maximum), you can end up with more than 1 page to reload
@@ -351,8 +385,11 @@ void Menu::draw()
 
     draw_basic_interface();
     switch_screen(GFX_TOP);
-    draw_text_centered(TEXT_GENERAL, this->mode_indicator_id, COLOR_WHITE, (BARS_SIZE - 30*0.6f)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
-    draw_text_centered(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, COLOR_WHITE, 240 - BARS_SIZE + (BARS_SIZE - 30*0.6f)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
+    float height;
+    get_text_dimensions(TEXT_GENERAL, this->mode_indicator_id, nullptr, &height, 0.6f, 0.6f);
+    draw_text_centered(TEXT_GENERAL, this->mode_indicator_id, COLOR_WHITE, (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
+    get_text_dimensions(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, nullptr, &height, 0.6f, 0.6f);
+    draw_text_centered(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, COLOR_WHITE, 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
 
     if(this->entries.size())
     {
@@ -449,7 +486,9 @@ void Menu::draw()
                 C2D_DrawRectSolid(0.0f, y, 0.2f, this->icon_size, this->icon_size, current_entry->color);
             }
 
-            draw_text(current_entry->title, text_color, this->icon_size + 6, y + (this->icon_size - 30.0f)/2.0f, 0.2f, 0.55f, 0.55f);
+            float height;
+            get_text_dimensions(current_entry->title, nullptr, &height, 0.55f, 0.55f);
+            draw_text(current_entry->title, text_color, this->icon_size + 6, y + (this->icon_size - height)/2.0f, 0.2f, 0.55f, 0.55f);
         }
 
         // Draw entries list
@@ -574,5 +613,34 @@ MenuActionReturn Menu::change_to_qr_scanner()
 
 MenuActionReturn Menu::handle_touch()
 {
+    touchPosition touch;
+    hidTouchRead(&touch);
+    u16 bars_size = static_cast<u16>(BARS_SIZE);
+    if(touch.py < bars_size)
+    {
+        u16 x = 8;
+        if(touch.px >= x && touch.px < x + bars_size)
+            return RETURN_CHANGE_TO_PREVIOUS_MODE;
+
+        for(MenuType i = MODE_THEMES; i < MODES_AMOUNT; i = static_cast<MenuType>(i + 1))
+        {
+            x += bars_size;
+            if(touch.px >= x && touch.px < x + bars_size)
+                return static_cast<MenuActionReturn>(RETURN_CHANGE_TO_THEME_MODE + i);
+        }
+
+        x += bars_size;
+        if(touch.px >= x && touch.px < x + bars_size)
+            return RETURN_CHANGE_TO_NEXT_MODE;
+    }
+    else if(touch.py >= 240 - bars_size)
+    {
+        // If touch.x >= 176, open jump menu
+    }
+    else
+    {
+        u16 y = touch.py - bars_size;
+        this->previous_selected_entry = this->selected_entry = this->scroll + (y / this->icon_size);
+    }
     return RETURN_NONE;
 }

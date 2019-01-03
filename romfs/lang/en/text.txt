@@ -31,6 +31,7 @@ Are you sure?
 #A Yes
 #B No
 SELECT: Instructions / START: Quit
+#B Exit instructions
 | "Icons" for changing menus
 T
 S

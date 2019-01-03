@@ -101,13 +101,15 @@ class MenuBase {
 
         void toggle_instructions_mode();
         void draw_instructions();
-        MenuActionReturn set_instruction_screen_to_left();
-        MenuActionReturn set_instruction_screen_to_right();
 
     protected:
         MenuBase(const std::string& loading_path, int icon_size, u32 background_color);
         std::stack<const Instructions*> instructions_stack;
         void change_selected_entry(int delta);
+        MenuActionReturn exit_instructions();
+        MenuActionReturn set_instruction_screen_to_left();
+        MenuActionReturn set_instruction_screen_to_right();
+        MenuActionReturn instructions_handle_touch();
         std::string path;
         int icon_size;
 
@@ -120,7 +122,7 @@ class MenuBase {
 
         std::unique_ptr<PreviewImage> preview;
         std::unique_ptr<PreviewImage> previous_preview;
-        Entry* selected_entry_for_previous_preview = nullptr;
+        const Entry* selected_entry_for_previous_preview = nullptr;
 
         std::vector<std::unique_ptr<Entry>> entries;
 };

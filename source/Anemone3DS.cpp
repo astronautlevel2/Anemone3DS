@@ -208,6 +208,10 @@ Anemone3DS::Anemone3DS()
     DEBUG("init_screens\n");
     init_screens();
 
+    start_frame(-1);
+    draw_basic_interface();
+    end_frame();
+
     if(R_FAILED(theme_result))
         return;
 
@@ -354,7 +358,7 @@ void Anemone3DS::update()
         running = false;
         return;
     }
-    else if(kDown & KEY_SELECT)
+    else if(kDown & KEY_SELECT && !this->current_menu->in_preview())
     {
         this->current_menu->toggle_instructions_mode();
         return;

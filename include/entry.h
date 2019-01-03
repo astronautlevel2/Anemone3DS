@@ -32,9 +32,11 @@
 struct EntryIcon {
     C2D_Image* image;
 
-    EntryIcon();
     EntryIcon(u16* pixels);
     ~EntryIcon();
+
+protected:
+    EntryIcon();
 };
 
 struct BadgeIcon : public EntryIcon {
@@ -70,10 +72,10 @@ class Entry {
         std::string title, description, author;
         fs::path path;
         u32 color = 0;
-        
+
         enum EntryState {
             STATE_NONE = 0,
-            
+
             STATE_SHUFFLE = BIT(0),
             STATE_SHUFFLE_NO_BGM = BIT(1),
         };
