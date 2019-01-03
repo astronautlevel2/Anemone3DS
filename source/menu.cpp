@@ -826,8 +826,11 @@ MenuActionReturn Menu::change_to_sorting_mode()
 
 MenuActionReturn Menu::delete_selected_entry()
 {
+    if(!this->entries.size())
+        return RETURN_NONE;
+
     draw_install(INSTALL_DELETING);
-    if(this->scroll == this->entries.size() - this->icons_per_screen)
+    if(this->scroll > 0 && this->entries.size() > this->icons_per_screen && this->scroll == this->entries.size() - this->icons_per_screen)
         --this->scroll;
 
     this->entries.erase(this->entries.begin() + this->selected_entry);
