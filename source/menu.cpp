@@ -123,7 +123,7 @@ MenuActionReturn MenuBase::exit_instructions()
 void MenuBase::toggle_instructions_mode()
 {
     if(!this->entries.size())
-        return RETURN_NONE;
+        return;
 
     if(this->in_instructions)
     {
