@@ -33,6 +33,9 @@ class SplashMenu : public Menu {
     public:
         SplashMenu();
         ~SplashMenu();
+
+    private:
+        MenuActionReturn change_to_action_mode();
 };
 
 #endif

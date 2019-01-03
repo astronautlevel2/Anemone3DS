@@ -33,6 +33,9 @@ class BadgeMenu : public Menu {
     public:
         BadgeMenu();
         ~BadgeMenu();
+
+    private:
+        MenuActionReturn change_to_action_mode();
 };
 
 #endif

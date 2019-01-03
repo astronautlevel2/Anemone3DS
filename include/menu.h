@@ -71,14 +71,18 @@ enum RemoteSortType {
     SORT_LIKE_COUNT,
 };
 
-union Instructions {
+struct Instructions {
     InstructionType array[8];
-    struct separate {
-        InstructionType a, b, x, y, up, left, down, right;
-    };
 };
 
 using KeysActions = std::vector<std::pair<u32, std::function<MenuActionReturn()>>>;
+
+struct CurrentActions {
+    const KeysActions* down;
+    const KeysActions* held;
+};
+
+extern const KeysActions empty_held_actions;
 
 class MenuBase {
     public:
@@ -89,8 +93,7 @@ class MenuBase {
         MenuActionReturn load_preview();
         MenuActionReturn exit_preview();
 
-        std::stack<const KeysActions*> current_actions_down;
-        std::stack<const KeysActions*> current_actions_held;
+        std::stack<CurrentActions> current_actions;
 
         bool in_instructions = false;
         bool should_scroll = false;
@@ -111,10 +114,10 @@ class MenuBase {
         std::string path;
         int icon_size;
 
-        size_t scroll = 0;
-        size_t new_scroll = 0;
-        size_t selected_entry = 0;
-        size_t previous_selected_entry = 0;
+        size_t scroll;
+        size_t new_scroll;
+        size_t selected_entry;
+        size_t previous_selected_entry;
         int change;
         bool instruction_screen_right;
         SortType sort_type = SORTS_AMOUNT;
@@ -151,12 +154,14 @@ class Menu : public MenuBase {
         MenuActionReturn change_to_qr_scanner();
         MenuActionReturn handle_touch();
 
+        MenuActionReturn delete_selected_entry();
+
     protected:
         Menu(const std::string& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu = false);
         void load_icons();
 
-        MenuActionReturn change_to_sorting_mode();
-        MenuActionReturn delete_selected_entry();
+        virtual MenuActionReturn change_to_action_mode() = 0;
+        MenuActionReturn jump_in_selection();
         MenuActionReturn change_to_browser_mode();
 
         size_t icons_per_screen;

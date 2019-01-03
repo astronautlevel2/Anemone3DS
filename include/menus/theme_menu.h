@@ -33,6 +33,9 @@ class ThemeMenu : public Menu {
     public:
         ThemeMenu();
         ~ThemeMenu();
+
+    private:
+        MenuActionReturn change_to_action_mode();
 };
 
 #endif

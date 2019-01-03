@@ -364,7 +364,8 @@ void Anemone3DS::update()
         return;
     }
 
-    for(const auto& [keycombo, action] : *(this->current_menu->current_actions_down.top()))
+    const auto& current_actions = this->current_menu->current_actions.top();
+    for(const auto& [keycombo, action] : *current_actions.down)
     {
         if((keycombo & kDown) == keycombo)
         {
@@ -377,7 +378,7 @@ void Anemone3DS::update()
 
     u32 kHeld = hidKeysHeld();
 
-    for(const auto& [keycombo, action] : *(this->current_menu->current_actions_held.top()))
+    for(const auto& [keycombo, action] : *current_actions.held)
     {
         if((keycombo & kHeld) == keycombo)
         {

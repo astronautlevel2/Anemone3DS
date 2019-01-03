@@ -29,7 +29,7 @@
 BadgeMenu::BadgeMenu() : Menu("/Badges/", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, TEXT_NOT_FOUND_SWITCH_TO_THEME, 64, COLOR_BADGE_BG, true)
 {
     static const KeysActions normal_actions_down{
-        // {KEY_A, std::bind(&BadgeMenu::change_to_action_mode, this)},
+        {KEY_A, std::bind(&BadgeMenu::change_to_action_mode, this)},
         {KEY_B, std::bind(&Menu::change_to_qr_scanner, this)},
         {KEY_X, std::bind(&Menu::change_to_extra_mode, this)},
         {KEY_Y, std::bind(&MenuBase::load_preview, this)},
@@ -49,11 +49,37 @@ BadgeMenu::BadgeMenu() : Menu("/Badges/", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWI
         {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
     };
 
-    this->current_actions_down.push(&normal_actions_down);
-    this->current_actions_held.push(&normal_actions_held);
+    this->current_actions.push({&normal_actions_down, &normal_actions_held});
 }
 
 BadgeMenu::~BadgeMenu()
 {
     
+}
+
+MenuActionReturn BadgeMenu::change_to_action_mode()
+{
+    if(!this->entries.size())
+        return RETURN_NONE;
+
+    static const KeysActions badge_actions_down{
+        {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
+        {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
+    };
+
+    static const Instructions badge_actions_instructions = {
+        INSTRUCTIONS_NONE,
+        INSTRUCTION_B_FOR_GOING_BACK,
+        INSTRUCTION_X_FOR_DELETING_ENTRY,
+        INSTRUCTIONS_NONE,
+        INSTRUCTIONS_NONE,
+        INSTRUCTIONS_NONE,
+        INSTRUCTIONS_NONE,
+        INSTRUCTIONS_NONE,
+    };
+
+    this->current_actions.push({&badge_actions_down, &empty_held_actions});
+    this->instructions_stack.push(&badge_actions_instructions);
+
+    return RETURN_NONE;
 }

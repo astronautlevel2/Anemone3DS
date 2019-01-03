@@ -14,14 +14,25 @@
 #Dd to move cursor down
 #Dr to move cursor down a page
 | General extra mode
-#A to sort entries
-#X to delete the selected entry
+#A to jump to selection
 #Y to access ThemePlaza
-| General extra mode
-#A to sort by filename
-#X to sort by author name
-#Y to sort by title
+#Du to sort by author name
+#Dl to sort by filename
+#Dr to sort by title
+| General action mode
+#X to delete the selected entry
 | ThemePlaza normal mode
 #A to download highlighted
 #Dl to move cursor left
 #Dr to move cursor right
+| Theme action mode
+#A to mark for shuffle
+#Du for single install
+#Dl for BGM-only install
+#Dd for shuffle install
+#Dr for no-BGM install
+| Splash action mode
+#A to delete installed splash
+#Du to install splash
+#Dl to install splash top
+#Dr to install splash bottom

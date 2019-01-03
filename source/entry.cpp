@@ -51,7 +51,7 @@ EntryIcon::EntryIcon()  // For badges
     this->image->tex = tex;
     this->image->subtex = &subt3x;
     C3D_TexInit(this->image->tex, 64, 64, GPU_RGBA8);
-    memset(this->image->tex->data, 0, this->image->tex->size);
+    memset(this->image->tex->data, 0xFF, this->image->tex->size);
 
     C3D_TexSetFilter(image->tex, GPU_LINEAR, GPU_LINEAR);
     image->tex->border = 0xFFFFFFFF;

@@ -26,6 +26,8 @@
 
 #include "menu.h"
 
+const KeysActions empty_held_actions{};
+
 MenuBase::MenuBase(const std::string& loading_path, int icon_size, u32 background_color) : background_color(background_color), path(loading_path), icon_size(icon_size)
 {
 
@@ -38,8 +40,10 @@ bool MenuBase::in_preview()
 
 MenuActionReturn MenuBase::exit_mode_controls()
 {
-    this->current_actions_down.pop();
-    this->current_actions_held.pop();
+    if(this->current_actions.size() == 1)
+        return RETURN_NONE;
+
+    this->current_actions.pop();
     if(!this->in_instructions && !this->in_preview())
         this->instructions_stack.pop();
     return RETURN_NONE;
@@ -57,16 +61,13 @@ MenuActionReturn MenuBase::load_preview()
         {KEY_TOUCH, std::bind(&MenuBase::exit_preview, this)},
     };
 
-    static const KeysActions exit_preview_actions_held{};
-
     if(this->entries.size())
     {
         const Entry* current_entry_ptr = this->entries[this->selected_entry].get();
         if(current_entry_ptr == this->selected_entry_for_previous_preview)
         {
             this->preview = std::move(this->previous_preview);
-            this->current_actions_down.push(&exit_preview_actions_down);
-            this->current_actions_held.push(&exit_preview_actions_held);
+            this->current_actions.push({&exit_preview_actions_down, &empty_held_actions});
         }
         else
         {
@@ -76,8 +77,7 @@ MenuActionReturn MenuBase::load_preview()
                 this->preview = std::move(new_preview);
                 this->selected_entry_for_previous_preview = current_entry_ptr;
 
-                this->current_actions_down.push(&exit_preview_actions_down);
-                this->current_actions_held.push(&exit_preview_actions_held);
+                this->current_actions.push({&exit_preview_actions_down, &empty_held_actions});
             }
         }
     }
@@ -138,10 +138,7 @@ void MenuBase::toggle_instructions_mode()
             {KEY_TOUCH, std::bind(&MenuBase::instructions_handle_touch, this)},
         };
 
-        static const KeysActions instructions_actions_held{};
-
-        this->current_actions_down.push(&instructions_actions_down);
-        this->current_actions_held.push(&instructions_actions_held);
+        this->current_actions.push({&instructions_actions_down, &empty_held_actions});
 
         this->in_instructions = true;
         this->instruction_screen_right = false;
@@ -164,10 +161,14 @@ void MenuBase::draw_instructions()
     C2D_DrawRectSolid((this->instruction_screen_right ? 320.0f/2.0f : 0.0f) + 2.0f, 2.0f, 0.25f, 320.0f/2.0f - 2.0f*2.0f, BARS_SIZE - 2.0f*2.0f, COLOR_CURSOR);
     draw_text(TEXT_GENERAL, TEXT_L, this->instruction_screen_right ? COLOR_CURSOR : COLOR_BLACK, (320.0f/2.0f*0.5f) - l_width/2.0f, (BARS_SIZE - l_height)/2.0f, 0.5f, 0.6f, 0.6f);
     draw_text(TEXT_GENERAL, TEXT_R, this->instruction_screen_right ? COLOR_BLACK : COLOR_CURSOR, (320.0f/2.0f*1.5f) - r_width/2.0f, (BARS_SIZE - r_height)/2.0f, 0.5f, 0.6f, 0.6f);
-    for(int i = start; i < start + 4; ++i,  y += step)
+    for(int i = start; i < start + 4; ++i, y += step)
     {
-        get_text_dimensions(TEXT_INSTRUCTIONS, current_instructions->array[i], nullptr, &height, instructions_scale, instructions_scale);
-        draw_text_centered(TEXT_INSTRUCTIONS, current_instructions->array[i], COLOR_WHITE, y + (step - height)/2.0f, 0.5f, instructions_scale, instructions_scale);
+        InstructionType current_instruction_id = current_instructions->array[i];
+        if(current_instruction_id == INSTRUCTIONS_NONE)
+            continue;
+
+        get_text_dimensions(TEXT_INSTRUCTIONS, current_instruction_id, nullptr, &height, instructions_scale, instructions_scale);
+        draw_text_centered(TEXT_INSTRUCTIONS, current_instruction_id, COLOR_WHITE, y + (step - height)/2.0f, 0.5f, instructions_scale, instructions_scale);
     }
 
     C2D_DrawRectSolid(2.0f, 240.0f - BARS_SIZE + 2.0f, 0.25f, 320.0f - 2.0f*2.0f, BARS_SIZE - 2.0f*2.0f, COLOR_CURSOR);
@@ -587,6 +588,7 @@ MenuActionReturn Menu::sort(SortType sort_type)
     this->previous_selected_entry = this->selected_entry = this->scroll = 0;
     this->load_icons();
 
+    this->exit_mode_controls();
     return RETURN_NONE;
 }
 
@@ -664,39 +666,26 @@ MenuActionReturn Menu::change_to_extra_mode()
         return RETURN_NONE;
 
     static const KeysActions extra_actions_down{
-        {KEY_A, std::bind(&Menu::change_to_sorting_mode, this)},
+        {KEY_A, std::bind(&Menu::jump_in_selection, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
-        {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
         {KEY_Y, std::bind(&Menu::change_to_browser_mode, this)},
-        {KEY_L, std::bind(&Menu::change_to_previous_mode, this)},
-        {KEY_R, std::bind(&Menu::change_to_next_mode, this)},
-        {KEY_DUP, std::bind(&Menu::select_previous_entry, this)},
-        {KEY_DLEFT, std::bind(&Menu::select_previous_page, this)},
-        {KEY_DDOWN, std::bind(&Menu::select_next_entry, this)},
-        {KEY_DRIGHT, std::bind(&Menu::select_next_page, this)},
-        {KEY_TOUCH, std::bind(&Menu::handle_touch, this)},
-    };
-
-    static const KeysActions extra_actions_held{
-        {KEY_CPAD_UP, std::bind(&Menu::select_previous_entry_fast, this)},
-        {KEY_CPAD_LEFT, std::bind(&Menu::select_previous_page_fast, this)},
-        {KEY_CPAD_DOWN, std::bind(&Menu::select_next_entry_fast, this)},
-        {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
+        {KEY_DUP, std::bind(&Menu::sort, this, SORT_AUTHOR)},
+        {KEY_DLEFT, std::bind(&Menu::sort, this, SORT_FILENAME)},
+        {KEY_DRIGHT, std::bind(&Menu::sort, this, SORT_NAME)},
     };
 
     static const Instructions extra_actions_instructions = {
-        INSTRUCTION_A_FOR_SORTING_MODE,
+        INSTRUCTION_A_FOR_JUMPING,
         INSTRUCTION_B_FOR_GOING_BACK,
-        INSTRUCTION_X_FOR_DELETING_ENTRY,
+        INSTRUCTIONS_NONE,
         INSTRUCTION_Y_FOR_ENTERING_BROWSER,
         INSTRUCTION_UP_TO_MOVE_UP,
         INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
-        INSTRUCTION_DOWN_TO_MOVE_DOWN,
+        INSTRUCTIONS_NONE,
         INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
     };
 
-    this->current_actions_down.push(&extra_actions_down);
-    this->current_actions_held.push(&extra_actions_held);
+    this->current_actions.push({&extra_actions_down, &empty_held_actions});
     this->instructions_stack.push(&extra_actions_instructions);
 
     return RETURN_NONE;
@@ -721,6 +710,48 @@ static SwkbdCallbackResult jump_entry_menu_callback(void* entries_count, const c
         return SWKBD_CALLBACK_CONTINUE;
     }
     return SWKBD_CALLBACK_OK;
+}
+
+MenuActionReturn Menu::jump_in_selection()
+{
+    if(!this->entries.size())
+        return RETURN_NONE;
+
+    SwkbdState swkbd;
+
+    size_t entries_count = this->entries.size();
+    const std::string entries_count_str = std::to_string(entries_count);
+    swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, entries_count_str.length());
+
+    const std::string selected_entry_str = std::to_string(this->selected_entry + 1);
+    char* selected_entry_char = strdup(selected_entry_str.c_str());
+    swkbdSetInitialText(&swkbd, selected_entry_char);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, entries_count_str.length());
+
+    swkbdSetFilterCallback(&swkbd, jump_entry_menu_callback, &entries_count);
+
+    char numbuf[8] = {0};
+    SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        this->selected_entry = strtoul(numbuf, nullptr, 10) - 1;
+        if(this->selected_entry < this->scroll || this->selected_entry >= this->scroll + this->icons_per_screen)
+        {
+            this->scroll = this->selected_entry;
+            const size_t max_scroll = this->entries.size() - this->icons_per_screen;
+            if(this->scroll > max_scroll)
+                this->scroll = max_scroll;
+
+            if(this->entries.size() > this->icons.size())
+                this->load_icons();
+        }
+    }
+    free(selected_entry_char);
+
+    return RETURN_NONE;
 }
 
 MenuActionReturn Menu::handle_touch()
@@ -749,42 +780,7 @@ MenuActionReturn Menu::handle_touch()
     {
         if(touch.px >= 176)
         {
-            if(!this->entries.size())
-                return RETURN_NONE;
-
-            SwkbdState swkbd;
-
-            size_t entries_count = this->entries.size();
-            const std::string entries_count_str = std::to_string(entries_count);
-            swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, entries_count_str.length());
-
-            const std::string selected_entry_str = std::to_string(this->selected_entry + 1);
-            char* selected_entry_char = strdup(selected_entry_str.c_str());
-            swkbdSetInitialText(&swkbd, selected_entry_char);
-
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
-            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, entries_count_str.length());
-
-            swkbdSetFilterCallback(&swkbd, jump_entry_menu_callback, &entries_count);
-
-            char numbuf[8] = {0};
-            SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
-            if(button == SWKBD_BUTTON_CONFIRM)
-            {
-                this->selected_entry = strtoul(numbuf, nullptr, 10) - 1;
-                if(this->selected_entry < this->scroll || this->selected_entry >= this->scroll + this->icons_per_screen)
-                {
-                    this->scroll = this->selected_entry;
-                    const size_t max_scroll = this->entries.size() - this->icons_per_screen;
-                    if(this->scroll > max_scroll)
-                        this->scroll = max_scroll;
-
-                    if(this->entries.size() > this->icons.size())
-                        this->load_icons();
-                }
-            }
-            free(selected_entry_char);
+            this->jump_in_selection();
         }
     }
     else
@@ -795,50 +791,6 @@ MenuActionReturn Menu::handle_touch()
         u16 y = touch.py - bars_size;
         this->previous_selected_entry = this->selected_entry = this->scroll + (y / this->icon_size);
     }
-    return RETURN_NONE;
-}
-
-MenuActionReturn Menu::change_to_sorting_mode()
-{
-    if(!this->entries.size())
-        return RETURN_NONE;
-
-    static const KeysActions sorting_actions_down{
-        {KEY_A, std::bind(&Menu::sort, this, SORT_FILENAME)},
-        {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
-        {KEY_X, std::bind(&Menu::sort, this, SORT_AUTHOR)},
-        {KEY_Y, std::bind(&Menu::sort, this, SORT_NAME)},
-        {KEY_L, std::bind(&Menu::change_to_previous_mode, this)},
-        {KEY_R, std::bind(&Menu::change_to_next_mode, this)},
-        {KEY_DUP, std::bind(&Menu::select_previous_entry, this)},
-        {KEY_DLEFT, std::bind(&Menu::select_previous_page, this)},
-        {KEY_DDOWN, std::bind(&Menu::select_next_entry, this)},
-        {KEY_DRIGHT, std::bind(&Menu::select_next_page, this)},
-        {KEY_TOUCH, std::bind(&Menu::handle_touch, this)},
-    };
-
-    static const KeysActions sorting_actions_held{
-        {KEY_CPAD_UP, std::bind(&Menu::select_previous_entry_fast, this)},
-        {KEY_CPAD_LEFT, std::bind(&Menu::select_previous_page_fast, this)},
-        {KEY_CPAD_DOWN, std::bind(&Menu::select_next_entry_fast, this)},
-        {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
-    };
-
-    static const Instructions sorting_actions_instructions = {
-        INSTRUCTION_A_FOR_SORTING_FILENAME,
-        INSTRUCTION_B_FOR_GOING_BACK,
-        INSTRUCTION_X_FOR_SORTING_AUTHOR,
-        INSTRUCTION_Y_FOR_SORTING_NAME,
-        INSTRUCTION_UP_TO_MOVE_UP,
-        INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
-        INSTRUCTION_DOWN_TO_MOVE_DOWN,
-        INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
-    };
-
-    this->current_actions_down.push(&sorting_actions_down);
-    this->current_actions_held.push(&sorting_actions_held);
-    this->instructions_stack.push(&sorting_actions_instructions);
-
     return RETURN_NONE;
 }
 
@@ -867,6 +819,6 @@ MenuActionReturn Menu::delete_selected_entry()
 
 MenuActionReturn Menu::change_to_browser_mode()
 {
-    this->exit_mode_controls();
+    // this->exit_mode_controls();
     return RETURN_CHANGE_TO_BROWSER_MODE;
 }
