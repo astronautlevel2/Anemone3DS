@@ -267,12 +267,19 @@ void Menu::load_icons()
     }
     else
     {
+        size_t entries_count = this->entries.size();
         for(size_t i = 0; i < this->icons_per_screen; i++)
         {
             draw_loading_bar(i, this->icons_per_screen, INSTALL_LOADING_ICONS);
-            this->icons[i] = std::move(std::unique_ptr<EntryIcon>(this->entries[this->entries.size() - this->icons_per_screen + i]->load_icon()));
-            this->icons[i + this->icons_per_screen] = std::move(std::unique_ptr<EntryIcon>(this->entries[i]->load_icon()));
-            this->icons[i + this->icons_per_screen*2] = std::move(std::unique_ptr<EntryIcon>(this->entries[this->icons_per_screen + i]->load_icon()));
+            int above_pos = this->scroll + i - this->icons_per_screen;
+            if(above_pos < 0)
+                above_pos = entries_count + above_pos;
+            int visible_pos = this->scroll + i;
+            int under_pos = this->scroll + i + this->icons_per_screen;
+            under_pos %= entries_count;
+            this->icons[i] = std::move(std::unique_ptr<EntryIcon>(this->entries[above_pos]->load_icon()));
+            this->icons[i + this->icons_per_screen] = std::move(std::unique_ptr<EntryIcon>(this->entries[visible_pos]->load_icon()));
+            this->icons[i + this->icons_per_screen*2] = std::move(std::unique_ptr<EntryIcon>(this->entries[under_pos]->load_icon()));
         }
     }
 }
@@ -658,7 +665,7 @@ MenuActionReturn Menu::handle_touch()
             const std::string entries_count_str = std::to_string(entries_count);
             swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, entries_count_str.length());
 
-            const std::string selected_entry_str = std::to_string(this->selected_entry);
+            const std::string selected_entry_str = std::to_string(this->selected_entry + 1);
             char* selected_entry_char = strdup(selected_entry_str.c_str());
             swkbdSetInitialText(&swkbd, selected_entry_char);
 
@@ -679,6 +686,9 @@ MenuActionReturn Menu::handle_touch()
                     const size_t max_scroll = this->entries.size() - this->icons_per_screen;
                     if(this->scroll > max_scroll)
                         this->scroll = max_scroll;
+
+                    if(this->entries.size() > this->icons.size())
+                        this->load_icons();
                 }
             }
             free(selected_entry_char);
