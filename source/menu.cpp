@@ -476,7 +476,7 @@ void Menu::draw()
             {
                 C2D_Image * image = NULL;
                 if(this->entries.size() <= this->icons.size())
-                    image =  this->icons[i]->image;
+                    image = this->icons[actual_i]->image;
                 else
                     image = this->icons[i + this->icons_per_screen]->image;
                 C2D_DrawImageAt(*image, 0.0f, y, 0.2f);
