@@ -399,7 +399,8 @@ void Menu::draw()
     get_text_dimensions(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, nullptr, &height, 0.6f, 0.6f);
     draw_text_centered(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, COLOR_WHITE, 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
 
-    if(this->entries.size())
+    size_t entries_count = this->entries.size();
+    if(entries_count)
     {
         this->entries[this->selected_entry]->draw();
     }
@@ -466,13 +467,16 @@ void Menu::draw()
     }
 
     switch_screen(GFX_BOTTOM);
-    if(this->entries.size())
+    if(entries_count)
     {
         float y = BARS_SIZE;
         for(size_t i = 0; i < this->icons_per_screen; i++, y += this->icon_size)
         {
-            u32 text_color = COLOR_WHITE;
             size_t actual_i = i + this->scroll;
+            if(actual_i >= entries_count)
+                break;
+
+            u32 text_color = COLOR_WHITE;
             if(actual_i == this->selected_entry)
             {
                 text_color = COLOR_BLACK;
@@ -483,7 +487,7 @@ void Menu::draw()
             if(!current_entry->color)
             {
                 C2D_Image * image = NULL;
-                if(this->entries.size() <= this->icons.size())
+                if(entries_count <= this->icons.size())
                     image = this->icons[actual_i]->image;
                 else
                     image = this->icons[i + this->icons_per_screen]->image;
@@ -500,13 +504,14 @@ void Menu::draw()
         }
 
         // Draw entries list
-        std::string selected_entry_str = std::to_string(this->selected_entry + 1) + "/" + std::to_string(this->entries.size());
+        std::string selected_entry_str = std::to_string(this->selected_entry + 1) + "/" + std::to_string(entries_count);
         float x = 316;
-        float width = 0;
-        get_text_dimensions(selected_entry_str, &width, nullptr, 0.6f, 0.6f);
+        float width, height;
+        get_text_dimensions(selected_entry_str, &width, &height, 0.6f, 0.6f);
         x -= width;
-        draw_text(selected_entry_str, COLOR_WHITE, x, 219, 0.2f, 0.6f, 0.6f);
-        draw_text(TEXT_GENERAL, this->entries.size() > 999 ? TEXT_MENU_SELECTED_SHORT : TEXT_MENU_SELECTED, COLOR_WHITE, 176, 219, 0.2f, 0.6f, 0.6f);
+        y = 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f;
+        draw_text(selected_entry_str, COLOR_WHITE, x, y, 0.2f, 0.6f, 0.6f);
+        draw_text(TEXT_GENERAL, this->entries.size() > 999 ? TEXT_MENU_SELECTED_SHORT : TEXT_MENU_SELECTED, COLOR_WHITE, 176, y, 0.2f, 0.6f, 0.6f);
     }
 }
 
