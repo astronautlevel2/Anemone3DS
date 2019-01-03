@@ -861,10 +861,13 @@ MenuActionReturn Menu::delete_selected_entry()
 
         this->load_icons();
     }
+
+    this->exit_mode_controls();
     return RETURN_NONE;
 }
 
 MenuActionReturn Menu::change_to_browser_mode()
 {
+    this->exit_mode_controls();
     return RETURN_CHANGE_TO_BROWSER_MODE;
 }
