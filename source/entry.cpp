@@ -186,15 +186,15 @@ Entry::Entry(const fs::path& path, bool is_zip) : path(path), is_zip(is_zip)
                 SMDH* smdh_buf = reinterpret_cast<SMDH*>(buf);
 
                 char utf_title[0x40] = {0};
-                utf16_to_utf8((u8*)utf_title, smdh_buf->name, 0x40);
+                utf16_to_utf8(reinterpret_cast<u8*>(utf_title), smdh_buf->name, 0x40);
                 this->title = std::string(utf_title, 0x40);
 
                 char utf_description[0x80] = {0};
-                utf16_to_utf8((u8*)utf_description, smdh_buf->desc, 0x80);
+                utf16_to_utf8(reinterpret_cast<u8*>(utf_description), smdh_buf->desc, 0x80);
                 this->description = std::string(utf_description, 0x80);
 
                 char utf_author[0x40] = {0};
-                utf16_to_utf8((u8*)utf_author, smdh_buf->author, 0x40);
+                utf16_to_utf8(reinterpret_cast<u8*>(utf_author), smdh_buf->author, 0x40);
                 this->author = std::string(utf_author, 0x40);
             }
             else
@@ -226,10 +226,11 @@ void Entry::draw() const
     draw_text(TEXT_GENERAL, TEXT_ENTRY_BY, COLOR_WHITE, x, y, 0.2f, 0.5f, 0.5f);
     draw_text(this->author, COLOR_WHITE, x + width, y, 0.2f, 0.5f, 0.5f);
     y += height + 2.0f;
-    get_text_dimensions(this->title, nullptr, &height, 0.7f, 0.7f);
-    draw_text(this->title, COLOR_WHITE, x, y, 0.2f, 0.7f, 0.7f);
+    height = draw_text_wrap(this->title, COLOR_WHITE, 400.0f - x*2.0f, x, y, 0.2f, 0.7f, 0.7f);
     y += height + 8.0f;
     C2D_DrawRectSolid(12.0f, y, 0.2f, 400.0f - 12.0f*2.0f, 1.0f, COLOR_CURSOR);
+    y += 1.0f + 8.0f;
+    draw_text_wrap(this->description, COLOR_WHITE, 400.0f - x*2.0f, x, y, 0.2f, 0.5f, 0.5f);
 }
 
 u32 Entry::get_file(const std::string& file_path, char** buf) const

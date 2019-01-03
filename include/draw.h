@@ -52,6 +52,12 @@ inline void get_text_dimensions(const std::string& text, float* width, float* he
 void draw_text_centered(C2D_Text* text, u32 color, float y, float z, float scale_X, float scale_Y);
 void draw_text_centered(TextType type, int id, u32 color, float y, float z, float scale_X, float scale_Y);
 
+float draw_text_wrap(const char* text, u32 color, float max_x, float x, float y, float z, float scale_X, float scale_Y);
+inline float draw_text_wrap(const std::string& text, u32 color, float max_x, float x, float y, float z, float scale_X, float scale_Y)
+{
+    return draw_text_wrap(text.c_str(), color, max_x, x, y, z, scale_X, scale_Y);
+}
+
 void draw_text(C2D_Text* text, u32 color, float x, float y, float z, float scale_X, float scale_Y);
 void draw_text(TextType type, int id, u32 color, float x, float y, float z, float scale_X, float scale_Y);
 void draw_text(const char* text, u32 color, float x, float y, float z, float scale_X, float scale_Y);

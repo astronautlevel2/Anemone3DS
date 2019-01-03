@@ -136,6 +136,55 @@ void draw_text_centered(TextType type, int id, u32 color, float y, float z, floa
     draw_text_centered(&static_texts[type][id], color, y, z, scale_X, scale_Y);
 }
 
+float draw_text_wrap(const char* text, u32 color, float max_x, float x, float y, float z, float scale_X, float scale_Y)
+{
+    std::vector<char> wrapped_text;
+    wrapped_text.reserve(strlen(text) + 2);
+
+    float current_width = 0.0f;
+
+    while(*text)
+    {
+        ssize_t consumed;
+        u32 codepoint;
+
+        if(*text == '\n')
+            current_width = 0.0f;
+
+        if(*text == '\r')
+        {
+            text++;
+            continue;
+        }
+
+        if((consumed = decode_utf8(&codepoint, reinterpret_cast<u8*>(const_cast<char*>(text)))) == -1)
+            break;
+
+        float character_width = scale_X * (fontGetCharWidthInfo(fontGlyphIndexFromCodePoint(codepoint))->charWidth);
+        if((x + (current_width += character_width)) > max_x)
+        {
+            auto it = std::find(wrapped_text.rbegin(), wrapped_text.rend(), ' ');
+            if(it == wrapped_text.rend())
+                wrapped_text.push_back('\n');
+            else
+                *it = '\n';
+            current_width = 0.0f;
+        }
+
+        wrapped_text.insert(wrapped_text.end(), text, text + consumed);
+        text += consumed;
+    }
+
+    wrapped_text.push_back('\0');
+    C2D_Text actual_text;
+    C2D_TextParse(&actual_text, dynamic_buf, wrapped_text.data());
+    C2D_TextOptimize(&actual_text);
+    float height;
+    C2D_TextGetDimensions(&actual_text, scale_X, scale_Y, nullptr, &height);
+    draw_text(&actual_text, color, x, y, z, scale_X, scale_Y);
+    return height;
+}
+
 void draw_text(C2D_Text* text, u32 color, float x, float y, float z, float scale_X, float scale_Y)
 {
     C2D_DrawText(text, C2D_WithColor, x, y, z, scale_X, scale_Y, color);
