@@ -24,56 +24,24 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef ENTRY_H
-#define ENTRY_H
+#ifndef PREVIEW_H
+#define PREVIEW_H
 
 #include "common.h"
-#include "preview.h"
 
-struct EntryIcon {
+struct PreviewImage {
     C2D_Image* image;
+    bool ready = false;
 
-    EntryIcon(u16* pixels);
-    ~EntryIcon();
-
-protected:
-    EntryIcon();
+    PreviewImage();
+    PreviewImage(char* png_buf, u32 png_size);
+    ~PreviewImage();
+    virtual void draw() const;
 };
 
-struct BadgeIcon : public EntryIcon {
-    BadgeIcon(const fs::path& path);
-};
-
-class Entry {
-    public:
-        Entry(const fs::path& path, bool is_zip);
-        void draw() const;
-
-        EntryIcon* load_icon() const;
-        PreviewImage* load_preview() const;
-
-        void delete_entry();
-        u32 get_file(const std::string& file_path, char** buf) const;
-
-        std::string title, description, author;
-        fs::path path;
-        u32 color = 0;
-
-        enum EntryState {
-            STATE_NONE = 0,
-
-            STATE_SHUFFLE = BIT(0),
-            STATE_SHUFFLE_NO_BGM = BIT(1),
-        };
-        u32 state = STATE_NONE;  // marked for shuffle, multi-install, etc...
-
-    private:
-        bool is_zip;
-};
-
-class RemoteEntry : public Entry {
-    public:
-        RemoteEntry(int entry_id);
+struct BadgePreviewImage : PreviewImage{
+    BadgePreviewImage(const fs::path& path);
+    void draw() const;
 };
 
 #endif
