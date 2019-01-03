@@ -395,16 +395,63 @@ void Menu::draw()
     }
 
     draw_basic_interface();
-    switch_screen(GFX_TOP);
-    float height;
-    get_text_dimensions(TEXT_GENERAL, this->mode_indicator_id, nullptr, &height, 0.6f, 0.6f);
-    draw_text_centered(TEXT_GENERAL, this->mode_indicator_id, COLOR_WHITE, (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
-    get_text_dimensions(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, nullptr, &height, 0.6f, 0.6f);
-    draw_text_centered(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, COLOR_WHITE, 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
 
+    float height;
     size_t entries_count = this->entries.size();
     if(entries_count)
     {
+        float y = BARS_SIZE;
+        for(size_t i = 0; i < this->icons_per_screen; i++, y += this->icon_size)
+        {
+            size_t actual_i = i + this->scroll;
+            if(actual_i >= entries_count)
+                break;
+
+            u32 text_color = COLOR_WHITE;
+            if(actual_i == this->selected_entry)
+            {
+                text_color = COLOR_BLACK;
+                C2D_DrawRectSolid(0.0f, y, 0.1f, 320.0f, this->icon_size, COLOR_CURSOR);
+            }
+
+            const auto& current_entry = this->entries[actual_i];
+            if(!current_entry->color)
+            {
+                C2D_Image * image = NULL;
+                if(entries_count <= this->icons.size())
+                    image = this->icons[actual_i]->image;
+                else
+                    image = this->icons[i + this->icons_per_screen]->image;
+                C2D_DrawImageAt(*image, 0.0f, y, 0.2f);
+            }
+            else
+            {
+                C2D_DrawRectSolid(0.0f, y, 0.2f, this->icon_size, this->icon_size, current_entry->color);
+            }
+
+            get_text_dimensions(current_entry->title, nullptr, &height, 0.55f, 0.55f);
+            draw_text(current_entry->title, text_color, this->icon_size + 6, y + (this->icon_size - height)/2.0f, 0.2f, 0.55f, 0.55f);
+        }
+
+        // Draw entries list
+        std::string selected_entry_str = std::to_string(this->selected_entry + 1) + "/" + std::to_string(entries_count);
+        float x = 316;
+        float width;
+        get_text_dimensions(selected_entry_str, &width, &height, 0.6f, 0.6f);
+        x -= width;
+        y = 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f;
+        draw_text(selected_entry_str, COLOR_WHITE, x, y, 0.2f, 0.6f, 0.6f);
+        draw_text(TEXT_GENERAL, this->entries.size() > 999 ? TEXT_MENU_SELECTED_SHORT : TEXT_MENU_SELECTED, COLOR_WHITE, 176, y, 0.2f, 0.6f, 0.6f);
+    }
+
+    switch_screen(GFX_TOP);
+    get_text_dimensions(TEXT_GENERAL, this->mode_indicator_id, nullptr, &height, 0.6f, 0.6f);
+    draw_text_centered(TEXT_GENERAL, this->mode_indicator_id, COLOR_WHITE, (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
+
+    if(entries_count)
+    {
+        get_text_dimensions(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, nullptr, &height, 0.6f, 0.6f);
+        draw_text_centered(TEXT_GENERAL, TEXT_INFO_INSTRUCTIONS_QUIT, COLOR_WHITE, 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f - 1.0f, 0.2f, 0.6f, 0.6f);
         this->entries[this->selected_entry]->draw();
     }
     else
@@ -467,54 +514,6 @@ void Menu::draw()
 
         y += y_step;
         draw_text_centered(TEXT_GENERAL, TEXT_NOT_START_TO_QUIT, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
-    }
-
-    switch_screen(GFX_BOTTOM);
-    if(entries_count)
-    {
-        float y = BARS_SIZE;
-        for(size_t i = 0; i < this->icons_per_screen; i++, y += this->icon_size)
-        {
-            size_t actual_i = i + this->scroll;
-            if(actual_i >= entries_count)
-                break;
-
-            u32 text_color = COLOR_WHITE;
-            if(actual_i == this->selected_entry)
-            {
-                text_color = COLOR_BLACK;
-                C2D_DrawRectSolid(0.0f, y, 0.1f, 320.0f, this->icon_size, COLOR_CURSOR);
-            }
-
-            const auto& current_entry = this->entries[actual_i];
-            if(!current_entry->color)
-            {
-                C2D_Image * image = NULL;
-                if(entries_count <= this->icons.size())
-                    image = this->icons[actual_i]->image;
-                else
-                    image = this->icons[i + this->icons_per_screen]->image;
-                C2D_DrawImageAt(*image, 0.0f, y, 0.2f);
-            }
-            else
-            {
-                C2D_DrawRectSolid(0.0f, y, 0.2f, this->icon_size, this->icon_size, current_entry->color);
-            }
-
-            float height;
-            get_text_dimensions(current_entry->title, nullptr, &height, 0.55f, 0.55f);
-            draw_text(current_entry->title, text_color, this->icon_size + 6, y + (this->icon_size - height)/2.0f, 0.2f, 0.55f, 0.55f);
-        }
-
-        // Draw entries list
-        std::string selected_entry_str = std::to_string(this->selected_entry + 1) + "/" + std::to_string(entries_count);
-        float x = 316;
-        float width, height;
-        get_text_dimensions(selected_entry_str, &width, &height, 0.6f, 0.6f);
-        x -= width;
-        y = 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f;
-        draw_text(selected_entry_str, COLOR_WHITE, x, y, 0.2f, 0.6f, 0.6f);
-        draw_text(TEXT_GENERAL, this->entries.size() > 999 ? TEXT_MENU_SELECTED_SHORT : TEXT_MENU_SELECTED, COLOR_WHITE, 176, y, 0.2f, 0.6f, 0.6f);
     }
 }
 
