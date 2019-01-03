@@ -1,0 +1,4 @@
+The new position has to be#nsmaller than or equal to the#nnumber of entries!
+The new position has to#nbe positive!
+The new page has to be#nsmaller than or equal to the#nnumber of pages!
+The new page has to#nbe positive!

@@ -180,4 +180,16 @@ enum InstructionType {
     INSTRUCTION_RIGHT_TO_MOVE_RIGHT,
 };
 
+enum KeyboardText {
+    KEYBOARD_GENERAL_TOO_HIGH,
+    KEYBOARD_GENERAL_NON_ZERO,
+
+    KEYBOARD_THEMEPLAZA_TOO_HIGH,
+    KEYBOARD_THEMEPLAZA_NON_ZERO,
+
+    KEYBOARD_TEXTS_AMOUNT
+};
+
+extern std::vector<char*> keyboard_shown_text;
+
 #endif

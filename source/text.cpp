@@ -28,6 +28,7 @@
 
 static C2D_TextBuf static_text_buf;
 std::vector<std::vector<C2D_Text>> static_texts(TEXT_TYPES_AMOUNT);
+std::vector<char*> keyboard_shown_text;
 
 static const std::string& parse_line(const char* start, const char* end)
 {
@@ -138,6 +139,31 @@ static void load_text(TextType type, const std::string& path)
     fclose(fh);
 }
 
+static void load_text_directly(const std::string& path)
+{
+    DEBUG("Loading text directly from %s\n", path.c_str());
+    FILE* fh = fopen(path.c_str(), "r");
+    bool done = false;
+    keyboard_shown_text.reserve(KEYBOARD_TEXTS_AMOUNT);
+
+    do {
+        char* line = nullptr;
+        size_t n = 0;
+        ssize_t read_length = __getline(&line, &n, fh);
+        if(line && line[0] != '|')
+        {
+            if(line[read_length-1] != '\n')
+                done = true;
+
+            const std::string& text = parse_line(line, line + read_length - 1 - (done ? 0 : 1));
+            keyboard_shown_text.push_back(strdup(text.c_str()));
+        }
+        free(line);
+    } while(!done);
+
+    fclose(fh);
+}
+
 void init_text()
 {
     static_text_buf = C2D_TextBufNew(0x2000);
@@ -153,9 +179,10 @@ void init_text()
             break;
     }
     load_text(TEXT_GENERAL, lang_folder / "text.txt");
-    load_text(TEXT_INSTRUCTIONS, lang_folder / "instructions.txt");
     load_text(TEXT_INSTALL, lang_folder / "installs.txt");
     load_text(TEXT_ERROR, lang_folder / "errors.txt");
+    load_text(TEXT_INSTRUCTIONS, lang_folder / "instructions.txt");
+    load_text_directly(lang_folder / "keyboard.txt");
 
     static_texts[TEXT_GENERAL].emplace_back();
     C2D_TextParse(&static_texts[TEXT_GENERAL].back(), static_text_buf, " ");
@@ -170,6 +197,7 @@ void init_text()
 
 void exit_text()
 {
-    static_texts.clear();
+    for(auto& text : keyboard_shown_text)
+        free(text);
     C2D_TextBufDelete(static_text_buf);
 }

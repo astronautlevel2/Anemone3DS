@@ -611,6 +611,21 @@ MenuActionReturn Menu::change_to_qr_scanner()
     return RETURN_NONE;
 }
 
+static SwkbdCallbackResult jump_entry_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
+{
+    size_t typed_value = strtoul(text, nullptr, 10);
+    if(typed_value > *reinterpret_cast<size_t*>(entries_count))
+    {
+        *ppMessage = keyboard_shown_text[KEYBOARD_GENERAL_TOO_HIGH];
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    else if(typed_value == 0)
+    {
+        *ppMessage = keyboard_shown_text[KEYBOARD_GENERAL_NON_ZERO];
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
 MenuActionReturn Menu::handle_touch()
 {
     touchPosition touch;
@@ -635,7 +650,39 @@ MenuActionReturn Menu::handle_touch()
     }
     else if(touch.py >= 240 - bars_size)
     {
-        // If touch.x >= 176, open jump menu
+        if(touch.px >= 176)
+        {
+            SwkbdState swkbd;
+
+            size_t entries_count = this->entries.size();
+            const std::string entries_count_str = std::to_string(entries_count);
+            swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, entries_count_str.length());
+
+            const std::string selected_entry_str = std::to_string(this->selected_entry);
+            char* selected_entry_char = strdup(selected_entry_str.c_str());
+            swkbdSetInitialText(&swkbd, selected_entry_char);
+
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, entries_count_str.length());
+
+            swkbdSetFilterCallback(&swkbd, jump_entry_menu_callback, &entries_count);
+
+            char numbuf[8] = {0};
+            SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
+            if(button == SWKBD_BUTTON_CONFIRM)
+            {
+                this->selected_entry = strtoul(numbuf, nullptr, 10) - 1;
+                if(this->selected_entry < this->scroll || this->selected_entry >= this->scroll + this->icons_per_screen)
+                {
+                    this->scroll = this->selected_entry;
+                    const size_t max_scroll = this->entries.size() - this->icons_per_screen;
+                    if(this->scroll > max_scroll)
+                        this->scroll = max_scroll;
+                }
+            }
+            free(selected_entry_char);
+        }
     }
     else
     {
