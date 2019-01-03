@@ -80,8 +80,6 @@ union Instructions {
 
 using KeysActions = std::vector<std::pair<u32, std::function<MenuActionReturn()>>>;
 
-extern Instructions normal_actions_instructions;
-
 class MenuBase {
     public:
         virtual void draw() = 0;
@@ -119,6 +117,7 @@ class MenuBase {
         size_t previous_selected_entry = 0;
         int change;
         bool instruction_screen_right;
+        SortType sort_type = SORTS_AMOUNT;
 
         std::unique_ptr<PreviewImage> preview;
         std::unique_ptr<PreviewImage> previous_preview;
@@ -155,6 +154,10 @@ class Menu : public MenuBase {
     protected:
         Menu(const std::string& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu = false);
         void load_icons();
+
+        MenuActionReturn change_to_sorting_mode();
+        MenuActionReturn delete_selected_entry();
+        MenuActionReturn change_to_browser_mode();
 
         size_t icons_per_screen;
         std::vector<std::unique_ptr<EntryIcon>> icons;

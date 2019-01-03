@@ -14,15 +14,14 @@
 #Dd to move cursor down
 #Dr to move cursor down a page
 | General extra mode
-INSTRUCTION_A_FOR_SORTING_MODE
-INSTRUCTION_X_FOR_DELETING_ENTRY
-INSTRUCTION_Y_FOR_ENTERING_BROWSER
+#A to sort entries
+#X to delete the selected entry
+#Y to access ThemePlaza
 | General extra mode
-INSTRUCTION_A_FOR_SORTING_FILENAME
-INSTRUCTION_X_FOR_SORTING_AUTHOR
-INSTRUCTION_Y_FOR_SORTING_NAME
-
-| Themeplaza normal mode
+#A to sort by filename
+#X to sort by author name
+#Y to sort by title
+| ThemePlaza normal mode
 #A to download highlighted
 #Dl to move cursor left
 #Dr to move cursor right

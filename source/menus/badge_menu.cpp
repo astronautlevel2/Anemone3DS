@@ -51,7 +51,6 @@ BadgeMenu::BadgeMenu() : Menu("/Badges/", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWI
 
     this->current_actions_down.push(&normal_actions_down);
     this->current_actions_held.push(&normal_actions_held);
-    this->instructions_stack.push(&normal_actions_instructions);
 }
 
 BadgeMenu::~BadgeMenu()

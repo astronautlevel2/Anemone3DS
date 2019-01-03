@@ -26,17 +26,6 @@
 
 #include "menu.h"
 
-Instructions normal_actions_instructions = {
-    INSTRUCTION_A_FOR_ACTION_MODE,
-    INSTRUCTION_B_FOR_QR_SCANNER,
-    INSTRUCTION_X_FOR_EXTRA_MODE,
-    INSTRUCTION_Y_FOR_PREVIEW,
-    INSTRUCTION_UP_TO_MOVE_UP,
-    INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
-    INSTRUCTION_DOWN_TO_MOVE_DOWN,
-    INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
-};
-
 MenuBase::MenuBase(const std::string& loading_path, int icon_size, u32 background_color) : background_color(background_color), path(loading_path), icon_size(icon_size)
 {
 
@@ -252,6 +241,18 @@ next_mode_indicator_id(next_mode_indicator_id)
     DEBUG("got %zd entries.\n", this->entries.size());
     this->entries.shrink_to_fit();
     this->sort(SORT_NAME);
+
+    static const Instructions normal_actions_instructions = {
+        INSTRUCTION_A_FOR_ACTION_MODE,
+        INSTRUCTION_B_FOR_QR_SCANNER,
+        INSTRUCTION_X_FOR_EXTRA_MODE,
+        INSTRUCTION_Y_FOR_PREVIEW,
+        INSTRUCTION_UP_TO_MOVE_UP,
+        INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
+        INSTRUCTION_DOWN_TO_MOVE_DOWN,
+        INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
+    };
+    this->instructions_stack.push(&normal_actions_instructions);
 }
 
 void Menu::load_icons()
@@ -561,13 +562,21 @@ void Menu::calculate_new_scroll()
 
 MenuActionReturn Menu::sort(SortType sort_type)
 {
+    if(this->sort_type == sort_type)
+        return RETURN_NONE;
+
+    this->sort_type = sort_type;
+    DEBUG("Sorting menu with sort mode %d\n", sort_type);
     std::array<std::function<bool(const std::unique_ptr<Entry>&, const std::unique_ptr<Entry>&)>, SORTS_AMOUNT> sorting_functions{
         [](const std::unique_ptr<Entry>& a, const std::unique_ptr<Entry>& b) { return a->title < b->title; },
         [](const std::unique_ptr<Entry>& a, const std::unique_ptr<Entry>& b) { return a->author < b->author; },
         [](const std::unique_ptr<Entry>& a, const std::unique_ptr<Entry>& b) { return a->path < b->path; },
     };
+    draw_install(INSTALL_SORTING);
     std::sort(this->entries.begin(), this->entries.end(), sorting_functions[sort_type]);
+    this->previous_selected_entry = this->selected_entry = this->scroll = 0;
     this->load_icons();
+
     return RETURN_NONE;
 }
 
@@ -641,6 +650,42 @@ MenuActionReturn Menu::change_to_next_mode()
 
 MenuActionReturn Menu::change_to_extra_mode()
 {
+    static const KeysActions extra_actions_down{
+        {KEY_A, std::bind(&Menu::change_to_sorting_mode, this)},
+        {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
+        {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
+        {KEY_Y, std::bind(&Menu::change_to_browser_mode, this)},
+        {KEY_L, std::bind(&Menu::change_to_previous_mode, this)},
+        {KEY_R, std::bind(&Menu::change_to_next_mode, this)},
+        {KEY_DUP, std::bind(&Menu::select_previous_entry, this)},
+        {KEY_DLEFT, std::bind(&Menu::select_previous_page, this)},
+        {KEY_DDOWN, std::bind(&Menu::select_next_entry, this)},
+        {KEY_DRIGHT, std::bind(&Menu::select_next_page, this)},
+        {KEY_TOUCH, std::bind(&Menu::handle_touch, this)},
+    };
+
+    static const KeysActions extra_actions_held{
+        {KEY_CPAD_UP, std::bind(&Menu::select_previous_entry_fast, this)},
+        {KEY_CPAD_LEFT, std::bind(&Menu::select_previous_page_fast, this)},
+        {KEY_CPAD_DOWN, std::bind(&Menu::select_next_entry_fast, this)},
+        {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
+    };
+
+    static const Instructions extra_actions_instructions = {
+        INSTRUCTION_A_FOR_SORTING_MODE,
+        INSTRUCTION_B_FOR_GOING_BACK,
+        INSTRUCTION_X_FOR_DELETING_ENTRY,
+        INSTRUCTION_Y_FOR_ENTERING_BROWSER,
+        INSTRUCTION_UP_TO_MOVE_UP,
+        INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
+        INSTRUCTION_DOWN_TO_MOVE_DOWN,
+        INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
+    };
+
+    this->current_actions_down.push(&extra_actions_down);
+    this->current_actions_held.push(&extra_actions_held);
+    this->instructions_stack.push(&extra_actions_instructions);
+
     return RETURN_NONE;
 }
 
@@ -731,4 +776,68 @@ MenuActionReturn Menu::handle_touch()
         this->previous_selected_entry = this->selected_entry = this->scroll + (y / this->icon_size);
     }
     return RETURN_NONE;
+}
+
+MenuActionReturn Menu::change_to_sorting_mode()
+{
+    static const KeysActions sorting_actions_down{
+        {KEY_A, std::bind(&Menu::sort, this, SORT_FILENAME)},
+        {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
+        {KEY_X, std::bind(&Menu::sort, this, SORT_AUTHOR)},
+        {KEY_Y, std::bind(&Menu::sort, this, SORT_NAME)},
+        {KEY_L, std::bind(&Menu::change_to_previous_mode, this)},
+        {KEY_R, std::bind(&Menu::change_to_next_mode, this)},
+        {KEY_DUP, std::bind(&Menu::select_previous_entry, this)},
+        {KEY_DLEFT, std::bind(&Menu::select_previous_page, this)},
+        {KEY_DDOWN, std::bind(&Menu::select_next_entry, this)},
+        {KEY_DRIGHT, std::bind(&Menu::select_next_page, this)},
+        {KEY_TOUCH, std::bind(&Menu::handle_touch, this)},
+    };
+
+    static const KeysActions sorting_actions_held{
+        {KEY_CPAD_UP, std::bind(&Menu::select_previous_entry_fast, this)},
+        {KEY_CPAD_LEFT, std::bind(&Menu::select_previous_page_fast, this)},
+        {KEY_CPAD_DOWN, std::bind(&Menu::select_next_entry_fast, this)},
+        {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
+    };
+
+    static const Instructions sorting_actions_instructions = {
+        INSTRUCTION_A_FOR_SORTING_FILENAME,
+        INSTRUCTION_B_FOR_GOING_BACK,
+        INSTRUCTION_X_FOR_SORTING_AUTHOR,
+        INSTRUCTION_Y_FOR_SORTING_NAME,
+        INSTRUCTION_UP_TO_MOVE_UP,
+        INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
+        INSTRUCTION_DOWN_TO_MOVE_DOWN,
+        INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
+    };
+
+    this->current_actions_down.push(&sorting_actions_down);
+    this->current_actions_held.push(&sorting_actions_held);
+    this->instructions_stack.push(&sorting_actions_instructions);
+
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::delete_selected_entry()
+{
+    draw_install(INSTALL_DELETING);
+    if(this->scroll == this->entries.size() - this->icons_per_screen)
+        --this->scroll;
+
+    this->entries.erase(this->entries.begin() + this->selected_entry);
+
+    if(this->entries.size())
+    {
+        if(this->selected_entry == this->entries.size())
+            this->selected_entry = this->previous_selected_entry = this->selected_entry - 1;
+
+        this->load_icons();
+    }
+    return RETURN_NONE;
+}
+
+MenuActionReturn Menu::change_to_browser_mode()
+{
+    return RETURN_CHANGE_TO_BROWSER_MODE;
 }

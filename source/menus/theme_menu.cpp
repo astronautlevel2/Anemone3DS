@@ -51,7 +51,6 @@ ThemeMenu::ThemeMenu() : Menu("/Themes/", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWI
 
     this->current_actions_down.push(&normal_actions_down);
     this->current_actions_held.push(&normal_actions_held);
-    this->instructions_stack.push(&normal_actions_instructions);
 }
 
 ThemeMenu::~ThemeMenu()

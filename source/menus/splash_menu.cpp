@@ -51,7 +51,6 @@ SplashMenu::SplashMenu() : Menu("/Splashes/", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUN
 
     this->current_actions_down.push(&normal_actions_down);
     this->current_actions_held.push(&normal_actions_held);
-    this->instructions_stack.push(&normal_actions_instructions);
 }
 
 
