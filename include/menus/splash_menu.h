@@ -36,6 +36,9 @@ class SplashMenu : public Menu {
 
     private:
         MenuActionReturn change_to_action_mode();
+        MenuActionReturn delete_installed_splash();
+        bool install_splash_internal(FS_Path dest, const std::string& source, u32 wanted_size, ErrorType size_wrong_error, ErrorType not_found_error);
+        MenuActionReturn install_splash(bool install_top, bool install_bottom);
 };
 
 #endif

@@ -288,3 +288,8 @@ void remake_file(FS_Path path, Archive archive, u32 size)
         DEBUG("problems in memory for remake_file!\n");
     }
 }
+
+void delete_file(FS_Path path, Archive archive)
+{
+    FSUSER_DeleteFile(archives[archive], path);
+}

@@ -57,5 +57,6 @@ bool check_file_in_zip(const char* filename, const void* zip_buf, size_t zip_siz
 
 Result buf_to_file(FS_Path path, Archive archive, u32 size, const void* buf);
 void remake_file(FS_Path path, Archive archive, u32 size);
+void delete_file(FS_Path path, Archive archive);
 
 #endif
