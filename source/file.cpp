@@ -126,6 +126,11 @@ Result close_archives()
     return 0;
 }
 
+Result file_open(FS_Path path, Archive archive, Handle* handle, int mode)
+{
+    return FSUSER_OpenFile(handle, archives[archive], path, mode, 0);
+}
+
 u32 file_to_buf(FS_Path path, Archive archive, char** buf)
 {
     Handle file;
@@ -141,7 +146,7 @@ u32 file_to_buf(FS_Path path, Archive archive, char** buf)
 
     if(size != 0)
     {
-        char* actual_buf = new(std::nothrow) char[size];
+        char* actual_buf = *buf ? *buf : new(std::nothrow) char[size];
         if(actual_buf != nullptr)
         {
             if(R_SUCCEEDED(res = FSFILE_Read(file, nullptr, 0, actual_buf, size)))
@@ -150,7 +155,8 @@ u32 file_to_buf(FS_Path path, Archive archive, char** buf)
             }
             else
             {
-                delete actual_buf;
+                if(!*buf)
+                    delete[] actual_buf;
                 size = 0;
             }
         }
@@ -182,7 +188,7 @@ static u32 zip_to_buf(struct archive* a, const char* filename, char** buf)
         size = archive_entry_size(entry);
         if(buf)
         {
-            char* actual_buf = new(std::nothrow) char[size];
+            char* actual_buf = *buf ? *buf : new(std::nothrow) char[size];
             if(actual_buf != nullptr)
             {
                 archive_read_data(a, actual_buf, size);
@@ -275,7 +281,7 @@ void remake_file(FS_Path path, Archive archive, u32 size)
     {
         memset(buf, 0, size);
         buf_to_file(path, archive, size, buf);
-        delete buf;
+        delete[] buf;
     }
     else
     {

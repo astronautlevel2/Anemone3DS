@@ -44,7 +44,9 @@ extern bool have_luma_folder;
 Result open_archives();
 Result close_archives();
 
+Result file_open(FS_Path path, Archive archive, Handle* handle, int mode);
 // For both of these functions, if allocation fails, buf is unmodified
+// and if buf points to non-nullptr, it will try to read into there directly, no matter the size
 // If file couldn't be opened, buf is unmodified
 u32 file_to_buf(FS_Path path, Archive archive, char** buf);
 // If zip couldn't be opened, buf is unmodified

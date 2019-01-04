@@ -8,7 +8,7 @@ File downloaded isn't a zip.
 Download failed.
 Invalid preview.png
 No preview found.
-You don't have enough themes selected.
+You don't have enough#nthemes selected.
 You have too many themes selected.
 Couldn't download ThemePlaza data.#nMake sure WiFi is on.
 No results for this search.
@@ -17,3 +17,5 @@ Target is not valid!
 No splash.bin or splashbottom.bin found.#nIs this a splash?
 Splashes are disabled in Luma Config
 No body_LZ.bin found - is this a theme?
+No bgm.bcstm found, skipping.
+bgm.bcstm is too big.
