@@ -72,7 +72,6 @@ void Anemone3DS::scroll_thread_function()
 
 void Anemone3DS::select_previous_menu()
 {
-    DEBUG("start: %zd\n", this->selected_menu);
     if(this->selected_menu == 0)
         this->selected_menu = this->menus.size();
     --this->selected_menu;
@@ -81,7 +80,6 @@ void Anemone3DS::select_previous_menu()
 
 void Anemone3DS::select_next_menu()
 {
-    DEBUG("start: %zd\n", this->selected_menu);
     if(++(this->selected_menu) == this->menus.size())
         this->selected_menu = 0;
     this->set_menu();
@@ -95,7 +93,6 @@ void Anemone3DS::select_menu(MenuType menu)
 
 void Anemone3DS::set_menu()
 {
-    DEBUG("Switching to menu %zd\n", this->selected_menu);
     this->current_menu = this->menus[this->selected_menu].get();
 }
 
@@ -265,11 +262,12 @@ Anemone3DS::Anemone3DS()
         svcCloseHandle(hbldr_handle);
     }
 
+    DEBUG("Have luma: %s\n", have_luma ? "Yes" : "No");
+    DEBUG("Running under *hax: %s\n", this->running_from_hax ? "Yes" : "No");
+
     this->init_services();
 
-    DEBUG("open_archives\n");
     open_archives();
-    DEBUG("init_screens\n");
     init_screens();
 
     start_frame(-1);
@@ -280,23 +278,24 @@ Anemone3DS::Anemone3DS()
         return;
 
     if(R_FAILED(badge_result))
+    {
+        DEBUG("No badge extdata...\n");
         draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_NO_BADGE_EXTDATA);
+    }
 
     if(!have_luma)
+    {
+        DEBUG("No luma...\n");
         draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_NO_LUMA);
+    }
 
-    DEBUG("Handles\n");
     svcCreateMutex(&scroll_lock, true);
     svcCreateEvent(&scroll_ready_to_draw_event, RESET_ONESHOT);
     svcCreateEvent(&scroll_start_event, RESET_ONESHOT);
     svcCreateEvent(&scroll_stop_thread, RESET_ONESHOT);
 
-    DEBUG("this->init_menus\n");
     this->init_menus();
-    DEBUG("this->init_threads\n");
     this->init_threads();
-
-    DEBUG("Constructor done\n");
 
     this->select_menu(MODE_THEMES);
 }
