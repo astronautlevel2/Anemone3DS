@@ -71,10 +71,7 @@ enum RemoteSortType {
     SORT_LIKE_COUNT,
 };
 
-struct Instructions {
-    InstructionType array[8];
-};
-
+using Instructions = std::array<InstructionType, 8>;  // A, B, X, Y, UP, LEFT, DOWN, RIGTH in order
 using KeysActions = std::vector<std::pair<u32, std::function<MenuActionReturn()>>>;
 
 struct CurrentActions {

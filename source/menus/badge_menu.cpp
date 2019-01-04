@@ -67,7 +67,7 @@ MenuActionReturn BadgeMenu::change_to_action_mode()
         {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
     };
 
-    static const Instructions badge_actions_instructions = {
+    static const Instructions badge_actions_instructions{
         INSTRUCTIONS_NONE,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTION_X_FOR_DELETING_ENTRY,

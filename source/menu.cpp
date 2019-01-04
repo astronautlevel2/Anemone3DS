@@ -147,7 +147,7 @@ void MenuBase::toggle_instructions_mode()
 
 void MenuBase::draw_instructions()
 {
-    const Instructions* current_instructions = this->instructions_stack.top();
+    const Instructions& current_instructions = *this->instructions_stack.top();
     static constexpr float instructions_scale = 0.8f;
 
     float l_width, r_width, l_height, r_height;
@@ -163,7 +163,7 @@ void MenuBase::draw_instructions()
     draw_text(TEXT_GENERAL, TEXT_R, this->instruction_screen_right ? COLOR_BLACK : COLOR_CURSOR, (320.0f/2.0f*1.5f) - r_width/2.0f, (BARS_SIZE - r_height)/2.0f, 0.5f, 0.6f, 0.6f);
     for(int i = start; i < start + 4; ++i, y += step)
     {
-        InstructionType current_instruction_id = current_instructions->array[i];
+        InstructionType current_instruction_id = current_instructions[i];
         if(current_instruction_id == INSTRUCTIONS_NONE)
             continue;
 
@@ -246,7 +246,7 @@ next_mode_indicator_id(next_mode_indicator_id)
     this->entries.shrink_to_fit();
     this->sort(SORT_NAME);
 
-    static const Instructions normal_actions_instructions = {
+    static const Instructions normal_actions_instructions{
         INSTRUCTION_A_FOR_ACTION_MODE,
         INSTRUCTION_B_FOR_QR_SCANNER,
         INSTRUCTION_X_FOR_EXTRA_MODE,
@@ -674,7 +674,7 @@ MenuActionReturn Menu::change_to_extra_mode()
         {KEY_DRIGHT, std::bind(&Menu::sort, this, SORT_NAME)},
     };
 
-    static const Instructions extra_actions_instructions = {
+    static const Instructions extra_actions_instructions{
         INSTRUCTION_A_FOR_JUMPING,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTIONS_NONE,

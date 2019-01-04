@@ -72,7 +72,7 @@ MenuActionReturn ThemeMenu::change_to_action_mode()
         // {KEY_DRIGHT, std::bind(&Menu::install_no_bgm, this)},
     };
 
-    static const Instructions theme_actions_instructions = {
+    static const Instructions theme_actions_instructions{
         INSTRUCTION_THEME_A_FOR_MARKING,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTION_X_FOR_DELETING_ENTRY,

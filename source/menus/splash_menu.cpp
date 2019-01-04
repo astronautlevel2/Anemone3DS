@@ -52,7 +52,6 @@ SplashMenu::SplashMenu() : Menu("/Splashes/", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUN
     this->current_actions.push({&normal_actions_down, &normal_actions_held});
 }
 
-
 SplashMenu::~SplashMenu()
 {
 
@@ -72,7 +71,7 @@ MenuActionReturn SplashMenu::change_to_action_mode()
         // {KEY_DRIGHT, std::bind(&SplashMenu::install_splash, this, false, true)},
     };
 
-    static const Instructions splash_actions_instructions = {
+    static const Instructions splash_actions_instructions{
         INSTRUCTIONS_SPLASH_A_TO_DELETE_INSTALLED,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTION_X_FOR_DELETING_ENTRY,
