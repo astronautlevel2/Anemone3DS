@@ -345,6 +345,7 @@ void Anemone3DS::draw()
     {
         // if(!this->browser_menu)
         {
+            switch_screen(GFX_BOTTOM);
             static constexpr float y = (BARS_SIZE - 30*0.6f)/2.0f - 1.0f;
             static const float l_width = get_text_width(TEXT_GENERAL, TEXT_L, 0.6f);
             static const float r_width = get_text_width(TEXT_GENERAL, TEXT_R, 0.6f);
