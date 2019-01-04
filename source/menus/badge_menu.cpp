@@ -32,7 +32,7 @@ BadgeMenu::BadgeMenu() : Menu("/Badges/", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWI
         {KEY_A, std::bind(&BadgeMenu::change_to_action_mode, this)},
         {KEY_B, std::bind(&Menu::change_to_qr_scanner, this)},
         {KEY_X, std::bind(&Menu::change_to_extra_mode, this)},
-        {KEY_Y, std::bind(&MenuBase::load_preview, this)},
+        {KEY_Y, std::bind(&Menu::change_to_browser_mode, this)},
         {KEY_L, std::bind(&Menu::change_to_previous_mode, this)},
         {KEY_R, std::bind(&Menu::change_to_next_mode, this)},
         {KEY_DUP, std::bind(&Menu::select_previous_entry, this)},
@@ -65,13 +65,14 @@ MenuActionReturn BadgeMenu::change_to_action_mode()
     const KeysActions badge_actions_down{
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
         {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
+        {KEY_Y, std::bind(&MenuBase::load_preview, this)},
     };
 
     static const Instructions badge_actions_instructions{
         INSTRUCTIONS_NONE,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTION_X_FOR_DELETING_ENTRY,
-        INSTRUCTIONS_NONE,
+        INSTRUCTION_Y_FOR_PREVIEW,
         INSTRUCTIONS_NONE,
         INSTRUCTIONS_NONE,
         INSTRUCTIONS_NONE,

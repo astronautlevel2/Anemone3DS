@@ -250,7 +250,7 @@ next_mode_indicator_id(next_mode_indicator_id)
         INSTRUCTION_A_FOR_ACTION_MODE,
         INSTRUCTION_B_FOR_QR_SCANNER,
         INSTRUCTION_X_FOR_EXTRA_MODE,
-        INSTRUCTION_Y_FOR_PREVIEW,
+        INSTRUCTION_Y_FOR_ENTERING_BROWSER,
         INSTRUCTION_UP_TO_MOVE_UP,
         INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
         INSTRUCTION_DOWN_TO_MOVE_DOWN,
@@ -471,9 +471,10 @@ void Menu::draw()
     }
     else
     {
-        static constexpr float y_start = 60.0f;
         static constexpr float not_found_scale = 0.7f;
-        static constexpr float y_step = 2 + 30*not_found_scale;
+        static constexpr float y_step = 2.0f + 30.0f*not_found_scale;
+        static constexpr float steps_amount = 6;
+        static constexpr float y_start = (240.0f - steps_amount*y_step)/2.0f;
 
         static const float space_width = get_text_width(TEXT_GENERAL, TEXT_SPACE, not_found_scale);
         static const float or_width = get_text_width(TEXT_GENERAL, TEXT_NOT_FOUND_OR, not_found_scale);
@@ -486,6 +487,8 @@ void Menu::draw()
 
         y += y_step;
         draw_text_centered(TEXT_GENERAL, TEXT_NOT_FOUND_PRESS_FOR_QR, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
+        y += y_step;
+        draw_text_centered(TEXT_GENERAL, TEXT_NOT_FOUND_OR_BROWSER, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
 
         float total_width, x;
 
@@ -528,7 +531,7 @@ void Menu::draw()
         draw_text(TEXT_GENERAL, this->next_mode_indicator_id, COLOR_WARNING, x, y, 0.1f, not_found_scale, not_found_scale);
 
         y += y_step;
-        draw_text_centered(TEXT_GENERAL, TEXT_NOT_START_TO_QUIT, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
+        draw_text_centered(TEXT_GENERAL, TEXT_NOT_FOUND_START_TO_QUIT, COLOR_WARNING, y, 0.1f, not_found_scale, not_found_scale);
     }
 }
 
@@ -682,7 +685,6 @@ MenuActionReturn Menu::change_to_extra_mode()
     const KeysActions extra_actions_down{
         {KEY_A, std::bind(&Menu::jump_in_selection, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
-        {KEY_Y, std::bind(&Menu::change_to_browser_mode, this)},
         {KEY_DUP, std::bind(&Menu::sort, this, SORT_AUTHOR)},
         {KEY_DLEFT, std::bind(&Menu::sort, this, SORT_FILENAME)},
         {KEY_DRIGHT, std::bind(&Menu::sort, this, SORT_NAME)},
@@ -692,7 +694,7 @@ MenuActionReturn Menu::change_to_extra_mode()
         INSTRUCTION_A_FOR_JUMPING,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTIONS_NONE,
-        INSTRUCTION_Y_FOR_ENTERING_BROWSER,
+        INSTRUCTIONS_NONE,
         INSTRUCTION_UP_TO_MOVE_UP,
         INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
         INSTRUCTIONS_NONE,
@@ -765,6 +767,7 @@ MenuActionReturn Menu::jump_in_selection()
     }
     free(selected_entry_char);
 
+    this->exit_mode_controls();
     return RETURN_NONE;
 }
 
@@ -833,6 +836,5 @@ MenuActionReturn Menu::delete_selected_entry()
 
 MenuActionReturn Menu::change_to_browser_mode()
 {
-    // this->exit_mode_controls();
     return RETURN_CHANGE_TO_BROWSER_MODE;
 }

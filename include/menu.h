@@ -131,7 +131,7 @@ class Menu : public MenuBase {
         bool needs_thread();
         virtual void draw();
         void calculate_new_scroll();
-        MenuActionReturn sort(SortType sort_type);
+
 
         MenuActionReturn select_previous_entry();
         MenuActionReturn select_previous_page();
@@ -151,6 +151,7 @@ class Menu : public MenuBase {
         MenuActionReturn handle_touch();
 
         MenuActionReturn delete_selected_entry();
+        MenuActionReturn change_to_browser_mode();
 
     protected:
         Menu(const std::string& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu = false);
@@ -158,7 +159,7 @@ class Menu : public MenuBase {
 
         virtual MenuActionReturn change_to_action_mode() = 0;
         MenuActionReturn jump_in_selection();
-        MenuActionReturn change_to_browser_mode();
+        MenuActionReturn sort(SortType sort_type);
 
         size_t icons_per_screen;
         std::vector<std::unique_ptr<EntryIcon>> icons;

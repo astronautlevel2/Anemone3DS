@@ -10,6 +10,7 @@ No theme found
 No splash found
 No badge found
 Press #B to download from QR
+Or #Y to open ThemePlaza
 Or
 #L
 #R

@@ -34,7 +34,7 @@ ThemeMenu::ThemeMenu() : Menu("/Themes/", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWI
         {KEY_A, std::bind(&ThemeMenu::change_to_action_mode, this)},
         {KEY_B, std::bind(&Menu::change_to_qr_scanner, this)},
         {KEY_X, std::bind(&Menu::change_to_extra_mode, this)},
-        {KEY_Y, std::bind(&MenuBase::load_preview, this)},
+        {KEY_Y, std::bind(&Menu::change_to_browser_mode, this)},
         {KEY_L, std::bind(&Menu::change_to_previous_mode, this)},
         {KEY_R, std::bind(&Menu::change_to_next_mode, this)},
         {KEY_DUP, std::bind(&Menu::select_previous_entry, this)},
@@ -62,7 +62,7 @@ ThemeMenu::~ThemeMenu()
 void ThemeMenu::draw()
 {
     Menu::draw();
-    if(this->entries.size())
+    if(this->entries.size() && !this->in_preview())
     {
         switch_screen(GFX_BOTTOM);
         static constexpr float shuffle_indicator_x = 320.0f - 4.0f - 24.0f;
@@ -90,6 +90,7 @@ MenuActionReturn ThemeMenu::change_to_action_mode()
         {KEY_A, std::bind(&ThemeMenu::mark_entry, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
         {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
+        {KEY_Y, std::bind(&MenuBase::load_preview, this)},
         {KEY_DUP, std::bind(&ThemeMenu::install_themes, this, true, true, false)},
         {KEY_DLEFT, std::bind(&ThemeMenu::install_themes, this, false, true, false)},
         {KEY_DDOWN, std::bind(&ThemeMenu::install_themes, this, true, true, true)},
@@ -100,7 +101,7 @@ MenuActionReturn ThemeMenu::change_to_action_mode()
         INSTRUCTION_THEME_A_FOR_MARKING,
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTION_X_FOR_DELETING_ENTRY,
-        INSTRUCTIONS_NONE,
+        INSTRUCTION_Y_FOR_PREVIEW,
         INSTRUCTION_THEME_UP_FOR_NORMAL,
         INSTRUCTION_THEME_LEFT_FOR_BGM_ONLY,
         INSTRUCTION_THEME_DOWN_FOR_SHUFFLE,
