@@ -52,4 +52,7 @@ static constexpr u32 COLOR_ERROR_TEXT[ERROR_LEVEL_AMOUNT] = {
     COLOR_ERROR_CRITICAL,
 };
 
+static constexpr u32 COLOR_SHUFFLE_BAD = COLOR_ERROR;
+static constexpr u32 COLOR_SHUFFLE_OK = COLOR_WHITE;
+
 #endif

@@ -34,8 +34,13 @@ class ThemeMenu : public Menu {
         ThemeMenu();
         ~ThemeMenu();
 
+        void draw();
+
     private:
+        size_t shuffle_count = 0;
         MenuActionReturn change_to_action_mode();
+        MenuActionReturn mark_entry();
+        MenuActionReturn install_themes(bool install_body, bool install_bgm, bool shuffle);
 };
 
 #endif

@@ -59,6 +59,7 @@ class Anemone3DS
         void set_menu();  // Actually sets the current menu
         void enter_browser_mode();
         void enter_list_mode();
+        void installed_a_theme();
         void handle_action_return(MenuActionReturn action_result);
 
         bool installed_theme, running_from_hax;

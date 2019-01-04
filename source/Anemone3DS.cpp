@@ -159,6 +159,11 @@ void Anemone3DS::move_schedule_sleep()
     this->sleep_scheduled = true;
 }
 
+void Anemone3DS::installed_a_theme()
+{
+    this->installed_theme = true;
+}
+
 void Anemone3DS::handle_action_return(MenuActionReturn action_result)
 {
     static std::array<std::function<void()>, MENU_ACTION_AMOUNT> actions{
@@ -172,6 +177,7 @@ void Anemone3DS::handle_action_return(MenuActionReturn action_result)
         std::bind(&Anemone3DS::enter_list_mode, this),
 
         std::bind(&Anemone3DS::move_schedule_sleep, this),
+        std::bind(&Anemone3DS::installed_a_theme, this),
     };
 
     actions[action_result-1]();

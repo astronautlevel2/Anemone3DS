@@ -53,6 +53,7 @@ enum MenuActionReturn {
     RETURN_CHANGE_TO_LIST_MODE,
 
     RETURN_MOVE_SLEEP,
+    RETURN_INSTALLED_THEME,
 
     MENU_ACTION_AMOUNT
 };
@@ -128,7 +129,7 @@ class Menu : public MenuBase {
     public:
         void scroll_icons(const Handle* scroll_ready_to_draw_event);
         bool needs_thread();
-        void draw();
+        virtual void draw();
         void calculate_new_scroll();
         MenuActionReturn sort(SortType sort_type);
 

@@ -408,11 +408,16 @@ void Menu::draw()
             if(actual_i >= entries_count)
                 break;
 
+            C2D_ImageTint indicator_tint;
             u32 text_color = COLOR_WHITE;
             if(actual_i == this->selected_entry)
             {
-                text_color = COLOR_BLACK;
+                C2D_PlainImageTint(&indicator_tint, (text_color = COLOR_BLACK), 1.0f);
                 C2D_DrawRectSolid(0.0f, y, 0.1f, 320.0f, this->icon_size, COLOR_CURSOR);
+            }
+            else
+            {
+                C2D_PlainImageTint(&indicator_tint, text_color, 1.0f);
             }
 
             const auto& current_entry = this->entries[actual_i];
@@ -432,6 +437,15 @@ void Menu::draw()
 
             get_text_dimensions(current_entry->title, nullptr, &height, 0.55f, 0.55f);
             draw_text(current_entry->title, text_color, this->icon_size + 6, y + (this->icon_size - height)/2.0f, 0.2f, 0.55f, 0.55f);
+
+            if(current_entry->state == Entry::STATE_SHUFFLE)
+            {
+                draw_image(sprites_shuffle_idx, 320.0f - 24.0f - 4.0f, y, 0.3f, &indicator_tint);
+            }
+            else if(current_entry->state == Entry::STATE_SHUFFLE_NO_BGM)
+            {
+                draw_image(sprites_shuffle_no_bgm_idx, 320.0f - 24.0f - 4.0f, y, 0.3f, &indicator_tint);
+            }
         }
 
         // Draw entries list
