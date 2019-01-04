@@ -60,6 +60,7 @@ namespace fs = std::filesystem;
 extern bool have_sound;
 extern bool running;
 extern bool power_pressed;
+extern bool have_luma;
 
 struct Image {
     u16 w, h;

@@ -99,6 +99,61 @@ void Anemone3DS::set_menu()
     this->current_menu = this->menus[this->selected_menu].get();
 }
 
+void Anemone3DS::enter_browser_mode()
+{
+   /*
+    std::unique_ptr<RemoteMenu> new_browser_menu;
+    switch(this->selected_menu)
+    {
+        case MODE_THEMES:
+            new_browser_menu = std::make_unique<RemoteThemeMenu>();
+            break;
+        case MODE_SPLASHES:
+            new_browser_menu = std::make_unique<RemoteSplashMenu>();
+            break;
+        case MODE_BADGES:
+            draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_THEMEPLAZA_BADGES_DISABLED);
+            break;
+        default:
+            svcBreak(USERBREAK_PANIC);
+            break;
+    }
+    this->browser_menu = std::move(new_browser_menu);
+    this->current_menu = this->browser_menu.get();
+    */
+}
+
+void Anemone3DS::enter_list_mode()
+{
+    bool downloaded_any = false;
+    // bool downloaded_any = this->browser_menu->downloaded_any;
+    // this->browser_menu = nullptr;
+
+    if(downloaded_any)
+    {
+        this->menus[this->selected_menu] = nullptr;
+        std::unique_ptr<Menu> new_menu;
+        switch(this->selected_menu)
+        {
+            case MODE_THEMES:
+                new_menu = std::make_unique<ThemeMenu>();
+                break;
+            case MODE_SPLASHES:
+                new_menu = std::make_unique<SplashMenu>();
+                break;
+            case MODE_BADGES:
+                new_menu = std::make_unique<BadgeMenu>();
+                break;
+            default:
+                svcBreak(USERBREAK_PANIC);
+                break;
+        }
+        this->menus[this->selected_menu] = std::move(new_menu);
+    }
+
+    this->set_menu();
+}
+
 void Anemone3DS::move_schedule_sleep()
 {
     this->sleep_scheduled = true;
@@ -113,8 +168,8 @@ void Anemone3DS::handle_action_return(MenuActionReturn action_result)
         std::bind(&Anemone3DS::select_menu, this, MODE_SPLASHES),
         std::bind(&Anemone3DS::select_menu, this, MODE_BADGES),
 
-        std::bind(&Anemone3DS::select_previous_menu, this),
-        std::bind(&Anemone3DS::select_next_menu, this),
+        std::bind(&Anemone3DS::enter_browser_mode, this),
+        std::bind(&Anemone3DS::enter_list_mode, this),
 
         std::bind(&Anemone3DS::move_schedule_sleep, this),
     };
@@ -197,7 +252,11 @@ Anemone3DS::Anemone3DS()
     if(envIsHomebrew())
     {
         s64 out;
-        svcGetSystemInfo(&out, 0x10000, 0);
+        Result res = svcGetSystemInfo(&out, 0x10000, 0);
+        if(R_FAILED(res))
+        {
+            have_luma = false;
+        }
         this->running_from_hax = !out;
     }
 
@@ -217,6 +276,9 @@ Anemone3DS::Anemone3DS()
 
     if(R_FAILED(badge_result))
         draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_NO_BADGE_EXTDATA);
+
+    if(!have_luma)
+        draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_NO_LUMA);
 
     DEBUG("Handles\n");
     svcCreateMutex(&scroll_lock, true);

@@ -30,7 +30,8 @@
 #include "common.h"
 
 enum Archive {
-    SD_CARD,
+    SD_CARD = 0,
+    CTRNAND,
     HOME_EXTDATA,
     THEME_EXTDATA,
     BADGE_EXTDATA,
@@ -39,6 +40,7 @@ enum Archive {
 };
 
 extern Result theme_result, badge_result;
+extern bool have_luma_folder;
 Result open_archives();
 Result close_archives();
 

@@ -30,6 +30,7 @@ int __stacksize__ = 64 * 1024;
 bool have_sound = false;
 bool running = true;
 bool power_pressed = true;
+bool have_luma = true;
 
 /*
 Image::Image(u16 w, u16 h, GPU_TEXCOLOR format) : w(w), h(h)

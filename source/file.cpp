@@ -35,11 +35,14 @@ extern "C" {
 
 Result theme_result = 0;
 Result badge_result = 0;
+bool have_luma_folder = fs::exists("/luma/");
 
-static FS_Archive archives[ACHIVE_AMOUNT] = {0};
+static std::array<FS_Archive, ACHIVE_AMOUNT> archives;
 
 Result open_archives()
 {
+    std::fill(archives.begin(), archives.end(), 0);
+
     romfsInit();
     u8 regionCode;
     u32 archive1;
@@ -82,12 +85,19 @@ Result open_archives()
     FSUSER_CreateDirectory(archives[SD_CARD], fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(archives[SD_CARD], fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
 
+    if(have_luma && !have_luma_folder)
+    {
+        if(R_FAILED(res = FSUSER_OpenArchive(&archives[CTRNAND], ARCHIVE_NAND_CTR_FS, fsMakePath(PATH_EMPTY, ""))))
+            return res;
+    }
+
     u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
     home.type = PATH_BINARY;
     home.size = 0xC;
     home.data = homeMenuPath;
     if(R_FAILED(res = FSUSER_OpenArchive(&archives[HOME_EXTDATA], ARCHIVE_EXTDATA, home)))
         return res;
+
 
     u32 themePath[3] = {MEDIATYPE_SD, archive1, 0};
     theme.type = PATH_BINARY;
@@ -108,15 +118,11 @@ Result open_archives()
 
 Result close_archives()
 {
-    Result res = 0;
-    if(R_FAILED(res = FSUSER_CloseArchive(archives[SD_CARD])))
-        return res;
-    if(R_FAILED(res = FSUSER_CloseArchive(archives[HOME_EXTDATA])))
-        return res;
-    if(R_FAILED(res = FSUSER_CloseArchive(archives[THEME_EXTDATA])))
-        return res;
-    if(R_FAILED(res = FSUSER_CloseArchive(archives[BADGE_EXTDATA])))
-        return res;
+    for(FS_Archive archive : archives)
+    {
+        if(archive)
+            FSUSER_CloseArchive(archive);
+    }
     return 0;
 }
 

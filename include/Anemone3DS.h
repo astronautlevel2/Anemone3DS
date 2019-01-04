@@ -57,6 +57,8 @@ class Anemone3DS
         void select_menu(MenuType menu);
         void move_schedule_sleep();
         void set_menu();  // Actually sets the current menu
+        void enter_browser_mode();
+        void enter_list_mode();
         void handle_action_return(MenuActionReturn action_result);
 
         bool installed_theme, running_from_hax;
