@@ -262,10 +262,10 @@ Anemone3DS::Anemone3DS()
         svcCloseHandle(hbldr_handle);
     }
 
+    this->init_services();
+
     DEBUG("Have luma: %s\n", have_luma ? "Yes" : "No");
     DEBUG("Running under *hax: %s\n", this->running_from_hax ? "Yes" : "No");
-
-    this->init_services();
 
     open_archives();
     init_screens();
