@@ -327,7 +327,7 @@ void Menu::scroll_icons(const Handle* scroll_ready_to_draw_event)
         std::rotate(begin, step, end);
     }
 
-    if(abs(delta) <= this->icons_per_screen)
+    if(scroll_ready_to_draw_event && abs(delta) <= this->icons_per_screen)
     {
         svcSignalEvent(*scroll_ready_to_draw_event);
         // even though it shouldn't happen anyway, ensure the event can't be signaled a second time in the loop
