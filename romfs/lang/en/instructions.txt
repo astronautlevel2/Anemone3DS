@@ -7,20 +7,20 @@
 | General normal mode
 #A to enter action mode
 #B to enter QR scanner
+#Y to access ThemePlaza
 #X to enter extra mode
-#Y for preview
 #Du to move cursor up
 #Dl to move cursor up a page
 #Dd to move cursor down
 #Dr to move cursor down a page
 | General extra mode
 #A to jump to selection
-#Y to access ThemePlaza
 #Du to sort by author name
 #Dl to sort by filename
 #Dr to sort by title
 | General action mode
 #X to delete the selected entry
+#Y for preview
 | ThemePlaza normal mode
 #A to download highlighted
 #Dl to move cursor left

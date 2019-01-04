@@ -695,10 +695,10 @@ MenuActionReturn Menu::change_to_extra_mode()
         INSTRUCTION_B_FOR_GOING_BACK,
         INSTRUCTIONS_NONE,
         INSTRUCTIONS_NONE,
-        INSTRUCTION_UP_TO_MOVE_UP,
-        INSTRUCTION_LEFT_TO_MOVE_PAGE_UP,
+        INSTRUCTION_UP_FOR_SORTING_AUTHOR,
+        INSTRUCTION_LEFT_FOR_SORTING_FILENAME,
         INSTRUCTIONS_NONE,
-        INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
+        INSTRUCTION_RIGHT_FOR_SORTING_NAME,
     };
 
     this->current_actions.push({extra_actions_down, {}});

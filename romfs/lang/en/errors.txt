@@ -15,8 +15,10 @@ No results for this search.
 ThemePlaza browser doesn't allow badges.
 Target is not valid!
 Splashes are disabled in Luma Config
-Splash top is the wrong size
-Splash bottom is the wrong size
+splash.bin is the wrong size
+splashbottom.bin is the wrong size
+Couldn't find splash.bin
+Couldn't find splashbottom.bin
 No body_LZ.bin found - is this a theme?
 No bgm.bcstm found, skipping.
 bgm.bcstm is too big.
