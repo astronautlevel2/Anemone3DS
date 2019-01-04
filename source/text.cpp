@@ -112,9 +112,11 @@ static const std::string& parse_line(const char* start, const char* end)
     return out;
 }
 
-static void load_text(TextType type, const std::string& path)
+static void load_text(TextType type, size_t max_size, const std::string& path)
 {
     auto& current_texts = static_texts[type];
+    current_texts.reserve(max_size);
+
     DEBUG("Loading text from %s\n", path.c_str());
     FILE* fh = fopen(path.c_str(), "r");
     bool done = false;
@@ -178,10 +180,10 @@ void init_text()
             lang_folder /= "en";
             break;
     }
-    load_text(TEXT_GENERAL, lang_folder / "text.txt");
-    load_text(TEXT_INSTALL, lang_folder / "installs.txt");
-    load_text(TEXT_ERROR, lang_folder / "errors.txt");
-    load_text(TEXT_INSTRUCTIONS, lang_folder / "instructions.txt");
+    load_text(TEXT_GENERAL, TEXTS_AMOUNT, lang_folder / "text.txt");
+    load_text(TEXT_INSTALL, INSTALLS_AMOUNT, lang_folder / "installs.txt");
+    load_text(TEXT_ERROR, ERRORS_AMOUNT, lang_folder / "errors.txt");
+    load_text(TEXT_INSTRUCTIONS, INSTRUCTIONS_NONE, lang_folder / "instructions.txt");
     load_text_directly(lang_folder / "keyboard.txt");
 
     static_texts[TEXT_GENERAL].emplace_back();
@@ -190,9 +192,6 @@ void init_text()
     static_texts[TEXT_GENERAL].emplace_back();
     C2D_TextParse(&static_texts[TEXT_GENERAL].back(), static_text_buf, VERSION);
     C2D_TextOptimize(&static_texts[TEXT_GENERAL].back());
-
-    for(auto& texts_vec : static_texts)
-        texts_vec.shrink_to_fit();
 }
 
 void exit_text()

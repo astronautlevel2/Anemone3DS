@@ -79,8 +79,11 @@ enum TextID {
     TEXT_SPLASH_ICON,
     TEXT_BADGE_ICON,
 
+    // always the last
     TEXT_SPACE,
-    TEXT_VERSION
+    TEXT_VERSION,
+
+    TEXTS_AMOUNT
 };
 
 enum InstallType {
@@ -109,6 +112,8 @@ enum InstallType {
     INSTALL_LOADING_REMOTE_SPLASHES,
     INSTALL_LOADING_REMOTE_PREVIEW,
     INSTALL_LOADING_REMOTE_BGM,
+
+    INSTALLS_AMOUNT
 };
 
 enum ErrorLevel {
@@ -148,6 +153,8 @@ enum ErrorType {
     ERROR_TYPE_SPLASH_LUMA_DISABLED,
 
     ERROR_TYPE_THEME_NO_BODY,
+
+    ERRORS_AMOUNT
 };
 
 enum InstructionType {
