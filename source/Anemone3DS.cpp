@@ -257,7 +257,7 @@ Anemone3DS::Anemone3DS()
         s64 out;
         svcGetSystemInfo(&out, 0x10000, 0);
         this->running_from_hax = !out;
-        Handke hbldr_handle;
+        Handle hbldr_handle;
         have_luma = R_SUCCEEDED(svcConnectToPort(&hbldr_handle, "hb:ldr"));
         svcCloseHandle(hbldr_handle);
     }
