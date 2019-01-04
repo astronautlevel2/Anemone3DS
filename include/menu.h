@@ -75,11 +75,9 @@ using Instructions = std::array<InstructionType, 8>;  // A, B, X, Y, UP, LEFT, D
 using KeysActions = std::vector<std::pair<u32, std::function<MenuActionReturn()>>>;
 
 struct CurrentActions {
-    const KeysActions* down;
-    const KeysActions* held;
+    const KeysActions down;
+    const KeysActions held;
 };
-
-extern const KeysActions empty_held_actions;
 
 class MenuBase {
     public:

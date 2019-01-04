@@ -28,7 +28,7 @@
 
 ThemeMenu::ThemeMenu() : Menu("/Themes/", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWITCH_TO_BADGE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, 48, COLOR_THEME_BG)
 {
-    static const KeysActions normal_actions_down{
+    const KeysActions normal_actions_down{
         {KEY_A, std::bind(&ThemeMenu::change_to_action_mode, this)},
         {KEY_B, std::bind(&Menu::change_to_qr_scanner, this)},
         {KEY_X, std::bind(&Menu::change_to_extra_mode, this)},
@@ -42,14 +42,14 @@ ThemeMenu::ThemeMenu() : Menu("/Themes/", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWI
         {KEY_TOUCH, std::bind(&Menu::handle_touch, this)},
     };
 
-    static const KeysActions normal_actions_held{
+    const KeysActions normal_actions_held{
         {KEY_CPAD_UP, std::bind(&Menu::select_previous_entry_fast, this)},
         {KEY_CPAD_LEFT, std::bind(&Menu::select_previous_page_fast, this)},
         {KEY_CPAD_DOWN, std::bind(&Menu::select_next_entry_fast, this)},
         {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
     };
 
-    this->current_actions.push({&normal_actions_down, &normal_actions_held});
+    this->current_actions.push({normal_actions_down, normal_actions_held});
 }
 
 ThemeMenu::~ThemeMenu()
@@ -62,14 +62,14 @@ MenuActionReturn ThemeMenu::change_to_action_mode()
     if(!this->entries.size())
         return RETURN_NONE;
 
-    static const KeysActions theme_actions_down{
+    const KeysActions theme_actions_down{
         // {KEY_A, std::bind(&ThemeMenu::mark_entry, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
         {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
         // {KEY_DUP, std::bind(&ThemeMenu::install_single, this)},
-        // {KEY_DLEFT, std::bind(&Menu::install_bgm_only, this)},
-        // {KEY_DDOWN, std::bind(&Menu::install_shuffle, this)},
-        // {KEY_DRIGHT, std::bind(&Menu::install_no_bgm, this)},
+        // {KEY_DLEFT, std::bind(&ThemeMenu::install_bgm_only, this)},
+        // {KEY_DDOWN, std::bind(&ThemeMenu::install_shuffle, this)},
+        // {KEY_DRIGHT, std::bind(&ThemeMenu::install_no_bgm, this)},
     };
 
     static const Instructions theme_actions_instructions{
@@ -83,7 +83,7 @@ MenuActionReturn ThemeMenu::change_to_action_mode()
         INSTRUCTION_THEME_RIGHT_FOR_NO_BGM,
     };
 
-    this->current_actions.push({&theme_actions_down, &empty_held_actions});
+    this->current_actions.push({theme_actions_down, {}});
     this->instructions_stack.push(&theme_actions_instructions);
 
     return RETURN_NONE;

@@ -26,8 +26,6 @@
 
 #include "menu.h"
 
-const KeysActions empty_held_actions{};
-
 MenuBase::MenuBase(const std::string& loading_path, int icon_size, u32 background_color) : background_color(background_color), path(loading_path), icon_size(icon_size)
 {
 
@@ -51,7 +49,7 @@ MenuActionReturn MenuBase::exit_mode_controls()
 
 MenuActionReturn MenuBase::load_preview()
 {
-    static const KeysActions exit_preview_actions_down{
+    const KeysActions exit_preview_actions_down{
         {KEY_A, std::bind(&MenuBase::exit_preview, this)},
         {KEY_B, std::bind(&MenuBase::exit_preview, this)},
         {KEY_X, std::bind(&MenuBase::exit_preview, this)},
@@ -67,7 +65,7 @@ MenuActionReturn MenuBase::load_preview()
         if(current_entry_ptr == this->selected_entry_for_previous_preview)
         {
             this->preview = std::move(this->previous_preview);
-            this->current_actions.push({&exit_preview_actions_down, &empty_held_actions});
+            this->current_actions.push({exit_preview_actions_down, {}});
         }
         else
         {
@@ -77,7 +75,7 @@ MenuActionReturn MenuBase::load_preview()
                 this->preview = std::move(new_preview);
                 this->selected_entry_for_previous_preview = current_entry_ptr;
 
-                this->current_actions.push({&exit_preview_actions_down, &empty_held_actions});
+                this->current_actions.push({exit_preview_actions_down, {}});
             }
         }
     }
@@ -131,14 +129,14 @@ void MenuBase::toggle_instructions_mode()
     }
     else
     {
-        static const KeysActions instructions_actions_down{
+        const KeysActions instructions_actions_down{
             {KEY_L, std::bind(&MenuBase::set_instruction_screen_to_left, this)},
             {KEY_R, std::bind(&MenuBase::set_instruction_screen_to_right, this)},
             {KEY_B, std::bind(&MenuBase::exit_instructions, this)},
             {KEY_TOUCH, std::bind(&MenuBase::instructions_handle_touch, this)},
         };
 
-        this->current_actions.push({&instructions_actions_down, &empty_held_actions});
+        this->current_actions.push({instructions_actions_down, {}});
 
         this->in_instructions = true;
         this->instruction_screen_right = false;
@@ -147,6 +145,8 @@ void MenuBase::toggle_instructions_mode()
 
 void MenuBase::draw_instructions()
 {
+    switch_screen(GFX_BOTTOM);
+
     const Instructions& current_instructions = *this->instructions_stack.top();
     static constexpr float instructions_scale = 0.8f;
 
@@ -665,7 +665,7 @@ MenuActionReturn Menu::change_to_extra_mode()
     if(!this->entries.size())
         return RETURN_NONE;
 
-    static const KeysActions extra_actions_down{
+    const KeysActions extra_actions_down{
         {KEY_A, std::bind(&Menu::jump_in_selection, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
         {KEY_Y, std::bind(&Menu::change_to_browser_mode, this)},
@@ -685,7 +685,7 @@ MenuActionReturn Menu::change_to_extra_mode()
         INSTRUCTION_RIGHT_TO_MOVE_PAGE_DOWN,
     };
 
-    this->current_actions.push({&extra_actions_down, &empty_held_actions});
+    this->current_actions.push({extra_actions_down, {}});
     this->instructions_stack.push(&extra_actions_instructions);
 
     return RETURN_NONE;

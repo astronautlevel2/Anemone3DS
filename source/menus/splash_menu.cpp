@@ -28,7 +28,7 @@
 
 SplashMenu::SplashMenu() : Menu("/Splashes/", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUND_SWITCH_TO_THEME, TEXT_NOT_FOUND_SWITCH_TO_BADGE, 48, COLOR_SPLASH_BG)
 {
-    static const KeysActions normal_actions_down{
+    const KeysActions normal_actions_down{
         {KEY_A, std::bind(&SplashMenu::change_to_action_mode, this)},
         {KEY_B, std::bind(&Menu::change_to_qr_scanner, this)},
         {KEY_X, std::bind(&Menu::change_to_extra_mode, this)},
@@ -42,14 +42,14 @@ SplashMenu::SplashMenu() : Menu("/Splashes/", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUN
         {KEY_TOUCH, std::bind(&Menu::handle_touch, this)},
     };
 
-    static const KeysActions normal_actions_held{
+    const KeysActions normal_actions_held{
         {KEY_CPAD_UP, std::bind(&Menu::select_previous_entry_fast, this)},
         {KEY_CPAD_LEFT, std::bind(&Menu::select_previous_page_fast, this)},
         {KEY_CPAD_DOWN, std::bind(&Menu::select_next_entry_fast, this)},
         {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
     };
 
-    this->current_actions.push({&normal_actions_down, &normal_actions_held});
+    this->current_actions.push({normal_actions_down, normal_actions_held});
 }
 
 SplashMenu::~SplashMenu()
@@ -62,7 +62,7 @@ MenuActionReturn SplashMenu::change_to_action_mode()
     if(!this->entries.size())
         return RETURN_NONE;
 
-    static const KeysActions splash_actions_down{
+    const KeysActions splash_actions_down{
         // {KEY_A, std::bind(&SplashMenu::delete_installed_splash, this)},
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
         {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
@@ -82,7 +82,7 @@ MenuActionReturn SplashMenu::change_to_action_mode()
         INSTRUCTION_SPLASH_RIGHT_FOR_INSTALLING_BOTTOM,
     };
 
-    this->current_actions.push({&splash_actions_down, &empty_held_actions});
+    this->current_actions.push({splash_actions_down, {}});
     this->instructions_stack.push(&splash_actions_instructions);
 
     return RETURN_NONE;
