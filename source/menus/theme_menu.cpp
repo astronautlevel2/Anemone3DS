@@ -238,7 +238,7 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
         remake_file(bgm_path, THEME_EXTDATA, BGM_MAX_SIZE);
         if(install_bgm && !(shuffle && marked_entry->state == Entry::STATE_SHUFFLE_NO_BGM))
         {
-            music_sizes[i] = marked_entry->get_file("/bgm.bcstm", &padded_bgm);
+            music_sizes[i] = marked_entry->get_file("bgm.bcstm", &padded_bgm);
             if(music_sizes[i] > BGM_MAX_SIZE)
             {
                 draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_THEME_BGM_TOO_BIG);
