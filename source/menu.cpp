@@ -40,7 +40,7 @@ bool MenuBase::in_preview()
 
 MenuActionReturn MenuBase::exit_mode_controls()
 {
-    if(this->current_actions.size() == 1)
+    if(this->current_actions.size() <= 1)
         return RETURN_NONE;
 
     this->current_actions.pop();
