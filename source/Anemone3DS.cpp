@@ -258,12 +258,11 @@ Anemone3DS::Anemone3DS()
     if(envIsHomebrew())
     {
         s64 out;
-        Result res = svcGetSystemInfo(&out, 0x10000, 0);
-        if(R_FAILED(res))
-        {
-            have_luma = false;
-        }
+        svcGetSystemInfo(&out, 0x10000, 0);
         this->running_from_hax = !out;
+        Handke hbldr_handle;
+        have_luma = R_SUCCEEDED(svcConnectToPort(&hbldr_handle, "hb:ldr"));
+        svcCloseHandle(hbldr_handle);
     }
 
     this->init_services();
