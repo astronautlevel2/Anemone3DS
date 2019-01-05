@@ -432,11 +432,11 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
 
     static constexpr u32 homebrew_set_id = 0x0000BEEF;
     static constexpr u16 badge_quantity = 0xFFFF;
+    static constexpr u64 tid_high = 0x00040010ULL << 32;
     u32 start_index = badgemanage->unique_badges_amount;
 
     u32 total_installed_badges = 0;
     u32 i = 0;
-    u64 tid_high = 0x00040010ULL << 32; 
     for(Entry* marked_entry : entries_to_install)
     {
         if(multi)
@@ -455,12 +455,19 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
             for(u32 k = 0; k < BADGE_LANGUAGES_COUNT; k++)
                 memcpy(badgedata->badge_titles[current_index][k], name, 0x40); //entry name is only 0x41, but badge name can go up to 0x45
 
-
             Badge_Info_s* current_slot = &badgemanage->badge_info_entries[current_index];
             current_slot->number_placed = 0;
             current_slot->quantity = badge_quantity;
-            current_slot->shortcut_tid[0] = tid_high | shortcut_lowid;
-            current_slot->shortcut_tid[1] = tid_high | shortcut_lowid;
+            if(shortcut_lowid)
+            {
+                current_slot->shortcut_tid[0] = tid_high | shortcut_lowid;
+                current_slot->shortcut_tid[1] = tid_high | shortcut_lowid;
+            }
+            else
+            {
+                current_slot->shortcut_tid[0] = 0;
+                current_slot->shortcut_tid[1] = 0;
+            }
 
             Badge_Identifier_s* current_identifier = &current_slot->identifier;
             current_identifier->id = current_index + 1;
