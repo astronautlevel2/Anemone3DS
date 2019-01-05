@@ -298,9 +298,13 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
     const int endx = width/64;
     Pixel_s *top_left_pixel, *top_right_pixel, *bottom_left_pixel, *bottom_right_pixel;
 
+    const u32 max_badges = endx * height/64;
     u32 index = start_index;
     for(int y = 0; y < height; y += 64)
     {
+        if(max_badges > 1)
+            draw_loading_bar(y/64*endx, max_badges, INSTALL_BADGES_SPLITTING);
+
         for(u32 j = 0; j < 32; ++j)
         {
             png_bytep top_row = row_pointers[y + j*2];
@@ -308,17 +312,17 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
             for(u32 i = 0; i < 32; ++i)
             {
                 u32 dst = ((((j >> 3) * (32 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
-
                 for(int x = 0; x < BADGE_MAX_SPLIT_WITH; ++x)
                 {
                     if(x >= endx)
                         break;
 
-                    top_left_pixel = reinterpret_cast<Pixel_s*>(&top_row[(i + x*64)*sizeof(u32)]);
-                    top_right_pixel = reinterpret_cast<Pixel_s*>(&top_row[(i + x*64 + 1)*sizeof(u32)]);
-                    bottom_left_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(i + x*64)*sizeof(u32)]);
-                    bottom_right_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(i + x*64 + 1)*sizeof(u32)]);
-    
+                    u32 actual_x =  x*64 + i*2;
+                    top_left_pixel = reinterpret_cast<Pixel_s*>(&top_row[(actual_x)*sizeof(u32)]);
+                    top_right_pixel = reinterpret_cast<Pixel_s*>(&top_row[(actual_x + 1)*sizeof(u32)]);
+                    bottom_left_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(actual_x)*sizeof(u32)]);
+                    bottom_right_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(actual_x + 1)*sizeof(u32)]);
+
                     Pixel_s px = {0};
                     px.r = (top_left_pixel->r + top_right_pixel->r + bottom_left_pixel->r + bottom_right_pixel->r)/4;
                     px.g = (top_left_pixel->g + top_right_pixel->g + bottom_left_pixel->g + bottom_right_pixel->g)/4;
@@ -340,7 +344,6 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
             for(u32 i = 0; i < 64; ++i)
             {
                 u32 dst = ((((j >> 3) * (64 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
-
                 for(int x = 0; x < BADGE_MAX_SPLIT_WITH; ++x)
                 {
                     if(x >= endx)
@@ -363,7 +366,7 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
     }
 
     delete[] row_pointers;
-    return index - start_index;
+    return max_badges;
 }
 
 static void load_homebrew_set_icon(u16* icon_out)
