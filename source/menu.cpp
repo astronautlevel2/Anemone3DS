@@ -542,7 +542,7 @@ void Menu::calculate_new_scroll()
         const size_t max_scroll = this->entries.size() - this->icons_per_screen;
         this->new_scroll = this->scroll;
 
-        if(this->entries.size() >= this->icons_per_screen*2 + 1)
+        if(this->entries.size() >= this->icons.size())
         {
             if(this->previous_selected_entry < this->icons_per_screen && this->selected_entry >= max_scroll)
             {
@@ -617,7 +617,7 @@ MenuActionReturn Menu::select_previous_entry()
 
 MenuActionReturn Menu::select_previous_page()
 {
-    if(this->entries.size() >= this->icons_per_screen*2 + 1)
+    if(this->entries.size() >= this->icons.size())
         this->change_selected_entry(-this->icons_per_screen);
     return RETURN_NONE;
 }
@@ -630,7 +630,7 @@ MenuActionReturn Menu::select_next_entry()
 
 MenuActionReturn Menu::select_next_page()
 {
-    if(this->entries.size() >= this->icons_per_screen*2 + 1)
+    if(this->entries.size() >= this->icons.size())
         this->change_selected_entry(this->icons_per_screen);
     return RETURN_NONE;
 }
@@ -644,7 +644,7 @@ MenuActionReturn Menu::select_previous_entry_fast()
 
 MenuActionReturn Menu::select_previous_page_fast()
 {
-    if(this->entries.size() < this->icons_per_screen*2 + 1)
+    if(this->entries.size() < this->icons.size())
         return RETURN_NONE;
 
     this->change_selected_entry(-this->icons_per_screen);
@@ -659,7 +659,7 @@ MenuActionReturn Menu::select_next_entry_fast()
 
 MenuActionReturn Menu::select_next_page_fast()
 {
-    if(this->entries.size() < this->icons_per_screen*2 + 1)
+    if(this->entries.size() < this->icons.size())
         return RETURN_NONE;
 
     this->change_selected_entry(this->icons_per_screen);
