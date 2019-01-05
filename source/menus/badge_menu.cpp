@@ -39,6 +39,10 @@ static constexpr u32 ICON_SIZE_32 = (32*32);
 static FS_Path badge_manage_path = fsMakePath(PATH_ASCII, "/BadgeMngFile.dat");
 static FS_Path badge_data_path = fsMakePath(PATH_ASCII, "/BadgeData.dat");
 
+struct Pixel_s {
+    u8 r, g, b ,a;
+};
+
 struct Badge_Icon_64_s {
     u16 icon_data[ICON_SIZE_64];
     u8 icon_alpha[ICON_SIZE_64/2];
@@ -174,8 +178,8 @@ MenuActionReturn BadgeMenu::change_to_action_mode()
         {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
         {KEY_X, std::bind(&Menu::delete_selected_entry, this)},
         {KEY_Y, std::bind(&MenuBase::load_preview, this)},
-        {KEY_UP, std::bind(&BadgeMenu::install_badges, this, false)},
-        {KEY_DOWN, std::bind(&BadgeMenu::install_badges, this, true)},
+        {KEY_DUP, std::bind(&BadgeMenu::install_badges, this, false)},
+        {KEY_DDOWN, std::bind(&BadgeMenu::install_badges, this, true)},
     };
 
     static const Instructions badge_actions_instructions{
@@ -243,7 +247,7 @@ static png_bytep* load_image_to_rows(const fs::path& path, int* width, int* heig
     png_byte color_type = png_get_color_type(png, info);
     png_byte bit_depth  = png_get_bit_depth(png, info);
 
-    // Read any color_type into 8bit depth, ABGR format.
+    // Read any color_type into 8bit depth, RGBA format.
     // See http://www.libpng.org/pub/png/libpng-manual.txt
 
     if(bit_depth == 16)
@@ -269,10 +273,6 @@ static png_bytep* load_image_to_rows(const fs::path& path, int* width, int* heig
        color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
         png_set_gray_to_rgb(png);
 
-    //output ABGR
-    // png_set_bgr(png);
-    // png_set_swap_alpha(png);
-
     png_read_update_info(png, info);
 
     png_size_t row_bytes = png_get_rowbytes(png,info);
@@ -296,11 +296,6 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
         return 0;
 
     const int endx = width/64;
-
-    struct Pixel_s {
-        u8 r, g, b ,a;
-    };
-
     Pixel_s *top_left_pixel, *top_right_pixel, *bottom_left_pixel, *bottom_right_pixel;
 
     u32 index = start_index;
@@ -371,7 +366,7 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
     return index - start_index;
 }
 
-static void load_homebrew_set_icon(void* icon_out)
+static void load_homebrew_set_icon(u16* icon_out)
 {
     int width, height;
     png_bytep* row_pointers = load_image_to_rows("romfs:/badge_set_icon.png", &width, &height);
@@ -380,10 +375,10 @@ static void load_homebrew_set_icon(void* icon_out)
         png_bytep row = row_pointers[j];
         for(int i = 0; i < 64; i++)
         {
-            png_bytep px = &(row[i * sizeof(u32)]);
-            u32 dst = ((((j >> 3) * (64 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
+            Pixel_s* px = reinterpret_cast<Pixel_s*>(&(row[i * sizeof(u32)]));
+            u32 dst = ((((j >> 3) * (64 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
 
-            memcpy(static_cast<u8*>(icon_out) + dst, px, sizeof(u32));
+            icon_out[dst] = RGB8_to_565(px->r, px->g, px->b);
         }
         delete[] row;
     }
@@ -512,7 +507,7 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
         for(u32 j = 0; j < BADGE_LANGUAGES_COUNT; j++)
             memcpy(badgedata->badge_set_titles[badgemanage->badge_sets_amount][j], title, 0x45);
 
-        load_homebrew_set_icon(static_cast<void*>(badgedata->badge_set_icons_565_64[badgemanage->badge_sets_amount]));
+        load_homebrew_set_icon(badgedata->badge_set_icons_565_64[badgemanage->badge_sets_amount]);
 
         badgemanage->used_badge_set_slot[badgemanage->badge_sets_amount/8] |= 1 << (badgemanage->badge_sets_amount % 8);
         ++badgemanage->badge_sets_amount;
