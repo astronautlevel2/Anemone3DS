@@ -218,6 +218,10 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
                 draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_THEME_NO_BODY);
                 delete[] padded_body;
                 delete[] padded_bgm;
+                if(shuffle)
+                {
+                    FSFILE_Close(shuffle_install_file);
+                }
                 return RETURN_NONE;
             }
         }
