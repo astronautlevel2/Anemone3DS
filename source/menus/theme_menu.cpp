@@ -30,6 +30,8 @@
 static constexpr size_t SHUFFLE_MAX = 10;
 static constexpr u32 BODY_CACHE_SIZE = 0x150000;
 static constexpr u32 BGM_MAX_SIZE = 0x337000;
+static FS_Path body_rd_path = fsMakePath(PATH_ASCII, "/BodyCache_rd.bin");
+static FS_Path body_path = fsMakePath(PATH_ASCII, "/BodyCache.bin");
 
 ThemeMenu::ThemeMenu() : Menu("/Themes/", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWITCH_TO_BADGE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, 48, COLOR_THEME_BG)
 {
@@ -194,7 +196,6 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
 
     if(shuffle)
     {
-        FS_Path body_rd_path = fsMakePath(PATH_ASCII, "/BodyCache_rd.bin");
         remake_file(body_rd_path, THEME_EXTDATA, BODY_CACHE_SIZE * SHUFFLE_MAX);
         file_open(body_rd_path, THEME_EXTDATA, &shuffle_install_file, FS_OPEN_WRITE);
     }
@@ -234,7 +235,7 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
         }
         else if(install_body)
         {
-            buf_to_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), THEME_EXTDATA, BODY_CACHE_SIZE, padded_body); // Write body data to file
+            buf_to_file(body_path, THEME_EXTDATA, BODY_CACHE_SIZE, padded_body); // Write body data to file
         }
 
         strcat(bgm_path_str, ".bin");
