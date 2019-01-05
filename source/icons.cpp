@@ -98,6 +98,7 @@ BadgeIcon::BadgeIcon(const fs::path& path)
     {
         png_destroy_read_struct(&png, &info, NULL);
         fclose(fh);
+        return;
     }
 
     png_byte color_type = png_get_color_type(png, info);

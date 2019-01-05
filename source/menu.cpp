@@ -446,6 +446,10 @@ void Menu::draw()
             {
                 draw_image(sprites_shuffle_no_bgm_idx, 320.0f - 24.0f - 4.0f, y, 0.3f, &indicator_tint);
             }
+            else if(current_entry->state == Entry::STATE_MULTI)
+            {
+                draw_image(sprites_multi_idx, 320.0f - 24.0f - 4.0f, y, 0.3f, &indicator_tint);
+            }
         }
 
         // Draw entries list

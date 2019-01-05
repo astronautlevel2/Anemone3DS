@@ -22,3 +22,5 @@ Couldn't find splashbottom.bin
 No body_LZ.bin found - is this a theme?
 No bgm.bcstm found, skipping.
 bgm.bcstm is too big.
+Badge dimensions are too large.
+Badge extdata in use.#nRestart your console,#nwait for the home menu to load all badges,#nand try again.

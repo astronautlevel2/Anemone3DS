@@ -36,3 +36,7 @@
 #Du to install splash
 #Dl to install splash top
 #Dr to install splash bottom
+| Splash action mode
+#A to mark for install
+#Du to install splash
+#Dd to install all marked

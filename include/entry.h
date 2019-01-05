@@ -51,6 +51,7 @@ class Entry {
 
             STATE_SHUFFLE = BIT(0),
             STATE_SHUFFLE_NO_BGM = BIT(1),
+            STATE_MULTI = BIT(2),
         };
         u32 state = STATE_NONE;  // marked for shuffle, multi-install, etc...
 

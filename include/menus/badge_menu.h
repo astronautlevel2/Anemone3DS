@@ -34,8 +34,13 @@ class BadgeMenu : public Menu {
         BadgeMenu();
         ~BadgeMenu();
 
+        void draw();
+
     private:
+        size_t marked_count = 0;
         MenuActionReturn change_to_action_mode();
+        MenuActionReturn mark_entry();
+        MenuActionReturn install_badges(bool multi);
 };
 
 #endif
