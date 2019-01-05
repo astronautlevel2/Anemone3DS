@@ -206,7 +206,7 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
         if(install_bgm)
             memset(padded_bgm, 0, BGM_MAX_SIZE);
 
-        char bgm_path_str[8 + 3 + 4 + 1] = "BgmCache";
+        char bgm_path_str[9 + 3 + 4 + 1] = "/BgmCache";
         if(shuffle)
             draw_loading_bar(i, entries_to_install.size(), INSTALL_THEME_SHUFFLE);
 
