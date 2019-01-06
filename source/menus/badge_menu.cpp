@@ -305,58 +305,52 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
         if(max_badges > 1)
             draw_loading_bar(y/64*endx, max_badges, INSTALL_BADGES_SPLITTING);
 
-        for(u32 j = 0; j < 32; ++j)
-        {
-            png_bytep top_row = row_pointers[y + j*2];
-            png_bytep bottom_row = row_pointers[y + j*2 + 1];
-            for(u32 i = 0; i < 32; ++i)
-            {
-                u32 dst = ((((j >> 3) * (32 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
-                for(int x = 0; x < BADGE_MAX_SPLIT_WITH; ++x)
-                {
-                    if(x >= endx)
-                        break;
-
-                    u32 actual_x =  x*64 + i*2;
-                    top_left_pixel = reinterpret_cast<Pixel_s*>(&top_row[(actual_x)*sizeof(u32)]);
-                    top_right_pixel = reinterpret_cast<Pixel_s*>(&top_row[(actual_x + 1)*sizeof(u32)]);
-                    bottom_left_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(actual_x)*sizeof(u32)]);
-                    bottom_right_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(actual_x + 1)*sizeof(u32)]);
-
-                    Pixel_s px = {0};
-                    px.r = (top_left_pixel->r + top_right_pixel->r + bottom_left_pixel->r + bottom_right_pixel->r)/4;
-                    px.g = (top_left_pixel->g + top_right_pixel->g + bottom_left_pixel->g + bottom_right_pixel->g)/4;
-                    px.b = (top_left_pixel->b + top_right_pixel->b + bottom_left_pixel->b + bottom_right_pixel->b)/4;
-                    px.a = (top_left_pixel->a + top_right_pixel->a + bottom_left_pixel->a + bottom_right_pixel->a)/4;
-                    Badge_Icon_32_s* icon = &badgedata->badge_icons_32[index + x];
-
-                    u16 pixel_565 = RGB8_to_565(px.r, px.g, px.b);
-                    icon->icon_data[dst] = pixel_565;
-                    u8 alpha_4 = (px.a * 0x0f)/0xff;
-                    icon->icon_alpha[dst] |= (alpha_4 & 0x0f) << ((i % 2) * 4);
-                }
-            }
-        }
-
         for(u32 j = 0; j < 64; ++j)
         {
             png_bytep row = row_pointers[y + j];
             for(u32 i = 0; i < 64; ++i)
             {
                 u32 dst = ((((j >> 3) * (64 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
-                for(int x = 0; x < BADGE_MAX_SPLIT_WITH; ++x)
+                u32 dst_32 = 0;
+                png_bytep bottom_row = nullptr;
+                int alpha_shift = ((i % 2) * 4);
+                if(j % 2 == 0 && i % 2 == 0)
                 {
-                    if(x >= endx)
-                        break;
+                    dst_32 = (((((j/2) >> 3) * (32 >> 3) + ((i/2) >> 3)) << 6) + (((i/2) & 1) | (((j/2) & 1) << 1) | (((i/2) & 2) << 1) | (((j/2) & 2) << 2) | (((i/2) & 4) << 2) | (((j/2) & 4) << 3)));
+                    bottom_row = row_pointers[y + j + 1];
+                }
 
-                    Pixel_s* px = reinterpret_cast<Pixel_s*>(&row[(i + x*64)*sizeof(u32)]);
+                for(int x = 0; x < endx; ++x)
+                {
+                    u32 actual_x = i + x*64;
+                    Pixel_s* px = reinterpret_cast<Pixel_s*>(&row[actual_x*sizeof(u32)]);
 
                     Badge_Icon_64_s* icon = &badgedata->badge_icons_64[index + x];
 
                     u16 pixel_565 = RGB8_to_565(px->r, px->g, px->b);
                     icon->icon_data[dst] = pixel_565;
                     u8 alpha_4 = (px->a * 0x0f)/0xff;
-                    icon->icon_alpha[dst] |= (alpha_4 & 0x0f) << ((i % 2) * 4);
+                    icon->icon_alpha[dst] |= (alpha_4 & 0x0f) << alpha_shift;
+
+                    if(bottom_row)
+                    {
+                        top_left_pixel = px;
+                        top_right_pixel = reinterpret_cast<Pixel_s*>(&row[(actual_x + 1)*sizeof(u32)]);
+                        bottom_left_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(actual_x)*sizeof(u32)]);
+                        bottom_right_pixel = reinterpret_cast<Pixel_s*>(&bottom_row[(actual_x + 1)*sizeof(u32)]);
+
+                        Pixel_s pixel = {0};
+                        pixel.r = (top_left_pixel->r + top_right_pixel->r + bottom_left_pixel->r + bottom_right_pixel->r)/4;
+                        pixel.g = (top_left_pixel->g + top_right_pixel->g + bottom_left_pixel->g + bottom_right_pixel->g)/4;
+                        pixel.b = (top_left_pixel->b + top_right_pixel->b + bottom_left_pixel->b + bottom_right_pixel->b)/4;
+                        pixel.a = (top_left_pixel->a + top_right_pixel->a + bottom_left_pixel->a + bottom_right_pixel->a)/4;
+                        Badge_Icon_32_s* icon_32 = &badgedata->badge_icons_32[index + x];
+
+                        pixel_565 = RGB8_to_565(pixel.r, pixel.g, pixel.b);
+                        icon_32->icon_data[dst_32] = pixel_565;
+                        alpha_4 = (pixel.a * 0x0f)/0xff;
+                        icon_32->icon_alpha[dst_32] |= (alpha_4 & 0x0f) << alpha_shift;
+                    }
                 }
             }
             delete[] row;
