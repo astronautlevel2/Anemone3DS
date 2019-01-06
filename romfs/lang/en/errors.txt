@@ -8,6 +8,7 @@ File downloaded isn't a zip.
 Download failed.
 Invalid preview.png
 No preview found.
+You don't have enough#nbadges selected.
 You don't have enough#nthemes selected.
 You have too many themes selected.
 Couldn't download ThemePlaza data.#nMake sure WiFi is on.

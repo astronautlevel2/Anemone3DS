@@ -388,6 +388,12 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
     std::vector<Entry*> entries_to_install;
     if(multi)
     {
+        if(!this->marked_count)
+        {
+            draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_MULTI_NOT_ENOUGH);
+            return RETURN_NONE;
+        }
+
         draw_loading_bar(0, this->marked_count, INSTALL_FINDING_MARKED_BADGES);
         entries_to_install.reserve(this->marked_count);
         for(auto& entry : this->entries)
