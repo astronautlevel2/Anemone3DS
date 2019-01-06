@@ -396,6 +396,8 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
             {
                 entries_to_install.push_back(entry.get());
                 draw_loading_bar(entries_to_install.size(), this->marked_count, INSTALL_FINDING_MARKED_BADGES);
+                if(entries_to_install.size() == this->marked_count)
+                    break;
             }
         }
         this->marked_count = 0;

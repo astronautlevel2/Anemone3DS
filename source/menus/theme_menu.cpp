@@ -165,6 +165,8 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
                 {
                     entries_to_install.push_back(entry.get());
                     draw_loading_bar(entries_to_install.size(), this->shuffle_count, INSTALL_FINDING_MARKED_THEMES);
+                    if(entries_to_install.size() == this->shuffle_count)
+                        break;
                 }
             }
             this->shuffle_count = 0;
