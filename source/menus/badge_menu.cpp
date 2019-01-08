@@ -330,7 +330,7 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
                     u16 pixel_565 = RGB8_to_565(px->r, px->g, px->b);
                     icon->icon_data[dst] = pixel_565;
                     u8 alpha_4 = (px->a * 0x0f)/0xff;
-                    icon->icon_alpha[dst] |= (alpha_4 & 0x0f) << alpha_shift;
+                    icon->icon_alpha[dst/2] |= (alpha_4 & 0x0f) << alpha_shift;
 
                     if(bottom_row)
                     {
@@ -349,7 +349,7 @@ static u32 split_badge(const fs::path& path, Badge_Data_dat_s* badgedata, u32 st
                         pixel_565 = RGB8_to_565(pixel.r, pixel.g, pixel.b);
                         icon_32->icon_data[dst_32] = pixel_565;
                         alpha_4 = (pixel.a * 0x0f)/0xff;
-                        icon_32->icon_alpha[dst_32] |= (alpha_4 & 0x0f) << alpha_shift;
+                        icon_32->icon_alpha[dst_32/2] |= (alpha_4 & 0x0f) << alpha_shift;
                     }
                 }
             }
