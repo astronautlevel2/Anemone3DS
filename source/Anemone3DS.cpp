@@ -30,6 +30,9 @@
 #include "menus/splash_menu.h"
 #include "menus/badge_menu.h"
 
+// #include "menus/remote_theme_menu.h"
+// #include "menus/remote_splash_menu.h"
+
 #include "draw.h"
 #include "file.h"
 
@@ -70,6 +73,30 @@ void Anemone3DS::scroll_thread_function()
     this->menus[this->selected_menu]->scroll_icons(&scroll_ready_to_draw_event);
 }
 
+void Anemone3DS::reload_menu(MenuType menu)
+{
+    if(menu < MODES_AMOUNT)
+        this->menus[menu] = nullptr;  // Since we're low on linear (and regular) heap space, free up the menu before recreating it
+
+    std::unique_ptr<Menu> new_menu;
+    switch(menu)
+    {
+        case MODE_THEMES:
+            new_menu = std::make_unique<ThemeMenu>();
+            break;
+        case MODE_SPLASHES:
+            new_menu = std::make_unique<SplashMenu>();
+            break;
+        case MODE_BADGES:
+            new_menu = std::make_unique<BadgeMenu>();
+            break;
+        default:
+            svcBreak(USERBREAK_PANIC);
+            break;
+    }
+    this->menus[menu] = std::move(new_menu);
+}
+
 void Anemone3DS::select_previous_menu()
 {
     if(this->selected_menu == 0)
@@ -98,15 +125,14 @@ void Anemone3DS::set_menu()
 
 void Anemone3DS::enter_browser_mode()
 {
-   /*
     std::unique_ptr<RemoteMenu> new_browser_menu;
     switch(this->selected_menu)
     {
         case MODE_THEMES:
-            new_browser_menu = std::make_unique<RemoteThemeMenu>();
+            // new_browser_menu = std::make_unique<RemoteThemeMenu>();
             break;
         case MODE_SPLASHES:
-            new_browser_menu = std::make_unique<RemoteSplashMenu>();
+            // new_browser_menu = std::make_unique<RemoteSplashMenu>();
             break;
         case MODE_BADGES:
             draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_THEMEPLAZA_BADGES_DISABLED);
@@ -115,38 +141,39 @@ void Anemone3DS::enter_browser_mode()
             svcBreak(USERBREAK_PANIC);
             break;
     }
-    this->browser_menu = std::move(new_browser_menu);
-    this->current_menu = this->browser_menu.get();
-    */
+
+    if(new_browser_menu)
+    {
+        std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
+        this->browser_menu = std::move(new_browser_menu);
+        this->current_menu = this->browser_menu.get();
+    }
+}
+
+void Anemone3DS::enter_qr_mode()
+{
+    std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
 }
 
 void Anemone3DS::enter_list_mode()
 {
-    bool downloaded_any = false;
-    // bool downloaded_any = this->browser_menu->downloaded_any;
-    // this->browser_menu = nullptr;
-
-    if(downloaded_any)
+    if(this->browser_menu)
     {
-        this->menus[this->selected_menu] = nullptr;
-        std::unique_ptr<Menu> new_menu;
-        switch(this->selected_menu)
-        {
-            case MODE_THEMES:
-                new_menu = std::make_unique<ThemeMenu>();
-                break;
-            case MODE_SPLASHES:
-                new_menu = std::make_unique<SplashMenu>();
-                break;
-            case MODE_BADGES:
-                new_menu = std::make_unique<BadgeMenu>();
-                break;
-            default:
-                svcBreak(USERBREAK_PANIC);
-                break;
-        }
-        this->menus[this->selected_menu] = std::move(new_menu);
+        this->browser_menu = nullptr;
+        if(this->downloaded_any[this->selected_menu])
+            this->reload_menu(static_cast<MenuType>(this->selected_menu));
     }
+    else if(this->qr_menu)
+    {
+        this->qr_menu = nullptr;
+        for(size_t i = 0; i < MODES_AMOUNT; i++)
+        {
+            if(this->downloaded_any[i])
+                this->reload_menu(static_cast<MenuType>(i));
+        }
+    }
+    else
+        svcBreak(USERBREAK_PANIC);
 
     this->set_menu();
 }
@@ -159,6 +186,16 @@ void Anemone3DS::move_schedule_sleep()
 void Anemone3DS::installed_a_theme()
 {
     this->installed_theme = true;
+}
+
+void Anemone3DS::downloaded_from_tp()
+{
+    this->downloaded_any[this->selected_menu] = true;
+}
+
+void Anemone3DS::downloaded_from_qr(MenuType menu)
+{
+    this->downloaded_any[menu] = true;
 }
 
 void Anemone3DS::handle_action_return(MenuActionReturn action_result)
@@ -175,6 +212,7 @@ void Anemone3DS::handle_action_return(MenuActionReturn action_result)
 
         std::bind(&Anemone3DS::move_schedule_sleep, this),
         std::bind(&Anemone3DS::installed_a_theme, this),
+        std::bind(&Anemone3DS::downloaded_from_tp, this),
     };
 
     actions[action_result-1]();

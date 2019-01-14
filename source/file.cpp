@@ -131,32 +131,30 @@ Result file_open(FS_Path path, Archive archive, Handle* handle, int mode)
     return FSUSER_OpenFile(handle, archives[archive], path, mode, 0);
 }
 
-u32 file_to_buf(FS_Path path, Archive archive, char** buf)
+std::pair<std::unique_ptr<char[]>, u64> file_to_buf(FS_Path path, Archive archive, u32 wanted_size)
 {
     Handle file;
     Result res = 0;
     if(R_FAILED(res = FSUSER_OpenFile(&file, archives[archive], path, FS_OPEN_READ, 0)))
-        return 0;
+        return std::make_pair(nullptr, 0);
 
     u64 size;
     if(R_FAILED(res = FSFILE_GetSize(file, &size)))
     {
         size = 0;
     }
+    char* out = nullptr;
 
-    if(size != 0)
+    DEBUG("wanted, size: %lu, %llu\n", wanted_size, size);
+    if((wanted_size && wanted_size == size) || (!wanted_size && size != 0))
     {
-        char* actual_buf = *buf ? *buf : new(std::nothrow) char[size];
-        if(actual_buf != nullptr)
+        out = new(std::nothrow) char[size];
+        if(out != nullptr)
         {
-            if(R_SUCCEEDED(res = FSFILE_Read(file, nullptr, 0, actual_buf, size)))
+            if(R_FAILED(res = FSFILE_Read(file, nullptr, 0, out, size)))
             {
-                *buf = actual_buf;
-            }
-            else
-            {
-                if(!*buf)
-                    delete[] actual_buf;
+                delete[] out;
+                out = nullptr;
                 size = 0;
             }
         }
@@ -167,36 +165,70 @@ u32 file_to_buf(FS_Path path, Archive archive, char** buf)
     }
 
     FSFILE_Close(file);
-    return (u32)size;
+    return std::make_pair(std::unique_ptr<char[]>(out), size);
+}
+
+bool file_to_buf(FS_Path path, Archive archive, void* buf, u32 wanted_size)
+{
+    Handle file;
+    Result res = 0;
+    if(R_FAILED(res = FSUSER_OpenFile(&file, archives[archive], path, FS_OPEN_READ, 0)))
+        return false;
+
+    u64 size;
+    if(R_FAILED(res = FSFILE_GetSize(file, &size)))
+    {
+        FSFILE_Close(file);
+        return false;
+    }
+    
+    if((wanted_size && wanted_size == size) || (!wanted_size && size != 0))
+    {
+       FSFILE_Read(file, nullptr, 0, buf, size);
+    }
+    else
+    {
+        FSFILE_Close(file);
+        return false;
+    }
+
+    FSFILE_Close(file);
+    return true;
 }
 
 // If buf is nullptr, skips reading the file but does find it
-static u32 zip_to_buf(struct archive* a, const char* filename, char** buf)
+static std::unique_ptr<char[]> zip_to_buf(struct archive* a, const char* filename, u64& size, u32 wanted_size, void* buf = nullptr, bool search_only = false)
 {
     struct archive_entry* entry;
 
     bool found = false;
-    u64 size = 0;
 
     while(!found && archive_read_next_header(a, &entry) == ARCHIVE_OK)
     {
         found = !strcasecmp(archive_entry_pathname(entry), filename);
     }
 
+    char* out = nullptr;
     if(found)
     {
         size = archive_entry_size(entry);
-        if(buf)
+        if(!search_only)
         {
-            char* actual_buf = *buf ? *buf : new(std::nothrow) char[size];
-            if(actual_buf != nullptr)
+            if((wanted_size && size == wanted_size) || (!wanted_size && size != 0))
             {
-                archive_read_data(a, actual_buf, size);
-                *buf = actual_buf;
+                if(buf)
+                {
+                    archive_read_data(a, buf, size);
+                }
+                else
+                {
+                    out = new(std::nothrow) char[size];
+                    archive_read_data(a, out, size);
+                }
             }
             else
             {
-                DEBUG("File found, but allocation failed.\n");
+                DEBUG("File found, but size doesn't match.\n");
                 size = 0;
             }
         }
@@ -208,10 +240,10 @@ static u32 zip_to_buf(struct archive* a, const char* filename, char** buf)
 
     archive_read_free(a);
 
-    return (u32)size;
+    return std::unique_ptr<char[]>(out);
 }
 
-u32 zip_file_to_buf(const char* filename, const std::string& zip_path, char** buf)
+std::pair<std::unique_ptr<char[]>, u64> zip_file_to_buf(const char* filename, const std::string& zip_path, u32 wanted_size)
 {
     struct archive* a = archive_read_new();
     archive_read_support_format_zip(a);
@@ -221,13 +253,33 @@ u32 zip_file_to_buf(const char* filename, const std::string& zip_path, char** bu
     {
         DEBUG("Invalid zip being opened: %s\n", archive_error_string(a));
         archive_read_free(a);
-        return 0;
+        return std::make_pair(nullptr, 0);;
     }
 
-    return zip_to_buf(a, filename, buf);
+    u64 size = 0;
+    std::unique_ptr<char[]> buf = zip_to_buf(a, filename, size, wanted_size);
+    return std::make_pair(std::move(buf), size);
 }
 
-bool check_file_is_zip(void* zip_buf, size_t zip_size, char** buf)
+bool zip_file_to_buf(const char* filename, const std::string& zip_path, void* buf, u32 wanted_size)
+{
+    struct archive* a = archive_read_new();
+    archive_read_support_format_zip(a);
+
+    int r = archive_read_open_filename(a, zip_path.c_str(), 0x4000);
+    if(r != ARCHIVE_OK)
+    {
+        DEBUG("Invalid zip being opened: %s\n", archive_error_string(a));
+        archive_read_free(a);
+        return false;
+    }
+
+    u64 size = 0;
+    zip_to_buf(a, filename, size, wanted_size, buf);
+    return size != 0;
+}
+
+bool check_file_is_zip(void* zip_buf, size_t zip_size)
 {
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
@@ -238,7 +290,7 @@ bool check_file_is_zip(void* zip_buf, size_t zip_size, char** buf)
     return r == ARCHIVE_OK;
 }
 
-bool check_file_in_zip(const char* filename, void* zip_buf, size_t zip_size)
+bool check_file_in_zip(void* zip_buf, size_t zip_size, const char* filename)
 {
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
@@ -249,7 +301,9 @@ bool check_file_in_zip(const char* filename, void* zip_buf, size_t zip_size)
         return false;
     }
 
-    return zip_to_buf(a, filename, nullptr);
+    u64 size = 0;
+    zip_to_buf(a, filename, size, 0, nullptr, true);
+    return size != 0;
 }
 
 
@@ -266,7 +320,7 @@ Result buf_to_file(FS_Path path, Archive archive, u32 size, const void* buf)
     return 0;
 }
 
-void remake_file(FS_Path path, Archive archive, u32 size)
+void remake_file(FS_Path path, Archive archive, u32 size, const void* buf)
 {
     Handle handle;
     FS_Archive actual_archive =  archives[archive];
@@ -276,12 +330,16 @@ void remake_file(FS_Path path, Archive archive, u32 size)
         FSUSER_DeleteFile(actual_archive, path);
     }
     FSUSER_CreateFile(actual_archive, path, 0, size);
-    char* buf = new(std::nothrow) char[size];
+    char* empty_buf = buf ? nullptr : new(std::nothrow) char[size];
     if(buf)
     {
-        memset(buf, 0, size);
+        memset(empty_buf, 0, size);
+        buf_to_file(path, archive, size, empty_buf);
+        delete[] empty_buf;
+    }
+    else if(buf)
+    {
         buf_to_file(path, archive, size, buf);
-        delete[] buf;
     }
     else
     {
@@ -292,4 +350,9 @@ void remake_file(FS_Path path, Archive archive, u32 size)
 void delete_file(FS_Path path, Archive archive)
 {
     FSUSER_DeleteFile(archives[archive], path);
+}
+
+void delete_folder(FS_Path path, Archive archive)
+{
+    FSUSER_DeleteDirectoryRecursively(archives[archive], path);
 }

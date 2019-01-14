@@ -50,10 +50,15 @@ enum MenuActionReturn {
     RETURN_CHANGE_TO_BADGE_MODE,
 
     RETURN_CHANGE_TO_BROWSER_MODE,
+    RETURN_CHANGE_TO_QR_MODE,
     RETURN_CHANGE_TO_LIST_MODE,
 
     RETURN_MOVE_SLEEP,
     RETURN_INSTALLED_THEME,
+    RETURN_DOWNLOADED_FROM_TP,
+    RETURN_DOWNLOADED_FROM_QR_THEME,
+    RETURN_DOWNLOADED_FROM_QR_SPLASH,
+    RETURN_DOWNLOADED_FROM_QR_BADGE,
 
     MENU_ACTION_AMOUNT
 };
@@ -167,18 +172,6 @@ class Menu : public MenuBase {
         TextID mode_indicator_id;
         TextID previous_mode_indicator_id;
         TextID next_mode_indicator_id;
-};
-
-// Screw badges, get them from QRs
-class RemoteMenu : public MenuBase {
-    public:
-        void draw();
-        void calculate_new_scroll();
-
-    protected:
-        RemoteMenu();
-        void load_icons();
-        std::array<std::array<std::unique_ptr<EntryIcon>, 4>, 6> icons;
 };
 
 #endif

@@ -27,39 +27,18 @@
 #include "Anemone3DS.h"
 
 int __stacksize__ = 64 * 1024;
+// Linear heap is used for images to display only, so it doesnt need to be a full 32 MiB if we know its maximum size beforehand
+// In normal mode, with badge menu selected, each menu having more than or just enough icons, a preview saved, and badge displaying a preview while having a previous one
+// (64*64*2)*12*2 + (64*64*4)*9 + (512*512*4)*2 + (1024*512*4)*2
+// alternatively
+// In browser mode, displaying a preview while having a previous one, each normal menu having more than or just enough icons and a preview saved
+// (64*64*2)*12*2 + (64*64*4)*9 + (512*512*4)*2 + (1024*512*4) + (64*64*2)*6*4 + (512*512*4)*2
+// Both are less than 7 MiB
+u32 __ctru_linear_heap_size = 8*1024*1024;
 bool have_sound = false;
 bool running = true;
 bool power_pressed = true;
 bool have_luma = true;
-
-/*
-Image::Image(u16 w, u16 h, GPU_TEXCOLOR format) : w(w), h(h)
-{
-    this->image = new C2D_Image;
-
-    this->image->tex = new C3D_Tex;
-    u16 w_nextPow2 = nextPow2(w);
-    u16 h_nextPow2 = nextPow2(h);
-    C3D_TexInit(this->image->tex, w_nextPow2, h_nextPow2, format);
-
-    Tex3DS_SubTexture* subtex = new Tex3DS_SubTexture;
-    subtex->width = w;
-    subtex->height = h;
-    subtex->left = 0.0f;
-    subtex->top = 1.0f;
-    subtex->right = static_cast<float>(w) / w_nextPow2;
-    subtex->bottom = 1.0f - (static_cast<float>(h) / h_nextPow2);
-    this->image->subtex = subtex;
-}
-
-Image::~Image()
-{
-    C3D_TexDelete(this->image->tex);
-    delete this->image->tex;
-    delete this->image->subtex;
-    delete this->image;
-}
-*/
 
 int main(int argc, char* argv[])
 {

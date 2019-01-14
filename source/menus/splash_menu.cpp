@@ -106,21 +106,18 @@ MenuActionReturn SplashMenu::delete_installed_splash()
 
 bool SplashMenu::install_splash_internal(FS_Path dest, const std::string& source, u32 wanted_size, ErrorType size_wrong_error, ErrorType not_found_error)
 {
-    char* splash_buf = nullptr;
-    u32 splash_size = this->entries[this->selected_entry]->get_file(source, &splash_buf);
-    if(splash_buf != nullptr)
+    const auto& [splash_buf, splash_size] = this->entries[this->selected_entry]->get_file(source);
+    if(splash_buf)
     {
         if(splash_size == wanted_size)
         {
-            remake_file(top_splash_path, have_luma_folder ? SD_CARD : CTRNAND, wanted_size);
-            buf_to_file(top_splash_path, have_luma_folder ? SD_CARD : CTRNAND, wanted_size, splash_buf);
+            remake_file(dest, have_luma_folder ? SD_CARD : CTRNAND, wanted_size, splash_buf.get());
         }
         else
         {
             draw_error(ERROR_LEVEL_ERROR, size_wrong_error);
         }
-        delete[] splash_buf;
-        return splash_size == TOP_SCREEN_SPLASH_SIZE;
+        return splash_size == wanted_size;
     }
     else
     {
@@ -141,13 +138,11 @@ MenuActionReturn SplashMenu::install_splash(bool install_top, bool install_botto
 
     if(installed_top && installed_bottom)
     {
-        char* config_buf;
-        u32 config_size = file_to_buf(luma_config_path, have_luma_folder ? SD_CARD : CTRNAND, &config_buf);
+        const auto& [config_buf, config_size] = file_to_buf(luma_config_path, have_luma_folder ? SD_CARD : CTRNAND);
         if(config_size)
         {
             if(config_buf[0xC] == 0)
                 draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_SPLASH_LUMA_DISABLED);
-            delete[] config_buf;
         }
     }
 

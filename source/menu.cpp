@@ -70,7 +70,7 @@ MenuActionReturn MenuBase::load_preview()
         else
         {
             std::unique_ptr<PreviewImage> new_preview(current_entry_ptr->load_preview());
-            if(new_preview->ready)
+            if(new_preview && new_preview->ready)
             {
                 this->preview = std::move(new_preview);
                 this->selected_entry_for_previous_preview = current_entry_ptr;
@@ -824,6 +824,7 @@ MenuActionReturn Menu::delete_selected_entry()
     if(this->scroll > 0 && this->entries.size() > this->icons_per_screen && this->scroll == this->entries.size() - this->icons_per_screen)
         --this->scroll;
 
+    this->entries[this->selected_entry]->delete_entry();
     this->entries.erase(this->entries.begin() + this->selected_entry);
 
     if(this->entries.size())

@@ -24,42 +24,24 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef REMOTE_MENU_H
+#define REMOTE_MENU_H
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+#include "common.h"
+#include "menu.h"
+#include "icons.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
+// Screw badges, get them from QRs
+class RemoteMenu : public MenuBase {
+    public:
+        void draw();
+        void calculate_new_scroll();
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
-
-#include "sprites.h"
-
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
-
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
-extern bool have_luma;
+    protected:
+        RemoteMenu();
+        void load_icons();
+        std::array<std::array<std::unique_ptr<EntryIcon>, 4>, 6> icons;
+        size_t page = 1;
+};
 
 #endif

@@ -414,23 +414,22 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
         entries_to_install.push_back(this->entries[this->selected_entry].get());
     }
 
-    char* badgemanage_buf = nullptr;
-    if(file_to_buf(badge_manage_path, BADGE_EXTDATA, &badgemanage_buf) == 0)
+    Badge_Mng_File_dat_s* badgemanage = new(std::nothrow) Badge_Mng_File_dat_s;
+    if(file_to_buf(badge_manage_path, BADGE_EXTDATA, &badgemanage, sizeof(Badge_Mng_File_dat_s)) == 0)
     {
+        delete badgemanage;
         draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_BADGE_EXTDATA_IN_USE);
         return RETURN_NONE;
     }
 
-    char* badgedata_buf = nullptr;
-    if(file_to_buf(badge_data_path, BADGE_EXTDATA, &badgedata_buf) == 0)
+    Badge_Data_dat_s* badgedata = new(std::nothrow) Badge_Data_dat_s;
+    if(file_to_buf(badge_data_path, BADGE_EXTDATA, &badgedata, sizeof(Badge_Data_dat_s)) == 0)
     {
-        delete[] badgemanage_buf;
+        delete badgemanage;
+        delete badgedata;
         draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_BADGE_EXTDATA_IN_USE);
         return RETURN_NONE;
     }
-
-    Badge_Mng_File_dat_s* badgemanage = reinterpret_cast<Badge_Mng_File_dat_s*>(badgemanage_buf);
-    Badge_Data_dat_s* badgedata = reinterpret_cast<Badge_Data_dat_s*>(badgedata_buf);
 
     static constexpr u32 homebrew_set_id = 0x0000BEEF;
     static constexpr u16 badge_quantity = 0xFFFF;
@@ -525,10 +524,10 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
         ++badgemanage->badge_sets_amount;
     }
 
-    buf_to_file(badge_manage_path, BADGE_EXTDATA, sizeof(Badge_Mng_File_dat_s), badgemanage_buf);
-    buf_to_file(badge_data_path, BADGE_EXTDATA, sizeof(Badge_Data_dat_s), badgedata_buf);
+    buf_to_file(badge_manage_path, BADGE_EXTDATA, sizeof(Badge_Mng_File_dat_s), badgemanage);
+    buf_to_file(badge_data_path, BADGE_EXTDATA, sizeof(Badge_Data_dat_s), badgedata);
 
-    delete[] badgemanage_buf;
-    delete[] badgedata_buf;
+    delete badgemanage;
+    delete badgedata;
     return RETURN_NONE;
 }

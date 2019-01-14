@@ -34,7 +34,7 @@ struct PreviewImage {
     bool ready = false;
 
     PreviewImage();
-    PreviewImage(char* png_buf, u32 png_size);
+    PreviewImage(void* png_buf, u32 png_size);
     ~PreviewImage();
     virtual void draw() const;
 };

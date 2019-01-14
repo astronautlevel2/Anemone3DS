@@ -29,7 +29,7 @@
 
 #include "common.h"
 #include "menu.h"
-// #include "audio.h"
+#include "remote_menu.h"
 
 class Anemone3DS
 {
@@ -52,14 +52,19 @@ class Anemone3DS
 
         void draw();
 
+        void reload_menu(MenuType menu);
+
         void select_previous_menu();
         void select_next_menu();
         void select_menu(MenuType menu);
         void move_schedule_sleep();
         void set_menu();  // Actually sets the current menu
         void enter_browser_mode();
+        void enter_qr_mode();
         void enter_list_mode();
         void installed_a_theme();
+        void downloaded_from_tp();
+        void downloaded_from_qr(MenuType menu);
         void handle_action_return(MenuActionReturn action_result);
 
         bool installed_theme, running_from_hax;
@@ -69,11 +74,13 @@ class Anemone3DS
         size_t selected_menu;
         std::array<std::unique_ptr<Menu>, MODES_AMOUNT> menus;
 
-        // std::unique_ptr<RemoteMenu> browser_menu;
+        std::unique_ptr<RemoteMenu> browser_menu;
+        std::unique_ptr<RemoteMenu> qr_menu;
+        // std::unique_ptr<QrMenu> qr_menu;
+        std::array<bool, MODES_AMOUNT> downloaded_any;
 
         bool sleep_scheduled = false;
         Thread scroll_thread;
-        std::array<Thread, MODES_AMOUNT> install_check_thread;
 
         u32 old_time_limit;
 };

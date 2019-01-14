@@ -47,14 +47,8 @@ PreviewImage::PreviewImage()
     this->image->tex = tex;
 }
 
-PreviewImage::PreviewImage(char* png_buf, u32 png_size) : PreviewImage()
+PreviewImage::PreviewImage(void* png_buf, u32 png_size) : PreviewImage()
 {
-    if(png_buf == nullptr)
-    {
-        draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_NO_PREVIEW);
-        return;
-    }
-
     if(png_sig_cmp(reinterpret_cast<u8*>(png_buf), 0, 8))
     {
         draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_INVALID_PREVIEW_PNG);
@@ -185,6 +179,13 @@ BadgePreviewImage::BadgePreviewImage(const fs::path& path)
 
     int width = png_get_image_width(png, info);
     int height = png_get_image_height(png, info);
+
+    if(width > 64*12 || height > 64*6)
+    {
+        png_destroy_read_struct(&png, &info, NULL);
+        fclose(fh);
+        return;
+    }
 
     png_byte color_type = png_get_color_type(png, info);
     png_byte bit_depth  = png_get_bit_depth(png, info);

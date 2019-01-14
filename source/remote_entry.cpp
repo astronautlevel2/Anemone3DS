@@ -24,42 +24,30 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#include "remote_entry.h"
+#include "network.h"
+#include "draw.h"
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+RemoteEntry::RemoteEntry(int entry_id) : Entry("/3ds/"  APP_TITLE  "/cache/" + std::to_string(entry_id), false, false), entry_id(entry_id)
+{
+    SMDH* icon = this->get_smdh();
+    if(icon == nullptr)
+    {
+        icon = new SMDH;
+        if(download_data(get_download_url(THEMEPLAZA_SMDH_FORMAT, this->entry_id), INSTALLS_AMOUNT, icon, sizeof(SMDH)))
+        {
+            std::string full_path = this->path / "info.smdh";
+            FILE* fh = fopen(full_path.c_str(), "wb");
+            fwrite(icon, sizeof(SMDH), 1, fh);
+            fclose(fh);
+        }
+    }
+    
+    this->load_meta(icon);
+}
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
-
-#include "sprites.h"
-
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
-
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
-extern bool have_luma;
-
-#endif
+std::pair<std::unique_ptr<u8[]>, u32> RemoteEntry::download_remote_entry(char** filename)
+{
+    draw_install(INSTALL_DOWNLOAD);
+    return download_data(get_download_url(THEMEPLAZA_DOWNLOAD_FORMAT, this->entry_id), INSTALL_DOWNLOAD, filename);
+}

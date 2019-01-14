@@ -24,42 +24,14 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#include "remote_menu.h"
 
-#include <vector>
-#include <array>
-#include <stack>
-#include <map>
-#include <string>
-#include <memory>
-#include <utility>
-#include <algorithm>
-#include <numeric>
-#include <functional>
+void RemoteMenu::draw()
+{
+    
+}
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <3ds.h>
-#include <citro3d.h>
-#include <citro2d.h>
-
-#include "sprites.h"
-
-#ifndef RELEASE
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
-
-extern bool have_sound;
-extern bool running;
-extern bool power_pressed;
-extern bool have_luma;
-
-#endif
+void RemoteMenu::calculate_new_scroll()
+{
+    
+}

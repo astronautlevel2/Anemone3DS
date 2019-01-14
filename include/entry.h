@@ -31,16 +31,36 @@
 #include "preview.h"
 #include "icons.h"
 
+struct SMDH {
+    u8 _padding1[4 + 2 + 2];
+
+    u16 name[0x40];
+    u16 desc[0x80];
+    u16 author[0x40];
+
+    u8 _padding2[0x2000 - 0x200 + 0x30 + 0x8];
+    u16 small_icon[24*24];
+
+    u16 big_icon[48*48];
+} PACKED;
+
 class Entry {
     public:
-        Entry(const fs::path& path, bool is_zip);
+        Entry(const fs::path& path, bool is_zip, bool directly_load = true);
         void draw() const;
 
         EntryIcon* load_icon() const;
         PreviewImage* load_preview() const;
 
         void delete_entry();
-        u32 get_file(const std::string& file_path, char** buf) const;
+        std::pair<std::unique_ptr<char[]>, u64> get_file(const std::string& file_path, u32 wanted_size = 0) const;
+        bool get_file(const std::string& file_path, void* buf, u32 wanted_size = 0) const;
+
+        template<typename T>
+        u32 get_file(const std::string& file_path, T* buf, u32 wanted_size = 0) const
+        {
+            return this->get_file(file_path, static_cast<void*>(buf), wanted_size);
+        }
 
         std::string title, description, author;
         fs::path path;
@@ -55,13 +75,11 @@ class Entry {
         };
         u32 state = STATE_NONE;  // marked for shuffle, multi-install, etc...
 
-    private:
+    protected:
+        SMDH* get_smdh() const;
+        // takes ownership of the pointer and deletes it when it's done
+        void load_meta(SMDH* icon = nullptr);
         bool is_zip;
-};
-
-class RemoteEntry : public Entry {
-    public:
-        RemoteEntry(int entry_id);
 };
 
 #endif

@@ -48,15 +48,19 @@ Result file_open(FS_Path path, Archive archive, Handle* handle, int mode);
 // For both of these functions, if allocation fails, buf is unmodified
 // and if buf points to non-nullptr, it will try to read into there directly, no matter the size
 // If file couldn't be opened, buf is unmodified
-u32 file_to_buf(FS_Path path, Archive archive, char** buf);
+std::pair<std::unique_ptr<char[]>, u64> file_to_buf(FS_Path path, Archive archive, u32 wanted_size = 0);
+bool file_to_buf(FS_Path path, Archive archive, void* buf, u32 wanted_size = 0);
 // If zip couldn't be opened, buf is unmodified
-u32 zip_file_to_buf(const char* filename, const std::string& zip_path, char** buf);
+std::pair<std::unique_ptr<char[]>, u64> zip_file_to_buf(const char* filename, const std::string& zip_path, u32 wanted_size = 0);
+bool zip_file_to_buf(const char* filename, const std::string& zip_path, void* buf, u32 wanted_size = 0);
 
 bool check_file_is_zip(const void* zip_buf, size_t zip_size);
-bool check_file_in_zip(const char* filename, const void* zip_buf, size_t zip_size);
+bool check_file_in_zip(const void* zip_buf, size_t zip_size, const char* filename);
 
 Result buf_to_file(FS_Path path, Archive archive, u32 size, const void* buf);
-void remake_file(FS_Path path, Archive archive, u32 size);
+// If you pass a buffer, it will write it directly instead of wasting time clearing the file first and you having to call buf_to_file after
+void remake_file(FS_Path path, Archive archive, u32 size, const void* buf = nullptr);
 void delete_file(FS_Path path, Archive archive);
+void delete_folder(FS_Path path, Archive archive);
 
 #endif

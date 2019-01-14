@@ -28,65 +28,10 @@
 #include "file.h"
 #include "draw.h"
 
-struct SMDH {
-    u8 _padding1[4 + 2 + 2];
-
-    u16 name[0x40];
-    u16 desc[0x80];
-    u16 author[0x40];
-
-    u8 _padding2[0x2000 - 0x200 + 0x30 + 0x8];
-    u16 small_icon[24*24];
-
-    u16 big_icon[48*48];
-} PACKED;
-
-Entry::Entry(const fs::path& path, bool is_zip) : path(path), is_zip(is_zip)
+Entry::Entry(const fs::path& path, bool is_zip, bool directly_load) : path(path), is_zip(is_zip)
 {
-    char* buf = nullptr;
-    if(is_zip && path.extension() == ".png")  // Badge
-    {
-        this->title = path.stem();
-    }
-    else  // Theme or Splash
-    {
-        u32 size = this->get_file("info.smdh", &buf);
-        if(buf != nullptr)
-        {
-            if(size == 0x36c0)
-            {
-                SMDH* smdh_buf = reinterpret_cast<SMDH*>(buf);
-
-                char utf_title[0x40] = {0};
-                utf16_to_utf8(reinterpret_cast<u8*>(utf_title), smdh_buf->name, 0x40);
-                this->title = std::string(utf_title, 0x40);
-
-                char utf_description[0x80] = {0};
-                utf16_to_utf8(reinterpret_cast<u8*>(utf_description), smdh_buf->desc, 0x80);
-                this->description = std::string(utf_description, 0x80);
-
-                char utf_author[0x40] = {0};
-                utf16_to_utf8(reinterpret_cast<u8*>(utf_author), smdh_buf->author, 0x40);
-                this->author = std::string(utf_author, 0x40);
-            }
-            else
-            {
-                this->color = C2D_Color32(rand() % 256, rand() % 256, rand() % 256, 255);
-            }
-            delete[] buf;
-        }
-        else
-        {
-            this->color = C2D_Color32(rand() % 256, rand() % 256, rand() % 256, 255);
-        }
-    }
-
-    if(this->author.empty())
-        this->author = "Unknown author";
-    if(this->description.empty())
-        this->description = "No description";
-    if(this->title.empty())
-        this->title = "No title";
+    if(directly_load)
+        this->load_meta();
 }
 
 void Entry::draw() const
@@ -105,16 +50,29 @@ void Entry::draw() const
     draw_text_wrap(this->description, COLOR_WHITE, 400.0f - x*2.0f, x, y, 0.2f, 0.5f, 0.5f);
 }
 
-u32 Entry::get_file(const std::string& file_path, char** buf) const
+std::pair<std::unique_ptr<char[]>, u64> Entry::get_file(const std::string& file_path, u32 wanted_size) const
 {
     if(this->is_zip)
     {
-        return zip_file_to_buf(file_path.c_str(), this->path, buf);
+        return zip_file_to_buf(file_path.c_str(), this->path, wanted_size);
     }
     else
     {
         std::string full_path = this->path / file_path;
-        return file_to_buf(fsMakePath(PATH_ASCII, full_path.c_str()), SD_CARD, buf);
+        return file_to_buf(fsMakePath(PATH_ASCII, full_path.c_str()), SD_CARD, wanted_size);
+    }
+}
+
+bool Entry::get_file(const std::string& file_path, void* buf, u32 wanted_size) const
+{
+    if(this->is_zip)
+    {
+        return zip_file_to_buf(file_path.c_str(), this->path, buf, wanted_size);
+    }
+    else
+    {
+        std::string full_path = this->path / file_path;
+        return file_to_buf(fsMakePath(PATH_ASCII, full_path.c_str()), SD_CARD, buf, wanted_size);
     }
 }
 
@@ -127,20 +85,15 @@ EntryIcon* Entry::load_icon() const
 
     if(this->is_zip && this->path.extension() == ".png")
     {
-        out = new BadgeIcon(this->path);
+        out = new(std::nothrow) BadgeIcon(this->path);
     }
     else
     {
-        char* buf = nullptr;
-        u32 size = this->get_file("info.smdh", &buf);
-        if(buf != nullptr)
+        SMDH* icon = this->get_smdh();
+        if(icon != nullptr)
         {
-            if(size == 0x36c0)
-            {
-                SMDH* smdh_buf = reinterpret_cast<SMDH*>(buf);
-                out = new EntryIcon(smdh_buf->big_icon);
-            }
-            delete[] buf;
+            out = new(std::nothrow) EntryIcon(icon->big_icon);
+            delete icon;
         }
     }
 
@@ -151,27 +104,74 @@ PreviewImage* Entry::load_preview() const
 {
     if(this->is_zip && this->path.extension() == ".png")
     {
-        return new BadgePreviewImage(this->path);
+        return new(std::nothrow) BadgePreviewImage(this->path);
     }
     else
     {
-        char* png_buf = nullptr;
-        u32 png_size = this->get_file("preview.png", &png_buf);
-        PreviewImage* preview = new PreviewImage(png_buf, png_size);
-
-        if(png_buf != nullptr)
-            delete[] png_buf;
-
-        return preview;
+        const auto& [png_buf, png_size] = this->get_file("preview.png");
+        if(png_size)
+        {
+            PreviewImage* preview = new(std::nothrow) PreviewImage(png_buf.get(), png_size);
+            return preview;
+        }
+        else
+        {
+            draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_NO_PREVIEW);
+            return nullptr;
+        }
     }
 }
 
 void Entry::delete_entry()
 {
-
+    FS_Path path = fsMakePath(PATH_ASCII, this->path.c_str());
+    if(this->is_zip)
+        delete_file(path, SD_CARD);
+    else
+        delete_folder(path, SD_CARD);
 }
 
-RemoteEntry::RemoteEntry(int entry_id) : Entry("/3ds/"  APP_TITLE  "/cache/" + std::to_string(entry_id), false)
+SMDH* Entry::get_smdh() const
 {
+    SMDH* out = new(std::nothrow) SMDH;
+    if(this->get_file("info.smdh", out, sizeof(SMDH)))
+        return out;
 
+    delete out;
+    return nullptr;
+}
+
+void Entry::load_meta(SMDH* icon)
+{
+    if(this->path.extension() != ".png")  // Theme or Splash, but not Bagde
+    {
+        if(icon == nullptr)
+            icon = this->get_smdh();
+        if(icon != nullptr)
+        {
+            char utf_title[0x40] = {0};
+            utf16_to_utf8(reinterpret_cast<u8*>(utf_title), icon->name, 0x40);
+            this->title = std::string(utf_title, 0x40);
+
+            char utf_description[0x80] = {0};
+            utf16_to_utf8(reinterpret_cast<u8*>(utf_description), icon->desc, 0x80);
+            this->description = std::string(utf_description, 0x80);
+
+            char utf_author[0x40] = {0};
+            utf16_to_utf8(reinterpret_cast<u8*>(utf_author), icon->author, 0x40);
+            this->author = std::string(utf_author, 0x40);
+            delete icon;
+        }
+        else
+        {
+            this->color = C2D_Color32(rand() % 256, rand() % 256, rand() % 256, 255);
+        }
+    }
+
+    if(this->author.empty())
+        this->author = "Unknown author";
+    if(this->description.empty())
+        this->description = "No description";
+    if(this->title.empty())
+        this->title = this->path.stem();
 }
