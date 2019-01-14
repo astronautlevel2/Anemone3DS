@@ -415,7 +415,12 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
     }
 
     Badge_Mng_File_dat_s* badgemanage = new(std::nothrow) Badge_Mng_File_dat_s;
-    if(file_to_buf(badge_manage_path, BADGE_EXTDATA, &badgemanage, sizeof(Badge_Mng_File_dat_s)) == 0)
+    if(!badgemanage)
+    {
+        draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_OUT_OF_MEMORY);
+        return RETURN_NONE;
+    }
+    else if(!file_to_buf(badge_manage_path, BADGE_EXTDATA, badgemanage, sizeof(Badge_Mng_File_dat_s)))
     {
         delete badgemanage;
         draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_BADGE_EXTDATA_IN_USE);
@@ -423,7 +428,12 @@ MenuActionReturn BadgeMenu::install_badges(bool multi)
     }
 
     Badge_Data_dat_s* badgedata = new(std::nothrow) Badge_Data_dat_s;
-    if(file_to_buf(badge_data_path, BADGE_EXTDATA, &badgedata, sizeof(Badge_Data_dat_s)) == 0)
+    if(!badgedata)
+    {
+        draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_OUT_OF_MEMORY);
+        return RETURN_NONE;
+    }
+    else if(!file_to_buf(badge_data_path, BADGE_EXTDATA, badgedata, sizeof(Badge_Data_dat_s)))
     {
         delete badgemanage;
         delete badgedata;
