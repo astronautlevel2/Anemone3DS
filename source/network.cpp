@@ -27,6 +27,14 @@
 #include "network.h"
 #include "draw.h"
 
+std::string get_page_url(size_t page, int sort, const std::string& search)
+{
+    char* url = nullptr;
+    asprintf(&url, THEMEPLAZA_PAGE_FORMAT, page, sort, search.c_str());
+    std::unique_ptr<char, decltype(free)*> formatted_url(url, free);
+    return std::string(formatted_url.get());
+}
+
 std::string get_download_url(const std::string& base, int entry_id)
 {
     char* url = nullptr;

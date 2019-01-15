@@ -50,7 +50,7 @@ class Entry {
         void draw() const;
 
         EntryIcon* load_icon() const;
-        PreviewImage* load_preview() const;
+        virtual PreviewImage* load_preview() const;
 
         void delete_entry();
         std::pair<std::unique_ptr<char[]>, u64> get_file(const std::string& file_path, u32 wanted_size = 0) const;

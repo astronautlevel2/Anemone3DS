@@ -71,12 +71,6 @@ enum SortType {
     SORTS_AMOUNT
 };
 
-enum RemoteSortType {
-    SORT_NEWEST,
-    SORT_DOWNLOAD_COUNT,
-    SORT_LIKE_COUNT,
-};
-
 using Instructions = std::array<InstructionType, 8>;  // A, B, X, Y, UP, LEFT, DOWN, RIGTH in order
 using KeysActions = std::vector<std::pair<u32, std::function<MenuActionReturn()>>>;
 
@@ -105,7 +99,7 @@ class MenuBase {
         void draw_instructions();
 
     protected:
-        MenuBase(const std::string& loading_path, int icon_size, u32 background_color);
+        MenuBase(const std::string& loading_path, int icon_size, u32 background_color, TextID mode_indicator_id);
         std::stack<const Instructions*> instructions_stack;
         void change_selected_entry(int delta);
         MenuActionReturn exit_instructions();
@@ -128,6 +122,7 @@ class MenuBase {
         const Entry* selected_entry_for_previous_preview = nullptr;
 
         std::vector<std::unique_ptr<Entry>> entries;
+        TextID mode_indicator_id;
 };
 
 class Menu : public MenuBase {
@@ -169,7 +164,6 @@ class Menu : public MenuBase {
         size_t icons_per_screen;
         std::vector<std::unique_ptr<EntryIcon>> icons;
 
-        TextID mode_indicator_id;
         TextID previous_mode_indicator_id;
         TextID next_mode_indicator_id;
 };

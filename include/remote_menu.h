@@ -31,17 +31,51 @@
 #include "menu.h"
 #include "icons.h"
 
+enum RemoteSortType {
+    SORT_NEWEST,
+    SORT_DOWNLOAD_COUNT,
+    SORT_LIKE_COUNT,
+};
+
 // Screw badges, get them from QRs
 class RemoteMenu : public MenuBase {
     public:
         void draw();
         void calculate_new_scroll();
 
+        bool ready = false;
+
     protected:
-        RemoteMenu();
-        void load_icons();
-        std::array<std::array<std::unique_ptr<EntryIcon>, 4>, 6> icons;
+        RemoteMenu(const std::string& loading_path, u32 background_color, TextID mode_indicator_id);
+        void load_page();
+        std::array<std::array<std::unique_ptr<EntryIcon>, 6>, 4> icons;
         size_t page = 1;
+        size_t page_count;
+        std::string search = "";
+        RemoteSortType sort = SORT_NEWEST;
+
+        void select_up_entry_internal();
+        void select_left_entry_internal();
+        void select_down_entry_internal();
+        void select_right_entry_internal();
+
+        MenuActionReturn select_up_entry();
+        MenuActionReturn select_left_entry();
+        MenuActionReturn select_down_entry();
+        MenuActionReturn select_right_entry();
+
+        MenuActionReturn select_up_entry_fast();
+        MenuActionReturn select_left_entry_fast();
+        MenuActionReturn select_down_entry_fast();
+        MenuActionReturn select_right_entry_fast();
+
+        MenuActionReturn change_to_previous_page();
+        MenuActionReturn change_to_next_page();
+
+        MenuActionReturn change_to_extra_mode();
+        MenuActionReturn handle_touch();
+
+        MenuActionReturn download_entry();
 };
 
 #endif

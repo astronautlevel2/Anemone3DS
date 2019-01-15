@@ -34,7 +34,7 @@
 #define THEMEPLAZA_API_URL "/api/anemone/v1"
 #define THEMEPLAZA_BASE_API_URL THEMEPLAZA_BASE_URL  THEMEPLAZA_API_URL
 
-#define THEMEPLAZA_PAGE_FORMAT THEMEPLAZA_BASE_API_URL  "/list?page=%i&category=%i&query=%s"
+#define THEMEPLAZA_PAGE_FORMAT THEMEPLAZA_BASE_API_URL  "/list?page=%zd&category=%d&query=%s"
 #define THEMEPLAZA_JSON_PAGE_COUNT   "pages"
 #define THEMEPLAZA_JSON_PAGE_IDS     "items"
 
@@ -48,6 +48,7 @@
 #define THEMEPLAZA_ICON_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/preview/icon"
 #define THEMEPLAZA_SMDH_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/smdh"
 
+std::string get_page_url(size_t page, int sort, const std::string& search);
 std::string get_download_url(const std::string& base, int entry_id);
 
 std::pair<std::unique_ptr<u8[]>, u32> download_data(const char* url, InstallType install_type, char** filename = nullptr);

@@ -24,21 +24,14 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef REMOTE_ENTRY_H
-#define REMOTE_ENTRY_H
+#ifndef REMOTE_SPLASH_MENU_H
+#define REMOTE_SPLASH_MENU_H
 
-#include "common.h"
-#include "entry.h"
+#include "remote_menu.h"
 
-class RemoteEntry : public Entry {
+class RemoteSplashMenu : public RemoteMenu {
     public:
-        RemoteEntry(int entry_id);
-        std::pair<std::unique_ptr<u8[]>, u32> download_remote_entry(char** filename);
-
-        PreviewImage* load_preview() const;
-
-    private:
-        int entry_id;
+        RemoteSplashMenu() : RemoteMenu("/Splashes/", COLOR_SPLASH_BG, TEXT_THEMEPLAZA_SPLASH_MODE) { };
 };
 
 #endif

@@ -30,8 +30,8 @@
 #include "menus/splash_menu.h"
 #include "menus/badge_menu.h"
 
-// #include "menus/remote_theme_menu.h"
-// #include "menus/remote_splash_menu.h"
+#include "menus/remote_theme_menu.h"
+#include "menus/remote_splash_menu.h"
 
 #include "draw.h"
 #include "file.h"
@@ -129,10 +129,10 @@ void Anemone3DS::enter_browser_mode()
     switch(this->selected_menu)
     {
         case MODE_THEMES:
-            // new_browser_menu = std::make_unique<RemoteThemeMenu>();
+            new_browser_menu = std::make_unique<RemoteThemeMenu>();
             break;
         case MODE_SPLASHES:
-            // new_browser_menu = std::make_unique<RemoteSplashMenu>();
+            new_browser_menu = std::make_unique<RemoteSplashMenu>();
             break;
         case MODE_BADGES:
             draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_THEMEPLAZA_BADGES_DISABLED);
@@ -142,7 +142,7 @@ void Anemone3DS::enter_browser_mode()
             break;
     }
 
-    if(new_browser_menu)
+    if(new_browser_menu && new_browser_menu->ready)
     {
         std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
         this->browser_menu = std::move(new_browser_menu);
@@ -385,7 +385,7 @@ void Anemone3DS::draw()
     }
     else if(!this->current_menu->in_preview())
     {
-        // if(!this->browser_menu)
+        if(!this->browser_menu)
         {
             switch_screen(GFX_BOTTOM);
             static constexpr float y = (BARS_SIZE - 30*0.6f)/2.0f - 1.0f;

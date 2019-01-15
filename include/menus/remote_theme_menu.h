@@ -24,21 +24,14 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef REMOTE_ENTRY_H
-#define REMOTE_ENTRY_H
+#ifndef REMOTE_THEME_MENU_H
+#define REMOTE_THEME_MENU_H
 
-#include "common.h"
-#include "entry.h"
+#include "remote_menu.h"
 
-class RemoteEntry : public Entry {
+class RemoteThemeMenu : public RemoteMenu {
     public:
-        RemoteEntry(int entry_id);
-        std::pair<std::unique_ptr<u8[]>, u32> download_remote_entry(char** filename);
-
-        PreviewImage* load_preview() const;
-
-    private:
-        int entry_id;
+        RemoteThemeMenu() : RemoteMenu("/Themes/", COLOR_THEME_BG, TEXT_THEMEPLAZA_THEME_MODE) { };
 };
 
 #endif

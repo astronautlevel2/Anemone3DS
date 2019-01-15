@@ -26,7 +26,7 @@
 
 #include "menu.h"
 
-MenuBase::MenuBase(const std::string& loading_path, int icon_size, u32 background_color) : background_color(background_color), path(loading_path), icon_size(icon_size)
+MenuBase::MenuBase(const std::string& loading_path, int icon_size, u32 background_color, TextID mode_indicator_id) : background_color(background_color), path(loading_path), icon_size(icon_size), mode_indicator_id(mode_indicator_id)
 {
 
 }
@@ -212,10 +212,9 @@ MenuActionReturn MenuBase::instructions_handle_touch()
 }
 
 Menu::Menu(const std::string& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu):
-MenuBase(loading_path, icon_size, background_color),
+MenuBase(loading_path, icon_size, background_color, mode_indicator_id),
 icons_per_screen(icons_per_screen),
 icons(icons_per_screen*3),
-mode_indicator_id(mode_indicator_id),
 previous_mode_indicator_id(previous_mode_indicator_id),
 next_mode_indicator_id(next_mode_indicator_id)
 {

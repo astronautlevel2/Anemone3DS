@@ -13,7 +13,7 @@ You don't have enough#nthemes selected.
 You have too many themes selected.
 Couldn't download ThemePlaza data.#nMake sure WiFi is on.
 No results for this search.
-ThemePlaza browser doesn't allow badges.
+ThemePlaza browser#ndoesn't allow badges.
 Target is not valid!
 Splashes are disabled in Luma Config
 splash.bin is the wrong size
