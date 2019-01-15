@@ -190,7 +190,7 @@ void RemoteMenu::select_up_entry_internal()
         {
             if(this->entries.size() % 6)
             {
-                if(this->selected_entry > this->entries.size() % 6)
+                if(this->selected_entry >= this->entries.size() % 6)
                     this->selected_entry = this->entries.size() - 6 + this->selected_entry - (this->entries.size() % 6);
                 else
                     this->selected_entry = this->entries.size() - ((this->entries.size() % 6) - this->selected_entry);
