@@ -64,6 +64,10 @@ PreviewImage* RemoteEntry::load_preview() const
     {
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
         const auto& [dl_buf, dl_size] = download_data(get_download_url(THEMEPLAZA_PREVIEW_FORMAT, this->entry_id), INSTALL_LOADING_REMOTE_PREVIEW);
-        return nullptr;
+        std::string full_path = this->path / "preview.png";
+        FILE* fh = fopen(full_path.c_str(), "wb");
+        fwrite(dl_buf.get(), 1, dl_size, fh);
+        fclose(fh);
+        return new(std::nothrow) PreviewImage(dl_buf.get(), dl_size);;
     }
 }
