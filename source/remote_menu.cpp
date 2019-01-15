@@ -105,6 +105,19 @@ RemoteMenu::RemoteMenu(const std::string& loading_path, u32 background_color, Te
     };
 
     this->current_actions.push({normal_actions_down, normal_actions_held});
+
+    static const Instructions normal_actions_instructions{
+        INSTRUCTION_A_FOR_DOWNLOADING,
+        INSTRUCTION_B_FOR_GOING_BACK,
+        INSTRUCTION_X_FOR_EXTRA_MODE,
+        INSTRUCTION_Y_FOR_PREVIEW,
+        INSTRUCTION_UP_TO_MOVE_UP,
+        INSTRUCTION_LEFT_TO_MOVE_LEFT,
+        INSTRUCTION_DOWN_TO_MOVE_DOWN,
+        INSTRUCTION_RIGHT_TO_MOVE_RIGHT,
+    };
+
+    this->instructions_stack.push(&normal_actions_instructions);
 }
 
 void RemoteMenu::load_page()
@@ -174,7 +187,17 @@ void RemoteMenu::select_up_entry_internal()
     if(this->entries.size() > 6)
     {
         if(this->selected_entry < 6)
-            this->selected_entry = this->entries.size() - (6 - this->selected_entry) - 1;
+        {
+            if(this->entries.size() % 6)
+            {
+                if(this->selected_entry > this->entries.size() % 6)
+                    this->selected_entry = this->entries.size() - 6 + this->selected_entry - (this->entries.size() % 6);
+                else
+                    this->selected_entry = this->entries.size() - ((this->entries.size() % 6) - this->selected_entry);
+            }
+            else
+                this->selected_entry = this->entries.size() - (6 - this->selected_entry);
+        }
         else
             this->selected_entry -= 6;
     }
@@ -184,8 +207,13 @@ void RemoteMenu::select_left_entry_internal()
 {
     if(this->entries.size() > 1)
     {
-        if(this->selected_entry % 6 == 0)
+        // If you're on the last row and it's not full, add the row width if you're at the start
+        if(this->selected_entry == this->entries.size() - (this->entries.size() % 6))
+            this->selected_entry += (this->entries.size() % 6 ? (this->entries.size() % 6) : 6) - 1;
+        // otherwise, if you're not on the last row, it has to be a full row, so just add a full row's width if you're at the stat
+        else if(this->selected_entry % 6 == 0)
             this->selected_entry += 6 - 1;
+        // finally, if you're not at the start of any row, just move left
         else
             --this->selected_entry;
     }
@@ -196,7 +224,7 @@ void RemoteMenu::select_down_entry_internal()
     if(this->entries.size() > 6)
     {
         if(this->selected_entry >= this->entries.size() - 6)
-            this->selected_entry = 6 - (this->entries.size() - this->selected_entry);
+            this->selected_entry %= 6;
         else
             this->selected_entry += 6;
     }
@@ -206,8 +234,13 @@ void RemoteMenu::select_right_entry_internal()
 {
     if(this->entries.size() > 1)
     {
-        if(this->selected_entry % 6 == 5)
-            this->selected_entry -= 5;
+        // If you're on the last row and it's not full, subtract the row width if you're at the end
+        if((this->entries.size() < 6 && this->selected_entry == this->entries.size() - 1) || (this->selected_entry >= this->entries.size() - (this->entries.size() % 6) && this->selected_entry % 6 == 6 - (this->entries.size() % 6) - 1))
+            this->selected_entry -= 6 - (this->entries.size() % 6) - 1;
+        // otherwise, if you're not on the last row, it has to be a full row, so just subtract a full row's width if you're at the end
+        else if(this->selected_entry < this->entries.size() - (this->entries.size() % 6) && this->selected_entry % 6 == 6 - 1)
+            this->selected_entry -= 6 - 1;
+        // finally, if you're not at the end of any row, just move right
         else
             ++this->selected_entry;
     }
