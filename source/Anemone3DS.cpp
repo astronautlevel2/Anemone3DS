@@ -208,11 +208,15 @@ void Anemone3DS::handle_action_return(MenuActionReturn action_result)
         std::bind(&Anemone3DS::select_menu, this, MODE_BADGES),
 
         std::bind(&Anemone3DS::enter_browser_mode, this),
+        std::bind(&Anemone3DS::enter_qr_mode, this),
         std::bind(&Anemone3DS::enter_list_mode, this),
 
         std::bind(&Anemone3DS::move_schedule_sleep, this),
         std::bind(&Anemone3DS::installed_a_theme, this),
         std::bind(&Anemone3DS::downloaded_from_tp, this),
+        std::bind(&Anemone3DS::downloaded_from_qr, this, MODE_THEMES),
+        std::bind(&Anemone3DS::downloaded_from_qr, this, MODE_SPLASHES),
+        std::bind(&Anemone3DS::downloaded_from_qr, this, MODE_BADGES),
     };
 
     actions[action_result-1]();
