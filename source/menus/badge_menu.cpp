@@ -118,7 +118,7 @@ struct Badge_Mng_File_dat_s {
     Badge_Layout_Slot_s badge_layout_slot_entries[BADGE_LAYOUT_SLOT_LIMIT];
 };
 
-BadgeMenu::BadgeMenu() : Menu("/Badges/", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, TEXT_NOT_FOUND_SWITCH_TO_THEME, 64, COLOR_BADGE_BG, true)
+BadgeMenu::BadgeMenu() : Menu("/Badges", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, TEXT_NOT_FOUND_SWITCH_TO_THEME, 64, COLOR_BADGE_BG, true)
 {
     const KeysActions normal_actions_down{
         {KEY_A, std::bind(&BadgeMenu::change_to_action_mode, this)},

@@ -31,7 +31,7 @@
 
 class RemoteThemeMenu : public RemoteMenu {
     public:
-        RemoteThemeMenu() : RemoteMenu("/Themes/", COLOR_THEME_BG, TEXT_THEMEPLAZA_THEME_MODE) { };
+        RemoteThemeMenu() : RemoteMenu("/Themes", COLOR_THEME_BG, TEXT_THEMEPLAZA_THEME_MODE) { };
 };
 
 #endif

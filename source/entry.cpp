@@ -100,6 +100,11 @@ EntryIcon* Entry::load_icon() const
     return out;
 }
 
+std::pair<std::unique_ptr<u8[]>, u32> Entry::download_remote_entry(char** filename)
+{
+
+}
+
 PreviewImage* Entry::load_preview() const
 {
     if(this->is_zip && this->path.extension() == ".png")

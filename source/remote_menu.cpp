@@ -82,7 +82,7 @@ void RemoteMenu::calculate_new_scroll()
 
 }
 
-RemoteMenu::RemoteMenu(const std::string& loading_path, u32 background_color, TextID mode_indicator_id) : MenuBase(loading_path, 48, background_color, mode_indicator_id)
+RemoteMenu::RemoteMenu(const fs::path& loading_path, u32 background_color, TextID mode_indicator_id) : MenuBase(loading_path, 48, background_color, mode_indicator_id)
 {
     this->entries.reserve(24);
     this->load_page();
@@ -504,5 +504,19 @@ MenuActionReturn RemoteMenu::change_sort(RemoteSortType new_sort)
 
 MenuActionReturn RemoteMenu::download_entry()
 {
-    return RETURN_DOWNLOADED_FROM_TP;
+    char* filename = nullptr;
+    const auto& [dl_buf, dl_size] = this->entries[this->selected_entry]->download_remote_entry(&filename);
+    if(dl_size)
+    {
+        std::string full_path = this->path / filename;
+        delete[] filename;
+        FILE* fh = fopen(full_path.c_str(), "wb");
+        fwrite(dl_buf.get(), 1, dl_size, fh);
+        fclose(fh);
+        return RETURN_DOWNLOADED_FROM_TP;
+    }
+    else if(filename)
+        delete[] filename;
+
+    return RETURN_NONE;
 }

@@ -34,7 +34,7 @@ static const FS_Path top_splash_path = fsMakePath(PATH_ASCII, "/luma/splash.bin"
 static const FS_Path bottom_splash_path = fsMakePath(PATH_ASCII, "/luma/splashbottom.bin");
 static const FS_Path luma_config_path = fsMakePath(PATH_ASCII, "/luma/config.bin");
 
-SplashMenu::SplashMenu() : Menu("/Splashes/", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUND_SWITCH_TO_THEME, TEXT_NOT_FOUND_SWITCH_TO_BADGE, 48, COLOR_SPLASH_BG)
+SplashMenu::SplashMenu() : Menu("/Splashes", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUND_SWITCH_TO_THEME, TEXT_NOT_FOUND_SWITCH_TO_BADGE, 48, COLOR_SPLASH_BG)
 {
     const KeysActions normal_actions_down{
         {KEY_A, std::bind(&SplashMenu::change_to_action_mode, this)},

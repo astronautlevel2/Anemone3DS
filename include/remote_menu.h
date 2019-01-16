@@ -46,7 +46,7 @@ class RemoteMenu : public MenuBase {
         bool ready = false;
 
     protected:
-        RemoteMenu(const std::string& loading_path, u32 background_color, TextID mode_indicator_id);
+        RemoteMenu(const fs::path& loading_path, u32 background_color, TextID mode_indicator_id);
         void load_page();
         std::array<std::array<std::unique_ptr<EntryIcon>, 6>, 4> icons;
         size_t page = 1;

@@ -31,7 +31,7 @@
 
 class RemoteSplashMenu : public RemoteMenu {
     public:
-        RemoteSplashMenu() : RemoteMenu("/Splashes/", COLOR_SPLASH_BG, TEXT_THEMEPLAZA_SPLASH_MODE) { };
+        RemoteSplashMenu() : RemoteMenu("/Splashes", COLOR_SPLASH_BG, TEXT_THEMEPLAZA_SPLASH_MODE) { };
 };
 
 #endif

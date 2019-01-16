@@ -113,7 +113,7 @@ static std::pair<std::unique_ptr<u8[]>, u32> download_data_internal(const char* 
         return std::make_pair(nullptr, 0);
     }
 
-    while(filename)
+    while(filename && !(*filename))
     {
         char* content_disposition = new char[1024];
         memset(content_disposition, 0, 1024);
@@ -121,42 +121,17 @@ static std::pair<std::unique_ptr<u8[]>, u32> download_data_internal(const char* 
         if(R_FAILED(ret))
         {
             delete[] content_disposition;
-            free(new_url);
             DEBUG("httpcGetResponseHeader, aborting getting filename\n");
             break;
         }
-        DEBUG("content disposition:\n'%s'\n", content_disposition);
-
-        // char * tok = strtok(content_disposition, "\"");
-        // tok = strtok(NULL, "\"");
-
-        // if(!(tok))
-        // {
-            // free(content_disposition);
-            // free(new_url);
-            // free(*buf);
-            // throw_error("Target is not valid!", ERROR_LEVEL_WARNING);
-            // DEBUG("filename\n");
-            // return 0;
-        // }
-
-        // char *illegal_characters = "\"?;:/\\+";
-        // for (size_t i = 0; i < strlen(tok); i++)
-        // {
-            // for (size_t n = 0; n < strlen(illegal_characters); n++)
-            // {
-                // if ((tok)[i] == illegal_characters[n])
-                // {
-                    // (tok)[i] = '-';
-                // }
-            // }
-        // }
-
-        // *filename = new char[1024];
-        // strcpy(*filename, tok);
+        std::string content_disposition_str(content_disposition);
         delete[] content_disposition;
-        
-        break;
+
+        static const std::string searching_for = "filename=";
+        size_t pos = content_disposition_str.find(searching_for) + searching_for.length() + 1;
+        std::string filename_in_str = content_disposition_str.substr(pos, content_disposition_str.length() - pos - 1);
+        *filename = new char[filename_in_str.length() + 1];
+        strcpy(*filename, filename_in_str.c_str());
     }
 
     u8* out = buf ? static_cast<u8*>(buf) : new(std::nothrow) u8[content_size ? content_size : 0x1000];

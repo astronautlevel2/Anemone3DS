@@ -50,6 +50,7 @@ class Entry {
         void draw() const;
 
         EntryIcon* load_icon() const;
+        virtual std::pair<std::unique_ptr<u8[]>, u32> download_remote_entry(char** filename);
         virtual PreviewImage* load_preview() const;
 
         void delete_entry();

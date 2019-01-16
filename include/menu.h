@@ -99,14 +99,14 @@ class MenuBase {
         void draw_instructions();
 
     protected:
-        MenuBase(const std::string& loading_path, int icon_size, u32 background_color, TextID mode_indicator_id);
+        MenuBase(const fs::path& loading_path, int icon_size, u32 background_color, TextID mode_indicator_id);
         std::stack<const Instructions*> instructions_stack;
         void change_selected_entry(int delta);
         MenuActionReturn exit_instructions();
         MenuActionReturn set_instruction_screen_to_left();
         MenuActionReturn set_instruction_screen_to_right();
         MenuActionReturn instructions_handle_touch();
-        std::string path;
+        fs::path path;
         int icon_size;
 
         size_t scroll;
@@ -154,7 +154,7 @@ class Menu : public MenuBase {
         MenuActionReturn change_to_browser_mode();
 
     protected:
-        Menu(const std::string& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu = false);
+        Menu(const fs::path& loading_path, size_t icons_per_screen, TextID mode_indicator_id, TextID previous_mode_indicator_id, TextID next_mode_indicator_id, int icon_size, u32 background_color, bool badge_menu = false);
         void load_icons();
 
         virtual MenuActionReturn change_to_action_mode() = 0;

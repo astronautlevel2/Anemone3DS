@@ -35,7 +35,7 @@ static FS_Path body_path = fsMakePath(PATH_ASCII, "/BodyCache.bin");
 static FS_Path savedata_path = fsMakePath(PATH_ASCII, "/SaveData.dat");
 static FS_Path thememanage_path = fsMakePath(PATH_ASCII, "/ThemeManage.bin");
 
-ThemeMenu::ThemeMenu() : Menu("/Themes/", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWITCH_TO_BADGE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, 48, COLOR_THEME_BG)
+ThemeMenu::ThemeMenu() : Menu("/Themes", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWITCH_TO_BADGE, TEXT_NOT_FOUND_SWITCH_TO_SPLASH, 48, COLOR_THEME_BG)
 {
     const KeysActions normal_actions_down{
         {KEY_A, std::bind(&ThemeMenu::change_to_action_mode, this)},
