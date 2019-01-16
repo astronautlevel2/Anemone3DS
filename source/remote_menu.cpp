@@ -43,6 +43,10 @@ void RemoteMenu::draw()
 
     draw_basic_interface();
 
+    float height;
+    get_text_dimensions(TEXT_GENERAL, TEXT_THEMEPLAZA_SEARCH, nullptr, &height, 0.6f, 0.6f);
+    draw_text(TEXT_GENERAL, TEXT_THEMEPLAZA_SEARCH, COLOR_WHITE, 4, (BARS_SIZE - height)/2.0f, 0.2f, 0.6f, 0.6f);
+
     size_t entries_count = this->entries.size();
     C2D_ImageTint selected_tint;
     C2D_PlainImageTint(&selected_tint, COLOR_WHITE, 0.5f);
@@ -58,7 +62,7 @@ void RemoteMenu::draw()
     }
 
     std::string selected_entry_str = std::to_string(this->page) + "/" + std::to_string(this->page_count);
-    float width, height;
+    float width;
     get_text_dimensions(selected_entry_str, &width, &height, 0.6f, 0.6f);
     float y = 240.0f - BARS_SIZE + (BARS_SIZE - height)/2.0f;
     draw_text(selected_entry_str, COLOR_WHITE, 316 - width, y, 0.2f, 0.6f, 0.6f);
@@ -161,7 +165,6 @@ void RemoteMenu::load_page()
                         draw_loading_bar(i, ids_count, loading_screen);
                         this->entries.push_back(std::make_unique<RemoteEntry>(static_cast<int>(json_integer_value(id))));
                         this->icons[i/6][i%6] = std::unique_ptr<EntryIcon>(this->entries.back()->load_icon());
-                        DEBUG("entry %zd title, author: %s %s\n", i, this->entries.back()->title.c_str(), this->entries.back()->author.c_str());
                     }
                     draw_install(loading_screen);
                     this->ready = true;
@@ -325,14 +328,179 @@ MenuActionReturn RemoteMenu::change_to_next_page()
 
 MenuActionReturn RemoteMenu::change_to_extra_mode()
 {
+    const KeysActions extra_actions_down{
+        {KEY_A, std::bind(&RemoteMenu::open_search, this)},
+        {KEY_B, std::bind(&MenuBase::exit_mode_controls, this)},
+        {KEY_X, std::bind(&RemoteMenu::open_page_jump, this)},
+        {KEY_DUP, std::bind(&RemoteMenu::change_sort, this, SORT_DOWNLOAD_COUNT)},
+        {KEY_DLEFT, std::bind(&RemoteMenu::change_sort, this, SORT_NEWEST)},
+        {KEY_DRIGHT, std::bind(&RemoteMenu::change_sort, this, SORT_LIKE_COUNT)},
+    };
+
+    const KeysActions extra_actions_held{};
+
+    this->current_actions.push({extra_actions_down, extra_actions_held});
+
+    static const Instructions extra_actions_instructions{
+        INSTRUCTION_A_FOR_SEARCHING,
+        INSTRUCTION_B_FOR_GOING_BACK,
+        INSTRUCTION_X_FOR_JUMP_PAGE,
+        INSTRUCTIONS_NONE,
+        INSTRUCTION_UP_TO_SORT_DOWNLOAD_COUNT,
+        INSTRUCTION_LEFT_TO_SORT_NEWEST,
+        INSTRUCTIONS_NONE,
+        INSTRUCTION_RIGHT_TO_SORT_LIKE_COUNT,
+    };
+
+    this->instructions_stack.push(&extra_actions_instructions);
+
     return RETURN_NONE;
 }
 
 MenuActionReturn RemoteMenu::handle_touch()
 {
+    touchPosition touch;
+    hidTouchRead(&touch);
+    u16 bars_size = static_cast<u16>(BARS_SIZE);
+    if(touch.py < bars_size)
+    {
+        static const float width = get_text_width(TEXT_GENERAL, TEXT_THEMEPLAZA_SEARCH, 0.6f);
+        if(touch.px >= 4 && touch.px < 4 + static_cast<u16>(width))
+            this->open_search();
+    }
+    else if(touch.py >= 240 - bars_size)
+    {
+        if(touch.px > 176)
+            this->open_page_jump();
+    }
+    else
+    {
+        if(touch.px >= 16 && touch.px < 320 - 16)
+        {
+            for(int y = 0; y < 4; y++)
+            {
+                for(int x = 0; x < 6; x++)
+                {
+                    u16 actual_y = bars_size + y*this->icon_size;
+                    u16 actual_x = 16 + x*this->icon_size;
+                    if(touch.py >= actual_y && touch.py < actual_y + this->icon_size && touch.px >= actual_x && touch.px < actual_x + this->icon_size)
+                    {
+                        size_t new_selected = y*6 + x;
+                        if(new_selected < this->entries.size())
+                            this->selected_entry = new_selected;
+                        return RETURN_NONE;
+                    }
+                }
+            }
+        }
+    }
+
     return RETURN_NONE;
 }
 
+MenuActionReturn RemoteMenu::open_search()
+{
+    static constexpr int max_chars = 256;
+    char search_value[max_chars + 1] = {0};
+
+    SwkbdState swkbd;
+
+    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
+    swkbdSetHintText(&swkbd, keyboard_shown_text[KEYBOARD_HINT_ENTER_SEARCH]);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, keyboard_shown_text[KEYBOARD_BUTTON_CANCEL], false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, keyboard_shown_text[KEYBOARD_BUTTON_SEARCH], true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
+
+    SwkbdButton button = swkbdInputText(&swkbd, search_value, max_chars);
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        std::string search(search_value, max_chars);
+        if(search != this->search)
+        {
+            std::string previous_search = this->search;
+            size_t previous_page = this->page;
+
+            this->search = search;
+            this->page = 1;
+            this->ready = false;
+            this->load_page();
+            
+            if(!this->ready)
+            {
+                this->search = previous_search;
+                this->page = previous_page;
+                this->ready = true;
+            }
+        }
+    }
+
+    this->exit_mode_controls();
+    return RETURN_NONE;
+}
+
+static SwkbdCallbackResult jump_page_menu_callback(void* page_count, const char** ppMessage, const char* text, size_t textlen)
+{
+    size_t typed_value = strtoul(text, nullptr, 10);
+    if(typed_value > *static_cast<size_t*>(page_count))
+    {
+        *ppMessage = keyboard_shown_text[KEYBOARD_THEMEPLAZA_TOO_HIGH];
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    else if(typed_value == 0)
+    {
+        *ppMessage = keyboard_shown_text[KEYBOARD_THEMEPLAZA_NON_ZERO];
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+MenuActionReturn RemoteMenu::open_page_jump()
+{
+    SwkbdState swkbd;
+
+    size_t page_count = this->page_count;
+    const std::string page_count_str = std::to_string(page_count);
+    swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, page_count_str.length());
+
+    const std::string current_page_str = std::to_string(this->page);
+    char* current_page_char = strdup(current_page_str.c_str());
+    swkbdSetInitialText(&swkbd, current_page_char);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, keyboard_shown_text[KEYBOARD_BUTTON_CANCEL], false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, keyboard_shown_text[KEYBOARD_BUTTON_JUMP], true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, page_count_str.length());
+
+    swkbdSetFilterCallback(&swkbd, jump_page_menu_callback, &page_count);
+
+    char numbuf[8] = {0};
+    SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
+    if(button == SWKBD_BUTTON_CONFIRM)
+    {
+        size_t new_page = strtoul(numbuf, nullptr, 10);
+        if(this->page != new_page)
+        {
+            this->page = new_page;
+            this->load_page();
+        }
+    }
+    free(current_page_char);
+
+    this->exit_mode_controls();
+    return RETURN_NONE;
+}
+
+MenuActionReturn RemoteMenu::change_sort(RemoteSortType new_sort)
+{
+    if(this->sort != new_sort)
+    {
+        this->sort = new_sort;
+        this->page = 1;
+        this->load_page();
+    }
+
+    return RETURN_NONE;
+}
 
 MenuActionReturn RemoteMenu::download_entry()
 {

@@ -75,6 +75,11 @@ class RemoteMenu : public MenuBase {
         MenuActionReturn change_to_extra_mode();
         MenuActionReturn handle_touch();
 
+        MenuActionReturn open_search();
+        MenuActionReturn open_page_jump();
+
+        MenuActionReturn change_sort(RemoteSortType new_sort);
+
         MenuActionReturn download_entry();
 };
 

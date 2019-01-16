@@ -746,8 +746,8 @@ MenuActionReturn Menu::jump_in_selection()
     char* selected_entry_char = strdup(selected_entry_str.c_str());
     swkbdSetInitialText(&swkbd, selected_entry_char);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, keyboard_shown_text[KEYBOARD_BUTTON_CANCEL], false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, keyboard_shown_text[KEYBOARD_BUTTON_JUMP], true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, entries_count_str.length());
 
     swkbdSetFilterCallback(&swkbd, jump_entry_menu_callback, &entries_count);

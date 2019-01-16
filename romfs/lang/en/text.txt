@@ -26,6 +26,7 @@ Sel.
 ThemePlaza Theme mode
 ThemePlaza Splash mode
 Page:
+Search...
 Press #A to quit.
 Press #A to continue.
 Are you sure?

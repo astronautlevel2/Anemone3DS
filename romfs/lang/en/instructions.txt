@@ -25,6 +25,12 @@
 #A to download highlighted
 #Dl to move cursor left
 #Dr to move cursor right
+| ThemePlaza extra mode
+#A to set a search query
+#X to jump pages
+#Du to sort by downloads
+#Dl to sort by newest
+#Dr to sort by likes
 | Theme action mode
 #A to mark for shuffle
 #Du for single install
