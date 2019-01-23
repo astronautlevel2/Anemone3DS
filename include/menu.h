@@ -56,9 +56,6 @@ enum MenuActionReturn {
     RETURN_MOVE_SLEEP,
     RETURN_INSTALLED_THEME,
     RETURN_DOWNLOADED_FROM_TP,
-    RETURN_DOWNLOADED_FROM_QR_THEME,
-    RETURN_DOWNLOADED_FROM_QR_SPLASH,
-    RETURN_DOWNLOADED_FROM_QR_BADGE,
 
     MENU_ACTION_AMOUNT
 };
@@ -99,6 +96,7 @@ class MenuBase {
         void draw_instructions();
 
     protected:
+        MenuBase();
         MenuBase(const fs::path& loading_path, int icon_size, u32 background_color, TextID mode_indicator_id);
         std::stack<const Instructions*> instructions_stack;
         void change_selected_entry(int delta);

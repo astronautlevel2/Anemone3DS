@@ -144,7 +144,7 @@ void Anemone3DS::enter_browser_mode()
 
     if(new_browser_menu && new_browser_menu->ready)
     {
-        std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
+        this->downloaded_any = false;
         this->browser_menu = std::move(new_browser_menu);
         this->current_menu = this->browser_menu.get();
     }
@@ -152,7 +152,12 @@ void Anemone3DS::enter_browser_mode()
 
 void Anemone3DS::enter_qr_mode()
 {
-    std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
+    std::unique_ptr<QrMenu> new_qr_menu = std::make_unique<QrMenu>();
+    if(new_qr_menu->ready)
+    {
+        this->qr_menu = std::move(new_qr_menu);
+        this->current_menu = this->qr_menu.get();
+    }
 }
 
 void Anemone3DS::enter_list_mode()
@@ -160,15 +165,16 @@ void Anemone3DS::enter_list_mode()
     if(this->browser_menu)
     {
         this->browser_menu = nullptr;
-        if(this->downloaded_any[this->selected_menu])
+        if(this->downloaded_any)
             this->reload_menu(static_cast<MenuType>(this->selected_menu));
     }
     else if(this->qr_menu)
     {
+        auto downloaded_any_modes = this->qr_menu->downloaded_any;
         this->qr_menu = nullptr;
         for(size_t i = 0; i < MODES_AMOUNT; i++)
         {
-            if(this->downloaded_any[i])
+            if(downloaded_any_modes[i])
                 this->reload_menu(static_cast<MenuType>(i));
         }
     }
@@ -190,12 +196,7 @@ void Anemone3DS::installed_a_theme()
 
 void Anemone3DS::downloaded_from_tp()
 {
-    this->downloaded_any[this->selected_menu] = true;
-}
-
-void Anemone3DS::downloaded_from_qr(MenuType menu)
-{
-    this->downloaded_any[menu] = true;
+    this->downloaded_any = true;
 }
 
 void Anemone3DS::handle_action_return(MenuActionReturn action_result)
@@ -214,9 +215,6 @@ void Anemone3DS::handle_action_return(MenuActionReturn action_result)
         std::bind(&Anemone3DS::move_schedule_sleep, this),
         std::bind(&Anemone3DS::installed_a_theme, this),
         std::bind(&Anemone3DS::downloaded_from_tp, this),
-        std::bind(&Anemone3DS::downloaded_from_qr, this, MODE_THEMES),
-        std::bind(&Anemone3DS::downloaded_from_qr, this, MODE_SPLASHES),
-        std::bind(&Anemone3DS::downloaded_from_qr, this, MODE_BADGES),
     };
 
     actions[action_result-1]();
@@ -272,7 +270,8 @@ void Anemone3DS::exit_threads()
 
 void Anemone3DS::exit_menus()
 {
-    // this->browser_menu = nullptr;
+    this->qr_menu = nullptr;
+    this->browser_menu = nullptr;
 
     for(auto& menu : this->menus)
         menu = nullptr;
@@ -440,7 +439,8 @@ void Anemone3DS::update()
         }
     }
 
-    this->draw();
+    if(!this->qr_menu)
+        this->draw();
 
     if(this->current_menu->should_scroll)
     {
@@ -453,7 +453,7 @@ void Anemone3DS::update()
 
     if(this->sleep_scheduled)
     {
-        svcSleepThread(100 * 1000 * 1000);
+        svcSleepThread(150 * 1000 * 1000);
         this->sleep_scheduled = false;
     }
 
@@ -467,7 +467,7 @@ void Anemone3DS::update()
         running = false;
         return;
     }
-    else if(kDown & KEY_SELECT && !this->current_menu->in_preview())
+    else if(kDown & KEY_SELECT && !this->current_menu->in_preview() && !this->qr_menu)
     {
         this->current_menu->toggle_instructions_mode();
         return;

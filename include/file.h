@@ -54,8 +54,8 @@ bool file_to_buf(FS_Path path, Archive archive, void* buf, u32 wanted_size = 0);
 std::pair<std::unique_ptr<char[]>, u64> zip_file_to_buf(const char* filename, const std::string& zip_path, u32 wanted_size = 0);
 bool zip_file_to_buf(const char* filename, const std::string& zip_path, void* buf, u32 wanted_size = 0);
 
-bool check_file_is_zip(const void* zip_buf, size_t zip_size);
-bool check_file_in_zip(const void* zip_buf, size_t zip_size, const char* filename);
+bool check_file_is_zip(void* zip_buf, size_t zip_size);
+bool check_file_in_zip(void* zip_buf, size_t zip_size, const char* filename);
 
 Result buf_to_file(FS_Path path, Archive archive, u32 size, const void* buf);
 // If you pass a buffer, it will write it directly instead of wasting time clearing the file first and you having to call buf_to_file after

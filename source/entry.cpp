@@ -102,7 +102,7 @@ EntryIcon* Entry::load_icon() const
 
 std::pair<std::unique_ptr<u8[]>, u32> Entry::download_remote_entry(char** filename)
 {
-
+    return std::make_pair(nullptr, 0);
 }
 
 PreviewImage* Entry::load_preview() const

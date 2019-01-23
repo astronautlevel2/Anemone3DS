@@ -26,6 +26,11 @@
 
 #include "menu.h"
 
+MenuBase::MenuBase()
+{
+
+}
+
 MenuBase::MenuBase(const fs::path& loading_path, int icon_size, u32 background_color, TextID mode_indicator_id) : background_color(background_color), path(loading_path), icon_size(icon_size), mode_indicator_id(mode_indicator_id)
 {
 

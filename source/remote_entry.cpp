@@ -68,6 +68,6 @@ PreviewImage* RemoteEntry::load_preview() const
         FILE* fh = fopen(full_path.c_str(), "wb");
         fwrite(dl_buf.get(), 1, dl_size, fh);
         fclose(fh);
-        return new(std::nothrow) PreviewImage(dl_buf.get(), dl_size);;
+        return new(std::nothrow) PreviewImage(dl_buf.get(), dl_size);
     }
 }

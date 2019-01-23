@@ -24,64 +24,31 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef ANEMONE3DS_H
-#define ANEMONE3DS_H
+#ifndef CAMERA_H
+#define CAMERA_H
 
 #include "common.h"
 #include "menu.h"
-#include "remote_menu.h"
-#include "camera.h"
 
-class Anemone3DS
-{
+extern "C" {
+#include "quirc.h"
+}
+
+class QrMenu : public MenuBase {
     public:
-        Anemone3DS();
-        ~Anemone3DS();
+        QrMenu();
+        ~QrMenu();
 
-        void update();
-
-        void scroll_thread_function();
-
-    private:
-        void init_services();
-        void init_menus();
-        void init_threads();
-
-        void exit_threads();
-        void exit_menus();
-        void exit_services();
-
+        void calculate_new_scroll();
         void draw();
 
-        void reload_menu(MenuType menu);
+        bool ready = false;
 
-        void select_previous_menu();
-        void select_next_menu();
-        void select_menu(MenuType menu);
-        void move_schedule_sleep();
-        void set_menu();  // Actually sets the current menu
-        void enter_browser_mode();
-        void enter_qr_mode();
-        void enter_list_mode();
-        void installed_a_theme();
-        void downloaded_from_tp();
-        void handle_action_return(MenuActionReturn action_result);
+        std::array<bool, MODES_AMOUNT> downloaded_any;
 
-        bool installed_theme, running_from_hax;
-
-        MenuBase* current_menu = nullptr;
-
-        size_t selected_menu;
-        std::array<std::unique_ptr<Menu>, MODES_AMOUNT> menus;
-
-        std::unique_ptr<RemoteMenu> browser_menu;
-        std::unique_ptr<QrMenu> qr_menu;
-        bool downloaded_any;
-
-        bool sleep_scheduled = false;
-        Thread scroll_thread;
-
-        u32 old_time_limit;
+    private:
+        quirc* context;
+        Thread capture_cam, update_ui;
 };
 
 #endif
