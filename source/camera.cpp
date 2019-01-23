@@ -157,6 +157,8 @@ QrMenu::QrMenu()
     quirc_resize(this->context, 400, 240);
     std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
 
+    camera_buffer = new u16[400 * 240];
+
     svcCreateMutex(&camera_mutex, false);
     svcCreateMutex(&draw_mutex, false);
     svcCreateEvent(&cancel_event, RESET_STICKY);
