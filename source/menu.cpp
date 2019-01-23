@@ -717,7 +717,7 @@ MenuActionReturn Menu::change_to_extra_mode()
 
 MenuActionReturn Menu::change_to_qr_scanner()
 {
-    return RETURN_NONE;
+    return RETURN_CHANGE_TO_QR_MODE;
 }
 
 static SwkbdCallbackResult jump_entry_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
