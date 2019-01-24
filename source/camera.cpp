@@ -73,23 +73,15 @@ static void capture_cam_thread(void* void_arg)
                 cancel = true;
                 break;
             case 1:
-                DEBUG("capture_cam_thread camera event received\n");
                 svcCloseHandle(events[1]);
                 events[1] = 0;
-
                 LightLock_Lock(&camera_buffer_mutex);
                 memcpy(camera_buffer, buffer, 400 * 240 * sizeof(u16));
-
-                DEBUG("capture_cam_thread signalling draw event\n");
                 LightEvent_Signal(&camera_received_event);
-
-                DEBUG("capture_cam_thread releasing camera buffer mutex\n");
                 LightLock_Unlock(&camera_buffer_mutex);
-
                 CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
                 break;
             case 2:
-                DEBUG("capture_cam_thread camera error event received\n");
                 svcCloseHandle(events[1]);
                 events[1] = 0;
                 CAMU_ClearBuffer(PORT_CAM1);
@@ -129,20 +121,17 @@ static void update_ui_thread(void* void_arg)
     C3D_TexInit(tex, 512, 256, GPU_RGB565);
     C3D_TexSetFilter(tex, GPU_LINEAR, GPU_LINEAR);
 
-    static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f / 512.0f, 1.0f - (240.0f / 512.0f)};
+    static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f / 512.0f, 1.0f - (240.0f / 256.0f)};
     C2D_Image image = {tex, &subt3x};
 
     while(!finished)
     {
-        DEBUG("update_ui_thread waiting for draw event\n");
         // Untiled texture loading code adapted from FBI
         LightEvent_Wait(&camera_received_event);
-        DEBUG("update_ui_thread received draw event\n");
         LightLock_Lock(&camera_buffer_mutex);
-        DEBUG("update_ui_thread tiling captured image\n");
-        for(u32 x = 0; x < 400; x++)
+        for(u32 x = 0; x < 400 && !finished; x++)
         {
-            for(u32 y = 0; y < 240; y++)
+            for(u32 y = 0; y < 240 && !finished; y++)
             {
                 u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3)));
                 u32 srcPos = (y * 400) + x;
@@ -152,11 +141,13 @@ static void update_ui_thread(void* void_arg)
         }
         LightLock_Unlock(&camera_buffer_mutex);
 
+        if(finished)
+            continue;
+
         LightLock_Lock(&draw_mutex);
-        DEBUG("update_ui_thread drawing captured image\n");
         start_frame(-1);
         switch_screen(GFX_TOP);
-        C2D_DrawImageAt(image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
+        C2D_DrawImageAt(image, 0.0f, 0.0f, 0.0f);
 
         switch_screen(GFX_BOTTOM);
         C2D_DrawRectSolid(0.0f, 0.0f, 0.0f, 320.0f, BARS_SIZE, COLOR_BARS);
@@ -281,12 +272,14 @@ void QrMenu::scan()
     int w;
     int h;
     u8* image = (u8*) quirc_begin(this->context, &w, &h);
+    LightLock_Lock(&camera_buffer_mutex);
     for (ssize_t x = 0; x < w && x < 400; x++) {
         for (ssize_t y = 0; y < h && y < 240; y++) {
             u16 px = camera_buffer[y * 400 + x];
             image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
     }
+    LightLock_Unlock(&camera_buffer_mutex);
     quirc_end(this->context);
 
     if(quirc_count(this->context) > 0)
@@ -299,6 +292,7 @@ void QrMenu::scan()
             LightLock_Lock(&draw_mutex);
             draw_install(INSTALL_DOWNLOAD);
             char* filename = nullptr;
+            DEBUG("payload: %s\n", (char*)scan_data.payload);
             const auto& [zip_buf, zip_size] = download_data((char*)scan_data.payload, INSTALL_DOWNLOAD, &filename);
             if(zip_size != 0)
             {
