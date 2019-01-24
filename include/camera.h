@@ -41,6 +41,7 @@ class QrMenu : public MenuBase {
 
         void calculate_new_scroll();
         void draw();
+        void scan();
 
         bool ready = false;
 

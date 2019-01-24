@@ -292,12 +292,11 @@ void Anemone3DS::exit_services()
 Anemone3DS::Anemone3DS()
 {
     this->installed_theme = false;
-    this->running_from_hax = false;
     if(envIsHomebrew())
     {
         s64 out;
         svcGetSystemInfo(&out, 0x10000, 0);
-        this->running_from_hax = !out;
+        running_from_hax = !out;
         Handle hbldr_handle;
         have_luma = R_SUCCEEDED(svcConnectToPort(&hbldr_handle, "hb:ldr"));
         svcCloseHandle(hbldr_handle);
@@ -306,7 +305,7 @@ Anemone3DS::Anemone3DS()
     this->init_services();
 
     DEBUG("Have luma: %s\n", have_luma ? "Yes" : "No");
-    DEBUG("Running under *hax: %s\n", this->running_from_hax ? "Yes" : "No");
+    DEBUG("Running under *hax: %s\n", running_from_hax ? "Yes" : "No");
 
     open_archives();
     init_screens();
@@ -358,7 +357,7 @@ Anemone3DS::~Anemone3DS()
 
     if(this->installed_theme && !power_pressed)
     {
-        if(this->running_from_hax)
+        if(running_from_hax)
         {
             APT_HardwareResetAsync();
         }
@@ -439,7 +438,9 @@ void Anemone3DS::update()
         }
     }
 
-    if(!this->qr_menu)
+    if(this->qr_menu)
+        this->qr_menu->scan();
+    else
         this->draw();
 
     if(this->current_menu->should_scroll)

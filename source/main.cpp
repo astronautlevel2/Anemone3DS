@@ -39,6 +39,7 @@ bool have_sound = false;
 bool running = true;
 bool power_pressed = true;
 bool have_luma = true;
+bool running_from_hax = false;
 
 int main(int argc, char* argv[])
 {

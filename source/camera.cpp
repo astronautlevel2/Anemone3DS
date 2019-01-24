@@ -29,16 +29,21 @@
 #include "draw.h"
 #include "network.h"
 
-static Handle camera_mutex, draw_mutex, cancel_event, started_camera_event;
+static bool inited_light = false;
+static LightLock camera_buffer_mutex, draw_mutex;
+static LightEvent started_camera_event, camera_received_event;
+static Handle cancel_event;
 static u16* camera_buffer = nullptr;
+static volatile bool finished = false;
 
 static void capture_cam_thread(void* void_arg)
 {
+    DEBUG("capture_cam_thread start\n");
     Handle events[3] = {0};
     events[0] = cancel_event;
     u32 transferUnit;
 
-    u16* buffer = new u16[400 * 240];
+    u16* buffer = new(std::nothrow) u16[400 * 240];
     camInit();
     CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
     CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
@@ -55,26 +60,36 @@ static void capture_cam_thread(void* void_arg)
     CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), (s16)transferUnit);
     CAMU_StartCapture(PORT_CAM1);
 
-    svcSignalEvent(started_camera_event);
+    LightEvent_Signal(&started_camera_event);
     bool cancel = false;
     while(!cancel) 
     {
         s32 index = 0;
         svcWaitSynchronizationN(&index, events, 3, false, U64_MAX);
-        switch(index) {
+        switch(index)
+        {
             case 0:
-                DEBUG("Cancel event received\n");
+                DEBUG("capture_cam_thread Cancel event received\n");
                 cancel = true;
                 break;
             case 1:
+                DEBUG("capture_cam_thread camera event received\n");
                 svcCloseHandle(events[1]);
                 events[1] = 0;
-                svcWaitSynchronization(camera_mutex, U64_MAX);
+
+                LightLock_Lock(&camera_buffer_mutex);
                 memcpy(camera_buffer, buffer, 400 * 240 * sizeof(u16));
-                svcReleaseMutex(camera_mutex);
+
+                DEBUG("capture_cam_thread signalling draw event\n");
+                LightEvent_Signal(&camera_received_event);
+
+                DEBUG("capture_cam_thread releasing camera buffer mutex\n");
+                LightLock_Unlock(&camera_buffer_mutex);
+
                 CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
                 break;
             case 2:
+                DEBUG("capture_cam_thread camera error event received\n");
                 svcCloseHandle(events[1]);
                 events[1] = 0;
                 CAMU_ClearBuffer(PORT_CAM1);
@@ -82,6 +97,7 @@ static void capture_cam_thread(void* void_arg)
                 CAMU_StartCapture(PORT_CAM1);
                 break;
             default:
+                DEBUG("capture_cam_thread wtaf\n");
                 break;
         }
     }
@@ -98,10 +114,17 @@ static void capture_cam_thread(void* void_arg)
     delete[] buffer;
     svcCloseHandle(events[1]);
     svcCloseHandle(events[2]);
+
+    finished = true;
+    LightLock_Lock(&camera_buffer_mutex);
+    LightEvent_Signal(&camera_received_event);
+    LightLock_Unlock(&camera_buffer_mutex);
+    DEBUG("capture_cam_thread end\n");
 }
 
 static void update_ui_thread(void* void_arg)
 {
+    DEBUG("update_ui_thread start\n");
     C3D_Tex* tex = new(std::nothrow) C3D_Tex;
     C3D_TexInit(tex, 512, 256, GPU_RGB565);
     C3D_TexSetFilter(tex, GPU_LINEAR, GPU_LINEAR);
@@ -109,18 +132,14 @@ static void update_ui_thread(void* void_arg)
     static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f / 512.0f, 1.0f - (240.0f / 512.0f)};
     C2D_Image image = {tex, &subt3x};
 
-    Handle handles[] = {
-        cancel_event,
-        camera_mutex,
-    };
-    while(true)
+    while(!finished)
     {
-        s32 index = 0;
-        svcWaitSynchronizationN(&index, handles, 2, false, U64_MAX);
-        if(index == 0)
-            break;
-
+        DEBUG("update_ui_thread waiting for draw event\n");
         // Untiled texture loading code adapted from FBI
+        LightEvent_Wait(&camera_received_event);
+        DEBUG("update_ui_thread received draw event\n");
+        LightLock_Lock(&camera_buffer_mutex);
+        DEBUG("update_ui_thread tiling captured image\n");
         for(u32 x = 0; x < 400; x++)
         {
             for(u32 y = 0; y < 240; y++)
@@ -131,10 +150,10 @@ static void update_ui_thread(void* void_arg)
                 memcpy(static_cast<u16*>(tex->data) + dstPos, camera_buffer + srcPos, sizeof(u16));
             }
         }
+        LightLock_Unlock(&camera_buffer_mutex);
 
-        svcReleaseMutex(camera_mutex);
-
-        svcWaitSynchronization(draw_mutex, U64_MAX);
+        LightLock_Lock(&draw_mutex);
+        DEBUG("update_ui_thread drawing captured image\n");
         start_frame(-1);
         switch_screen(GFX_TOP);
         C2D_DrawImageAt(image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
@@ -144,55 +163,85 @@ static void update_ui_thread(void* void_arg)
         C2D_DrawRectSolid(0.0f, 240.0f - BARS_SIZE, 0.0f, 320.0f, BARS_SIZE, COLOR_BARS);
         // draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
         end_frame();
-        svcReleaseMutex(draw_mutex);
+        LightLock_Unlock(&draw_mutex);
     }
 
     C3D_TexDelete(tex);
     delete tex;
+    DEBUG("update_ui_thread end\n");
 }
 
 QrMenu::QrMenu()
 {
-    this->context = quirc_new();
-    quirc_resize(this->context, 400, 240);
-    std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
+    DEBUG("QrMenu::QrMenu\n");
+    draw_install(INSTALL_ENTERING_QR);
+    if(R_SUCCEEDED(camInit()))
+    {
+        camExit();
+        u32 out;
+        ACU_GetWifiStatus(&out);
+        if(out)
+        {
+            finished = false;
 
-    camera_buffer = new u16[400 * 240];
+            this->context = quirc_new();
+            quirc_resize(this->context, 400, 240);
+            std::fill(this->downloaded_any.begin(), this->downloaded_any.end(), false);
 
-    svcCreateMutex(&camera_mutex, false);
-    svcCreateMutex(&draw_mutex, false);
-    svcCreateEvent(&cancel_event, RESET_STICKY);
-    svcCreateEvent(&started_camera_event, RESET_ONESHOT);
-    this->update_ui = this->capture_cam = NULL;
-    if((this->capture_cam = threadCreate(capture_cam_thread, nullptr, 0x10000, 0x1A, 1, false)) == NULL)
-        return;
-    svcWaitSynchronization(started_camera_event, U64_MAX);
-    if((this->update_ui = threadCreate(update_ui_thread, nullptr, 0x10000, 0x1A, 1, true)) == NULL)
-        return;
-    svcCloseHandle(started_camera_event);
+            camera_buffer = new(std::nothrow) u16[400 * 240];
+            std::fill(camera_buffer, camera_buffer + (400 * 240), 0);
 
-    const KeysActions normal_actions_down{
-        {KEY_B, [](){ return RETURN_CHANGE_TO_LIST_MODE; }},
-    };
+            if(!inited_light)
+            {
+                inited_light = true;
+                LightLock_Init(&camera_buffer_mutex);
+                LightLock_Init(&draw_mutex);
+                LightEvent_Init(&camera_received_event, RESET_ONESHOT);
+                LightEvent_Init(&started_camera_event, RESET_ONESHOT);
+            }
+            svcCreateEvent(&cancel_event, RESET_STICKY);
+            this->update_ui = this->capture_cam = NULL;
+            if((this->capture_cam = threadCreate(capture_cam_thread, nullptr, 0x10000, 0x1A, 1, false)) == NULL)
+                return;
+            LightEvent_Wait(&started_camera_event);
+            if((this->update_ui = threadCreate(update_ui_thread, nullptr, 0x10000, 0x1A, 1, false)) == NULL)
+                return;
 
-    const KeysActions normal_actions_held{};
+            const KeysActions normal_actions_down{
+                {KEY_B, [](){ return RETURN_CHANGE_TO_LIST_MODE; }},
+            };
 
-    this->current_actions.push({normal_actions_down, normal_actions_held});
+            const KeysActions normal_actions_held{};
 
-    static const Instructions normal_actions_instructions{
-        INSTRUCTIONS_NONE,
-        INSTRUCTION_B_FOR_GOING_BACK,
-        INSTRUCTIONS_NONE,
-        INSTRUCTIONS_NONE,
-        INSTRUCTIONS_NONE,
-        INSTRUCTIONS_NONE,
-        INSTRUCTIONS_NONE,
-        INSTRUCTIONS_NONE,
-    };
+            this->current_actions.push({normal_actions_down, normal_actions_held});
 
-    this->instructions_stack.push(&normal_actions_instructions);
+            static const Instructions normal_actions_instructions{
+                INSTRUCTIONS_NONE,
+                INSTRUCTION_B_FOR_GOING_BACK,
+                INSTRUCTIONS_NONE,
+                INSTRUCTIONS_NONE,
+                INSTRUCTIONS_NONE,
+                INSTRUCTIONS_NONE,
+                INSTRUCTIONS_NONE,
+                INSTRUCTIONS_NONE,
+            };
 
-    this->ready = true;
+            this->instructions_stack.push(&normal_actions_instructions);
+
+            this->ready = true;
+        }
+        else
+        {
+            draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_NO_WIFI_QR);
+        }
+    }
+    else
+    {
+        if(running_from_hax)
+            draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_NO_QR_HBL);
+        else
+            draw_error(ERROR_LEVEL_ERROR, ERROR_TYPE_OTHER_QR_ERROR);
+    }
 }
 
 QrMenu::~QrMenu()
@@ -224,6 +273,11 @@ void QrMenu::calculate_new_scroll()
 
 void QrMenu::draw()
 {
+
+}
+
+void QrMenu::scan()
+{
     int w;
     int h;
     u8* image = (u8*) quirc_begin(this->context, &w, &h);
@@ -242,7 +296,7 @@ void QrMenu::draw()
         quirc_extract(this->context, 0, &code);
         if(!quirc_decode(&code, &scan_data))
         {
-            svcWaitSynchronization(draw_mutex, U64_MAX);
+            LightLock_Lock(&draw_mutex);
             draw_install(INSTALL_DOWNLOAD);
             char* filename = nullptr;
             const auto& [zip_buf, zip_size] = download_data((char*)scan_data.payload, INSTALL_DOWNLOAD, &filename);
@@ -284,7 +338,7 @@ void QrMenu::draw()
             {
                 draw_error(ERROR_LEVEL_WARNING, ERROR_TYPE_DOWNLOAD_FAILED);
             }
-            svcReleaseMutex(draw_mutex);
+            LightLock_Unlock(&draw_mutex);
 
             if(filename)
                 delete[] filename;

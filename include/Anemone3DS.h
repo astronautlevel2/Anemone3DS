@@ -67,7 +67,7 @@ class Anemone3DS
         void downloaded_from_tp();
         void handle_action_return(MenuActionReturn action_result);
 
-        bool installed_theme, running_from_hax;
+        bool installed_theme;
 
         MenuBase* current_menu = nullptr;
 
