@@ -113,10 +113,11 @@ PreviewImage* Entry::load_preview() const
     }
     else
     {
-        const auto& [png_buf, png_size] = this->get_file("preview.png");
+        auto [png_buf, png_size] = this->get_file("preview.png");
         if(png_size)
         {
-            PreviewImage* preview = new(std::nothrow) PreviewImage(png_buf.get(), png_size);
+            auto [bgm_buf, bgm_size] = this->get_file("bgm.ogg");
+            PreviewImage* preview = new(std::nothrow) PreviewImage(png_buf.get(), png_size, bgm_buf, bgm_size);
             return preview;
         }
         else

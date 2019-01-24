@@ -24,32 +24,43 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef PREVIEW_H
-#define PREVIEW_H
+#ifndef MUSIC_H
+#define MUSIC_H
 
 #include "common.h"
-#include "music.h"
 
-struct PreviewImage {
-    bool ready = false;
+#include <tremor/ivorbisfile.h>
+#include <tremor/ivorbiscodec.h>
 
-    PreviewImage(void* png_buf, u32 png_size, std::unique_ptr<char[]>& ogg_buf, u32 ogg_size);
-    PreviewImage(void* png_buf, u32 png_size, std::unique_ptr<u8[]>& ogg_buf, u32 ogg_size);
-    ~PreviewImage();
-    virtual void draw() const;
+class MusicBase {
+    public:
+        ~MusicBase();
 
-protected:
-    PreviewImage();
-    C2D_Image* image;
+        bool ready = false;
+        FILE* fh;
+        LightEvent stop_event;
 
-private:
-    PreviewImage(void* png_buf, u32 png_size);
-    std::unique_ptr<MusicBase> bgm;
+    protected:
+        MusicBase(FILE* fh);
+
+    private:
+        Thread bgm_thread = NULL;
 };
 
-struct BadgePreviewImage : PreviewImage{
-    BadgePreviewImage(const fs::path& path);
-    void draw() const;
+class MusicFile : public MusicBase {
+    public:
+        MusicFile(std::unique_ptr<char[]>& ogg_buf, u32 ogg_size);
+
+    private:
+        std::unique_ptr<char[]> ogg_buf;
+};
+
+class MusicDownloaded : public MusicBase {
+    public:
+        MusicDownloaded(std::unique_ptr<u8[]>& ogg_buf, u32 ogg_size);
+
+    private:
+        std::unique_ptr<u8[]> ogg_buf;
 };
 
 #endif

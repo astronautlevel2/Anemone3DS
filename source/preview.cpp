@@ -138,6 +138,26 @@ PreviewImage::PreviewImage(void* png_buf, u32 png_size) : PreviewImage()
     this->ready = true;
 }
 
+PreviewImage::PreviewImage(void* png_buf, u32 png_size, std::unique_ptr<char[]>& ogg_buf, u32 ogg_size) : PreviewImage(png_buf, png_size)
+{
+    if(ogg_buf)
+    {
+        auto temp_bgm = std::make_unique<MusicFile>(ogg_buf, ogg_size);
+        if(temp_bgm->ready)
+            this->bgm = std::move(temp_bgm);
+    }
+}
+
+PreviewImage::PreviewImage(void* png_buf, u32 png_size, std::unique_ptr<u8[]>& ogg_buf, u32 ogg_size) : PreviewImage(png_buf, png_size)
+{
+    if(ogg_buf)
+    {
+        auto temp_bgm = std::make_unique<MusicDownloaded>(ogg_buf, ogg_size);
+        if(temp_bgm->ready)
+            this->bgm = std::move(temp_bgm);
+    }
+}
+
 PreviewImage::~PreviewImage()
 {
     C3D_TexDelete(this->image->tex);

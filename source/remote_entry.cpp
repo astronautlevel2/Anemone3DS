@@ -43,7 +43,7 @@ RemoteEntry::RemoteEntry(int entry_id) : Entry(fs::path("/3ds") / APP_TITLE / "c
             fclose(fh);
         }
     }
-    
+
     this->load_meta(icon);
 }
 
@@ -55,19 +55,31 @@ std::pair<std::unique_ptr<u8[]>, u32> RemoteEntry::download_remote_entry(char** 
 
 PreviewImage* RemoteEntry::load_preview() const
 {
-    const auto& [file_buf, file_size] = this->get_file("preview.png");
+    auto [file_buf, file_size] = this->get_file("preview.png");
     if(file_size)
     {
-        return new(std::nothrow) PreviewImage(file_buf.get(), file_size);
+        auto [bgm_buf, bgm_size] = this->get_file("bgm.ogg");
+        return new(std::nothrow) PreviewImage(file_buf.get(), file_size, bgm_buf, bgm_size);
     }
     else
     {
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
-        const auto& [dl_buf, dl_size] = download_data(get_download_url(THEMEPLAZA_PREVIEW_FORMAT, this->entry_id), INSTALL_LOADING_REMOTE_PREVIEW);
+        auto [png_dl_buf, png_dl_size] = download_data(get_download_url(THEMEPLAZA_PREVIEW_FORMAT, this->entry_id), INSTALL_LOADING_REMOTE_PREVIEW);
         std::string full_path = this->path / "preview.png";
         FILE* fh = fopen(full_path.c_str(), "wb");
-        fwrite(dl_buf.get(), 1, dl_size, fh);
+        fwrite(png_dl_buf.get(), 1, png_dl_size, fh);
         fclose(fh);
-        return new(std::nothrow) PreviewImage(dl_buf.get(), dl_size);
+
+        draw_install(INSTALL_LOADING_REMOTE_BGM);
+        auto [bgm_dl_buf, bgm_dl_size] = download_data(get_download_url(THEMEPLAZA_BGM_FORMAT, this->entry_id), INSTALL_LOADING_REMOTE_PREVIEW);
+        if(bgm_dl_buf)
+        {
+            std::string full_path = this->path / "bgm.ogg";
+            FILE* fh = fopen(full_path.c_str(), "wb");
+            fwrite(bgm_dl_buf.get(), 1, bgm_dl_size, fh);
+            fclose(fh);
+        }
+
+        return new(std::nothrow) PreviewImage(png_dl_buf.get(), png_dl_size, bgm_dl_buf, bgm_dl_size);
     }
 }

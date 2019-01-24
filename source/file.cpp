@@ -331,7 +331,7 @@ void remake_file(FS_Path path, Archive archive, u32 size, const void* buf)
     }
     FSUSER_CreateFile(actual_archive, path, 0, size);
     char* empty_buf = buf ? nullptr : new(std::nothrow) char[size];
-    if(buf)
+    if(empty_buf)
     {
         memset(empty_buf, 0, size);
         buf_to_file(path, archive, size, empty_buf);

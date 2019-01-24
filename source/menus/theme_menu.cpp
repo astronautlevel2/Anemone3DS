@@ -143,9 +143,7 @@ MenuActionReturn ThemeMenu::mark_entry()
 
 MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, bool shuffle)
 {
-    DEBUG("1\n");
     this->exit_mode_controls();
-    DEBUG("2\n");
     std::vector<Entry*> entries_to_install;
     if(shuffle)
     {
@@ -179,7 +177,6 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
     else
         entries_to_install.push_back(this->entries[this->selected_entry].get());
 
-    DEBUG("3\n");
     if(!shuffle)
     {
         if(install_body && install_bgm)
@@ -191,7 +188,6 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
         else
             svcBreak(USERBREAK_PANIC);
     }
-    DEBUG("4\n");
 
     size_t i = 0;
     Handle shuffle_install_file;
@@ -201,13 +197,11 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
     u32 music_sizes[SHUFFLE_MAX] = {0};
     char to_append[3] = "_0";
 
-    DEBUG("5\n");
     if(shuffle)
     {
         remake_file(body_rd_path, THEME_EXTDATA, BODY_CACHE_SIZE * SHUFFLE_MAX);
         file_open(body_rd_path, THEME_EXTDATA, &shuffle_install_file, FS_OPEN_WRITE);
     }
-    DEBUG("6\n");
 
     for(Entry* marked_entry : entries_to_install)
     {
@@ -277,7 +271,6 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
             marked_entry->state = Entry::STATE_NONE;
     }
 
-    DEBUG("7\n");
     delete[] padded_body;
     delete[] padded_bgm;
 
@@ -303,7 +296,7 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
             u32 shuffle_body_sizes[SHUFFLE_MAX];
             u32 shuffle_music_sizes[SHUFFLE_MAX];
 
-            u8 _padding2[0x800 - sizeof(u32)*SHUFFLE_MAX*2 - 0x338 - 8*sizeof(u32)];
+            u8 _padding2[0x458];
         };
 
         DEBUG("ThemeManage_bin_s: %zx\n", sizeof(ThemeManage_bin_s));
