@@ -37,11 +37,12 @@ class MusicBase {
         ~MusicBase();
 
         bool ready = false;
-        FILE* fh;
-        LightEvent stop_event;
+        void* buf;
+        u32 size;
+        LightEvent stop_event, ready_or_not_event;
 
     protected:
-        MusicBase(FILE* fh);
+        MusicBase(void* buf, u32 size);
 
     private:
         Thread bgm_thread = NULL;

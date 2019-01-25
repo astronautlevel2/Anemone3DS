@@ -296,7 +296,7 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
             u32 shuffle_body_sizes[SHUFFLE_MAX];
             u32 shuffle_music_sizes[SHUFFLE_MAX];
 
-            u8 _padding2[0x458];
+            u8 _padding2[0x478];
         };
 
         DEBUG("ThemeManage_bin_s: %zx\n", sizeof(ThemeManage_bin_s));

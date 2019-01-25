@@ -26,16 +26,27 @@
 
 #include "music.h"
 
-#define BUF_TO_READ 40960 // How much data should be buffered at a time
+#define BUF_TO_READ 0x1000 // How much data should be buffered at a time
 
 static void decode_thread(void* arg)
 {
     MusicBase* this_ = static_cast<MusicBase*>(arg);
+
+    FILE* fh = fmemopen(this_->buf, this_->size, "rb");
+    if(!fh)
+    {
+        DEBUG("MusicBase fmemopen failed!\n");
+        LightEvent_Signal(&this_->ready_or_not_event);
+        return;
+    }
+
     OggVorbis_File vf;
-    int e = ov_open(this_->fh, &vf, NULL, 0);
+    int e = ov_open(fh, &vf, NULL, 0);  // Takes ownership of FILE except if failure
     if(e < 0) 
     {
         DEBUG("<decode_thread> Vorbis: %d\n", e);
+        fclose(fh);
+        LightEvent_Signal(&this_->ready_or_not_event);
         return;
     }
 
@@ -55,22 +66,24 @@ static void decode_thread(void* arg)
     {
         DEBUG("<decode_thread> Invalid number of channels\n");
         ov_clear(&vf);
+        LightEvent_Signal(&this_->ready_or_not_event);
         return;
     }
-
-    // Most vorbis packets should only be 4 KB at most (?) Possibly dangerous assumption
-    void* buf_1 = linearAlloc(BUF_TO_READ);
-    void* buf_2 = linearAlloc(BUF_TO_READ);
 
     ndspWaveBuf wave_buf[2];
     wave_buf[0].nsamples = wave_buf[1].nsamples = vi->rate / 4;  // 4 bytes per sample, samples = rate (bytes) / 4
     wave_buf[0].status = wave_buf[1].status = NDSP_WBUF_DONE;  // Used in play to stop from writing to current buffer
-    wave_buf[0].data_vaddr = buf_1;
-    wave_buf[1].data_vaddr = buf_2;
+    // Most vorbis packets should only be 4 KiB at most (?) Possibly dangerous assumption
+    wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ);
+    wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
     DEBUG("<decode_thread> start success!\n");
 
     long data_read = 0;
     int selected_buf = 0;
+
+    this_->ready = true;
+    LightEvent_Signal(&this_->ready_or_not_event);
+
     while(!LightEvent_TryWait(&this_->stop_event))
     {
         long size = wave_buf[selected_buf].nsamples * 4 - data_read;
@@ -79,7 +92,7 @@ static void decode_thread(void* arg)
         {
             DEBUG("<decode_thread> Attempting ov_read\n");
             int bitstream;
-            long read_size = ov_read(&vf, (char*)wave_buf[selected_buf].data_vaddr + data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
+            long read_size = ov_read(&vf, ((char*)wave_buf[selected_buf].data_vaddr) + data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
             DEBUG("<decode_thread> ov_read successful\n");
 
             if(read_size <= 0) // EoF or error
@@ -87,7 +100,8 @@ static void decode_thread(void* arg)
                 if(read_size == 0) // EoF
                 { 
                     ov_clear(&vf);
-                    ov_open(this_->fh, &vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
+                    fh = fmemopen(this_->buf, this_->size, "rb");
+                    ov_open(fh, &vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
                 }
                 else // Error :(
                 { 
@@ -113,30 +127,24 @@ static void decode_thread(void* arg)
     while(wave_buf[0].status != NDSP_WBUF_DONE || wave_buf[1].status != NDSP_WBUF_DONE)
         svcSleepThread(10 * 1000 * 1000);
 
-    linearFree(buf_1);
-    linearFree(buf_2);
+    linearFree(const_cast<void*>(wave_buf[0].data_vaddr));
+    linearFree(const_cast<void*>(wave_buf[1].data_vaddr));
 }
 
-MusicBase::MusicBase(FILE* fh) : fh(fh)
+MusicBase::MusicBase(void* buf, u32 size) : buf(buf), size(size)
 {
     if(have_sound)
     {
-        if(fh)
-        {
-            LightEvent_Init(&this->stop_event, RESET_STICKY);
-            this->bgm_thread = threadCreate(decode_thread, this, 0x10000, 0x3F, 1, false);
-            this->ready = true;
-        }
-        else
-        {
-            DEBUG("MusicBase fmemopen failed!\n");
-        }
+        LightEvent_Init(&this->stop_event, RESET_STICKY);
+        LightEvent_Init(&this->ready_or_not_event, RESET_ONESHOT);
+        this->bgm_thread = threadCreate(decode_thread, this, 0x10000, 0x3F, 1, false);
+        LightEvent_Wait(&this->ready_or_not_event);
     }
 }
 
 MusicBase::~MusicBase()
 {
-    if(this->fh)
+    if(have_sound)
     {
         LightEvent_Signal(&this->stop_event);
         if(this->bgm_thread)
@@ -144,16 +152,15 @@ MusicBase::~MusicBase()
             threadJoin(this->bgm_thread, U64_MAX);
             threadFree(this->bgm_thread);
         }
-        fclose(this->fh);
     }
 }
 
-MusicFile::MusicFile(std::unique_ptr<char[]>& ogg_buf, u32 ogg_size) : MusicBase(fmemopen(ogg_buf.get(), ogg_size, "rb")), ogg_buf(std::move(ogg_buf))
+MusicFile::MusicFile(std::unique_ptr<char[]>& ogg_buf, u32 ogg_size) : MusicBase(ogg_buf.get(), ogg_size), ogg_buf(std::move(ogg_buf))
 {
 
 }
 
-MusicDownloaded::MusicDownloaded(std::unique_ptr<u8[]>& ogg_buf, u32 ogg_size) : MusicBase(fmemopen(ogg_buf.get(), ogg_size, "rb")), ogg_buf(std::move(ogg_buf))
+MusicDownloaded::MusicDownloaded(std::unique_ptr<u8[]>& ogg_buf, u32 ogg_size) : MusicBase(ogg_buf.get(), ogg_size), ogg_buf(std::move(ogg_buf))
 {
 
 }
