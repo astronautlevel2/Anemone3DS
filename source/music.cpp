@@ -56,6 +56,7 @@ static void decode_thread(void* arg)
     ndspChnSetMix(0, mix); // See mix comment above
 
     vorbis_info* vi = ov_info(&vf, -1);
+    DEBUG("rate: %ld\n", vi->rate);
     ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
     if(vi->channels == 2)
     {
@@ -71,11 +72,14 @@ static void decode_thread(void* arg)
     }
 
     ndspWaveBuf wave_buf[2];
-    wave_buf[0].nsamples = wave_buf[1].nsamples = vi->rate / 4;  // 4 bytes per sample, samples = rate (bytes) / 4
+    memset(wave_buf, 0, sizeof(wave_buf));
+    wave_buf[0].nsamples = wave_buf[1].nsamples = BUF_TO_READ / 2;
     wave_buf[0].status = wave_buf[1].status = NDSP_WBUF_DONE;  // Used in play to stop from writing to current buffer
     // Most vorbis packets should only be 4 KiB at most (?) Possibly dangerous assumption
-    wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ);
-    wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
+    wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ * 2);
+    wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ * 2);
+    DEBUG("vaddr 1: %p\n", wave_buf[0].data_vaddr);
+    DEBUG("vaddr 2: %p\n", wave_buf[1].data_vaddr);
     DEBUG("<decode_thread> start success!\n");
 
     long data_read = 0;
@@ -86,19 +90,17 @@ static void decode_thread(void* arg)
 
     while(!LightEvent_TryWait(&this_->stop_event))
     {
-        long size = wave_buf[selected_buf].nsamples * 4 - data_read;
-        DEBUG("<decode_thread> Audio Size: %ld\n", size);
+        long size = BUF_TO_READ * 2 - data_read;
         if(wave_buf[selected_buf].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
         {
-            DEBUG("<decode_thread> Attempting ov_read\n");
             int bitstream;
             long read_size = ov_read(&vf, ((char*)wave_buf[selected_buf].data_vaddr) + data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
-            DEBUG("<decode_thread> ov_read successful\n");
 
             if(read_size <= 0) // EoF or error
             { 
                 if(read_size == 0) // EoF
                 { 
+                    DEBUG("looping audio...\n");
                     ov_clear(&vf);
                     fh = fmemopen(this_->buf, this_->size, "rb");
                     ov_open(fh, &vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
@@ -123,10 +125,15 @@ static void decode_thread(void* arg)
         }
     }
 
+    DEBUG("out of loop\n");
+    ndspChnWaveBufClear(0);
+    DEBUG("ndspChnWaveBufClear\n");
     ov_clear(&vf);
-    while(wave_buf[0].status != NDSP_WBUF_DONE || wave_buf[1].status != NDSP_WBUF_DONE)
+    DEBUG("ov_clear\n");
+    while((wave_buf[0].status != NDSP_WBUF_DONE || wave_buf[0].status != NDSP_WBUF_FREE) || (wave_buf[1].status != NDSP_WBUF_DONE || wave_buf[1].status != NDSP_WBUF_FREE))
         svcSleepThread(10 * 1000 * 1000);
 
+    DEBUG("free\n");
     linearFree(const_cast<void*>(wave_buf[0].data_vaddr));
     linearFree(const_cast<void*>(wave_buf[1].data_vaddr));
 }
@@ -146,6 +153,7 @@ MusicBase::~MusicBase()
 {
     if(have_sound)
     {
+        DEBUG("signalling event...\n");
         LightEvent_Signal(&this->stop_event);
         if(this->bgm_thread)
         {

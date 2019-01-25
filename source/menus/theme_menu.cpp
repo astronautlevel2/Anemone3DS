@@ -299,7 +299,6 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
             u8 _padding2[0x478];
         };
 
-        DEBUG("ThemeManage_bin_s: %zx\n", sizeof(ThemeManage_bin_s));
         ThemeManage_bin_s* theme_manage = new(std::nothrow) ThemeManage_bin_s;
         file_to_buf(thememanage_path, THEME_EXTDATA, theme_manage, sizeof(ThemeManage_bin_s));
 
@@ -353,7 +352,6 @@ MenuActionReturn ThemeMenu::install_themes(bool install_body, bool install_bgm, 
             u8 _padding3[0x2da0 - (0x141b + sizeof(u8))];
         };
 
-        DEBUG("SaveData_dat_s: %zx\n", sizeof(SaveData_dat_s));
         SaveData_dat_s* savedata = new(std::nothrow) SaveData_dat_s;
         file_to_buf(savedata_path, HOME_EXTDATA, savedata, sizeof(SaveData_dat_s));
 
