@@ -78,8 +78,10 @@ MenuActionReturn MenuBase::load_preview()
             std::unique_ptr<PreviewImage> new_preview(current_entry_ptr->load_preview());
             if(new_preview && new_preview->ready)
             {
-                this->previous_preview = nullptr;
                 this->preview = std::move(new_preview);
+                this->preview->pause();  // Allow the previous preview to die
+                this->previous_preview = nullptr;
+                this->preview->resume();
                 this->selected_entry_for_previous_preview = current_entry_ptr;
 
                 this->current_actions.push({exit_preview_actions_down, {}});

@@ -56,7 +56,6 @@ static void decode_thread(void* arg)
     ndspChnSetMix(0, mix); // See mix comment above
 
     vorbis_info* vi = ov_info(&vf, -1);
-    DEBUG("rate: %ld\n", vi->rate);
     ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
     if(vi->channels == 2)
     {
@@ -78,8 +77,6 @@ static void decode_thread(void* arg)
     // Most vorbis packets should only be 4 KiB at most (?) Possibly dangerous assumption
     wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ * 2);
     wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ * 2);
-    DEBUG("vaddr 1: %p\n", wave_buf[0].data_vaddr);
-    DEBUG("vaddr 2: %p\n", wave_buf[1].data_vaddr);
     DEBUG("<decode_thread> start success!\n");
 
     long data_read = 0;
