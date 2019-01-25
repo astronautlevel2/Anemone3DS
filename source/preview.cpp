@@ -177,6 +177,18 @@ void PreviewImage::draw() const
     end_frame();
 }
 
+void PreviewImage::pause()
+{
+    if(this->bgm)
+        this->bgm->pause();
+}
+
+void PreviewImage::resume()
+{
+    if(this->bgm)
+        this->bgm->resume();
+}
+
 BadgePreviewImage::BadgePreviewImage(const fs::path& path)
 {
     FILE* fh = fopen(path.c_str(), "rb");

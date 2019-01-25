@@ -90,6 +90,12 @@ static void decode_thread(void* arg)
 
     while(!LightEvent_TryWait(&this_->stop_event))
     {
+        if(LightEvent_TryWait(&this_->pause_event))
+        {
+            LightEvent_Wait(&this_->resume_event);
+            continue;
+        }
+
         long size = BUF_TO_READ * 2 - data_read;
         if(wave_buf[selected_buf].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
         {
@@ -130,7 +136,7 @@ static void decode_thread(void* arg)
     DEBUG("ndspChnWaveBufClear\n");
     ov_clear(&vf);
     DEBUG("ov_clear\n");
-    while((wave_buf[0].status != NDSP_WBUF_DONE || wave_buf[0].status != NDSP_WBUF_FREE) || (wave_buf[1].status != NDSP_WBUF_DONE || wave_buf[1].status != NDSP_WBUF_FREE))
+    while((wave_buf[0].status != NDSP_WBUF_DONE && wave_buf[0].status != NDSP_WBUF_FREE) || (wave_buf[1].status != NDSP_WBUF_DONE && wave_buf[1].status != NDSP_WBUF_FREE))
         svcSleepThread(10 * 1000 * 1000);
 
     DEBUG("free\n");
@@ -143,6 +149,8 @@ MusicBase::MusicBase(void* buf, u32 size) : buf(buf), size(size)
     if(have_sound)
     {
         LightEvent_Init(&this->stop_event, RESET_STICKY);
+        LightEvent_Init(&this->pause_event, RESET_ONESHOT);
+        LightEvent_Init(&this->resume_event, RESET_ONESHOT);
         LightEvent_Init(&this->ready_or_not_event, RESET_ONESHOT);
         this->bgm_thread = threadCreate(decode_thread, this, 0x10000, 0x3F, 1, false);
         LightEvent_Wait(&this->ready_or_not_event);
@@ -155,12 +163,23 @@ MusicBase::~MusicBase()
     {
         DEBUG("signalling event...\n");
         LightEvent_Signal(&this->stop_event);
+        LightEvent_Signal(&this->resume_event);
         if(this->bgm_thread)
         {
             threadJoin(this->bgm_thread, U64_MAX);
             threadFree(this->bgm_thread);
         }
     }
+}
+
+void MusicBase::pause()
+{
+    LightEvent_Signal(&this->pause_event);
+}
+
+void MusicBase::resume()
+{
+    LightEvent_Signal(&this->resume_event);
 }
 
 MusicFile::MusicFile(std::unique_ptr<char[]>& ogg_buf, u32 ogg_size) : MusicBase(ogg_buf.get(), ogg_size), ogg_buf(std::move(ogg_buf))

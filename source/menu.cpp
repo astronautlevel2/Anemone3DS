@@ -70,6 +70,7 @@ MenuActionReturn MenuBase::load_preview()
         if(current_entry_ptr == this->selected_entry_for_previous_preview)
         {
             this->preview = std::move(this->previous_preview);
+            this->preview->resume();
             this->current_actions.push({exit_preview_actions_down, {}});
         }
         else
@@ -77,6 +78,7 @@ MenuActionReturn MenuBase::load_preview()
             std::unique_ptr<PreviewImage> new_preview(current_entry_ptr->load_preview());
             if(new_preview && new_preview->ready)
             {
+                this->previous_preview = nullptr;
                 this->preview = std::move(new_preview);
                 this->selected_entry_for_previous_preview = current_entry_ptr;
 
@@ -91,6 +93,7 @@ MenuActionReturn MenuBase::load_preview()
 MenuActionReturn MenuBase::exit_preview()
 {
     this->exit_mode_controls();
+    this->preview->pause();
     this->previous_preview = std::move(this->preview);
     return RETURN_NONE;
 }

@@ -35,11 +35,13 @@
 class MusicBase {
     public:
         ~MusicBase();
+        void pause();
+        void resume();
 
         bool ready = false;
         void* buf;
         u32 size;
-        LightEvent stop_event, ready_or_not_event;
+        LightEvent stop_event, ready_or_not_event, pause_event, resume_event;
 
     protected:
         MusicBase(void* buf, u32 size);

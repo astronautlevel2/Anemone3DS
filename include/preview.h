@@ -32,6 +32,8 @@
 
 struct PreviewImage {
     bool ready = false;
+    void pause();
+    void resume();
 
     PreviewImage(void* png_buf, u32 png_size, std::unique_ptr<char[]>& ogg_buf, u32 ogg_size);
     PreviewImage(void* png_buf, u32 png_size, std::unique_ptr<u8[]>& ogg_buf, u32 ogg_size);
