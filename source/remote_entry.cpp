@@ -71,7 +71,7 @@ PreviewImage* RemoteEntry::load_preview() const
         fclose(fh);
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
-        auto [bgm_dl_buf, bgm_dl_size] = download_data(get_download_url(THEMEPLAZA_BGM_FORMAT, this->entry_id), INSTALL_LOADING_REMOTE_PREVIEW);
+        auto [bgm_dl_buf, bgm_dl_size] = download_data(get_download_url(THEMEPLAZA_BGM_FORMAT, this->entry_id), INSTALL_LOADING_REMOTE_BGM);
         if(bgm_dl_buf)
         {
             std::string full_path = this->path / "bgm.ogg";
