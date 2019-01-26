@@ -42,7 +42,7 @@
 #Du to install splash
 #Dl to install splash top
 #Dr to install splash bottom
-| Splash action mode
+| Badge action mode
 #A to mark for install
-#Du to install splash
+#Du to install badge
 #Dd to install all marked
