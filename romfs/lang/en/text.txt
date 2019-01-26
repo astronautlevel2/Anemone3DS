@@ -34,6 +34,7 @@ Are you sure?
 #B No
 SELECT: Instructions / START: Quit
 #B Exit instructions
+Press #B to go back
 | "Icons" for changing menus
 T
 S

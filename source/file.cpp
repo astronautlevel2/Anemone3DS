@@ -181,7 +181,7 @@ bool file_to_buf(FS_Path path, Archive archive, void* buf, u32 wanted_size)
         FSFILE_Close(file);
         return false;
     }
-    
+
     if((wanted_size && wanted_size == size) || (!wanted_size && size != 0))
     {
        FSFILE_Read(file, nullptr, 0, buf, size);
@@ -355,4 +355,35 @@ void delete_file(FS_Path path, Archive archive)
 void delete_folder(FS_Path path, Archive archive)
 {
     FSUSER_DeleteDirectoryRecursively(archives[archive], path);
+}
+
+void extract_all_badges(void* zip_buf, size_t zip_size)
+{
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+    int r = archive_read_open_memory(a, zip_buf, zip_size);
+    if(r != ARCHIVE_OK)
+    {
+        DEBUG("couldn't open badges zip.\n");
+        return;
+    }
+
+    struct archive_entry* entry;
+    std::vector<u8> buf;
+    const char* filename = nullptr;
+    while(archive_read_next_header(a, &entry) == ARCHIVE_OK)
+    {
+        if(strcasecmp((filename = archive_entry_pathname(entry)), "preview.png"))
+        {
+            u64 size = archive_entry_size(entry);
+            buf.resize(size);
+            archive_read_data(a, buf.data(), size);
+            char path_to_file[0x107];
+            sprintf(path_to_file, "/Badges/%s", filename);
+            DEBUG("reading badge to %s\n", path_to_file);
+            FILE* fh = fopen(path_to_file, "wb");
+            fwrite(buf.data(), 1, size, fh);
+            fclose(fh);
+        }
+    }
 }

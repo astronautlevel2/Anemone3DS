@@ -124,6 +124,11 @@ static void update_ui_thread(void* void_arg)
     static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f / 512.0f, 1.0f - (240.0f / 256.0f)};
     C2D_Image image = {tex, &subt3x};
 
+    float height, width;
+    get_text_dimensions(TEXT_GENERAL, TEXT_INFO_EXIT_QR, &width, &height, 0.5f, 0.5f);
+    float info_text_x = (320.0f - width)/2.0f;
+    float info_text_y = (BARS_SIZE - height)/2.0f;
+
     while(!finished)
     {
         // Untiled texture loading code adapted from FBI
@@ -152,7 +157,7 @@ static void update_ui_thread(void* void_arg)
         switch_screen(GFX_BOTTOM);
         C2D_DrawRectSolid(0.0f, 0.0f, 0.0f, 320.0f, BARS_SIZE, COLOR_BARS);
         C2D_DrawRectSolid(0.0f, 240.0f - BARS_SIZE, 0.0f, 320.0f, BARS_SIZE, COLOR_BARS);
-        // draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
+        draw_text(TEXT_GENERAL, TEXT_INFO_EXIT_QR, COLOR_WHITE, info_text_x, info_text_y, 0.1f, 0.5f, 0.5f);
         end_frame();
         LightLock_Unlock(&draw_mutex);
     }
@@ -271,10 +276,12 @@ void QrMenu::scan()
 {
     int w;
     int h;
-    u8* image = (u8*) quirc_begin(this->context, &w, &h);
+    u8* image = quirc_begin(this->context, &w, &h);
     LightLock_Lock(&camera_buffer_mutex);
-    for (ssize_t x = 0; x < w && x < 400; x++) {
-        for (ssize_t y = 0; y < h && y < 240; y++) {
+    for (ssize_t y = 0; y < h && y < 240; y++)
+    {
+        for (ssize_t x = 0; x < w && x < 400; x++)
+        {
             u16 px = camera_buffer[y * 400 + x];
             image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
@@ -301,10 +308,16 @@ void QrMenu::scan()
                 if(check_file_is_zip(zip_buf.get(), zip_size))
                 {
                     MenuType mode = MODE_BADGES;
+                    if(check_file_in_zip(zip_buf.get(), zip_size, "body_LZ.bin"))
+                        mode = MODE_THEMES;
+                    else if(check_file_in_zip(zip_buf.get(), zip_size, "splash.bin"))
+                        mode = MODE_SPLASHES;
+                    else if(check_file_in_zip(zip_buf.get(), zip_size, "splashbottom.bin"))
+                        mode = MODE_SPLASHES;
 
                     if(mode == MODE_BADGES)
                     {
-
+                        extract_all_badges(zip_buf.get(), zip_size);
                     }
                     else
                     {
@@ -318,6 +331,7 @@ void QrMenu::scan()
                         if (extension == NULL || strcmp(extension, ".zip"))
                             strcat(path_to_file, ".zip");
 
+                        DEBUG("filename: %s\n", path_to_file);
                         remake_file(fsMakePath(PATH_ASCII, path_to_file), SD_CARD, zip_size, zip_buf.get());
                     }
 

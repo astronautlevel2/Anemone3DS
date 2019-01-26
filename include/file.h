@@ -63,4 +63,6 @@ void remake_file(FS_Path path, Archive archive, u32 size, const void* buf = null
 void delete_file(FS_Path path, Archive archive);
 void delete_folder(FS_Path path, Archive archive);
 
+void extract_all_badges(void* zip_buf, size_t zip_size);
+
 #endif
