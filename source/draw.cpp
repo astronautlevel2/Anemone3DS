@@ -317,7 +317,7 @@ void draw_basic_interface()
 
     if(have_ptmu)
     {
-        static constexpr float battery_x = 400.0f - 48.0f - 8.0f;
+        static constexpr float battery_x = 400.0f - 48.0f;
         u8 battery_charging = 0;
         PTMU_GetBatteryChargeState(&battery_charging);
         if(battery_charging == 1)
