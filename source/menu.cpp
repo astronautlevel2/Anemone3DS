@@ -71,7 +71,7 @@ MenuActionReturn MenuBase::load_preview()
         {
             this->preview = std::move(this->previous_preview);
             this->preview->resume();
-            this->current_actions.push({exit_preview_actions_down, {}});
+            this->current_actions.push({exit_preview_actions_down, {}, -1});
         }
         else
         {
@@ -84,7 +84,7 @@ MenuActionReturn MenuBase::load_preview()
                 this->preview->resume();
                 this->selected_entry_for_previous_preview = current_entry_ptr;
 
-                this->current_actions.push({exit_preview_actions_down, {}});
+                this->current_actions.push({exit_preview_actions_down, {}, -1});
             }
         }
     }
@@ -146,7 +146,7 @@ void MenuBase::toggle_instructions_mode()
             {KEY_TOUCH, std::bind(&MenuBase::instructions_handle_touch, this)},
         };
 
-        this->current_actions.push({instructions_actions_down, {}});
+        this->current_actions.push({instructions_actions_down, {}, -1});
 
         this->in_instructions = true;
         this->instruction_screen_right = false;
@@ -714,7 +714,7 @@ MenuActionReturn Menu::change_to_extra_mode()
         INSTRUCTION_RIGHT_FOR_SORTING_NAME,
     };
 
-    this->current_actions.push({extra_actions_down, {}});
+    this->current_actions.push({extra_actions_down, {}, sprites_extra_mode_idx});
     this->instructions_stack.push(&extra_actions_instructions);
 
     return RETURN_NONE;

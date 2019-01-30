@@ -57,7 +57,7 @@ SplashMenu::SplashMenu() : Menu("/Splashes", 4, TEXT_SPLASH_MODE, TEXT_NOT_FOUND
         {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
     };
 
-    this->current_actions.push({normal_actions_down, normal_actions_held});
+    this->current_actions.push({normal_actions_down, normal_actions_held, -1});
 }
 
 SplashMenu::~SplashMenu()
@@ -91,7 +91,7 @@ MenuActionReturn SplashMenu::change_to_action_mode()
         INSTRUCTION_SPLASH_RIGHT_FOR_INSTALLING_BOTTOM,
     };
 
-    this->current_actions.push({splash_actions_down, {}});
+    this->current_actions.push({splash_actions_down, {}, sprites_action_mode_idx});
     this->instructions_stack.push(&splash_actions_instructions);
 
     return RETURN_NONE;

@@ -74,6 +74,7 @@ using KeysActions = std::vector<std::pair<u32, std::function<MenuActionReturn()>
 struct CurrentActions {
     const KeysActions down;
     const KeysActions held;
+    const int icon_id;
 };
 
 class MenuBase {

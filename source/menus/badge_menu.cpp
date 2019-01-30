@@ -141,7 +141,7 @@ BadgeMenu::BadgeMenu() : Menu("/Badges", 3, TEXT_BADGE_MODE, TEXT_NOT_FOUND_SWIT
         {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
     };
 
-    this->current_actions.push({normal_actions_down, normal_actions_held});
+    this->current_actions.push({normal_actions_down, normal_actions_held, -1});
 }
 
 BadgeMenu::~BadgeMenu()
@@ -193,7 +193,7 @@ MenuActionReturn BadgeMenu::change_to_action_mode()
         INSTRUCTIONS_NONE,
     };
 
-    this->current_actions.push({badge_actions_down, {}});
+    this->current_actions.push({badge_actions_down, {}, sprites_action_mode_idx});
     this->instructions_stack.push(&badge_actions_instructions);
 
     return RETURN_NONE;

@@ -387,14 +387,22 @@ void Anemone3DS::draw()
     }
     else if(!this->current_menu->in_preview())
     {
+        switch_screen(GFX_BOTTOM);
+        float x = 8.0f;
+        int mode_icon = this->current_menu->current_actions.top().icon_id;
+        if(mode_icon != -1)
+        {
+            draw_image(mode_icon, x, 0.0f, 0.2f);
+        }
+        x += BARS_SIZE;
+
         if(!this->browser_menu)
         {
-            switch_screen(GFX_BOTTOM);
+
             static constexpr float y = (BARS_SIZE - 30*0.6f)/2.0f - 1.0f;
             static const float l_width = get_text_width(TEXT_GENERAL, TEXT_L, 0.6f);
             static const float r_width = get_text_width(TEXT_GENERAL, TEXT_R, 0.6f);
             static constexpr float x_step = BARS_SIZE;
-            float x = 8.0f;
 
             draw_text(TEXT_GENERAL, TEXT_L, COLOR_WHITE, x + (BARS_SIZE - l_width)/2.0f, y, 0.2f, 0.6f, 0.6f);
             x += x_step;

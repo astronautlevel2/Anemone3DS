@@ -58,7 +58,7 @@ ThemeMenu::ThemeMenu() : Menu("/Themes", 4, TEXT_THEME_MODE, TEXT_NOT_FOUND_SWIT
         {KEY_CPAD_RIGHT, std::bind(&Menu::select_next_page_fast, this)},
     };
 
-    this->current_actions.push({normal_actions_down, normal_actions_held});
+    this->current_actions.push({normal_actions_down, normal_actions_held, -1});
 }
 
 ThemeMenu::~ThemeMenu()
@@ -115,7 +115,7 @@ MenuActionReturn ThemeMenu::change_to_action_mode()
         INSTRUCTION_THEME_RIGHT_FOR_NO_BGM,
     };
 
-    this->current_actions.push({theme_actions_down, {}});
+    this->current_actions.push({theme_actions_down, {}, sprites_action_mode_idx});
     this->instructions_stack.push(&theme_actions_instructions);
 
     return RETURN_NONE;

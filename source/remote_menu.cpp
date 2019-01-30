@@ -108,7 +108,7 @@ RemoteMenu::RemoteMenu(const fs::path& loading_path, u32 background_color, TextI
         {KEY_CPAD_RIGHT, std::bind(&RemoteMenu::select_right_entry_fast, this)},
     };
 
-    this->current_actions.push({normal_actions_down, normal_actions_held});
+    this->current_actions.push({normal_actions_down, normal_actions_held, -1});
 
     static const Instructions normal_actions_instructions{
         INSTRUCTION_A_FOR_DOWNLOADING,
@@ -337,9 +337,7 @@ MenuActionReturn RemoteMenu::change_to_extra_mode()
         {KEY_DRIGHT, std::bind(&RemoteMenu::change_sort, this, SORT_LIKE_COUNT)},
     };
 
-    const KeysActions extra_actions_held{};
-
-    this->current_actions.push({extra_actions_down, extra_actions_held});
+    this->current_actions.push({extra_actions_down, {}, sprites_action_mode_idx});
 
     static const Instructions extra_actions_instructions{
         INSTRUCTION_A_FOR_SEARCHING,

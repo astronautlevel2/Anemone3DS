@@ -207,9 +207,7 @@ QrMenu::QrMenu()
                 {KEY_B, [](){ return RETURN_CHANGE_TO_LIST_MODE; }},
             };
 
-            const KeysActions normal_actions_held{};
-
-            this->current_actions.push({normal_actions_down, normal_actions_held});
+            this->current_actions.push({normal_actions_down, {}, -1});
 
             static const Instructions normal_actions_instructions{
                 INSTRUCTIONS_NONE,
