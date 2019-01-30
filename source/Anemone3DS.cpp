@@ -224,7 +224,7 @@ void Anemone3DS::init_services()
 {
     consoleDebugInit(debugDevice_SVC);
     cfguInit();
-    ptmuInit();
+    have_ptmu = R_SUCCEEDED(ptmuInit());
     acInit();
     have_sound = R_SUCCEEDED(ndspInit());
     APT_GetAppCpuTimeLimit(&this->old_time_limit);

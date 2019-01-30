@@ -34,6 +34,8 @@ static C3D_RenderTarget* bottom;
 static C2D_TextBuf width_buf, dynamic_buf;
 static u32 current_clear_color = COLOR_THEME_BG;
 
+bool have_ptmu = false;
+
 void init_screens()
 {
     DEBUG("gfxInitDefault\n");
@@ -312,6 +314,23 @@ void draw_basic_interface()
     if(tm.tm_sec % 2 == 1)
         C2D_DrawText(&separator, C2D_WithColor, 28, 2, 0.1f, 0.6f, 0.6f, COLOR_WHITE);
     C2D_DrawText(&minutes, C2D_WithColor, 28 + separator.width*0.6f, 3, 0.1f, 0.6f, 0.6f, COLOR_WHITE);
+
+    if(have_ptmu)
+    {
+        static constexpr float battery_x = 400.0f - 48.0f - 8.0f;
+        u8 battery_charging = 0;
+        PTMU_GetBatteryChargeState(&battery_charging);
+        if(battery_charging == 1)
+        {
+            draw_image(sprites_battery_charging_idx, battery_x, 0.0f, 0.1f);
+        }
+        else
+        {
+            u8 battery_status = 0;
+            PTMU_GetBatteryLevel(&battery_status);
+            draw_image(sprites_battery_0_idx + battery_status, battery_x, 0.0f, 0.1f);
+        }
+    }
 
     switch_screen(GFX_BOTTOM);
     C2D_DrawRectSolid(0.0f, 0.0f, 0.0f, 320.0f, BARS_SIZE, COLOR_BARS);

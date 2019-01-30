@@ -32,6 +32,7 @@
 #include "colors.h"
 
 static constexpr float BARS_SIZE = 24.0f;
+extern bool have_ptmu;
 
 void init_screens();
 void exit_screens();
