@@ -162,7 +162,7 @@ float draw_text_wrap(const char* text, u32 color, float max_x, float x, float y,
         if((consumed = decode_utf8(&codepoint, reinterpret_cast<u8*>(const_cast<char*>(text)))) == -1)
             break;
 
-        float character_width = scale_X * (fontGetCharWidthInfo(fontGlyphIndexFromCodePoint(codepoint))->charWidth);
+        float character_width = scale_X * (fontGetCharWidthInfo(nullptr, fontGlyphIndexFromCodePoint(nullptr, codepoint))->charWidth);
         if((x + (current_width += character_width)) > max_x)
         {
             auto it = std::find(wrapped_text.rbegin(), wrapped_text.rend(), ' ');
