@@ -43,12 +43,10 @@ bool running_from_hax = false;
 
 int main(int argc, char* argv[])
 {
-    auto anemone = new Anemone3DS;
+    Anemone3DS anemone;
 
     while(aptMainLoop() && running)
-        anemone->update();
-
-    delete anemone;
+        anemone.update();
 
     return 0;
 }

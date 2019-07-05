@@ -220,9 +220,24 @@ void Anemone3DS::handle_action_return(MenuActionReturn action_result)
     actions[action_result-1]();
 }
 
+void Anemone3DS::setup_debug_output()
+{
+    fs::path debug_file_path = fs::path("/3ds") / APP_TITLE / "debug.txt";
+    if(fs::exists(debug_file_path))
+    {
+        this->old_stderr = stderr;
+        FILE* new_stderr = fopen(debug_file_path.c_str(), "w");
+        setvbuf(new_stderr, this->stderr_buffer, _IOLBF, sizeof(this->stderr_buffer));
+        stderr = new_stderr;
+    }
+    else
+        consoleDebugInit(debugDevice_SVC);
+}
+
 void Anemone3DS::init_services()
 {
-    consoleDebugInit(debugDevice_SVC);
+    this->setup_debug_output();
+
     cfguInit();
     have_ptmu = R_SUCCEEDED(ptmuInit());
     acInit();
@@ -354,6 +369,13 @@ Anemone3DS::~Anemone3DS()
 
     close_archives();
     this->exit_services();
+
+    if(this->old_stderr)
+    {
+        fclose(stderr);
+        stderr = this->old_stderr;
+        this->old_stderr = nullptr;
+    }
 
     if(this->installed_theme && !power_pressed)
     {

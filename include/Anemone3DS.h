@@ -43,6 +43,8 @@ class Anemone3DS
         void scroll_thread_function();
 
     private:
+        void setup_debug_output();
+
         void init_services();
         void init_menus();
         void init_threads();
@@ -81,6 +83,8 @@ class Anemone3DS
         bool sleep_scheduled = false;
         Thread scroll_thread;
 
+        FILE* old_stderr = nullptr;
+        char stderr_buffer[1024];
         u32 old_time_limit;
 };
 
