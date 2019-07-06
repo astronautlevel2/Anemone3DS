@@ -30,7 +30,7 @@
 
 RemoteEntry::RemoteEntry(int entry_id) : Entry(fs::path("/3ds") / APP_TITLE / "cache" / std::to_string(entry_id), false, false), entry_id(entry_id)
 {
-    fs::create_directories(this->path);
+    fs::create_directory(this->path);
     SMDH* icon = this->get_smdh();
     if(icon == nullptr)
     {
