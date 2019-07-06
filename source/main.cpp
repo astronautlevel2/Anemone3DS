@@ -34,7 +34,8 @@ int __stacksize__ = 64 * 1024;
 // In browser mode, displaying a preview while having a previous one, each normal menu having more than or just enough icons and a preview saved
 // (64*64*2)*12*2 + (64*64*4)*9 + (512*512*4)*2 + (1024*512*4) + (64*64*2)*6*4 + (512*512*4)*2
 // Both are less than 7 MiB
-u32 __ctru_linear_heap_size = 8*1024*1024;
+u32 __ctru_linear_heap_size = 28*1024*1024;
+// u32 __ctru_linear_heap_size = 8*1024*1024;
 bool have_sound = false;
 bool running = true;
 bool power_pressed = true;
