@@ -4,7 +4,7 @@
 * Dawid Eckert ([@daedreth](https://github.com/daedreth))
 * Dylan G. ([@helloman892](https://github.com/helloman892))
 * Nils P. ([@ZetaDesigns](https://github.com/ZetaDesigns))
-* Matt Kenny ([@mattkenster](https://github.com/mattkenster))
+* Matt Kenny ([@8kenn](https://github.com/8kenn))
 
 # Minor Contributors
 * Nic ([@Wizzrobes](https://github.com/Wizzrobes))
