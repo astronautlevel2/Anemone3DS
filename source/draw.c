@@ -434,7 +434,7 @@ void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color
         if((consumed = decode_utf8(&codepoint, (unsigned char*)text)) == -1)
             break;
 
-        float character_width = scaleX * (fontGetCharWidthInfo(fontGlyphIndexFromCodePoint(codepoint))->charWidth);
+        float character_width = scaleX * (fontGetCharWidthInfo(NULL, fontGlyphIndexFromCodePoint(NULL, codepoint))->charWidth);
         if((current_width += character_width) > max_width)
         {
             char* last_space = NULL;
