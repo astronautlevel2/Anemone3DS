@@ -29,9 +29,9 @@
 
 #include "common.h"
 
-FS_Archive ArchiveSD;
-FS_Archive ArchiveHomeExt;
-FS_Archive ArchiveThemeExt;
+extern FS_Archive ArchiveSD;
+extern FS_Archive ArchiveHomeExt;
+extern FS_Archive ArchiveThemeExt;
 
 Result open_archives(void);
 Result close_archives(void);

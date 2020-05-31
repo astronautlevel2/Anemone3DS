@@ -31,6 +31,10 @@
  
 #include <archive.h>
 #include <archive_entry.h>
+
+FS_Archive ArchiveSD;
+FS_Archive ArchiveHomeExt;
+FS_Archive ArchiveThemeExt;
  
 Result open_archives(void)
 {

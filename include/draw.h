@@ -125,7 +125,7 @@ typedef enum {
 #define BUTTONS_INFO_LINES 4
 #define BUTTONS_INFO_COLUNMNS 2
 
-enum {
+typedef enum {
     BUTTONS_Y_INFO = BUTTONS_START_Y+5,
 
     BUTTONS_Y_LINE_1 = BUTTONS_START_Y + BUTTONS_STEP*1,

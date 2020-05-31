@@ -31,7 +31,7 @@
 
 typedef u32 Color;
 
-enum {
+typedef enum {
     COLOR_BACKGROUND, //silver-y black
     COLOR_ACCENT,
     COLOR_WHITE,
