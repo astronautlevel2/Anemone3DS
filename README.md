@@ -6,8 +6,7 @@ To-do list here: https://trello.com/b/F1YSa1VK
 # Dependencies
  * devkitARM, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
  * jansson, libvorbisidec, libpng, and libarchive, which can be retrieved from [devkitPro pacman](https://devkitpro.org/viewtopic.php?f=13&t=8702).
- * A recent build of [makerom](https://github.com/profi200/Project_CTR) and the latest release of [bannertool](https://github.com/Steveice10/bannertool). These must be added to your PATH.  
- A 64-bit Windows binary of makerom is available [here](https://hm892.s-ul.eu/U0Irkqih).
+ * A recent build of [makerom](https://github.com/profi200/Project_CTR) and the latest release of [bannertool](https://github.com/Steveice10/bannertool). These must be added to your PATH.
 
 # Building
 First of all, make sure devkitARM is properly installed - `$DEVKITPRO` and `$DEVKITARM` should be set to `/opt/devkitpro` and `$DEVKITPRO/devkitARM`, respectively.  
