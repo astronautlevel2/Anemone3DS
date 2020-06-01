@@ -540,7 +540,11 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 
             memcpy(preview_image->tex->data + dst, px, sizeof(u32));
         }
+
+        free(row_pointers[j]);
     }
+
+    free(row_pointers);
 
     *preview_offset = (width-400)/2;
 
