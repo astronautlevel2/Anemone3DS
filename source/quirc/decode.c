@@ -576,10 +576,11 @@ static quirc_decode_error_t codestream_ecc(struct quirc_data *data,
 		&quirc_version_db[data->version];
 	const struct quirc_rs_params *sb_ecc = &ver->ecc[data->ecc_level];
 	struct quirc_rs_params lb_ecc;
-	int bc = ver->data_bytes / sb_ecc->bs;
+	const int lb_count =
+	    (ver->data_bytes - sb_ecc->bs * sb_ecc->ns) / (sb_ecc->bs + 1);
+	const int bc = lb_count + sb_ecc->ns;
+	const int ecc_offset = sb_ecc->dw * bc + lb_count;
 	int dst_offset = 0;
-	int lb_count = ver->data_bytes - bc * sb_ecc->bs;
-	int small_dw_total = bc * sb_ecc->dw;
 	int i;
 
 	memcpy(&lb_ecc, sb_ecc, sizeof(lb_ecc));
@@ -588,22 +589,16 @@ static quirc_decode_error_t codestream_ecc(struct quirc_data *data,
 
 	for (i = 0; i < bc; i++) {
 		uint8_t *dst = ds->data + dst_offset;
-		const struct quirc_rs_params *ecc = sb_ecc;
+		const struct quirc_rs_params *ecc =
+		    (i < sb_ecc->ns) ? sb_ecc : &lb_ecc;
+		const int num_ec = ecc->bs - ecc->dw;
 		quirc_decode_error_t err;
-		int j = 0;
-		int k;
+		int j;
 
-		for (k = 0; k < sb_ecc->dw; k++)
-			dst[j++] = ds->raw[k * bc + i];
-
-		if (i + lb_count >= bc) {
-			dst[j++] = ds->raw[small_dw_total + i - lb_count];
-			ecc = &lb_ecc;
-		}
-
-		for (k = 0; k < sb_ecc->bs - sb_ecc->dw; k++)
-			dst[j++] = ds->raw[small_dw_total + lb_count + i +
-					   k * bc];
+		for (j = 0; j < ecc->dw; j++)
+			dst[j] = ds->raw[j * bc + i];
+		for (j = 0; j < num_ec; j++)
+			dst[ecc->dw + j] = ds->raw[ecc_offset + j * bc + i];
 
 		err = correct_block(dst, ecc);
 		if (err)
@@ -729,10 +724,10 @@ static quirc_decode_error_t decode_alpha(struct quirc_data *data,
 	int bits = 13;
 	int count;
 
-	if (data->version < 7)
+	if (data->version < 10)
 		bits = 9;
-	else if (data->version < 11)
-		bits = 10;
+	else if (data->version < 27)
+		bits = 11;
 
 	count = take_bits(ds, bits);
 	if (data->payload_len + count + 1 > QUIRC_MAX_PAYLOAD)
@@ -795,12 +790,18 @@ static quirc_decode_error_t decode_kanji(struct quirc_data *data,
 
 	for (i = 0; i < count; i++) {
 		int d = take_bits(ds, 13);
+		int msB = d / 0xc0;
+		int lsB = d % 0xc0;
+		int intermediate = (msB << 8) | lsB;
 		uint16_t sjw;
 
-		if (d + 0x8140 >= 0x9ffc)
-			sjw = d + 0x8140;
-		else
-			sjw = d + 0xc140;
+		if (intermediate + 0x8140 <= 0x9ffc) {
+			/* bytes are in the range 0x8140 to 0x9FFC */
+			sjw = intermediate + 0x8140;
+		} else {
+			/* bytes are in the range 0xE040 to 0xEBBF */
+			sjw = intermediate + 0xc140;
+		}
 
 		data->payload[data->payload_len++] = sjw >> 8;
 		data->payload[data->payload_len++] = sjw & 0xff;
@@ -873,7 +874,7 @@ static quirc_decode_error_t decode_payload(struct quirc_data *data,
 done:
 
 	/* Add nul terminator to all payloads */
-	if ((unsigned int)data->payload_len >= sizeof(data->payload))
+	if (data->payload_len >= (int) sizeof(data->payload))
 		data->payload_len--;
 	data->payload[data->payload_len] = 0;
 
