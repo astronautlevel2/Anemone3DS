@@ -221,6 +221,8 @@ void update_qr(qr_data *data)
         {
             exit_qr(data);
 
+            while (!data->finished) svcSleepThread(1000000);
+
             draw_install(INSTALL_DOWNLOAD);
             char * zip_buf = NULL;
             char * filename = NULL;
