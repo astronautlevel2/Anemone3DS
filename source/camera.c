@@ -150,7 +150,8 @@ void update_ui(void *arg)
         if (data->finished)
         {
             end_frame();
-        }
+            break; 
+       }
 
         C2D_DrawImageAt(data->image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
 
@@ -158,6 +159,7 @@ void update_ui(void *arg)
         draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
         end_frame();
     }
+    data->closed = true;
 }
 
 bool start_capture_cam(qr_data *data) 
@@ -306,6 +308,7 @@ bool init_qr(void)
     qr_data *data = calloc(1, sizeof(qr_data));
     data->capturing = false;
     data->finished = false;
+    data->closed = false;
     svcCreateEvent(&data->started, RESET_STICKY);
     
     data->context = quirc_new();
@@ -321,6 +324,7 @@ bool init_qr(void)
 
     while (!data->finished) update_qr(data);
     bool success = data->success;
+    while (!data->closed) svcSleepThread(1000000);
     free(data);
 
     return success;

@@ -35,6 +35,7 @@ typedef struct {
     C3D_Tex *tex;
     Handle mutex;
     volatile bool finished;
+    volatile bool closed;
     volatile bool success;
     Handle cancel;
     Handle started;
