@@ -292,6 +292,7 @@ void update_qr(qr_data *data)
                 {
                     throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
                 }
+                free(zip_buf);
             }
             else
             {
@@ -299,7 +300,6 @@ void update_qr(qr_data *data)
             }
 
             free(filename);
-            free(zip_buf);
         }   
     }
 

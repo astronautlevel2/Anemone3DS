@@ -807,7 +807,9 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
             return 0;
         }
 
+        DEBUG(content_disposition);
         char * tok = strtok(content_disposition, "\"");
+        DEBUG(tok);
         tok = strtok(NULL, "\"");
 
         if(!(tok))
