@@ -122,7 +122,7 @@ static void perspective_unmap(const double *c,
  * Span-based floodfill routine
  */
 
-#define FLOOD_FILL_MAX_DEPTH		4096
+#define FLOOD_FILL_MAX_DEPTH		128
 
 typedef void (*span_func_t)(void *user_data, int y, int left, int right);
 
