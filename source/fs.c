@@ -176,6 +176,7 @@ u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
     archive_read_support_format_zip(a);
 
     int r = archive_read_open_filename(a, path, 0x4000);
+    free(path);
     if(r != ARCHIVE_OK)
     {
         DEBUG("Invalid zip being opened\n");

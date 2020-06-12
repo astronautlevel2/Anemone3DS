@@ -187,9 +187,27 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
         if(R_FAILED(res) || entries_read == 0)
             break;
 
-        if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP")) 
+        if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP"))
             continue;
 
+        u16 path[0x106] = {0};
+        struacat(path, loading_path);
+        strucat(path, dir_entry.name);
+        char * buf = NULL;
+
+        if (!strcmp(dir_entry.shortExt, "ZIP"))
+        {
+            u32 size = zip_file_to_buf("info.smdh", path, &buf);
+            if (size == 0) continue;
+        }
+        else
+        {
+            struacat(path, "/info.smdh");
+            u32 size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &buf);
+            if (size == 0) continue;
+        }
+
+        free(buf);
         list->entries_count++;
         Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
         if(new_list == NULL)
