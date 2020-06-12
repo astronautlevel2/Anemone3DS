@@ -807,10 +807,7 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
             return 0;
         }
 
-        DEBUG(content_disposition);
-        char * tok = strtok(content_disposition, "\"");
-        DEBUG(tok);
-        tok = strtok(NULL, "\"");
+        char * tok = strstr(content_disposition, "filename=");
 
         if(!(tok))
         {
@@ -820,6 +817,17 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
             throw_error("Target is not valid!", ERROR_LEVEL_WARNING);
             DEBUG("filename\n");
             return 0;
+        }
+
+        tok += sizeof("filename=") - 1;
+        if(ispunct((int)*tok))
+        {
+            tok++;
+        }
+        char* last_char = tok + strlen(tok) - 1;
+        if(ispunct((int)*last_char))
+        {
+            *last_char = '\0';
         }
 
         char *illegal_characters = "\"?;:/\\+";
