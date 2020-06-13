@@ -193,6 +193,8 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     if(page <= 0)
         page = list->tp_page_count;
 
+    list->selected_entry = 0;
+
     InstallType loading_screen = INSTALL_NONE;
     if(mode == MODE_THEMES)
         loading_screen = INSTALL_LOADING_REMOTE_THEMES;
