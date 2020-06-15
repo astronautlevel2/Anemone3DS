@@ -128,7 +128,7 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         smdh_buf = NULL;
         char * api_url = NULL;
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
-        smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE);
+        smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE, "application/octet-stream");
         free(api_url);
     }
 
@@ -205,7 +205,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     char * page_json = NULL;
     char * api_url = NULL;
     asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode+1, list->tp_search);
-    u32 json_len = http_get(api_url, NULL, &page_json, INSTALL_NONE);
+    u32 json_len = http_get(api_url, NULL, &page_json, INSTALL_NONE, "application/json");
     free(api_url);
 
     if(json_len)
@@ -265,7 +265,7 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
 
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
 
-        preview_size = http_get(preview_url, NULL, &preview_png, INSTALL_LOADING_REMOTE_PREVIEW);
+        preview_size = http_get(preview_url, NULL, &preview_png, INSTALL_LOADING_REMOTE_PREVIEW, "image/png");
         free(preview_url);
     }
 
@@ -309,7 +309,7 @@ static void load_remote_bgm(Entry_s * entry)
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
 
-        bgm_size = http_get(bgm_url, NULL, &bgm_ogg, INSTALL_LOADING_REMOTE_BGM);
+        bgm_size = http_get(bgm_url, NULL, &bgm_ogg, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
         free(bgm_url);
 
         u16 path[0x107] = {0};
@@ -332,7 +332,7 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     char * zip_buf = NULL;
     char * filename = NULL;
     draw_install(INSTALL_DOWNLOAD);
-    u32 zip_size = http_get(download_url, &filename, &zip_buf, INSTALL_DOWNLOAD);
+    u32 zip_size = http_get(download_url, &filename, &zip_buf, INSTALL_DOWNLOAD, "application/zip");
     free(download_url);
 
     char path_to_file[0x107] = {0};
@@ -720,135 +720,158 @@ bool themeplaza_browser(EntryMode mode)
     return downloaded;
 }
 
-u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type)
+typedef struct header
+{
+    u32 status_code; // if not 200 OK, issue error
+    char *filename; // allocated in parse_header; if NULL, this is user-provided
+    u32 file_size; // if == (u64) -1, fall back to chunked read
+} header;
+
+static s8 parse_header(struct header *out, httpcContext *context, char **redirect_url, bool get_filename)
+{
+    char* content_buf = calloc(1024, sizeof (char));
+    // status code
+
+    if(httpcGetResponseStatusCode(context, &out->status_code))
+    {
+        DEBUG("httpcGetResponseStatusCode\n");
+        return -2;
+    }
+
+    switch(out->status_code)
+    {
+        // TODO: special cases for: 401, 403, 404, 500, 503
+        case 301:
+        case 302:
+        case 303:
+        case 307:
+        case 308:
+            if(*redirect_url == NULL)
+                *redirect_url = malloc(0x1000);
+            httpcGetResponseHeader(context, "Location", *redirect_url, 0x1000);
+            httpcCloseContext(context);
+            DEBUG("HTTP %lu Redirect: %s\n", out->status_code, *redirect_url);
+            return 2;
+        case 200:
+            break;
+        default:
+            httpcCloseContext(context);
+            DEBUG("HTTP %lu\n", out->status_code);
+            return 1;
+    }
+
+    // Content-Type
+
+    // TODO: uncomment this and handle the case where the MIME-type isn't correct
+    //httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
+
+    // Content-Length
+
+    if(httpcGetDownloadSizeState(context, NULL, &out->file_size))
+    {
+        DEBUG("httpcGetDownloadSizeState\n");
+    }
+
+    // Content-Disposition
+
+    if (get_filename)
+    {
+        if (httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024))
+        {
+            free(content_buf);
+            DEBUG("httpcGetResponseHeader\n");
+            return -1;
+        }
+
+        // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
+
+        char *filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
+
+        if(!filename)
+        {
+            // TODO: handle
+            DEBUG("no filename\n");
+            return -1;
+        }
+
+        filename = strpbrk(filename, "=") + 1; // <filename>;?
+        char *end = strpbrk(filename, ";");
+        if(end)
+            *end = '\0'; // <filename>
+
+        if(filename[0] == '"')
+        // safe to assume the filename is quoted
+        // TODO: what if it isn't?
+        {
+            filename[strlen(filename) - 1] = '\0';
+            filename++;
+        }
+
+        char *illegal_characters = "\"?;:/\\+";
+        char *illegal_char;
+
+        while((illegal_char = strpbrk(filename, illegal_characters)))
+            *illegal_char = '-';
+    }
+    free(content_buf);
+
+    return 0;
+}
+
+u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type, const char* mime_type)
 {
     Result ret;
     httpcContext context;
-    char *new_url = NULL;
-    u32 status_code;
     u32 content_size = 0;
     u32 read_size = 0;
     u32 size = 0;
     char *last_buf;
+    char *redirect_url = NULL;
+    s8 parse_result;
+
+    struct header _header = {};
 
     do {
         ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
         if (ret != 0)
         {
             httpcCloseContext(&context);
-            if (new_url != NULL) free(new_url);
             DEBUG("httpcOpenContext %.8lx\n", ret);
             return 0;
         }
-        ret = httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
-        ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-        ret = httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
-        ret = httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
+
+        httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
+        httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
+        httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
+        httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
+        httpcAddRequestHeaderField(&context, "Accept", mime_type);
 
         ret = httpcBeginRequest(&context);
         if (ret != 0)
         {
             httpcCloseContext(&context);
-            if (new_url != NULL) free(new_url);
             DEBUG("httpcBeginRequest %.8lx\n", ret);
             return 0;
         }
 
-        ret = httpcGetResponseStatusCode(&context, &status_code);
-        if(ret!=0){
-            httpcCloseContext(&context);
-            if(new_url!=NULL) free(new_url);
-            DEBUG("httpcGetResponseStatusCode\n");
-            return 0;
-        }
+        parse_result = parse_header(&_header, &context, &redirect_url, (bool)filename);
 
-        if ((status_code >= 301 && status_code <= 303) || (status_code >= 307 && status_code <= 308))
-        {
-            if (new_url == NULL) new_url = malloc(0x1000);
-            ret = httpcGetResponseHeader(&context, "Location", new_url, 0x1000);
-            url = new_url;
-            httpcCloseContext(&context);
-        }
-    } while ((status_code >= 301 && status_code <= 303) || (status_code >= 307 && status_code <= 308));
+        if(redirect_url)
+            url = redirect_url;
 
-    if (status_code != 200)
+    } while(parse_result == 2); // while status_code != 200
+
+    if(parse_result != 0)
     {
         httpcCloseContext(&context);
-        if (new_url != NULL) free(new_url);
-        DEBUG("status_code, %lu\n", status_code);
-        return 0;
-    }
-
-    ret = httpcGetDownloadSizeState(&context, NULL, &content_size);
-    if (ret != 0)
-    {
-        httpcCloseContext(&context);
-        if (new_url != NULL) free(new_url);
-        DEBUG("httpcGetDownloadSizeState\n");
+        free(_header.filename);
         return 0;
     }
 
     *buf = malloc(0x1000);
-    if (*buf == NULL)
-    {
-        httpcCloseContext(&context);
-        free(new_url);
-        DEBUG("malloc\n");
-        return 0;
-    }
 
     if(filename)
-    {
-        char *content_disposition = calloc(1024, sizeof(char));
-        ret = httpcGetResponseHeader(&context, "Content-Disposition", content_disposition, 1024);
-        if (ret != 0)
-        {
-            free(content_disposition);
-            free(new_url);
-            free(*buf);
-            DEBUG("httpcGetResponseHeader\n");
-            return 0;
-        }
-
-        char * tok = strstr(content_disposition, "filename=");
-
-        if(!(tok))
-        {
-            free(content_disposition);
-            free(new_url);
-            free(*buf);
-            throw_error("Target is not valid!", ERROR_LEVEL_WARNING);
-            DEBUG("filename\n");
-            return 0;
-        }
-
-        tok += sizeof("filename=") - 1;
-        if(ispunct((int)*tok))
-        {
-            tok++;
-        }
-        char* last_char = tok + strlen(tok) - 1;
-        if(ispunct((int)*last_char))
-        {
-            *last_char = '\0';
-        }
-
-        char *illegal_characters = "\"?;:/\\+";
-        for (size_t i = 0; i < strlen(tok); i++)
-        {
-            for (size_t n = 0; n < strlen(illegal_characters); n++)
-            {
-                if ((tok)[i] == illegal_characters[n])
-                {
-                    (tok)[i] = '-';
-                }
-            }
-        }
-
-        *filename = calloc(1024, sizeof(char));
-        strcpy(*filename, tok);
-        free(content_disposition);
-    }
+        *filename = _header.filename;
 
     do {
         ret = httpcDownloadData(&context, (*(u8**)buf) + size, 0x1000, &read_size);
@@ -864,7 +887,6 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
             if (*buf == NULL)
             {
                 httpcCloseContext(&context);
-                free(new_url);
                 free(last_buf);
                 DEBUG("NULL\n");
                 return 0;
@@ -877,14 +899,12 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
     if (*buf == NULL)
     {
         httpcCloseContext(&context);
-        free(new_url);
         free(last_buf);
         DEBUG("realloc\n");
         return 0;
     }
 
     httpcCloseContext(&context);
-    free(new_url);
 
     DEBUG("size: %lu\n", size);
     return size;
