@@ -351,6 +351,7 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
 
 static SwkbdCallbackResult jump_menu_callback(void* page_number, const char** ppMessage, const char* text, size_t textlen)
 {
+    (void)textlen;
     int typed_value = atoi(text);
     if(typed_value > *(json_int_t*)page_number)
     {

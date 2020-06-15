@@ -239,6 +239,7 @@ static void load_lists(Entry_List_s * lists)
 
 static SwkbdCallbackResult jump_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
 {
+    (void)textlen;
     int typed_value = atoi(text);
     if(typed_value > *(int*)entries_count)
     {
