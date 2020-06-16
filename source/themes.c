@@ -184,16 +184,29 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
         if(installmode & THEME_INSTALL_BGM)
         {
             music_size = load_data("/bgm.bcstm", current_theme, &music);
-            if(music_size > BGM_MAX_SIZE)
+            if (music_size > BGM_MAX_SIZE)
             {
                 free(music);
                 DEBUG("bgm too big\n");
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
             }
 
-            remake_file(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, BGM_MAX_SIZE);
-            res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
-            free(music);
+            if (music_size != 0)
+            {
+                remake_file(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, BGM_MAX_SIZE);
+                res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
+                free(music);
+
+                char *body_buf = NULL;
+                body_size = decompress_lz_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &body_buf);
+                if (body_buf[5] != 1)
+                {
+                    installmode |= THEME_INSTALL_BODY;
+                    body_buf[5] = 1;
+                    body_size = compress_lz_file_fast(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, body_buf, body_size);
+                }
+                free(body_buf);
+            }
 
             if(R_FAILED(res)) return res;
         } else

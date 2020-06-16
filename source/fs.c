@@ -28,7 +28,6 @@
 
 #include "fs.h"
 #include "unicode.h"
-#include "search.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -197,11 +196,11 @@ Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char *buf)
     return 0;
 }
 
-u32 decompress_lz_file(FS_Path file_name, char **buf)
+u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char **buf)
 {
     Handle handle;
     Result res = 0;
-    if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, file_name, FS_OPEN_READ, 0))) {
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, archive, file_name, FS_OPEN_READ, 0))) {
         DEBUG("%lu\n", res);
         return 0;
     }
@@ -218,6 +217,7 @@ u32 decompress_lz_file(FS_Path file_name, char **buf)
     FSFILE_Close(handle);
 
     if (temp_buf[0] != 0x11) {
+        free(temp_buf);
         return 0;
     }
 
@@ -290,9 +290,52 @@ u32 decompress_lz_file(FS_Path file_name, char **buf)
     return cur_written;
 }
 
-u32 compress_lz_file(FS_Path path, char *buf, u32 len)
+// This is an awful algorithm to "compress" LZ11 data.
+// We do this instead of actual LZ11 compression because of time -
+// LZ11 requires a lot of mem searching which is painfully slow on 3DS.
+// This process is nearly instant but means the resulting file is actually larger
+// than the input file. I don't think this is a problem as the only file we compress like this
+// is the theme data installed to extdata in some rare cases, which means only 1 file at most
+// is ever compressed like this. I don't think 400 KB is that big a sacrifice for probably
+// half a minute or so of time save - I may change my mind on this in the future, especially
+// if i figure out a dynamic programming algorithm which ends up being significantly
+// faster. Otherwise, I think this is probably a fine implementation.
+
+u32 compress_lz_file_fast(FS_Path path, FS_Archive archive, char *in_buf, u32 size)
 {
-    
+    char *output_buf = calloc(1, size * 2);
+    u32 output_size = 0;
+    u32 mask_pos = 0;
+    u32 bytes_processed = 0;
+    u8 counter = 0;
+
+    if (output_buf == NULL) return 0;
+
+    // Set header data for the LZ11 file - 0x11 is version (LZ11), next 3 bytes are size
+    output_buf[0] = 0x11;
+    output_buf[3] = (size & 0xFF0000) >> 16;
+    output_buf[2] = (size & 0xFF00) >> 8;
+    output_buf[1] = (size & 0xFF);
+
+    output_size += 4;
+
+    while (bytes_processed < size)
+    {
+        if (counter == 0)
+        {
+            mask_pos = output_size++;
+            output_buf[mask_pos] = 0;
+        }
+
+        output_buf[output_size++] = in_buf[bytes_processed++];
+
+        if (++counter == 8) counter = 0;
+    }
+
+    buf_to_file(output_size, path, archive, output_buf);
+    free(output_buf);
+
+    return output_size;
 }
 
 void remake_file(FS_Path path, FS_Archive archive, u32 size)
