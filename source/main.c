@@ -317,7 +317,7 @@ static void toggle_shuffle(Entry_List_s * list)
             current_entry->no_bgm_shuffle = true;
         }
     }
-    else 
+    else
     {
         current_entry->in_shuffle = true;
         list->shuffle_count++;
@@ -408,7 +408,7 @@ int main(void)
         }
 
         if(qr_mode) take_picture();
-        else if(preview_mode) 
+        else if(preview_mode)
         {
             draw_preview(preview, preview_offset);
         }
