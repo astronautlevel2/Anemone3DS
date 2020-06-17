@@ -198,13 +198,14 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 free(music);
 
                 char *body_buf = NULL;
-                body_size = decompress_lz_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &body_buf);
+                u32 uncompressed_size = decompress_lz_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &body_buf);
                 if (body_buf[5] != 1)
                 {
                     installmode |= THEME_INSTALL_BODY;
                     body_buf[5] = 1;
-                    body_size = compress_lz_file_fast(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, body_buf, body_size);
+                    body_size = compress_lz_file_fast(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, body_buf, uncompressed_size);
                 }
+                    
                 free(body_buf);
             }
 
