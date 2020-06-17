@@ -778,11 +778,14 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
 
     // Content-Type
 
-    httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
-    if(!strstr(mime, content_buf))
+    if (mime)
     {
-        DEBUG("expected %s received %s\n", mime, content_buf);
-        return SERVER_IS_MISBEHAVING;
+        httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
+        if (!strstr(mime, content_buf))
+        {
+            DEBUG("expected %s received %s\n", mime, content_buf);
+            return SERVER_IS_MISBEHAVING;
+        }
     }
 
 
@@ -869,7 +872,8 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
         httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
         httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
         httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-        httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
+        if (acceptable_mime_types)
+            httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
 
         ret = httpcBeginRequest(&context);
         if (ret != 0)
