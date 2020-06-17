@@ -727,20 +727,36 @@ typedef struct header
     u32 file_size; // if == (u64) -1, fall back to chunked read
 } header;
 
-static s8 parse_header(struct header *out, httpcContext *context, char **redirect_url, bool get_filename)
+typedef enum {
+    SUCCESS = 0,
+    REDIRECT,
+    HTTPC_ERROR,
+    HTTP_STATUS_UNHANDLED,
+    HTTP_UNACCEPTABLE,
+    SERVER_IS_MISBEHAVING,
+    NO_FILENAME, // provisional
+} ParseResult;
+
+// the good paths for this function return SUCCESS or REDIRECT;
+// all other paths are failures
+static ParseResult parse_header(struct header *out, httpcContext *context, char **redirect_url, bool get_filename, const char *mime)
 {
-    char* content_buf = calloc(1024, sizeof (char));
+    char* content_buf = calloc(1024, sizeof(char));
     // status code
 
     if(httpcGetResponseStatusCode(context, &out->status_code))
     {
         DEBUG("httpcGetResponseStatusCode\n");
-        return -2;
+        return HTTPC_ERROR;
     }
 
     switch(out->status_code)
     {
         // TODO: special cases for: 401, 403, 404, 500, 503
+        // 406 is special: it should be handled in a similar way to a mismatched MIME type
+        case 406:
+            DEBUG("HTTP 406 Unacceptable; Accept: %s\n", mime);
+            return HTTP_UNACCEPTABLE;
         case 301:
         case 302:
         case 303:
@@ -751,25 +767,31 @@ static s8 parse_header(struct header *out, httpcContext *context, char **redirec
             httpcGetResponseHeader(context, "Location", *redirect_url, 0x1000);
             httpcCloseContext(context);
             DEBUG("HTTP %lu Redirect: %s\n", out->status_code, *redirect_url);
-            return 2;
+            return REDIRECT;
         case 200:
             break;
         default:
             httpcCloseContext(context);
             DEBUG("HTTP %lu\n", out->status_code);
-            return 1;
+            return HTTP_STATUS_UNHANDLED;
     }
 
     // Content-Type
 
-    // TODO: uncomment this and handle the case where the MIME-type isn't correct
-    //httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
+    httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
+    if(!strstr(mime, content_buf))
+    {
+        DEBUG("expected %s received %s\n", mime, content_buf);
+        return SERVER_IS_MISBEHAVING;
+    }
+
 
     // Content-Length
 
     if(httpcGetDownloadSizeState(context, NULL, &out->file_size))
     {
         DEBUG("httpcGetDownloadSizeState\n");
+        return HTTPC_ERROR;
     }
 
     // Content-Disposition
@@ -780,7 +802,7 @@ static s8 parse_header(struct header *out, httpcContext *context, char **redirec
         {
             free(content_buf);
             DEBUG("httpcGetResponseHeader\n");
-            return -1;
+            return HTTPC_ERROR;
         }
 
         // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
@@ -791,7 +813,7 @@ static s8 parse_header(struct header *out, httpcContext *context, char **redirec
         {
             // TODO: handle
             DEBUG("no filename\n");
-            return -1;
+            return NO_FILENAME;
         }
 
         filename = strpbrk(filename, "=") + 1; // <filename>;?
@@ -815,10 +837,13 @@ static s8 parse_header(struct header *out, httpcContext *context, char **redirec
     }
     free(content_buf);
 
-    return 0;
+    return SUCCESS;
 }
 
-u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type, const char* mime_type)
+/*
+ * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
+ */
+u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type, const char *acceptable_mime_types)
 {
     Result ret;
     httpcContext context;
@@ -827,7 +852,7 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
     u32 size = 0;
     char *last_buf;
     char *redirect_url = NULL;
-    s8 parse_result;
+    ParseResult parse_result;
 
     struct header _header = {};
 
@@ -844,7 +869,7 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
         httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
         httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
         httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-        httpcAddRequestHeaderField(&context, "Accept", mime_type);
+        httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
 
         ret = httpcBeginRequest(&context);
         if (ret != 0)
@@ -854,14 +879,15 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
             return 0;
         }
 
-        parse_result = parse_header(&_header, &context, &redirect_url, (bool)filename);
+        parse_result = parse_header(&_header, &context, &redirect_url, (bool)filename, acceptable_mime_types);
 
         if(redirect_url)
             url = redirect_url;
+    } while(parse_result == REDIRECT); // while status_code != 200
 
-    } while(parse_result == 2); // while status_code != 200
+    free(redirect_url);
 
-    if(parse_result != 0)
+    if(parse_result != SUCCESS)
     {
         httpcCloseContext(&context);
         free(_header.filename);
