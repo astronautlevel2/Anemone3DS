@@ -722,7 +722,6 @@ bool themeplaza_browser(EntryMode mode)
 
 typedef struct header
 {
-    u32 status_code; // if not 200 OK, issue error
     char *filename; // allocated in parse_header; if NULL, this is user-provided
     u32 file_size; // if == (u64) -1, fall back to chunked read
 } header;
@@ -743,14 +742,15 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
 {
     char* content_buf = calloc(1024, sizeof(char));
     // status code
+    u32 status_code;
 
-    if(httpcGetResponseStatusCode(context, &out->status_code))
+    if(httpcGetResponseStatusCode(context, &status_code))
     {
         DEBUG("httpcGetResponseStatusCode\n");
         return HTTPC_ERROR;
     }
 
-    switch(out->status_code)
+    switch(status_code)
     {
         // TODO: special cases for: 401, 403, 404, 500, 503
         // 406 is special: it should be handled in a similar way to a mismatched MIME type
@@ -766,13 +766,13 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
                 *redirect_url = malloc(0x1000);
             httpcGetResponseHeader(context, "Location", *redirect_url, 0x1000);
             httpcCloseContext(context);
-            DEBUG("HTTP %lu Redirect: %s\n", out->status_code, *redirect_url);
+            DEBUG("HTTP %lu Redirect: %s\n", status_code, *redirect_url);
             return REDIRECT;
         case 200:
             break;
         default:
             httpcCloseContext(context);
-            DEBUG("HTTP %lu\n", out->status_code);
+            DEBUG("HTTP %lu\n", status_code);
             return HTTP_STATUS_UNHANDLED;
     }
 
