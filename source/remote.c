@@ -726,7 +726,7 @@ typedef struct header
     u32 file_size; // if == (u64) -1, fall back to chunked read
 } header;
 
-typedef enum {
+typedef enum ParseResult {
     SUCCESS = 0,
     REDIRECT,
     HTTPC_ERROR,
@@ -750,6 +750,7 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
         return HTTPC_ERROR;
     }
 
+    DEBUG("HTTP %lu\n", status_code);
     switch(status_code)
     {
         // TODO: special cases for: 401, 403, 404, 500, 503
@@ -764,15 +765,10 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
         case 308:
             if(*redirect_url == NULL)
                 *redirect_url = malloc(0x1000);
-            httpcGetResponseHeader(context, "Location", *redirect_url, 0x1000);
-            httpcCloseContext(context);
-            DEBUG("HTTP %lu Redirect: %s\n", status_code, *redirect_url);
             return REDIRECT;
         case 200:
             break;
         default:
-            httpcCloseContext(context);
-            DEBUG("HTTP %lu\n", status_code);
             return HTTP_STATUS_UNHANDLED;
     }
 
@@ -783,7 +779,6 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
         httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
         if (!strstr(mime, content_buf))
         {
-            DEBUG("expected %s received %s\n", mime, content_buf);
             return SERVER_IS_MISBEHAVING;
         }
     }
@@ -811,13 +806,8 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
         // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
 
         char *filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
-
         if(!filename)
-        {
-            // TODO: handle
-            DEBUG("no filename\n");
             return NO_FILENAME;
-        }
 
         filename = strpbrk(filename, "=") + 1; // <filename>;?
         char *end = strpbrk(filename, ";");
@@ -832,10 +822,8 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
             filename++;
         }
 
-        char *illegal_characters = "\"?;:/\\+";
         char *illegal_char;
-
-        while((illegal_char = strpbrk(filename, illegal_characters)))
+        while((illegal_char = strpbrk(filename, "\"?;:/\\+")))
             *illegal_char = '-';
     }
     free(content_buf);
@@ -855,46 +843,58 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
     u32 size = 0;
     char *last_buf;
     char *redirect_url = NULL;
-    ParseResult parse_result;
 
     struct header _header = {};
 
-    do {
-        ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
-        if (ret != 0)
-        {
-            httpcCloseContext(&context);
-            DEBUG("httpcOpenContext %.8lx\n", ret);
-            return 0;
-        }
+    DEBUG("Original URL: %s\n", url);
 
-        httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
-        httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-        httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
-        httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-        if (acceptable_mime_types)
-            httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
-
-        ret = httpcBeginRequest(&context);
-        if (ret != 0)
-        {
-            httpcCloseContext(&context);
-            DEBUG("httpcBeginRequest %.8lx\n", ret);
-            return 0;
-        }
-
-        parse_result = parse_header(&_header, &context, &redirect_url, (bool)filename, acceptable_mime_types);
-
-        if(redirect_url)
-            url = redirect_url;
-    } while(parse_result == REDIRECT); // while status_code != 200
-
-    free(redirect_url);
-
-    if(parse_result != SUCCESS)
+redirect: // goto here if we need to redirect
+    ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
+    if (ret != 0)
     {
         httpcCloseContext(&context);
+        DEBUG("httpcOpenContext %.8lx\n", ret);
+        return 0;
+    }
+
+    httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
+    httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
+    httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
+    httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
+    if (acceptable_mime_types)
+        httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
+
+    ret = httpcBeginRequest(&context);
+    if (ret != 0)
+    {
+        httpcCloseContext(&context);
+        DEBUG("httpcBeginRequest %.8lx\n", ret);
+        return 0;
+    }
+
+    ParseResult parse = parse_header(&_header, &context, &redirect_url, (bool)filename, acceptable_mime_types);
+    switch(parse)
+    {
+    case SUCCESS:
+        free(redirect_url);
+        break;
+    case REDIRECT:
+        url = redirect_url;
+        if(redirect_url == NULL)
+            redirect_url = malloc(0x1000);
+        httpcGetResponseHeader(&context, "Location", redirect_url, 0x1000);
+        httpcCloseContext(&context);
+        DEBUG("HTTP Redirect: %s\n", redirect_url);
+        goto redirect;
+    case HTTP_STATUS_UNHANDLED:
+    case HTTP_UNACCEPTABLE:
+    case SERVER_IS_MISBEHAVING:
+    case NO_FILENAME:
+    case HTTPC_ERROR: // no special handling here - the service fell over and we can't really do anything about that
+    default:
+        httpcCloseContext(&context);
         free(_header.filename);
+        free(redirect_url);
         return 0;
     }
 
