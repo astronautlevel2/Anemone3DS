@@ -41,7 +41,7 @@ void exit_qr(qr_data *data)
     DEBUG("Exiting QR\n");
     svcSignalEvent(data->cancel);
     while(!data->finished)
-       svcSleepThread(1000000);
+        svcSleepThread(1000000);
     svcCloseHandle(data->cancel);
     data->capturing = false;
 
@@ -116,7 +116,7 @@ void capture_cam_thread(void *arg)
     CAMU_Activate(SELECT_NONE);
     camExit();
     free(buffer);
-    for(int i = 0; i < 3; i++) {
+    for(int i = 1; i < 3; i++) {
         if(events[i] != 0) {
             svcCloseHandle(events[i]);
             events[i] = 0;
@@ -169,7 +169,10 @@ bool start_capture_cam(qr_data *data)
     svcCreateEvent(&data->cancel, RESET_STICKY);
     svcCreateMutex(&data->mutex, false);
     if(threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, true) == NULL)
+    {
+        throw_error("Capture cam thread creation failed\nPlease report this to the developers", ERROR_LEVEL_ERROR);
         return false;
+    }
     svcWaitSynchronization(data->started, U64_MAX);
     if(threadCreate(update_ui, data, 0x10000, 0x1A, 1, true) == NULL)
     {
@@ -327,6 +330,7 @@ bool init_qr(void)
     while (!data->finished) update_qr(data);
     bool success = data->success;
     while (!data->closed) svcSleepThread(1000000);
+    svcCloseHandle(data->started);
     free(data);
 
     return success;
