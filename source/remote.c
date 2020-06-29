@@ -99,11 +99,11 @@ static Instructions_s extra_instructions = {
 
 static void free_icons(Entry_List_s * list)
 {
-    if(list != NULL)
+    if (list != NULL)
     {
-        if(list->icons != NULL)
+        if (list->icons != NULL)
         {
-            for(int i = 0; i < list->entries_count; i++)
+            for (int i = 0; i < list->entries_count; i++)
             {
                 C3D_TexDelete(list->icons[i]->tex);
                 free(list->icons[i]->tex);
@@ -122,7 +122,7 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
 
     not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
 
-    if(not_cached)
+    if (not_cached)
     {
         free(smdh_buf);
         smdh_buf = NULL;
@@ -132,7 +132,7 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         free(api_url);
     }
 
-    if(!smdh_size)
+    if (!smdh_size)
     {
         free(smdh_buf);
         smdh_buf = NULL;
@@ -140,16 +140,16 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
 
     Icon_s * smdh = (Icon_s *)smdh_buf;
 
-    u16 fallback_name[0x81] = {0};
-    utf8_to_utf16(fallback_name, (u8*)"No name", 0x80);
+    u16 fallback_name[0x81] = { 0 };
+    utf8_to_utf16(fallback_name, (u8 *)"No name", 0x80);
 
     parse_smdh(smdh, entry, fallback_name);
     C2D_Image * image = loadTextureIcon(smdh);
 
-    if(not_cached)
+    if (not_cached)
     {
         FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, entry->path), FS_ATTRIBUTE_DIRECTORY);
-        u16 path[0x107] = {0};
+        u16 path[0x107] = { 0 };
         strucat(path, entry->path);
         struacat(path, "/info.smdh");
         remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_size);
@@ -160,13 +160,13 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
     return image;
 }
 
-static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ignore_cache, InstallType type)
+static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type)
 {
     free_icons(list);
     list->entries_count = json_array_size(ids_array);
     free(list->entries);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
-    list->icons = calloc(list->entries_count, sizeof(C2D_Image*));
+    list->icons = calloc(list->entries_count, sizeof(C2D_Image * ));
     list->entries_loaded = list->entries_count;
 
     size_t i = 0;
@@ -179,7 +179,7 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
 
         char * entry_path = NULL;
         asprintf(&entry_path, CACHE_PATH_FORMAT, current_entry->tp_download_id);
-        utf8_to_utf16(current_entry->path, (u8*)entry_path, 0x106);
+        utf8_to_utf16(current_entry->path, (u8 *)entry_path, 0x106);
         free(entry_path);
 
         list->icons[i] = load_remote_smdh(current_entry, ignore_cache);
@@ -188,27 +188,27 @@ static void load_remote_entries(Entry_List_s * list, json_t *ids_array, bool ign
 
 static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mode, bool ignore_cache)
 {
-    if(page > list->tp_page_count)
+    if (page > list->tp_page_count)
         page = 1;
-    if(page <= 0)
+    if (page <= 0)
         page = list->tp_page_count;
 
     list->selected_entry = 0;
 
     InstallType loading_screen = INSTALL_NONE;
-    if(mode == MODE_THEMES)
+    if (mode == MODE_THEMES)
         loading_screen = INSTALL_LOADING_REMOTE_THEMES;
-    else if(mode == MODE_SPLASHES)
+    else if (mode == MODE_SPLASHES)
         loading_screen = INSTALL_LOADING_REMOTE_SPLASHES;
     draw_install(loading_screen);
 
     char * page_json = NULL;
     char * api_url = NULL;
-    asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode+1, list->tp_search);
+    asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode + 1, list->tp_search);
     u32 json_len = http_get(api_url, NULL, &page_json, INSTALL_NONE, "application/json");
     free(api_url);
 
-    if(json_len)
+    if (json_len)
     {
         list->tp_current_page = page;
         list->mode = mode;
@@ -217,18 +217,19 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
         list->entries_per_screen_h = entries_per_screen_h[mode];
 
         json_error_t error;
-        json_t *root = json_loadb(page_json, json_len, 0, &error);
-        if(root)
+        json_t * root = json_loadb(page_json, json_len, 0, &error);
+        if (root)
         {
-            const char *key;
-            json_t *value;
+            const char * key;
+            json_t * value;
             json_object_foreach(root, key, value)
             {
-                if(json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
+                if (json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
                     list->tp_page_count = json_integer_value(value);
-                else if(json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
+                else if (json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
                     load_remote_entries(list, value, ignore_cache, loading_screen);
-                else if(json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE) && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
+                else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE)
+                    && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
                     throw_error("No results for this search.", ERROR_LEVEL_WARNING);
             }
         }
@@ -243,19 +244,20 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     free(page_json);
 }
 
-static u16 previous_path_preview[0x106] = {0};
-static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int * preview_offset)
+static u16 previous_path_preview[0x106] = { 0 };
+
+static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int * preview_offset)
 {
     bool not_cached = true;
 
-    if(!memcmp(&previous_path_preview, entry->path, 0x106*sizeof(u16))) return true;
+    if (!memcmp(&previous_path_preview, entry->path, 0x106 * sizeof(u16))) return true;
 
     char * preview_png = NULL;
     u32 preview_size = load_data("/preview.png", *entry, &preview_png);
 
     not_cached = !preview_size;
 
-    if(not_cached)
+    if (not_cached)
     {
         free(preview_png);
         preview_png = NULL;
@@ -269,7 +271,7 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
         free(preview_url);
     }
 
-    if(!preview_size)
+    if (!preview_size)
     {
         free(preview_png);
         return false;
@@ -277,9 +279,9 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
 
     bool ret = load_preview_from_buffer(preview_png, preview_size, preview_image, preview_offset);
 
-    if(ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
+    if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
     {
-        u16 path[0x107] = {0};
+        u16 path[0x107] = { 0 };
         strucat(path, entry->path);
         struacat(path, "/preview.png");
         remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, preview_size);
@@ -291,15 +293,16 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image* preview_image, int *
     return ret;
 }
 
-static u16 previous_path_bgm[0x106] = {0};
+static u16 previous_path_bgm[0x106] = { 0 };
+
 static void load_remote_bgm(Entry_s * entry)
 {
-    if(!memcmp(&previous_path_bgm, entry->path, 0x106*sizeof(u16))) return;
+    if (!memcmp(&previous_path_bgm, entry->path, 0x106 * sizeof(u16))) return;
 
     char * bgm_ogg = NULL;
     u32 bgm_size = load_data("/bgm.ogg", *entry, &bgm_ogg);
 
-    if(!bgm_size)
+    if (!bgm_size)
     {
         free(bgm_ogg);
         bgm_ogg = NULL;
@@ -312,13 +315,13 @@ static void load_remote_bgm(Entry_s * entry)
         bgm_size = http_get(bgm_url, NULL, &bgm_ogg, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
         free(bgm_url);
 
-        u16 path[0x107] = {0};
+        u16 path[0x107] = { 0 };
         strucat(path, entry->path);
         struacat(path, "/bgm.ogg");
         remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, bgm_size);
         buf_to_file(bgm_size, fsMakePath(PATH_UTF16, path), ArchiveSD, bgm_ogg);
 
-        memcpy(&previous_path_bgm, entry->path, 0x106*sizeof(u16));
+        memcpy(&previous_path_bgm, entry->path, 0x106 * sizeof(u16));
     }
 
     free(bgm_ogg);
@@ -335,7 +338,7 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     u32 zip_size = http_get(download_url, &filename, &zip_buf, INSTALL_DOWNLOAD, "application/zip");
     free(download_url);
 
-    char path_to_file[0x107] = {0};
+    char path_to_file[0x107] = { 0 };
     sprintf(path_to_file, "%s%s", main_paths[mode], filename);
     free(filename);
 
@@ -349,16 +352,17 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     free(zip_buf);
 }
 
-static SwkbdCallbackResult jump_menu_callback(void* page_number, const char** ppMessage, const char* text, size_t textlen)
+static SwkbdCallbackResult
+jump_menu_callback(void * page_number, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     int typed_value = atoi(text);
-    if(typed_value > *(json_int_t*)page_number)
+    if (typed_value > *(json_int_t *)page_number)
     {
         *ppMessage = "The new page has to be\nsmaller or equal to the\nnumber of pages!";
         return SWKBD_CALLBACK_CONTINUE;
     }
-    else if(typed_value == 0)
+    else if (typed_value == 0)
     {
         *ppMessage = "The new position has to\nbe positive!";
         return SWKBD_CALLBACK_CONTINUE;
@@ -368,17 +372,19 @@ static SwkbdCallbackResult jump_menu_callback(void* page_number, const char** pp
 
 static void jump_menu(Entry_List_s * list)
 {
-    if(list == NULL) return;
+    if (list == NULL) return;
 
-    char numbuf[64] = {0};
+    char numbuf[64] = { 0 };
 
     SwkbdState swkbd;
 
-    sprintf(numbuf, "%"  JSON_INTEGER_FORMAT, list->tp_page_count);
+    sprintf(numbuf, "%"
+    JSON_INTEGER_FORMAT, list->tp_page_count);
     int max_chars = strlen(numbuf);
     swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, max_chars);
 
-    sprintf(numbuf, "%"  JSON_INTEGER_FORMAT, list->tp_current_page);
+    sprintf(numbuf, "%"
+    JSON_INTEGER_FORMAT, list->tp_current_page);
     swkbdSetInitialText(&swkbd, numbuf);
 
     sprintf(numbuf, "Which page do you want to jump to?");
@@ -391,10 +397,10 @@ static void jump_menu(Entry_List_s * list)
 
     memset(numbuf, 0, sizeof(numbuf));
     SwkbdButton button = swkbdInputText(&swkbd, numbuf, sizeof(numbuf));
-    if(button == SWKBD_BUTTON_CONFIRM)
+    if (button == SWKBD_BUTTON_CONFIRM)
     {
         json_int_t newpage = (json_int_t)atoi(numbuf);
-        if(newpage != list->tp_current_page)
+        if (newpage != list->tp_current_page)
             load_remote_list(list, newpage, list->mode, false);
     }
 }
@@ -402,7 +408,7 @@ static void jump_menu(Entry_List_s * list)
 static void search_menu(Entry_List_s * list)
 {
     const int max_chars = 256;
-    char * search = calloc(max_chars+1, sizeof(char));
+    char * search = calloc(max_chars + 1, sizeof(char));
 
     SwkbdState swkbd;
 
@@ -414,12 +420,12 @@ static void search_menu(Entry_List_s * list)
     swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
 
     SwkbdButton button = swkbdInputText(&swkbd, search, max_chars);
-    if(button == SWKBD_BUTTON_CONFIRM)
+    if (button == SWKBD_BUTTON_CONFIRM)
     {
         free(list->tp_search);
-        for(unsigned int i = 0; i < strlen(search); i++)
+        for (unsigned int i = 0; i < strlen(search); i++)
         {
-            if(search[i] == ' ')
+            if (search[i] == ' ')
                 search[i] = '+';
         }
         list->tp_search = search;
@@ -433,21 +439,21 @@ static void search_menu(Entry_List_s * list)
 
 static void change_selected(Entry_List_s * list, int change_value)
 {
-    if(abs(change_value) >= list->entries_count) return;
+    if (abs(change_value) >= list->entries_count) return;
 
     int newval = list->selected_entry + change_value;
 
-    if(abs(change_value) == 1)
+    if (abs(change_value) == 1)
     {
-        if(newval < 0)
+        if (newval < 0)
             newval += list->entries_per_screen_h;
-        if(newval/list->entries_per_screen_h != list->selected_entry/list->entries_per_screen_h)
-            newval += list->entries_per_screen_h*(-change_value);
+        if (newval / list->entries_per_screen_h != list->selected_entry / list->entries_per_screen_h)
+            newval += list->entries_per_screen_h * (-change_value);
     }
     else
     {
-        if(newval < 0)
-            newval += list->entries_per_screen_h*list->entries_per_screen_v;
+        if (newval < 0)
+            newval += list->entries_per_screen_h * list->entries_per_screen_v;
         newval %= list->entries_count;
     }
     list->selected_entry = newval;
@@ -461,27 +467,27 @@ bool themeplaza_browser(EntryMode mode)
     int preview_offset = 0;
     audio_s * audio = NULL;
 
-    Entry_List_s list = {0};
+    Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
     load_remote_list(current_list, 1, mode, false);
-    C2D_Image preview = {0};
+    C2D_Image preview = { 0 };
 
     bool extra_mode = false;
 
-    while(aptMainLoop())
+    while (aptMainLoop())
     {
-        if(current_list->entries == NULL)
+        if (current_list->entries == NULL)
             break;
 
-        if(preview_mode)
+        if (preview_mode)
         {
             draw_preview(preview, preview_offset);
         }
         else
         {
             Instructions_s instructions = browser_instructions[mode];
-            if(extra_mode)
+            if (extra_mode)
                 instructions = extra_instructions;
             draw_grid_interface(current_list, instructions);
         }
@@ -492,12 +498,12 @@ bool themeplaza_browser(EntryMode mode)
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
 
-        if(kDown & KEY_START)
+        if (kDown & KEY_START)
         {
-            exit:
+        exit:
             quit = true;
             downloaded = false;
-            if(audio)
+            if (audio)
             {
                 audio->stop = true;
                 svcWaitSynchronization(audio->finished, U64_MAX);
@@ -506,15 +512,15 @@ bool themeplaza_browser(EntryMode mode)
             break;
         }
 
-        if(extra_mode)
+        if (extra_mode)
         {
-            if(kUp & KEY_X)
+            if (kUp & KEY_X)
                 extra_mode = false;
-            if(!extra_mode)
+            if (!extra_mode)
             {
-                if((kDown | kHeld) & KEY_DLEFT)
+                if ((kDown | kHeld) & KEY_DLEFT)
                 {
-                    change_mode:
+                change_mode:
                     mode++;
                     mode %= MODE_AMOUNT;
 
@@ -523,15 +529,15 @@ bool themeplaza_browser(EntryMode mode)
 
                     load_remote_list(current_list, 1, mode, false);
                 }
-                else if((kDown | kHeld) & KEY_DUP)
+                else if ((kDown | kHeld) & KEY_DUP)
                 {
                     jump_menu(current_list);
                 }
-                else if((kDown | kHeld) & KEY_DRIGHT)
+                else if ((kDown | kHeld) & KEY_DRIGHT)
                 {
                     load_remote_list(current_list, current_list->tp_current_page, mode, true);
                 }
-                else if((kDown | kHeld) & KEY_DDOWN)
+                else if ((kDown | kHeld) & KEY_DDOWN)
                 {
                     search_menu(current_list);
                 }
@@ -542,24 +548,24 @@ bool themeplaza_browser(EntryMode mode)
         int selected_entry = current_list->selected_entry;
         Entry_s * current_entry = &current_list->entries[selected_entry];
 
-        if(kDown & KEY_Y)
+        if (kDown & KEY_Y)
         {
-            toggle_preview:
-            if(!preview_mode)
+        toggle_preview:
+            if (!preview_mode)
             {
                 preview_mode = load_remote_preview(current_entry, &preview, &preview_offset);
-                if(mode == MODE_THEMES && dspfirm)
+                if (mode == MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_s));
-                    if(R_FAILED(load_audio(*current_entry, audio))) audio = NULL;
-                    if(audio != NULL) play_audio(audio);
+                    if (R_FAILED(load_audio(*current_entry, audio))) audio = NULL;
+                    if (audio != NULL) play_audio(audio);
                 }
             }
             else
             {
                 preview_mode = false;
-                if(mode == MODE_THEMES && audio != NULL)
+                if (mode == MODE_THEMES && audio != NULL)
                 {
                     audio->stop = true;
                     svcWaitSynchronization(audio->finished, U64_MAX);
@@ -567,12 +573,12 @@ bool themeplaza_browser(EntryMode mode)
                 }
             }
         }
-        else if(kDown & KEY_B)
+        else if (kDown & KEY_B)
         {
-            if(preview_mode)
+            if (preview_mode)
             {
                 preview_mode = false;
-                if(mode == MODE_THEMES && audio != NULL)
+                if (mode == MODE_THEMES && audio != NULL)
                 {
                     audio->stop = true;
                     svcWaitSynchronization(audio->finished, U64_MAX);
@@ -583,64 +589,64 @@ bool themeplaza_browser(EntryMode mode)
                 break;
         }
 
-        if(preview_mode)
+        if (preview_mode)
             goto touch;
 
-        if(kDown & KEY_A)
+        if (kDown & KEY_A)
         {
             download_remote_entry(current_entry, mode);
             downloaded = true;
         }
-        else if(kDown & KEY_X)
+        else if (kDown & KEY_X)
         {
             extra_mode = true;
         }
-        else if(kDown & KEY_L)
+        else if (kDown & KEY_L)
         {
-            load_remote_list(current_list, current_list->tp_current_page-1, mode, false);
+            load_remote_list(current_list, current_list->tp_current_page - 1, mode, false);
         }
-        else if(kDown & KEY_R)
+        else if (kDown & KEY_R)
         {
-            load_remote_list(current_list, current_list->tp_current_page+1, mode, false);
+            load_remote_list(current_list, current_list->tp_current_page + 1, mode, false);
         }
 
-        // Movement in the UI
-        else if(kDown & KEY_UP)
+            // Movement in the UI
+        else if (kDown & KEY_UP)
         {
             change_selected(current_list, -current_list->entries_per_screen_h);
         }
-        else if(kDown & KEY_DOWN)
+        else if (kDown & KEY_DOWN)
         {
             change_selected(current_list, current_list->entries_per_screen_h);
         }
-        // Quick moving
-        else if(kDown & KEY_LEFT)
+            // Quick moving
+        else if (kDown & KEY_LEFT)
         {
             change_selected(current_list, -1);
         }
-        else if(kDown & KEY_RIGHT)
+        else if (kDown & KEY_RIGHT)
         {
             change_selected(current_list, 1);
         }
 
-        touch:
-        if((kDown | kHeld) & KEY_TOUCH)
+    touch:
+        if ((kDown | kHeld) & KEY_TOUCH)
         {
-            touchPosition touch = {0};
+            touchPosition touch = { 0 };
             hidTouchRead(&touch);
 
             u16 x = touch.px;
             u16 y = touch.py;
 
-            #define BETWEEN(min, x, max) (min < x && x < max)
+#define BETWEEN(min, x, max) (min < x && x < max)
 
             int border = 16;
-            if(kDown & KEY_TOUCH)
+            if (kDown & KEY_TOUCH)
             {
-                if(preview_mode)
+                if (preview_mode)
                 {
                     preview_mode = false;
-                    if(mode == MODE_THEMES && audio)
+                    if (mode == MODE_THEMES && audio)
                     {
                         audio->stop = true;
                         svcWaitSynchronization(audio->finished, U64_MAX);
@@ -648,62 +654,62 @@ bool themeplaza_browser(EntryMode mode)
                     }
                     continue;
                 }
-                else if(y < 24)
+                else if (y < 24)
                 {
-                    if(BETWEEN(0, x, 80))
+                    if (BETWEEN(0, x, 80))
                     {
                         search_menu(current_list);
                     }
-                    else if(BETWEEN(320-96, x, 320-72))
+                    else if (BETWEEN(320 - 96, x, 320 - 72))
                     {
                         break;
                     }
-                    else if(BETWEEN(320-72, x, 320-48))
+                    else if (BETWEEN(320 - 72, x, 320 - 48))
                     {
                         goto exit;
                     }
-                    else if(BETWEEN(320-48, x, 320-24))
+                    else if (BETWEEN(320 - 48, x, 320 - 24))
                     {
                         goto toggle_preview;
                     }
-                    else if(BETWEEN(320-24, x, 320))
+                    else if (BETWEEN(320 - 24, x, 320))
                     {
                         goto change_mode;
                     }
                 }
-                else if(BETWEEN(240-24, y, 240) && BETWEEN(176, x, 320))
+                else if (BETWEEN(240 - 24, y, 240) && BETWEEN(176, x, 320))
                 {
                     jump_menu(current_list);
                 }
                 else
                 {
-                    if(BETWEEN(0, x, border))
+                    if (BETWEEN(0, x, border))
                     {
-                        load_remote_list(current_list, current_list->tp_current_page-1, mode, false);
+                        load_remote_list(current_list, current_list->tp_current_page - 1, mode, false);
                     }
-                    else if(BETWEEN(320-border, x, 320))
+                    else if (BETWEEN(320 - border, x, 320))
                     {
-                        load_remote_list(current_list, current_list->tp_current_page+1, mode, false);
+                        load_remote_list(current_list, current_list->tp_current_page + 1, mode, false);
                     }
                 }
             }
             else
             {
-                if(preview_mode)
+                if (preview_mode)
                 {
                     preview_mode = false;
                     continue;
                 }
-                else if(BETWEEN(24, y, 240-24))
+                else if (BETWEEN(24, y, 240 - 24))
                 {
-                    if(BETWEEN(border, x, 320-border))
+                    if (BETWEEN(border, x, 320 - border))
                     {
                         x -= border;
                         x /= current_list->entry_size;
                         y -= 24;
                         y /= current_list->entry_size;
-                        int new_selected = y*current_list->entries_per_screen_h + x;
-                        if(new_selected < current_list->entries_count)
+                        int new_selected = y * current_list->entries_per_screen_h + x;
+                        if (new_selected < current_list->entries_count)
                             current_list->selected_entry = new_selected;
                     }
                 }
@@ -722,11 +728,12 @@ bool themeplaza_browser(EntryMode mode)
 
 typedef struct header
 {
-    char *filename; // allocated in parse_header; if NULL, this is user-provided
+    char * filename; // allocated in parse_header; if NULL, this is user-provided
     u32 file_size; // if == (u64) -1, fall back to chunked read
 } header;
 
-typedef enum ParseResult {
+typedef enum ParseResult
+{
     SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
     REDIRECT, // 301/302/303/307/308
     HTTPC_ERROR,
@@ -752,20 +759,20 @@ typedef enum ParseResult {
 
 // the good paths for this function return SUCCESS or REDIRECT;
 // all other paths are failures
-static ParseResult parse_header(struct header *out, httpcContext *context, bool get_filename, const char *mime)
+static ParseResult parse_header(struct header * out, httpcContext * context, bool get_filename, const char * mime)
 {
-    char* content_buf = calloc(1024, sizeof(char));
+    char * content_buf = calloc(1024, sizeof(char));
     // status code
     u32 status_code;
 
-    if(httpcGetResponseStatusCode(context, &status_code))
+    if (httpcGetResponseStatusCode(context, &status_code))
     {
         DEBUG("httpcGetResponseStatusCode\n");
         return HTTPC_ERROR;
     }
 
     DEBUG("HTTP %lu\n", status_code);
-    switch(status_code)
+    switch (status_code)
     {
     case 301:
     case 302:
@@ -793,7 +800,7 @@ static ParseResult parse_header(struct header *out, httpcContext *context, bool 
 
     // Content-Length
 
-    if(httpcGetDownloadSizeState(context, NULL, &out->file_size))
+    if (httpcGetDownloadSizeState(context, NULL, &out->file_size))
     {
         DEBUG("httpcGetDownloadSizeState\n");
         return HTTPC_ERROR;
@@ -812,25 +819,25 @@ static ParseResult parse_header(struct header *out, httpcContext *context, bool 
 
         // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
 
-        char *filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
-        if(!filename)
+        char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
+        if (!filename)
             return NO_FILENAME;
 
         filename = strpbrk(filename, "=") + 1; // <filename>;?
-        char *end = strpbrk(filename, ";");
-        if(end)
+        char * end = strpbrk(filename, ";");
+        if (end)
             *end = '\0'; // <filename>
 
-        if(filename[0] == '"')
-        // safe to assume the filename is quoted
-        // TODO: what if it isn't?
+        if (filename[0] == '"')
+            // safe to assume the filename is quoted
+            // TODO: what if it isn't?
         {
             filename[strlen(filename) - 1] = '\0';
             filename++;
         }
 
-        char *illegal_char;
-        while((illegal_char = strpbrk(filename, "\"?;:/\\+")))
+        char * illegal_char;
+        while ((illegal_char = strpbrk(filename, "\"?;:/\\+")))
             *illegal_char = '-';
     }
     free(content_buf);
@@ -850,15 +857,16 @@ static inline u8 close_context_free(httpcContext * context, header * _header, ch
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
  */
-u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type, const char *acceptable_mime_types)
+u32
+http_get(const char * url, char ** filename, char ** buf, InstallType install_type, const char * acceptable_mime_types)
 {
     Result ret;
     httpcContext context;
     u32 content_size = 0;
     u32 read_size = 0;
     u32 size = 0;
-    char *last_buf;
-    char *redirect_url = NULL;
+    char * last_buf;
+    char * redirect_url = NULL;
     char * new_url = NULL;
 
     struct header _header = {};
@@ -890,14 +898,14 @@ redirect: // goto here if we need to redirect
     }
 
     ParseResult parse = parse_header(&_header, &context, (bool)filename, acceptable_mime_types);
-    switch(parse)
+    switch (parse)
     {
     case SUCCESS:
         free(redirect_url);
         free(new_url);
         break;
     case REDIRECT:
-        if(redirect_url == NULL)
+        if (redirect_url == NULL)
             redirect_url = malloc(0x1000);
         httpcGetResponseHeader(&context, "Location", redirect_url, 0x1000);
         httpcCloseContext(&context);
@@ -938,14 +946,15 @@ redirect: // goto here if we need to redirect
 
     *buf = malloc(0x1000);
 
-    if(filename)
+    if (filename)
         *filename = _header.filename;
 
-    do {
-        ret = httpcDownloadData(&context, (*(u8**)buf) + size, 0x1000, &read_size);
+    do
+    {
+        ret = httpcDownloadData(&context, (*(u8 **)buf) + size, 0x1000, &read_size);
         size += read_size;
 
-        if(content_size && install_type != INSTALL_NONE)
+        if (content_size && install_type != INSTALL_NONE)
             draw_loading_bar(size, content_size, install_type);
 
         if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
