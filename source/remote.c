@@ -727,18 +727,32 @@ typedef struct header
 } header;
 
 typedef enum ParseResult {
-    SUCCESS = 0,
-    REDIRECT,
+    SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
+    REDIRECT, // 301/302/303/307/308
     HTTPC_ERROR,
-    HTTP_STATUS_UNHANDLED,
-    HTTP_UNACCEPTABLE,
     SERVER_IS_MISBEHAVING,
     NO_FILENAME, // provisional
+    HTTP_NO_CONTENT = 204, // most servers will never return this
+    HTTP_MULTIPLE_CHOICES = 300, // TODO: there isn't a standard way to handle this without user intervention... we can check for a Location header, but that's about it
+    HTTP_UNAUTHORIZED = 401,
+    HTTP_FORBIDDEN = 403,
+    HTTP_NOT_FOUND = 404,
+    HTTP_UNACCEPTABLE = 406,
+    HTTP_PROXY_UNAUTHORIZED = 407,
+    HTTP_GONE = 410,
+    HTTP_URI_TOO_LONG = 414,
+    HTTP_IM_A_TEAPOT = 418, // Note that a combined coffee/tea pot that is temporarily out of coffee should instead return 503.
+    HTTP_UPGRADE_REQUIRED = 426, // the 3DS doesn't support HTTP/2, so we can't upgrade - inform and return
+    HTTP_LEGAL_REASONS = 451, // TODO: display message explaining why?
+    HTTP_INTERNAL_SERVER_ERROR = 500,
+    HTTP_BAD_GATEWAY = 502,
+    HTTP_SERVICE_UNAVAILABLE = 503,
+    HTTP_GATEWAY_TIMEOUT = 504,
 } ParseResult;
 
 // the good paths for this function return SUCCESS or REDIRECT;
 // all other paths are failures
-static ParseResult parse_header(struct header *out, httpcContext *context, char **redirect_url, bool get_filename, const char *mime)
+static ParseResult parse_header(struct header *out, httpcContext *context, bool get_filename, const char *mime)
 {
     char* content_buf = calloc(1024, sizeof(char));
     // status code
@@ -753,23 +767,17 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
     DEBUG("HTTP %lu\n", status_code);
     switch(status_code)
     {
-        // TODO: special cases for: 401, 403, 404, 500, 503
-        // 406 is special: it should be handled in a similar way to a mismatched MIME type
-        case 406:
-            DEBUG("HTTP 406 Unacceptable; Accept: %s\n", mime);
-            return HTTP_UNACCEPTABLE;
-        case 301:
-        case 302:
-        case 303:
-        case 307:
-        case 308:
-            if(*redirect_url == NULL)
-                *redirect_url = malloc(0x1000);
-            return REDIRECT;
-        case 200:
-            break;
-        default:
-            return HTTP_STATUS_UNHANDLED;
+    case 301:
+    case 302:
+    case 303: // 303 See Other may need to be handled differently
+    case 307:
+    case 308:
+        return REDIRECT;
+    case 200:
+    case 203:
+        break;
+    default:
+        return (ParseResult)status_code;
     }
 
     // Content-Type
@@ -782,7 +790,6 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
             return SERVER_IS_MISBEHAVING;
         }
     }
-
 
     // Content-Length
 
@@ -831,6 +838,15 @@ static ParseResult parse_header(struct header *out, httpcContext *context, char 
     return SUCCESS;
 }
 
+static inline u8 close_context_free(httpcContext * context, header * _header, char * redirect_url, char * new_url)
+{
+    httpcCloseContext(context);
+    free(_header->filename);
+    free(redirect_url);
+    free(new_url);
+    return 0;
+}
+
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
  */
@@ -843,6 +859,7 @@ u32 http_get(const char *url, char ** filename, char ** buf, InstallType install
     u32 size = 0;
     char *last_buf;
     char *redirect_url = NULL;
+    char * new_url = NULL;
 
     struct header _header = {};
 
@@ -872,30 +889,51 @@ redirect: // goto here if we need to redirect
         return 0;
     }
 
-    ParseResult parse = parse_header(&_header, &context, &redirect_url, (bool)filename, acceptable_mime_types);
+    ParseResult parse = parse_header(&_header, &context, (bool)filename, acceptable_mime_types);
     switch(parse)
     {
     case SUCCESS:
         free(redirect_url);
+        free(new_url);
         break;
     case REDIRECT:
-        url = redirect_url;
         if(redirect_url == NULL)
             redirect_url = malloc(0x1000);
         httpcGetResponseHeader(&context, "Location", redirect_url, 0x1000);
         httpcCloseContext(&context);
-        DEBUG("HTTP Redirect: %s\n", redirect_url);
+        if (*redirect_url == '/') // if relative URL
+        {
+            if (new_url == NULL)
+                new_url = malloc(0x1000);
+            strcpy(new_url, url);
+            // this is good code, i promise
+            *(strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/')) = '\0';
+            strncat(new_url, redirect_url, 0x1000 - strlen(new_url));
+            url = new_url;
+        }
+        else
+            url = redirect_url;
+        DEBUG("HTTP Redirect: %s %s\n", new_url, *redirect_url == '/' ? "relative" : "absolute");
         goto redirect;
-    case HTTP_STATUS_UNHANDLED:
     case HTTP_UNACCEPTABLE:
+        DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
+        throw_error("Error: ZIP not available at this URL\nPlease contact the site administrator", ERROR_LEVEL_WARNING);
+        return close_context_free(&context, &_header, redirect_url, new_url);
     case SERVER_IS_MISBEHAVING:
-    case NO_FILENAME:
-    case HTTPC_ERROR: // no special handling here - the service fell over and we can't really do anything about that
+        DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
+        throw_error("Error: ZIP not available at this URL\nPlease contact the site administrator", ERROR_LEVEL_WARNING);
+        return close_context_free(&context, &_header, redirect_url, new_url);
+    case HTTPC_ERROR:
+        DEBUG("httpc error\n");
+        return close_context_free(&context, &_header, redirect_url, new_url);
     default:
-        httpcCloseContext(&context);
-        free(_header.filename);
-        free(redirect_url);
-        return 0;
+    {
+        char * err_buf = malloc(0x45);
+        snprintf(err_buf, 0x45, "HTTP Error %u\nPlease contact the site administrator", parse);
+        throw_error(err_buf, ERROR_LEVEL_WARNING);
+        free(err_buf);
+        return close_context_free(&context, &_header, redirect_url, new_url);
+    }
     }
 
     *buf = malloc(0x1000);
