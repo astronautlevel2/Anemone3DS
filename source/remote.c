@@ -741,6 +741,7 @@ typedef enum ParseResult
     NO_FILENAME, // provisional
     HTTP_NO_CONTENT = 204, // most servers will never return this
     HTTP_MULTIPLE_CHOICES = 300, // TODO: there isn't a standard way to handle this without user intervention... we can check for a Location header, but that's about it
+    HTTP_SEE_OTHER = 303,
     HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
     HTTP_NOT_FOUND = 404,
@@ -776,7 +777,6 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
     {
     case 301:
     case 302:
-    case 303: // 303 See Other may need to be handled differently
     case 307:
     case 308:
         return REDIRECT;
@@ -830,7 +830,6 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
 
         if (filename[0] == '"')
             // safe to assume the filename is quoted
-            // TODO: what if it isn't?
         {
             filename[strlen(filename) - 1] = '\0';
             filename++;
@@ -853,6 +852,8 @@ static inline u8 close_context_free(httpcContext * context, header * _header, ch
     free(new_url);
     return 0;
 }
+
+#define ZIP_NOT_AVAILABLE "Error: ZIP not available at this URL\nIf you believe this is an error, please contact the site administrator"
 
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
@@ -925,19 +926,25 @@ redirect: // goto here if we need to redirect
         goto redirect;
     case HTTP_UNACCEPTABLE:
         DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
-        throw_error("Error: ZIP not available at this URL\nPlease contact the site administrator", ERROR_LEVEL_WARNING);
+        throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
         return close_context_free(&context, &_header, redirect_url, new_url);
     case SERVER_IS_MISBEHAVING:
         DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
-        throw_error("Error: ZIP not available at this URL\nPlease contact the site administrator", ERROR_LEVEL_WARNING);
+        throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
         return close_context_free(&context, &_header, redirect_url, new_url);
     case HTTPC_ERROR:
         DEBUG("httpc error\n");
         return close_context_free(&context, &_header, redirect_url, new_url);
+    case HTTP_SEE_OTHER:
+        // typically a server shouldn't return this, as this is normally used for POST/PUT and we don't use them
+        DEBUG("Server returned 303 - can't download this resource\n");
+        throw_error("Download failed.", ERROR_LEVEL_WARNING);
+        return close_context_free(&context, &_header, redirect_url, new_url);
     default:
     {
-        char * err_buf = malloc(0x45);
-        snprintf(err_buf, 0x45, "HTTP Error %u\nPlease contact the site administrator", parse);
+        char * err_buf = malloc(0x69);
+        snprintf(err_buf, 0x69, "HTTP Error %u\nIf you believe this is an error, please contact the site administrator",
+            parse);
         throw_error(err_buf, ERROR_LEVEL_WARNING);
         free(err_buf);
         return close_context_free(&context, &_header, redirect_url, new_url);
