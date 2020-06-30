@@ -288,18 +288,16 @@ void update_qr(qr_data *data)
                     }
                     else
                     {
+                        // TODO: handle more elegantly
                         throw_error("Zip downloaded is neither\na splash nor a theme.", ERROR_LEVEL_WARNING);
                     }
                 }
                 else
                 {
+                    // TODO: marked for deletion
                     throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
                 }
                 free(zip_buf);
-            }
-            else
-            {
-                throw_error("Download failed.", ERROR_LEVEL_WARNING);
             }
 
             free(filename);
