@@ -729,7 +729,7 @@ bool themeplaza_browser(EntryMode mode)
 typedef struct header
 {
     char * filename; // allocated in parse_header; if NULL, this is user-provided
-    u32 file_size; // if == (u64) -1, fall back to chunked read
+    u32 file_size; // if == 0, fall back to chunked read
 } header;
 
 typedef enum ParseResult
@@ -821,7 +821,10 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
 
         char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
         if (!filename)
+        {
+            free(content_buf);
             return NO_FILENAME;
+        }
 
         filename = strpbrk(filename, "=") + 1; // <filename>;?
         char * end = strpbrk(filename, ";");
@@ -838,16 +841,19 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         char * illegal_char;
         while ((illegal_char = strpbrk(filename, "\"?;:/\\+")))
             *illegal_char = '-';
+
+        out->filename = malloc(strlen(filename) + 1);
+        strcpy(out->filename, filename);
+        DEBUG("%s\n", out->filename);
     }
     free(content_buf);
 
     return SUCCESS;
 }
 
-static inline u8 close_context_free(httpcContext * context, header * _header, char * redirect_url, char * new_url)
+static inline u8 close_context_free(httpcContext * context, char * redirect_url, char * new_url)
 {
     httpcCloseContext(context);
-    free(_header->filename);
     free(redirect_url);
     free(new_url);
     return 0;
@@ -863,10 +869,6 @@ http_get(const char * url, char ** filename, char ** buf, InstallType install_ty
 {
     Result ret;
     httpcContext context;
-    u32 content_size = 0;
-    u32 read_size = 0;
-    u32 size = 0;
-    char * last_buf;
     char * redirect_url = NULL;
     char * new_url = NULL;
 
@@ -901,6 +903,7 @@ redirect: // goto here if we need to redirect
     ParseResult parse = parse_header(&_header, &context, (bool)filename, acceptable_mime_types);
     switch (parse)
     {
+    case NO_FILENAME:
     case SUCCESS:
         free(redirect_url);
         free(new_url);
@@ -927,19 +930,19 @@ redirect: // goto here if we need to redirect
     case HTTP_UNACCEPTABLE:
         DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
         throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
-        return close_context_free(&context, &_header, redirect_url, new_url);
+        return close_context_free(&context, redirect_url, new_url);
     case SERVER_IS_MISBEHAVING:
         DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
         throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
-        return close_context_free(&context, &_header, redirect_url, new_url);
+        return close_context_free(&context, redirect_url, new_url);
     case HTTPC_ERROR:
         DEBUG("httpc error\n");
-        return close_context_free(&context, &_header, redirect_url, new_url);
+        return close_context_free(&context, redirect_url, new_url);
     case HTTP_SEE_OTHER:
         // typically a server shouldn't return this, as this is normally used for POST/PUT and we don't use them
         DEBUG("Server returned 303 - can't download this resource\n");
-        throw_error("Download failed.", ERROR_LEVEL_WARNING);
-        return close_context_free(&context, &_header, redirect_url, new_url);
+        throw_error("Download failed.\nIs this item approved on Theme Plaza?", ERROR_LEVEL_WARNING);
+        return close_context_free(&context, redirect_url, new_url);
     default:
     {
         char * err_buf = malloc(0x69);
@@ -947,46 +950,76 @@ redirect: // goto here if we need to redirect
             parse);
         throw_error(err_buf, ERROR_LEVEL_WARNING);
         free(err_buf);
-        return close_context_free(&context, &_header, redirect_url, new_url);
+        return close_context_free(&context, redirect_url, new_url);
     }
     }
-
-    *buf = malloc(0x1000);
 
     if (filename)
-        *filename = _header.filename;
-
-    do
     {
-        ret = httpcDownloadData(&context, (*(u8 **)buf) + size, 0x1000, &read_size);
-        size += read_size;
+        if (parse != NO_FILENAME)
+            *filename = _header.filename;
+        else
+        {
+            // TODO: swkbd stuff
+            *filename = malloc(0x20);
+            sprintf(*filename, "tobesupplied.zip");
+        }
+    }
+
+    u32 size = 0;
+    char * last_buf;
+
+    // TODO: "progress bar"? would just update at estimated intervals, as when not doing chunked read we don't know
+    /*if (_header.file_size != 0)
+    {
+        *buf = malloc(_header.file_size);
+        ret = httpcDownloadData(&context, (u8*)(*buf), _header.file_size, &size);
+        if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
+        {
+            // FIXME:
+            //  - get out (server misreporting filesize)
+            //  - maybe we could just go back to chunked read even if the server is lying to us?
+            free(*buf);
+            return 0;
+        }
+    }
+    else*/
+    //{
+        u32 content_size = _header.file_size;
+        u32 read_size = 0;
+        *buf = malloc(0x1000);
+        do
+        {
+            ret = httpcDownloadData(&context, (*(u8 **)buf) + size, 0x1000, &read_size);
+            size += read_size;
 
         if (content_size && install_type != INSTALL_NONE)
             draw_loading_bar(size, content_size, install_type);
 
-        if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
-        {
-            last_buf = *buf;
-            *buf = realloc(*buf, size + 0x1000);
-            if (*buf == NULL)
+            if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
             {
-                httpcCloseContext(&context);
-                free(last_buf);
-                DEBUG("NULL\n");
-                return 0;
+                last_buf = *buf;
+                *buf = realloc(*buf, size + 0x1000);
+                if (*buf == NULL)
+                {
+                    httpcCloseContext(&context);
+                    free(last_buf);
+                    DEBUG("NULL\n");
+                    return 0;
+                }
             }
-        }
-    } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
+        } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
 
-    last_buf = *buf;
-    *buf = realloc(*buf, size);
-    if (*buf == NULL)
-    {
-        httpcCloseContext(&context);
-        free(last_buf);
-        DEBUG("realloc\n");
-        return 0;
-    }
+        last_buf = *buf;
+        *buf = realloc(*buf, size);
+        if (*buf == NULL)
+        {
+            httpcCloseContext(&context);
+            free(last_buf);
+            DEBUG("realloc\n");
+            return 0;
+        }
+    //}
 
     httpcCloseContext(&context);
 
