@@ -970,10 +970,11 @@ redirect: // goto here if we need to redirect
     char * last_buf;
 
     // TODO: "progress bar"? would just update at estimated intervals, as when not doing chunked read we don't know
-    /*if (_header.file_size != 0)
+    // we could just do a chunked download by a known quantity, e.g. size / 5
+    if (_header.file_size != 0)
     {
         *buf = malloc(_header.file_size);
-        ret = httpcDownloadData(&context, (u8*)(*buf), _header.file_size, &size);
+        ret = httpcDownloadData(&context, (u8 * )(*buf), _header.file_size, &size);
         if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
         {
             // FIXME:
@@ -983,18 +984,14 @@ redirect: // goto here if we need to redirect
             return 0;
         }
     }
-    else*/
-    //{
-        u32 content_size = _header.file_size;
+    else
+    {
         u32 read_size = 0;
         *buf = malloc(0x1000);
         do
         {
             ret = httpcDownloadData(&context, (*(u8 **)buf) + size, 0x1000, &read_size);
             size += read_size;
-
-        if (content_size && install_type != INSTALL_NONE)
-            draw_loading_bar(size, content_size, install_type);
 
             if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
             {
@@ -1019,7 +1016,7 @@ redirect: // goto here if we need to redirect
             DEBUG("realloc\n");
             return 0;
         }
-    //}
+    }
 
     httpcCloseContext(&context);
 
