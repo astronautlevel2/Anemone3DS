@@ -910,17 +910,17 @@ redirect: // goto here if we need to redirect
         break;
     case REDIRECT:
         if (redirect_url == NULL)
-            redirect_url = malloc(0x1000);
-        httpcGetResponseHeader(&context, "Location", redirect_url, 0x1000);
+            redirect_url = malloc(0x824);
+        httpcGetResponseHeader(&context, "Location", redirect_url, 0x824);
         httpcCloseContext(&context);
         if (*redirect_url == '/') // if relative URL
         {
             if (new_url == NULL)
-                new_url = malloc(0x1000);
+                new_url = malloc(0x824);
             strcpy(new_url, url);
             // this is good code, i promise
             *(strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/')) = '\0';
-            strncat(new_url, redirect_url, 0x1000 - strlen(new_url));
+            strncat(new_url, redirect_url, 0x824 - strlen(new_url));
             url = new_url;
         }
         else
