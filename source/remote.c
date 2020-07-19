@@ -966,54 +966,67 @@ redirect: // goto here if we need to redirect
         }
     }
 
-    u32 size = 0;
-    char * last_buf;
-
-    // TODO: "progress bar"? would just update at estimated intervals, as when not doing chunked read we don't know
-    // we could just do a chunked download by a known quantity, e.g. size / 5
-    if (_header.file_size != 0)
+    u32 chunk_size;
+    bool size_correct = false;
+    if (_header.file_size)
     {
+        chunk_size = _header.file_size / 4;
         *buf = malloc(_header.file_size);
-        ret = httpcDownloadData(&context, (u8 * )(*buf), _header.file_size, &size);
-        if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
-        {
-            // FIXME:
-            //  - get out (server misreporting filesize)
-            //  - maybe we could just go back to chunked read even if the server is lying to us?
-            free(*buf);
-            return 0;
-        }
+        size_correct = true;
     }
     else
     {
-        u32 read_size = 0;
-        *buf = malloc(0x1000);
-        do
+        chunk_size = 0x80000;
+        *buf = malloc(chunk_size);
+    }
+
+    if (*buf == NULL)
+    {
+        httpcCloseContext(&context);
+        DEBUG("malloc failed in http_get\n");
+        return 0;
+    }
+
+    char * last_buf;
+    u32 size = 0;
+    u32 read_size = 0;
+
+    do
+    {
+        if (size >= _header.file_size)
+            size_correct = false;
+        ret = httpcDownloadData(&context, (u8*)(*buf) + size, chunk_size, &read_size);
+        size += read_size;
+
+        if (size_correct)
         {
-            ret = httpcDownloadData(&context, (*(u8 **)buf) + size, 0x1000, &read_size);
-            size += read_size;
+            if (install_type != INSTALL_NONE)
+                draw_loading_bar(size, _header.file_size, install_type);
+        }
+        else if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
+        {
+            last_buf = *buf;
 
-            if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
+            *buf = realloc(*buf, size + chunk_size);
+            if (*buf == NULL)
             {
-                last_buf = *buf;
-                *buf = realloc(*buf, size + 0x1000);
-                if (*buf == NULL)
-                {
-                    httpcCloseContext(&context);
-                    free(last_buf);
-                    DEBUG("NULL\n");
-                    return 0;
-                }
+                httpcCloseContext(&context);
+                free(last_buf);
+                DEBUG("realloc failed in http_get - file possibly too large?\n"); // TODO: report this?
+                return 0;
             }
-        } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
+        }
+    } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
 
+    if (!size_correct)
+    {
         last_buf = *buf;
         *buf = realloc(*buf, size);
         if (*buf == NULL)
         {
             httpcCloseContext(&context);
             free(last_buf);
-            DEBUG("realloc\n");
+            DEBUG("shrinking realloc failed\n"); // 何？
             return 0;
         }
     }
