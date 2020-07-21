@@ -924,7 +924,9 @@ redirect: // goto here if we need to redirect
             url = new_url;
         }
         else
+        {
             url = redirect_url;
+        }
         DEBUG("HTTP Redirect: %s %s\n", new_url, *redirect_url == '/' ? "relative" : "absolute");
         goto redirect;
     case HTTP_UNACCEPTABLE:
@@ -966,17 +968,15 @@ redirect: // goto here if we need to redirect
         }
     }
 
-    u32 chunk_size;
+    u32 chunk_size = _header.file_size / 4 || 0x80000;
     bool size_correct = false;
     if (_header.file_size)
     {
-        chunk_size = _header.file_size / 4;
         *buf = malloc(_header.file_size);
         size_correct = true;
     }
     else
     {
-        chunk_size = 0x80000;
         *buf = malloc(chunk_size);
     }
 
@@ -1026,7 +1026,7 @@ redirect: // goto here if we need to redirect
         {
             httpcCloseContext(&context);
             free(last_buf);
-            DEBUG("shrinking realloc failed\n"); // 何？
+            DEBUG("shrinking realloc failed\n"); // ??
             return 0;
         }
     }
