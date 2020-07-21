@@ -994,8 +994,11 @@ redirect: // goto here if we need to redirect
     do
     {
         if (size >= _header.file_size)
+        {
             size_correct = false;
-        ret = httpcDownloadData(&context, (u8*)(*buf) + size, chunk_size, &read_size);
+            goto realloc_buf;
+        }
+        ret = httpcDownloadData(&context, (u8 * )(*buf) + size, chunk_size, &read_size);
         size += read_size;
 
         if (size_correct)
@@ -1005,6 +1008,7 @@ redirect: // goto here if we need to redirect
         }
         else if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
         {
+        realloc_buf:
             last_buf = *buf;
 
             *buf = realloc(*buf, size + chunk_size);
@@ -1026,7 +1030,7 @@ redirect: // goto here if we need to redirect
         {
             httpcCloseContext(&context);
             free(last_buf);
-            DEBUG("shrinking realloc failed\n"); // ??
+            DEBUG("shrinking realloc failed\n"); // 何？
             return 0;
         }
     }
