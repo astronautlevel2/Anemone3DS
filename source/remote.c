@@ -384,7 +384,7 @@ static void jump_menu(Entry_List_s * list)
     sprintf(numbuf, "Which page do you want to jump to?");
     swkbdSetHintText(&swkbd, numbuf);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cance", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
     swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->tp_page_count);
