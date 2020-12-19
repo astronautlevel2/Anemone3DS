@@ -36,28 +36,62 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-void exit_qr(qr_data *data)
+static void start_read(qr_data *data)
 {
-    DEBUG("Exiting QR\n");
-    svcSignalEvent(data->cancel);
-    while(!data->finished)
-        svcSleepThread(1000000);
-    svcCloseHandle(data->cancel);
-    data->capturing = false;
+    LightLock_Lock(&data->mut);
+    while(data->writer_waiting || data->writer_active)
+    {
+        CondVar_Wait(&data->cond, &data->mut);
+    }
 
-    free(data->camera_buffer);
-    free(data->tex);
-    quirc_destroy(data->context);
+    AtomicIncrement(&data->num_readers_active);
+    LightLock_Unlock(&data->mut);
+}
+static void stop_read(qr_data *data)
+{
+    LightLock_Lock(&data->mut);
+    AtomicDecrement(&data->num_readers_active);
+    if(data->num_readers_active == 0)
+    {
+        CondVar_Signal(&data->cond);
+    }
+    LightLock_Unlock(&data->mut);
+}
+static void start_write(qr_data *data)
+{
+    LightLock_Lock(&data->mut);
+    data->writer_waiting = true;
+
+    while(data->num_readers_active)
+    {
+        CondVar_Wait(&data->cond, &data->mut);
+    }
+
+    data->writer_waiting = false;
+    data->writer_active = true;
+
+    LightLock_Unlock(&data->mut);
+}
+static void stop_write(qr_data *data)
+{
+    LightLock_Lock(&data->mut);
+
+    data->writer_active = false;
+    CondVar_Broadcast(&data->cond);
+
+    LightLock_Unlock(&data->mut);
 }
 
-void capture_cam_thread(void *arg) 
+static void capture_cam_thread(void *arg)
 {
     qr_data *data = (qr_data *) arg;
-    Handle events[3] = {0};
-    events[0] = data->cancel;
-    u32 transferUnit;
 
-    u16 *buffer = calloc(1, 400 * 240 * sizeof(u16));
+    Handle cam_events[3] = {0};
+    cam_events[0] = data->event_stop;
+
+    u32 transferUnit;
+    u16 *buffer = linearAlloc(400 * 240 * sizeof(u16));
+
     camInit();
     CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
     CAMU_SetOutputFormat(SELECT_OUT1, OUTPUT_RGB_565, CONTEXT_A);
@@ -66,38 +100,41 @@ void capture_cam_thread(void *arg)
     CAMU_SetAutoExposure(SELECT_OUT1, true);
     CAMU_SetAutoWhiteBalance(SELECT_OUT1, true);
     CAMU_Activate(SELECT_OUT1);
-    CAMU_GetBufferErrorInterruptEvent(&events[2], PORT_CAM1);
+    CAMU_GetBufferErrorInterruptEvent(&cam_events[2], PORT_CAM1);
     CAMU_SetTrimming(PORT_CAM1, false);
     CAMU_GetMaxBytes(&transferUnit, 400, 240);
     CAMU_SetTransferBytes(PORT_CAM1, transferUnit, 400, 240);
     CAMU_ClearBuffer(PORT_CAM1);
-    CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), (s16) transferUnit);
+    CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
     CAMU_StartCapture(PORT_CAM1);
-    svcSignalEvent(data->started);
+
     bool cancel = false;
-    while (!cancel) 
+    while (!cancel)
     {
         s32 index = 0;
-        svcWaitSynchronizationN(&index, events, 3, false, U64_MAX);
+        svcWaitSynchronizationN(&index, cam_events, 3, false, U64_MAX);
         switch(index) {
             case 0:
                 DEBUG("Cancel event received\n");
                 cancel = true;
                 break;
             case 1:
-                svcCloseHandle(events[1]);
-                events[1] = 0;
-                svcWaitSynchronization(data->mutex, U64_MAX);
+                svcCloseHandle(cam_events[1]);
+                cam_events[1] = 0;
+
+                start_write(data);
                 memcpy(data->camera_buffer, buffer, 400 * 240 * sizeof(u16));
-                GSPGPU_FlushDataCache(data->camera_buffer, 400 * 240 * sizeof(u16));
-                svcReleaseMutex(data->mutex);
-                CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
+                data->any_update = true;
+                stop_write(data);
+
+                CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
                 break;
             case 2:
-                svcCloseHandle(events[1]);
-                events[1] = 0;
+                svcCloseHandle(cam_events[1]);
+                cam_events[1] = 0;
+
                 CAMU_ClearBuffer(PORT_CAM1);
-                CAMU_SetReceiving(&events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
+                CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
                 CAMU_StartCapture(PORT_CAM1);
                 break;
             default:
@@ -115,223 +152,253 @@ void capture_cam_thread(void *arg)
     CAMU_ClearBuffer(PORT_CAM1);
     CAMU_Activate(SELECT_NONE);
     camExit();
-    free(buffer);
-    for(int i = 1; i < 3; i++) {
-        if(events[i] != 0) {
-            svcCloseHandle(events[i]);
-            events[i] = 0;
+
+    linearFree(buffer);
+    for(int i = 1; i < 3; i++)
+    {
+        if(cam_events[i] != 0) {
+            svcCloseHandle(cam_events[i]);
+            cam_events[i] = 0;
         }
     }
-    svcCloseHandle(data->mutex);
-    data->finished = true;
+
+    LightEvent_Signal(&data->event_cam_info);
 }
 
-void update_ui(void *arg)
+static void update_ui(void *arg)
 {
     qr_data* data = (qr_data*) arg;
 
-    while (!data->finished)
+    static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f/512.0f, 1.0f - (240.0f/256.0f) };
+    C3D_Tex tex;
+    C3D_TexInit(&tex, 512, 256, GPU_RGB565);
+    C3D_TexSetFilter(&tex, GPU_LINEAR, GPU_LINEAR);
+
+    while(svcWaitSynchronization(data->event_stop, 4 * 1000 * 1000ULL) == 0x09401BFE) // timeout of 4ms occured, still have 12 for copy and render
     {
         draw_base_interface();
 
         // Untiled texture loading code adapted from FBI
-        svcWaitSynchronization(data->mutex, U64_MAX);
-        for(u32 x = 0; x < 400 && !data->finished; x++) {
-            for(u32 y = 0; y < 256 && !data->finished; y++) {
-                u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3))) * sizeof(u16);
-                u32 srcPos = (y * 400 + x) * sizeof(u16);
-
-                memcpy(&((u8*) data->image.tex->data)[dstPos], &((u8*) data->camera_buffer)[srcPos], sizeof(u16));
-            }
-        }
-
-        svcReleaseMutex(data->mutex);
-
-        if (data->finished)
+        start_read(data);
+        if(data->any_update)
         {
-            end_frame();
-            break; 
-       }
+            for(u32 x = 0; x < 400; x++) {
+                for(u32 y = 0; y < 240; y++) {
+                    const u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3)));
+                    const u32 srcPos = y * 400 + x;
 
-        C2D_DrawImageAt(data->image, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
+                    ((u16*)tex.data)[dstPos] = data->camera_buffer[srcPos];
+                }
+            }
+            data->any_update = false;
+        }
+        stop_read(data);
+
+        C2D_DrawImageAt((C2D_Image){ &tex, &subt3x }, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
 
         set_screen(bottom);
         draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
         end_frame();
     }
-    data->closed = true;
+
+    C3D_TexDelete(&tex);
+    LightEvent_Signal(&data->event_ui_info);
 }
 
-bool start_capture_cam(qr_data *data) 
+static bool start_capture_cam(qr_data *data) 
 {
-    data->mutex = 0;
-    data->cancel = 0;
-    svcCreateEvent(&data->cancel, RESET_STICKY);
-    svcCreateMutex(&data->mutex, false);
-    if(threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, true) == NULL)
+    if((data->cam_thread = threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, false)) == NULL)
     {
         throw_error("Capture cam thread creation failed\nPlease report this to the developers", ERROR_LEVEL_ERROR);
+        LightEvent_Signal(&data->event_cam_info);
+        LightEvent_Signal(&data->event_ui_info);
         return false;
     }
-    svcWaitSynchronization(data->started, U64_MAX);
-    if(threadCreate(update_ui, data, 0x10000, 0x1A, 1, true) == NULL)
+    if((data->ui_thread = threadCreate(update_ui, data, 0x10000, 0x1A, 1, false)) == NULL)
     {
-        exit_qr(data);
+        LightEvent_Signal(&data->event_ui_info);
         return false;
     }
     return true;
 }
 
-void update_qr(qr_data *data)
+static bool update_qr(qr_data *data, struct quirc_data* scan_data)
 {
-    hidScanInput();
-    if (hidKeysDown() & (KEY_R | KEY_B | KEY_TOUCH)) {
-        exit_qr(data);
-        return;
-    }
-
-    if (!data->capturing) {
-        if(start_capture_cam(data))
-            data->capturing = true;
-        else {
-            exit_qr(data);
-            return;
-        }
-
-    }
-
-    if (data->finished) {
-        exit_qr(data);
-        return;
-    }
-
     int w;
     int h;
     u8 *image = (u8*) quirc_begin(data->context, &w, &h);
+
+    start_read(data);
     for (ssize_t x = 0; x < w; x++) {
         for (ssize_t y = 0; y < h; y++) {
             u16 px = data->camera_buffer[y * 400 + x];
             image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
     }
+    stop_read(data);
+
     quirc_end(data->context);
     if(quirc_count(data->context) > 0)
     {
         struct quirc_code code;
-        struct quirc_data scan_data;
         quirc_extract(data->context, 0, &code);
-        if (!quirc_decode(&code, &scan_data))
+        if (!quirc_decode(&code, scan_data))
         {
-            exit_qr(data);
-
-            while (!data->finished) svcSleepThread(1000000);
-
-            draw_install(INSTALL_DOWNLOAD);
-            char * zip_buf = NULL;
-            char * filename = NULL;
-            u32 zip_size = http_get((char*)scan_data.payload, &filename, &zip_buf, INSTALL_DOWNLOAD);
-
-            if(zip_size != 0)
-            {
-                draw_install(INSTALL_CHECKING_DOWNLOAD);
-
-                struct archive *a = archive_read_new();
-                archive_read_support_format_zip(a);
-
-                int r = archive_read_open_memory(a, zip_buf, zip_size);
-                archive_read_free(a);
-
-                if(r == ARCHIVE_OK)
-                {
-                    EntryMode mode = MODE_AMOUNT;
-
-                    char * buf = NULL;
-                    do {
-                        if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
-                        {
-                            mode = MODE_THEMES;
-                            break;
-                        }
-
-                        free(buf);
-                        buf = NULL;
-                        if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
-                        {
-                            mode = MODE_SPLASHES;
-                            break;
-                        }
-
-                        free(buf);
-                        buf = NULL;
-                        if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
-                        {
-                            mode = MODE_SPLASHES;
-                            break;
-                        }
-                    }
-                    while(false);
-
-                    free(buf);
-                    buf = NULL;
-
-                    if(mode != MODE_AMOUNT)
-                    {
-                        char path_to_file[0x107] = {0};
-                        sprintf(path_to_file, "%s%s", main_paths[mode], filename);
-                        char * extension = strrchr(path_to_file, '.');
-                        if (extension == NULL || strcmp(extension, ".zip"))
-                            strcat(path_to_file, ".zip");
-
-                        remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
-                        buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
-                        data->success = true;
-                    }
-                    else
-                    {
-                        throw_error("Zip downloaded is neither\na splash nor a theme.", ERROR_LEVEL_WARNING);
-                    }
-                }
-                else
-                {
-                    throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
-                }
-                free(zip_buf);
-            }
-            else
-            {
-                throw_error("Download failed.", ERROR_LEVEL_WARNING);
-            }
-
-            free(filename);
-        }   
+            return true;
+        }
     }
 
+    return false;
 }
 
-bool init_qr(void)
+static void start_qr(qr_data *data)
 {
-    qr_data *data = calloc(1, sizeof(qr_data));
-    data->capturing = false;
-    data->finished = false;
-    data->closed = false;
-    svcCreateEvent(&data->started, RESET_STICKY);
-    
+    svcCreateEvent(&data->event_stop, RESET_STICKY);
+    LightEvent_Init(&data->event_cam_info, RESET_STICKY);
+    LightEvent_Init(&data->event_ui_info, RESET_STICKY);
+    LightLock_Init(&data->mut);
+    CondVar_Init(&data->cond);
+
+    data->cam_thread = NULL;
+    data->ui_thread = NULL;
+    data->any_update = false;
+
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);
 
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
+}
+static void exit_qr(qr_data *data)
+{
+    svcSignalEvent(data->event_stop);
 
-    data->tex = (C3D_Tex*)malloc(sizeof(C3D_Tex));
-    static const Tex3DS_SubTexture subt3x = { 512, 256, 0.0f, 1.0f, 1.0f, 0.0f };
-    data->image = (C2D_Image){ data->tex, &subt3x };
-    C3D_TexInit(data->image.tex, 512, 256, GPU_RGB565);
-    C3D_TexSetFilter(data->image.tex, GPU_LINEAR, GPU_LINEAR);
+    LightEvent_Wait(&data->event_ui_info);
+    LightEvent_Clear(&data->event_ui_info);
+    if(data->ui_thread != NULL)
+    {
+        threadJoin(data->ui_thread, U64_MAX);
+        threadFree(data->ui_thread);
+    }
 
-    while (!data->finished) update_qr(data);
-    bool success = data->success;
-    while (!data->closed) svcSleepThread(1000000);
-    svcCloseHandle(data->started);
-    free(data);
+    LightEvent_Wait(&data->event_cam_info);
+    LightEvent_Clear(&data->event_cam_info);
+    if(data->cam_thread != NULL)
+    {
+        threadJoin(data->cam_thread, U64_MAX);
+        threadFree(data->cam_thread);
+    }
 
+    free(data->camera_buffer);
+}
+
+bool init_qr(void)
+{
+    qr_data data;
+
+    memset(&data, 0, sizeof(data));
+
+    start_qr(&data);
+
+    struct quirc_data* scan_data = calloc(1, sizeof(struct quirc_data)); 
+    const bool ready = start_capture_cam(&data);
+    bool finished = !ready;
+    while(!finished)
+    {
+        hidScanInput();
+        if (hidKeysDown() & (KEY_R | KEY_B | KEY_TOUCH))
+        {
+            break;
+        }
+
+        finished = update_qr(&data, scan_data);
+        svcSleepThread(40 * 1000 * 1000ULL); // only scan every 40ms
+    }
+
+    exit_qr(&data);
+
+    bool success = false;
+    if(finished && ready)
+    {
+        draw_install(INSTALL_DOWNLOAD);
+        char * zip_buf = NULL;
+        char * filename = NULL;
+        u32 zip_size = http_get((char*)scan_data->payload, &filename, &zip_buf, INSTALL_DOWNLOAD);
+
+        if(zip_size != 0)
+        {
+            draw_install(INSTALL_CHECKING_DOWNLOAD);
+
+            struct archive *a = archive_read_new();
+            archive_read_support_format_zip(a);
+
+            int r = archive_read_open_memory(a, zip_buf, zip_size);
+            archive_read_free(a);
+
+            if(r == ARCHIVE_OK)
+            {
+                EntryMode mode = MODE_AMOUNT;
+
+                char * buf = NULL;
+                do {
+                    if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
+                    {
+                        mode = MODE_THEMES;
+                        break;
+                    }
+
+                    free(buf);
+                    buf = NULL;
+                    if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
+                    {
+                        mode = MODE_SPLASHES;
+                        break;
+                    }
+
+                    free(buf);
+                    buf = NULL;
+                    if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
+                    {
+                        mode = MODE_SPLASHES;
+                        break;
+                    }
+                }
+                while(false);
+
+                free(buf);
+                buf = NULL;
+
+                if(mode != MODE_AMOUNT)
+                {
+                    char path_to_file[0x107] = {0};
+                    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+                    char * extension = strrchr(path_to_file, '.');
+                    if (extension == NULL || strcmp(extension, ".zip"))
+                        strcat(path_to_file, ".zip");
+
+                    remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
+                    buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
+                    success = true;
+                }
+                else
+                {
+                    throw_error("Zip downloaded is neither\na splash nor a theme.", ERROR_LEVEL_WARNING);
+                }
+            }
+            else
+            {
+                throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
+            }
+            free(zip_buf);
+        }
+        else
+        {
+            throw_error("Download failed.", ERROR_LEVEL_WARNING);
+        }
+
+        free(filename);
+    }
+
+    free(scan_data);
+    quirc_destroy(data.context);
     return success;
 }
