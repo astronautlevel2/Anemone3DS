@@ -61,9 +61,9 @@ typedef struct {
 } Icon_s;
 
 typedef struct {
-    u16 name[0x40];
-    u16 desc[0x80];
-    u16 author[0x40];
+    u16 name[0x41];
+    u16 desc[0x81];
+    u16 author[0x41];
 
     // u32 placeholder_color;
 
