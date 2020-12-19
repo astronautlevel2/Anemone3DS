@@ -36,6 +36,8 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+// #define TIMESTUFF
+
 static void start_read(qr_data *data)
 {
     LightLock_Lock(&data->mut);
@@ -82,6 +84,18 @@ static void stop_write(qr_data *data)
     LightLock_Unlock(&data->mut);
 }
 
+#ifdef TIMESTUFF
+static float avrg(float* times, int count)
+{
+    float acc = 0.0f;
+    for(int i = 0; i < count; ++i)
+    {
+        acc += times[i];
+    }
+    return acc / count;
+}
+#endif
+
 static void capture_cam_thread(void *arg)
 {
     qr_data *data = (qr_data *) arg;
@@ -90,7 +104,8 @@ static void capture_cam_thread(void *arg)
     cam_events[0] = data->event_stop;
 
     u32 transferUnit;
-    u16 *buffer = linearAlloc(400 * 240 * sizeof(u16));
+    const u32 bufsz = 400 * 240 * sizeof(u16);
+    u16 *buffer = linearAlloc(bufsz);
 
     camInit();
     CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
@@ -105,10 +120,17 @@ static void capture_cam_thread(void *arg)
     CAMU_GetMaxBytes(&transferUnit, 400, 240);
     CAMU_SetTransferBytes(PORT_CAM1, transferUnit, 400, 240);
     CAMU_ClearBuffer(PORT_CAM1);
-    CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
+    CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, bufsz, transferUnit);
     CAMU_StartCapture(PORT_CAM1);
 
     bool cancel = false;
+
+#ifdef TIMESTUFF
+    float times[60] = {0};
+    int time_idx = 0;
+    TickCounter ticks;
+    osTickCounterStart(&ticks);
+#endif
     while (!cancel)
     {
         s32 index = 0;
@@ -123,23 +145,34 @@ static void capture_cam_thread(void *arg)
                 cam_events[1] = 0;
 
                 start_write(data);
-                memcpy(data->camera_buffer, buffer, 400 * 240 * sizeof(u16));
+                memcpy(data->camera_buffer, buffer, bufsz);
                 data->any_update = true;
                 stop_write(data);
 
-                CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
+                CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, bufsz, transferUnit);
                 break;
             case 2:
                 svcCloseHandle(cam_events[1]);
                 cam_events[1] = 0;
 
                 CAMU_ClearBuffer(PORT_CAM1);
-                CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, 400 * 240 * sizeof(u16), transferUnit);
+                CAMU_SetReceiving(&cam_events[1], buffer, PORT_CAM1, bufsz, transferUnit);
                 CAMU_StartCapture(PORT_CAM1);
                 break;
             default:
                 break;
         }
+
+#ifdef TIMESTUFF
+        osTickCounterUpdate(&ticks);
+        times[time_idx] = osTickCounterRead(&ticks) - times[time_idx == 0 ? 59 : (time_idx - 1)];
+        
+        if(++time_idx == 60)
+        {
+            DEBUG("cam thread %.4f ms avg this second\n", avrg(times, time_idx));
+            time_idx = 0;
+        }
+#endif
     }
 
     CAMU_StopCapture(PORT_CAM1);
@@ -168,13 +201,20 @@ static void capture_cam_thread(void *arg)
 static void update_ui(void *arg)
 {
     qr_data* data = (qr_data*) arg;
+    C3D_Tex tex;
 
     static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f/512.0f, 1.0f - (240.0f/256.0f) };
-    C3D_Tex tex;
     C3D_TexInit(&tex, 512, 256, GPU_RGB565);
+
     C3D_TexSetFilter(&tex, GPU_LINEAR, GPU_LINEAR);
 
-    while(svcWaitSynchronization(data->event_stop, 4 * 1000 * 1000ULL) == 0x09401BFE) // timeout of 4ms occured, still have 12 for copy and render
+#ifdef TIMESTUFF
+    float times[60] = {0};
+    int time_idx = 0;
+    TickCounter ticks;
+    osTickCounterStart(&ticks);
+#endif
+    while(svcWaitSynchronization(data->event_stop, 2 * 1000 * 1000ULL) == 0x09401BFE) // timeout of 2ms occured, still have 14 for copy and render
     {
         draw_base_interface();
 
@@ -182,12 +222,12 @@ static void update_ui(void *arg)
         start_read(data);
         if(data->any_update)
         {
-            for(u32 x = 0; x < 400; x++) {
-                for(u32 y = 0; y < 240; y++) {
+            for(u32 y = 0; y < 240; y++) {
+                const u32 srcPos = y * 400;
+                for(u32 x = 0; x < 400; x++) {
                     const u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3)));
-                    const u32 srcPos = y * 400 + x;
 
-                    ((u16*)tex.data)[dstPos] = data->camera_buffer[srcPos];
+                    ((u16*)tex.data)[dstPos] = data->camera_buffer[srcPos + x];
                 }
             }
             data->any_update = false;
@@ -199,6 +239,17 @@ static void update_ui(void *arg)
         set_screen(bottom);
         draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
         end_frame();
+
+#ifdef TIMESTUFF
+        osTickCounterUpdate(&ticks);
+        times[time_idx] = osTickCounterRead(&ticks) - times[time_idx == 0 ? 59 : (time_idx - 1)];
+        
+        if(++time_idx == 60)
+        {
+            DEBUG("ui thread %.4f ms avg this second\n", avrg(times, time_idx));
+            time_idx = 0;
+        }
+#endif
     }
 
     C3D_TexDelete(&tex);
@@ -229,10 +280,12 @@ static bool update_qr(qr_data *data, struct quirc_data* scan_data)
     u8 *image = (u8*) quirc_begin(data->context, &w, &h);
 
     start_read(data);
-    for (ssize_t x = 0; x < w; x++) {
-        for (ssize_t y = 0; y < h; y++) {
-            u16 px = data->camera_buffer[y * 400 + x];
-            image[y * w + x] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
+    for (int y = 0; y < h; y++) {
+        const int actual_y = y * w;
+        for (int x = 0; x < w; x++) {
+            const int actual_off = actual_y + x;
+            const u16 px = data->camera_buffer[actual_off];
+            image[actual_off] = (u8)(((((px >> 11) & 0x1F) << 3) + (((px >> 5) & 0x3F) << 2) + ((px & 0x1F) << 3)) / 3);
         }
     }
     stop_read(data);
@@ -265,7 +318,6 @@ static void start_qr(qr_data *data)
 
     data->context = quirc_new();
     quirc_resize(data->context, 400, 240);
-
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
 }
 static void exit_qr(qr_data *data)
@@ -302,6 +354,13 @@ bool init_qr(void)
     struct quirc_data* scan_data = calloc(1, sizeof(struct quirc_data)); 
     const bool ready = start_capture_cam(&data);
     bool finished = !ready;
+
+#ifdef TIMESTUFF
+    float times[60] = {0};
+    int time_idx = 0;
+    TickCounter ticks;
+    osTickCounterStart(&ticks);
+#endif
     while(!finished)
     {
         hidScanInput();
@@ -311,7 +370,18 @@ bool init_qr(void)
         }
 
         finished = update_qr(&data, scan_data);
-        svcSleepThread(40 * 1000 * 1000ULL); // only scan every 40ms
+        svcSleepThread(50 * 1000 * 1000ULL); // only scan every 50ms
+
+#ifdef TIMESTUFF
+        osTickCounterUpdate(&ticks);
+        times[time_idx] = osTickCounterRead(&ticks) - times[time_idx == 0 ? 59 : (time_idx - 1)];
+        
+        if(++time_idx == 60)
+        {
+            DEBUG("scan thread %.4f ms avg this second\n", avrg(times, time_idx));
+            time_idx = 0;
+        }
+#endif
     }
 
     exit_qr(&data);

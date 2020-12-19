@@ -359,7 +359,6 @@ int main(void)
     bool preview_mode = false;
     int preview_offset = 0;
 
-    bool qr_mode = false;
     bool install_mode = false;
     bool extra_mode = false;
     C2D_Image preview = {0};
@@ -407,7 +406,6 @@ int main(void)
             instructions = extra_instructions[index];
         }
 
-        if(qr_mode) take_picture();
         else if(preview_mode)
         {
             draw_preview(preview, preview_offset);
@@ -440,14 +438,14 @@ int main(void)
 
         if(!install_mode && !extra_mode)
         {
-            if(!preview_mode && !qr_mode && kDown & KEY_L) //toggle between splashes and themes
+            if(!preview_mode && kDown & KEY_L) //toggle between splashes and themes
             {
                 switch_mode:
                 current_mode++;
                 current_mode %= MODE_AMOUNT;
                 continue;
             }
-            else if(!qr_mode && !preview_mode && kDown & KEY_R) //toggle QR mode
+            else if(!preview_mode && kDown & KEY_R) //toggle QR mode
             {
                 enable_qr:
                 draw_base_interface();
@@ -480,7 +478,7 @@ int main(void)
 
                 continue;
             }
-            else if(!qr_mode && kDown & KEY_Y && current_list->entries != NULL) //toggle preview mode
+            else if(kDown & KEY_Y && current_list->entries != NULL) //toggle preview mode
             {
                 toggle_preview:
                 if(!preview_mode)
@@ -525,7 +523,7 @@ int main(void)
             }
         }
 
-        if(qr_mode || preview_mode || current_list->entries == NULL)
+        if(preview_mode || current_list->entries == NULL)
             goto touch;
 
         int selected_entry = current_list->selected_entry;
