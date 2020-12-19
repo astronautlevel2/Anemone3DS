@@ -83,6 +83,7 @@ C2D_Image * loadTextureIcon(Icon_s *icon)
 
 void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
 {
+    /*
     if(icon == NULL)
     {
         memcpy(entry->name, fallback_name, 0x80);
@@ -91,27 +92,12 @@ void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
         entry->placeholder_color = C2D_Color32(rand() % 255, rand() % 255, rand() % 255, 255);
         return;
     }
+    */
 
     memcpy(entry->name, icon->name, 0x40*sizeof(u16));
     memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
     memcpy(entry->author, icon->author, 0x40*sizeof(u16));
 }
-
-static void parse_entry_smdh(Entry_s * entry, const u16 * fallback_name)
-{
-    char *info_buffer = NULL;
-    u64 size = load_data("/info.smdh", *entry, &info_buffer);
-
-    if(!size)
-    {
-        free(info_buffer);
-        info_buffer = NULL;
-    }
-
-    Icon_s * smdh = (Icon_s *)info_buffer;
-
-    parse_smdh(smdh, entry, fallback_name);
-}   
 
 static C2D_Image * load_entry_icon(Entry_s entry)
 {
@@ -207,15 +193,14 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
             if (size == 0) continue;
         }
 
-        free(buf);
         list->entries_count++;
         Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
         if(new_list == NULL)
         {
-            free(list->entries);
-            list->entries = NULL;
-            res = -1;
-            DEBUG("break\n");
+            // out of memory: still allow use of currently loaded entries.
+            // Many things might die, depending on the heap layout after
+            list->entries_count--;
+            free(buf);
             break;
         }
         else
@@ -223,12 +208,11 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
         Entry_s * current_entry = &(list->entries[list->entries_count-1]);
         memset(current_entry, 0, sizeof(Entry_s));
+        parse_smdh((Icon_s *)buf, current_entry, dir_entry.name);
+        free(buf);
 
-        struacat(current_entry->path, loading_path);
-        strucat(current_entry->path, dir_entry.name);
-
+        memcpy(current_entry->path, path, 0x106 * sizeof(u16));
         current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-        parse_entry_smdh(current_entry, dir_entry.name);
     }
 
     FSDIR_Close(dir_handle);

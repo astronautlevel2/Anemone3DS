@@ -486,20 +486,38 @@ void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * 
 
 static void draw_entry_info(Entry_s * entry)
 {
+    {
+    u16 author_u16[0x41];
+    memcpy(author_u16, entry->author, 0x40);
+    author_u16[0x40] = 0;
+
     char author[0x41] = {0};
-    utf16_to_utf8((u8*)author, entry->author, 0x40);
+    utf16_to_utf8((u8*)author, author_u16, 0x40);
     draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], &text[TEXT_BY_AUTHOR]);
     float width = 0;
     C2D_TextGetDimensions(&text[TEXT_BY_AUTHOR], 0.5, 0.5, &width, NULL);
     draw_text(20+width, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], author);
+    }
+
+    {
+    u16 name_u16[0x41];
+    memcpy(name_u16, entry->name, 0x40);
+    name_u16[0x40] = 0;
 
     char title[0x41] = {0};
-    utf16_to_utf8((u8*)title, entry->name, 0x40);
+    utf16_to_utf8((u8*)title, name_u16, 0x40);
     draw_text(20, 50, 0.5, 0.7, 0.7, colors[COLOR_WHITE], title);
+    }
+
+    {
+    u16 desc_u16[0x81];
+    memcpy(desc_u16, entry->desc, 0x80);
+    desc_u16[0x80] = 0;
 
     char description[0x81] = {0};
-    utf16_to_utf8((u8*)description, entry->desc, 0x80);
+    utf16_to_utf8((u8*)description, desc_u16, 0x80);
     draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description, 363);
+    }
 }
 
 void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
@@ -552,13 +570,18 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
         vertical_offset += 24;
         horizontal_offset += 16;
 
+        // theoretically impossible to have no icon when from the api
+        /*
         if(!current_entry->placeholder_color)
         {
+        */
             C2D_Image * image = list->icons[i];
             C2D_DrawImageAt(*image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);
+        /*
         }
         else
             C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, list->entry_size, list->entry_size, current_entry->placeholder_color);
+        */
 
         if(i == selected_entry)
         {
@@ -713,19 +736,24 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
             C2D_DrawSpriteTinted(&sprite_installed, &tint);
         }
 
+        // no icons not allowed anymore
+        /*
         if(!current_entry->placeholder_color)
         {
+        */
             C2D_Image * image = NULL;
             if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
                 image = list->icons[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
             else
                 image = list->icons[i];
             C2D_DrawImageAt(*image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);
+        /*
         }
         else
         {
             C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, list->entry_size, list->entry_size, current_entry->placeholder_color);
         }
+        */
     }
 
     char entries_count_str[0x20] = {0};
