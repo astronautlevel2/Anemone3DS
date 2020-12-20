@@ -106,7 +106,9 @@ static C2D_Image * load_entry_icon(Entry_s entry)
     if(!size) return NULL;
 
     Icon_s * smdh = (Icon_s *)info_buffer;
-    return loadTextureIcon(smdh);
+    C2D_Image* out = loadTextureIcon(smdh);
+    free(info_buffer);
+    return out;
 }
 
 typedef int (*sort_comparator)(const void *, const void *);
