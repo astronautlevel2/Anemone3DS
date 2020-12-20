@@ -36,8 +36,6 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-// #define TIMESTUFF
-
 static void start_read(qr_data *data)
 {
     LightLock_Lock(&data->mut);
@@ -84,18 +82,6 @@ static void stop_write(qr_data *data)
     LightLock_Unlock(&data->mut);
 }
 
-#ifdef TIMESTUFF
-static float avrg(float* times, int count)
-{
-    float acc = 0.0f;
-    for(int i = 0; i < count; ++i)
-    {
-        acc += times[i];
-    }
-    return acc / count;
-}
-#endif
-
 static void capture_cam_thread(void *arg)
 {
     qr_data *data = (qr_data *) arg;
@@ -125,12 +111,6 @@ static void capture_cam_thread(void *arg)
 
     bool cancel = false;
 
-#ifdef TIMESTUFF
-    float times[60] = {0};
-    int time_idx = 0;
-    TickCounter ticks;
-    osTickCounterStart(&ticks);
-#endif
     while (!cancel)
     {
         s32 index = 0;
@@ -162,17 +142,6 @@ static void capture_cam_thread(void *arg)
             default:
                 break;
         }
-
-#ifdef TIMESTUFF
-        osTickCounterUpdate(&ticks);
-        times[time_idx] = osTickCounterRead(&ticks) - times[time_idx == 0 ? 59 : (time_idx - 1)];
-        
-        if(++time_idx == 60)
-        {
-            DEBUG("cam thread %.4f ms avg this second\n", avrg(times, time_idx));
-            time_idx = 0;
-        }
-#endif
     }
 
     CAMU_StopCapture(PORT_CAM1);
@@ -208,12 +177,6 @@ static void update_ui(void *arg)
 
     C3D_TexSetFilter(&tex, GPU_LINEAR, GPU_LINEAR);
 
-#ifdef TIMESTUFF
-    float times[60] = {0};
-    int time_idx = 0;
-    TickCounter ticks;
-    osTickCounterStart(&ticks);
-#endif
     while(svcWaitSynchronization(data->event_stop, 2 * 1000 * 1000ULL) == 0x09401BFE) // timeout of 2ms occured, still have 14 for copy and render
     {
         draw_base_interface();
@@ -239,17 +202,6 @@ static void update_ui(void *arg)
         set_screen(bottom);
         draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
         end_frame();
-
-#ifdef TIMESTUFF
-        osTickCounterUpdate(&ticks);
-        times[time_idx] = osTickCounterRead(&ticks) - times[time_idx == 0 ? 59 : (time_idx - 1)];
-        
-        if(++time_idx == 60)
-        {
-            DEBUG("ui thread %.4f ms avg this second\n", avrg(times, time_idx));
-            time_idx = 0;
-        }
-#endif
     }
 
     C3D_TexDelete(&tex);
@@ -355,12 +307,6 @@ bool init_qr(void)
     const bool ready = start_capture_cam(&data);
     bool finished = !ready;
 
-#ifdef TIMESTUFF
-    float times[60] = {0};
-    int time_idx = 0;
-    TickCounter ticks;
-    osTickCounterStart(&ticks);
-#endif
     while(!finished)
     {
         hidScanInput();
@@ -371,17 +317,6 @@ bool init_qr(void)
 
         finished = update_qr(&data, scan_data);
         svcSleepThread(50 * 1000 * 1000ULL); // only scan every 50ms
-
-#ifdef TIMESTUFF
-        osTickCounterUpdate(&ticks);
-        times[time_idx] = osTickCounterRead(&ticks) - times[time_idx == 0 ? 59 : (time_idx - 1)];
-        
-        if(++time_idx == 60)
-        {
-            DEBUG("scan thread %.4f ms avg this second\n", avrg(times, time_idx));
-            time_idx = 0;
-        }
-#endif
     }
 
     exit_qr(&data);
