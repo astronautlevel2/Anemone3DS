@@ -282,6 +282,7 @@ static void exit_qr(qr_data *data)
     {
         threadJoin(data->ui_thread, U64_MAX);
         threadFree(data->ui_thread);
+        data->ui_thread = NULL;
     }
 
     LightEvent_Wait(&data->event_cam_info);
@@ -290,9 +291,13 @@ static void exit_qr(qr_data *data)
     {
         threadJoin(data->cam_thread, U64_MAX);
         threadFree(data->cam_thread);
+        data->cam_thread = NULL;
     }
 
     free(data->camera_buffer);
+    data->camera_buffer = NULL;
+    svcCloseHandle(data->event_stop);
+    data->event_stop = 0;
 }
 
 bool init_qr(void)
