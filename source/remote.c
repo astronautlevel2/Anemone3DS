@@ -739,18 +739,16 @@ typedef enum ParseResult
     HTTPC_ERROR,
     SERVER_IS_MISBEHAVING,
     NO_FILENAME, // provisional
-    HTTP_NO_CONTENT = 204, // most servers will never return this
-    HTTP_MULTIPLE_CHOICES = 300, // TODO: there isn't a standard way to handle this without user intervention... we can check for a Location header, but that's about it
     HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
     HTTP_NOT_FOUND = 404,
-    HTTP_UNACCEPTABLE = 406,
+    HTTP_UNACCEPTABLE = 406, // like 204, usually doesn't happen
     HTTP_PROXY_UNAUTHORIZED = 407,
     HTTP_GONE = 410,
     HTTP_URI_TOO_LONG = 414,
     HTTP_IM_A_TEAPOT = 418, // Note that a combined coffee/tea pot that is temporarily out of coffee should instead return 503.
     HTTP_UPGRADE_REQUIRED = 426, // the 3DS doesn't support HTTP/2, so we can't upgrade - inform and return
-    HTTP_LEGAL_REASONS = 451, // TODO: display message explaining why?
+    HTTP_LEGAL_REASONS = 451,
     HTTP_INTERNAL_SERVER_ERROR = 500,
     HTTP_BAD_GATEWAY = 502,
     HTTP_SERVICE_UNAVAILABLE = 503,
@@ -761,7 +759,6 @@ typedef enum ParseResult
 // all other paths are failures
 static ParseResult parse_header(struct header * out, httpcContext * context, bool get_filename, const char * mime)
 {
-    char * content_buf = calloc(1024, sizeof(char));
     // status code
     u32 status_code;
 
@@ -786,6 +783,8 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         return (ParseResult)status_code;
     }
 
+    char * content_buf = calloc(1024, sizeof(char));
+
     // Content-Type
 
     if (mime)
@@ -793,6 +792,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
         if (!strstr(mime, content_buf))
         {
+            free(content_buf);
             return SERVER_IS_MISBEHAVING;
         }
     }
@@ -802,7 +802,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
     if (httpcGetDownloadSizeState(context, NULL, &out->file_size))
     {
         DEBUG("httpcGetDownloadSizeState\n");
-        return HTTPC_ERROR;
+        return HTTPC_ERROR; // no need to free, program dies anyway
     }
 
     // Content-Disposition
@@ -838,6 +838,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         }
 
         char * illegal_char;
+        // filter out characters illegal in FAT32 filenames
         while ((illegal_char = strpbrk(filename, "><\"?;:/\\+,.|[=]")))
             *illegal_char = '-';
 
@@ -845,12 +846,10 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         strcpy(out->filename, filename);
         DEBUG("%s\n", out->filename);
     }
-    free(content_buf);
-
     return SUCCESS;
 }
 
-#define ZIP_NOT_AVAILABLE "Error: ZIP not available at this URL\nIf you believe this is an error, please contact the site administrator"
+#define ZIP_NOT_AVAILABLE "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator"
 
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
@@ -927,14 +926,63 @@ redirect: // goto here if we need to redirect
         quit = true;
         return httpcCloseContext(&context);
     case HTTP_NOT_FOUND:
-        DEBUG("HTTP 404 Not Found; URL: %s\n", url);
+    case HTTP_GONE:
         // TODO: check if we're looking at a TP URL, if we are, suggest that it might be missing
-        throw_error("HTTP 404 Not Found\nIf you believe this to be in error, contact the site administrator.", ERROR_LEVEL_WARNING);
+        const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
+        DEBUG("HTTP %s; URL: %s\n", http_error, url);
+        char err_buf[0x69];
+        snprintf(err_buf, 0x69, "HTTP %s\nCheck that the URL is correct.", http_error);
+        throw_error(err_buf, ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_UNAUTHORIZED:
+    case HTTP_FORBIDDEN:
+    case HTTP_PROXY_UNAUTHORIZED:
+        DEBUG("HTTP %u: device not authenticated\n", parse);
+        char err_buf[0x69];
+        snprintf(err_buf, 0x69, "HTTP %s\nContact the site administrator.", parse == HTTP_UNAUTHORIZED
+            ? "401 Unauthorized"
+            : parse == HTTP_FORBIDDEN
+            ? "403 Forbidden"
+            : "407 Proxy Authentication Required");
+        throw_error(err_buf, ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_URI_TOO_LONG:
+        DEBUG("HTTP 414; URL is too long, maybe too many redirects?\n");
+        throw_error("HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_IM_A_TEAPOT:
+        DEBUG("HTTP 418 I'm a teapot\n");
+        throw_error("HTTP 418 I'm a teapot\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_UPGRADE_REQUIRED:
+        DEBUG("HTTP 426; HTTP/2 required\n");
+        throw_error("HTTP 426 Upgrade Required\nThe 3DS does not support this website.\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_LEGAL_REASONS:
+        DEBUG("HTTP 451; URL: %s\n", url);
+        throw_error("HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_INTERNAL_SERVER_ERROR:
+        DEBUG("HTTP 500\n");
+        throw_error("HTTP 500 Internal Server Error\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_BAD_GATEWAY:
+        DEBUG("HTTP 502\n");
+        throw_error("HTTP 502 Bad Gateway\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_SERVICE_UNAVAILABLE:
+        DEBUG("HTTP 503\n");
+        throw_error("HTTP 503 Service Unavailable\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
+    case HTTP_GATEWAY_TIMEOUT:
+        DEBUG("HTTP 504\n");
+        throw_error("HTTP 504 Gateway Timeout\nContact the site administrator.", ERROR_LEVEL_WARNING);
         return httpcCloseContext(&context);
     default:
     {
+        DEBUG("HTTP %u\n", parse);
         char err_buf[0x69];
-        snprintf(err_buf, 0x69, "HTTP Error %u\nIf you believe this is unexpected, please contact the site administrator", parse);
+        snprintf(err_buf, 0x69, "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.", parse);
         throw_error(err_buf, ERROR_LEVEL_WARNING);
         return httpcCloseContext(&context);
     }
