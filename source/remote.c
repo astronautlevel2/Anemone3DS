@@ -741,7 +741,6 @@ typedef enum ParseResult
     NO_FILENAME, // provisional
     HTTP_NO_CONTENT = 204, // most servers will never return this
     HTTP_MULTIPLE_CHOICES = 300, // TODO: there isn't a standard way to handle this without user intervention... we can check for a Location header, but that's about it
-    HTTP_SEE_OTHER = 303,
     HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
     HTTP_NOT_FOUND = 404,
@@ -839,7 +838,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         }
 
         char * illegal_char;
-        while ((illegal_char = strpbrk(filename, "\"?;:/\\+")))
+        while ((illegal_char = strpbrk(filename, "><\"?;:/\\+,.|[=]")))
             *illegal_char = '-';
 
         out->filename = malloc(strlen(filename) + 1);
@@ -851,26 +850,17 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
     return SUCCESS;
 }
 
-static inline u8 close_context_free(httpcContext * context, char * redirect_url, char * new_url)
-{
-    httpcCloseContext(context);
-    free(redirect_url);
-    free(new_url);
-    return 0;
-}
-
 #define ZIP_NOT_AVAILABLE "Error: ZIP not available at this URL\nIf you believe this is an error, please contact the site administrator"
 
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
  */
-u32
-http_get(const char * url, char ** filename, char ** buf, InstallType install_type, const char * acceptable_mime_types)
+u32 http_get(const char * url, char ** filename, char ** buf, InstallType install_type, const char * acceptable_mime_types)
 {
     Result ret;
     httpcContext context;
-    char * redirect_url = NULL;
-    char * new_url = NULL;
+    char redirect_url[0x824] = {0};
+    char new_url[0x824] = {0};
 
     struct header _header = {};
 
@@ -905,18 +895,12 @@ redirect: // goto here if we need to redirect
     {
     case NO_FILENAME:
     case SUCCESS:
-        free(redirect_url);
-        free(new_url);
         break;
     case REDIRECT:
-        if (redirect_url == NULL)
-            redirect_url = malloc(0x824);
         httpcGetResponseHeader(&context, "Location", redirect_url, 0x824);
         httpcCloseContext(&context);
         if (*redirect_url == '/') // if relative URL
         {
-            if (new_url == NULL)
-                new_url = malloc(0x824);
             strcpy(new_url, url);
             // this is good code, i promise
             *(strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/')) = '\0';
@@ -932,27 +916,27 @@ redirect: // goto here if we need to redirect
     case HTTP_UNACCEPTABLE:
         DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
         throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
-        return close_context_free(&context, redirect_url, new_url);
+        return httpcCloseContext(&context);
     case SERVER_IS_MISBEHAVING:
         DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
         throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
-        return close_context_free(&context, redirect_url, new_url);
+        return httpcCloseContext(&context);
     case HTTPC_ERROR:
         DEBUG("httpc error\n");
-        return close_context_free(&context, redirect_url, new_url);
-    case HTTP_SEE_OTHER:
-        // typically a server shouldn't return this, as this is normally used for POST/PUT and we don't use them
-        DEBUG("Server returned 303 - can't download this resource\n");
-        throw_error("Download failed.\nIs this item approved on Theme Plaza?", ERROR_LEVEL_WARNING);
-        return close_context_free(&context, redirect_url, new_url);
+        throw_error("Error in HTTPC sysmodule.\nIf you are seeing this, please contact an Anemone developer\non the ThemePlaza Discord.", ERROR_LEVEL_ERROR);
+        quit = true;
+        return httpcCloseContext(&context);
+    case HTTP_NOT_FOUND:
+        DEBUG("HTTP 404 Not Found; URL: %s\n", url);
+        // TODO: check if we're looking at a TP URL, if we are, suggest that it might be missing
+        throw_error("HTTP 404 Not Found\nIf you believe this to be in error, contact the site administrator.", ERROR_LEVEL_WARNING);
+        return httpcCloseContext(&context);
     default:
     {
-        char * err_buf = malloc(0x69);
-        snprintf(err_buf, 0x69, "HTTP Error %u\nIf you believe this is an error, please contact the site administrator",
-            parse);
+        char err_buf[0x69];
+        snprintf(err_buf, 0x69, "HTTP Error %u\nIf you believe this is unexpected, please contact the site administrator", parse);
         throw_error(err_buf, ERROR_LEVEL_WARNING);
-        free(err_buf);
-        return close_context_free(&context, redirect_url, new_url);
+        return httpcCloseContext(&context);
     }
     }
 
@@ -963,79 +947,58 @@ redirect: // goto here if we need to redirect
         else
         {
             // TODO: swkbd stuff
+            // needs to be heap allocated only because the call site is expected to free it
             *filename = malloc(0x20);
             sprintf(*filename, "tobesupplied.zip");
         }
     }
 
-    u32 chunk_size = _header.file_size / 4 || 0x80000;
-    bool size_correct = false;
+    u32 chunk_size;
     if (_header.file_size)
-    {
-        *buf = malloc(_header.file_size);
-        size_correct = true;
-    }
+        // the only reason we chunk this at all is for the download bar;
+        // in terms of efficiency, allocating the full size
+        // would avoid 3 reallocs whenever the server isn't lying
+        chunk_size = _header.file_size / 4;
     else
-    {
-        *buf = malloc(chunk_size);
-    }
+        chunk_size = 0x80000;
 
-    if (*buf == NULL)
-    {
-        httpcCloseContext(&context);
-        DEBUG("malloc failed in http_get\n");
-        return 0;
-    }
-
-    char * last_buf;
+    *buf = NULL;
+    char * new_buf;
     u32 size = 0;
     u32 read_size = 0;
 
     do
     {
-        if (size >= _header.file_size)
-        {
-            size_correct = false;
-            goto realloc_buf;
-        }
-        ret = httpcDownloadData(&context, (u8 * )(*buf) + size, chunk_size, &read_size);
-        size += read_size;
-
-        if (size_correct)
-        {
-            if (install_type != INSTALL_NONE)
-                draw_loading_bar(size, _header.file_size, install_type);
-        }
-        else if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING)
-        {
-        realloc_buf:
-            last_buf = *buf;
-
-            *buf = realloc(*buf, size + chunk_size);
-            if (*buf == NULL)
-            {
-                httpcCloseContext(&context);
-                free(last_buf);
-                DEBUG("realloc failed in http_get - file possibly too large?\n"); // TODO: report this?
-                return 0;
-            }
-        }
-    } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
-
-    if (!size_correct)
-    {
-        last_buf = *buf;
-        *buf = realloc(*buf, size);
-        if (*buf == NULL)
+        new_buf = realloc(*buf, size + chunk_size);
+        if (new_buf == NULL)
         {
             httpcCloseContext(&context);
-            free(last_buf);
-            DEBUG("shrinking realloc failed\n"); // 何？
+            free(*buf);
+            DEBUG("realloc failed in http_get - file possibly too large?\n"); // TODO: report this?
             return 0;
         }
-    }
+        *buf = new_buf;
 
+        // download exactly chunk_size bytes and toss them into buf.
+        // size contains the current offset into buf.
+        ret = httpcDownloadData(&context, (u8*)(*buf) + size, chunk_size, &read_size);
+        size += read_size;
+
+        if (_header.file_size && install_type != INSTALL_NONE)
+            draw_loading_bar(size, _header.file_size, install_type);
+    } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
     httpcCloseContext(&context);
+
+    // shrink to size
+    new_buf = realloc(*buf, size);
+    if (new_buf == NULL)
+    {
+        httpcCloseContext(&context);
+        free(*buf);
+        DEBUG("shrinking realloc failed\n"); // 何？
+        return 0;
+    }
+    *buf = new_buf;
 
     DEBUG("size: %lu\n", size);
     return size;
