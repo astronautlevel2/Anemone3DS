@@ -30,22 +30,24 @@
 #include "common.h"
 
 typedef struct {
-    u16 *camera_buffer;
-    C2D_Image image;
-    C3D_Tex *tex;
-    Handle mutex;
-    volatile bool finished;
-    volatile bool closed;
-    volatile bool success;
-    Handle cancel;
-    Handle started;
+    u16* camera_buffer;
 
-    bool capturing;
+    Handle event_stop;
+    Thread cam_thread, ui_thread;
+
+    LightEvent event_cam_info, event_ui_info;
+
+    CondVar cond;
+    LightLock mut;
+    u32 num_readers_active;
+    bool writer_waiting;
+    bool writer_active;
+
+    bool any_update;
+
     struct quirc* context;
 } qr_data;
 
 bool init_qr(void);
-void exit_qr(qr_data *data);
-void take_picture(void);
 
 #endif
