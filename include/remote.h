@@ -52,6 +52,6 @@
 #define CACHE_PATH_FORMAT            "/3ds/"  APP_TITLE  "/cache/%"  JSON_INTEGER_FORMAT
 
 bool themeplaza_browser(EntryMode mode);
-u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type);
+u32 http_get(const char *url, char ** filename, char ** buf, InstallType install_type, const char *mime_type);
 
 #endif
