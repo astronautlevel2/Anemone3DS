@@ -41,7 +41,7 @@ static void start_read(qr_data *data)
     LightLock_Lock(&data->mut);
     while(data->writer_waiting || data->writer_active)
     {
-        CondVar_Wait(&data->cond, &data->mut);
+        CondVar_WaitTimeout(&data->cond, &data->mut, 1000000);
     }
 
     AtomicIncrement(&data->num_readers_active);
@@ -64,7 +64,7 @@ static void start_write(qr_data *data)
 
     while(data->num_readers_active)
     {
-        CondVar_Wait(&data->cond, &data->mut);
+        CondVar_WaitTimeout(&data->cond, &data->mut, 1000000);
     }
 
     data->writer_waiting = false;
