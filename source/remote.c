@@ -892,6 +892,7 @@ redirect: // goto here if we need to redirect
     ParseResult parse = parse_header(&_header, &context, (bool)filename, acceptable_mime_types);
     switch (parse)
     {
+    char err_buf[0x69];
     case NO_FILENAME:
     case SUCCESS:
         break;
@@ -926,11 +927,10 @@ redirect: // goto here if we need to redirect
         quit = true;
         return httpcCloseContext(&context);
     case HTTP_NOT_FOUND:
-    case HTTP_GONE:
+    case HTTP_GONE: ;
         // TODO: check if we're looking at a TP URL, if we are, suggest that it might be missing
         const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
         DEBUG("HTTP %s; URL: %s\n", http_error, url);
-        char err_buf[0x69];
         snprintf(err_buf, 0x69, "HTTP %s\nCheck that the URL is correct.", http_error);
         throw_error(err_buf, ERROR_LEVEL_WARNING);
         return httpcCloseContext(&context);
@@ -938,7 +938,6 @@ redirect: // goto here if we need to redirect
     case HTTP_FORBIDDEN:
     case HTTP_PROXY_UNAUTHORIZED:
         DEBUG("HTTP %u: device not authenticated\n", parse);
-        char err_buf[0x69];
         snprintf(err_buf, 0x69, "HTTP %s\nContact the site administrator.", parse == HTTP_UNAUTHORIZED
             ? "401 Unauthorized"
             : parse == HTTP_FORBIDDEN
@@ -979,13 +978,10 @@ redirect: // goto here if we need to redirect
         throw_error("HTTP 504 Gateway Timeout\nContact the site administrator.", ERROR_LEVEL_WARNING);
         return httpcCloseContext(&context);
     default:
-    {
         DEBUG("HTTP %u\n", parse);
-        char err_buf[0x69];
         snprintf(err_buf, 0x69, "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.", parse);
         throw_error(err_buf, ERROR_LEVEL_WARNING);
         return httpcCloseContext(&context);
-    }
     }
 
     if (filename)

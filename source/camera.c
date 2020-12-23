@@ -332,7 +332,7 @@ bool init_qr(void)
         draw_install(INSTALL_DOWNLOAD);
         char * zip_buf = NULL;
         char * filename = NULL;
-        u32 zip_size = http_get((char*)scan_data->payload, &filename, &zip_buf, INSTALL_DOWNLOAD);
+        u32 zip_size = http_get((char*)scan_data->payload, &filename, &zip_buf, INSTALL_DOWNLOAD, "application/zip");
 
         if(zip_size != 0)
         {
