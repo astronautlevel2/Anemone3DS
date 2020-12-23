@@ -497,7 +497,7 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
     if(color_type == PNG_COLOR_TYPE_RGB ||
        color_type == PNG_COLOR_TYPE_GRAY ||
        color_type == PNG_COLOR_TYPE_PALETTE)
-        png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+        png_set_add_alpha(png, 0xFF, PNG_FILLER_BEFORE);
 
     if(color_type == PNG_COLOR_TYPE_GRAY ||
        color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
