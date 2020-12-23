@@ -31,7 +31,7 @@
 #include "draw.h"
 #include <ctype.h>
 
-#define THEMEPLAZA_BASE_URL "https://themeplaza.eu"
+#define THEMEPLAZA_BASE_URL "https://themeplaza.art"
 #define THEMEPLAZA_API_URL "/api/anemone/v1"
 #define THEMEPLAZA_BASE_API_URL THEMEPLAZA_BASE_URL  THEMEPLAZA_API_URL
 
