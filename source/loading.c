@@ -83,7 +83,7 @@ C2D_Image * loadTextureIcon(Icon_s *icon)
 
 void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
 {
-    /*
+ 
     if(icon == NULL)
     {
         memcpy(entry->name, fallback_name, 0x80);
@@ -92,7 +92,7 @@ void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
         entry->placeholder_color = C2D_Color32(rand() % 255, rand() % 255, rand() % 255, 255);
         return;
     }
-    */
+
 
     memcpy(entry->name, icon->name, 0x40*sizeof(u16));
     memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
@@ -186,14 +186,12 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
         if (!strcmp(dir_entry.shortExt, "ZIP"))
         {
             u32 size = zip_file_to_buf("info.smdh", path, &buf);
-            if (size == 0) continue;
         }
         else
         {
             const ssize_t len = strulen(path, 0x106);
             struacat(path, "/info.smdh");
             u32 size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &buf);
-            if (size == 0) continue;
             memset(&path[len], 0, (0x106 - len) * sizeof(u16));
         }
 

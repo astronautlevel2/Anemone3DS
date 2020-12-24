@@ -393,7 +393,11 @@ Result dump_theme(void)
 
     free(output_dir);
 
-    u16 color = rand() % 65535;
+    u8 r = rand() % 255;
+    u8 g = rand() % 255;
+    u8 b = rand() % 255;
+
+    u16 color = ((r & 0b11111000) << 8) | ((g & 0b11111100) << 3) | (b >> 3);
 
     for (int i = 0x2040; i < 0x36c0; i += 2)
     {

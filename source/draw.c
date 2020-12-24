@@ -719,24 +719,19 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
             C2D_DrawSpriteTinted(&sprite_installed, &tint);
         }
 
-        // no icons not allowed anymore
-        /*
         if(!current_entry->placeholder_color)
         {
-        */
             C2D_Image * image = NULL;
             if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
                 image = list->icons[ICONS_VISIBLE*list->entries_loaded + (i - list->scroll)];
             else
                 image = list->icons[i];
             C2D_DrawImageAt(*image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);
-        /*
         }
         else
         {
             C2D_DrawRectSolid(horizontal_offset, vertical_offset, 0.5f, list->entry_size, list->entry_size, current_entry->placeholder_color);
         }
-        */
     }
 
     char entries_count_str[0x20] = {0};
