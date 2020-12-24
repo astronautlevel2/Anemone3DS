@@ -1083,7 +1083,7 @@ redirect: // goto here if we need to redirect
         {
             httpcCloseContext(&context);
             free(*buf);
-            DEBUG("realloc failed in http_get - file possibly too large?\n"); // TODO: report this?
+            DEBUG("realloc failed in http_get - file possibly too large?\n");
             return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
         }
         *buf = new_buf;
