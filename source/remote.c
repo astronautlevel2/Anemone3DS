@@ -975,8 +975,8 @@ redirect: // goto here if we need to redirect
         if (*redirect_url == '/') // if relative URL
         {
             strcpy(new_url, url);
-            // this is good code, i promise
-            *(strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/')) = '\0';
+            char * last_slash = strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/');
+            if (last_slash) *last_slash = '\0'; // prevents a NULL deref in case the original domain was not /-delimited
             strncat(new_url, redirect_url, 0x824 - strlen(new_url));
             url = new_url;
         }
