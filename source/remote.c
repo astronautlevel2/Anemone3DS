@@ -849,6 +849,20 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
     return SUCCESS;
 }
 
+static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+{
+    (void)textlen;
+    (void)user;
+    *ppMessage = "Input must not contain:\n><\"?;:/\\+,.|[=]";
+    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    {
+        DEBUG("illegal filename: %s\n", text);
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+
+    return SWKBD_CALLBACK_OK;
+}
+
 #define ZIP_NOT_AVAILABLE "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator"
 
 /*
@@ -990,10 +1004,27 @@ redirect: // goto here if we need to redirect
             *filename = _header.filename;
         else
         {
-            // TODO: swkbd stuff
+            const int max_chars = 250;
             // needs to be heap allocated only because the call site is expected to free it
-            *filename = malloc(0x20);
-            sprintf(*filename, "tobesupplied.zip");
+            *filename = malloc(max_chars + 5); // + .zip and the null term
+
+            SwkbdState swkbd;
+
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, max_chars / 2);
+            swkbdSetHintText(&swkbd, "Choose a filename.");
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT | SWKBD_DARKEN_TOP_SCREEN);
+
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Download", true);
+            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, SWKBD_FILTER_CALLBACK, -1);
+            swkbdSetFilterCallback(&swkbd, &fat32filter, NULL);
+
+            SwkbdButton button = swkbdInputText(&swkbd, *filename, max_chars);
+
+            if (button != SWKBD_BUTTON_CONFIRM)
+                return httpcCloseContext(&context);
+
+            strcat(*filename, ".zip");
         }
     }
 
