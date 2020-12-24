@@ -410,9 +410,12 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
         int index = indexes[i];
 
         C2D_Image * image = icons[index];
-        C3D_TexDelete(image->tex);
-        free(image->tex);
-        free(image);
+        if (icons[index] != NULL)
+        {
+            C3D_TexDelete(image->tex);
+            free(image->tex);
+            free(image);
+        }
 
         icons[index] = load_entry_icon(*current_entry);
 
