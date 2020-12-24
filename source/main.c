@@ -406,7 +406,7 @@ int main(void)
             instructions = extra_instructions[index];
         }
 
-        else if(preview_mode)
+        if(preview_mode)
         {
             draw_preview(preview, preview_offset);
         }
