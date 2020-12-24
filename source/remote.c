@@ -280,10 +280,7 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int 
         Result res = http_get(preview_url, NULL, &preview_png, &preview_size, INSTALL_LOADING_REMOTE_PREVIEW, "image/png");
         free(preview_url);
         if (R_FAILED(res))
-        {
-            free(preview_png);
             return false;
-        }
     }
 
     if (!preview_size)
@@ -330,10 +327,7 @@ static void load_remote_bgm(Entry_s * entry)
         Result res = http_get(bgm_url, NULL, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
         free(bgm_url);
         if (R_FAILED(res))
-        {
-            free(bgm_ogg);
             return;
-        }
 
         u16 path[0x107] = { 0 };
         strucat(path, entry->path);
