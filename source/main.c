@@ -647,6 +647,13 @@ int main(void)
                     {
                         load_icons_first(current_list, false);
                     }
+                    else if((kDown | kHeld) & KEY_DRIGHT)
+                    {
+                        draw_install(INSTALL_DUMPING_THEME);
+                        Result res = dump_theme();
+                        if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
+                        else load_lists(lists);
+                    }
                 }
                 else if(key_l)
                 {

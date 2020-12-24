@@ -315,6 +315,99 @@ inline Result shuffle_install(Entry_List_s themes)
     return install_theme_internal(themes, THEME_INSTALL_SHUFFLE | THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
 
+static SwkbdCallbackResult
+dir_name_callback(void *data, const char ** ppMessage, const char * text, size_t textlen)
+{
+    (void)textlen;
+    (void)data;
+    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    {
+        *ppMessage = "Illegal character used.";
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+Result dump_theme(void)
+{
+    const int max_chars = 255;
+    char * output_dir = calloc(max_chars + 1, sizeof(char));
+
+    SwkbdState swkbd;
+
+    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
+    swkbdSetHintText(&swkbd, "Name of output folder");
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Done", true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
+    swkbdSetFilterCallback(&swkbd, dir_name_callback, NULL);
+
+    SwkbdButton button = swkbdInputText(&swkbd, output_dir, max_chars);
+
+    if (button != SWKBD_BUTTON_CONFIRM)
+    {
+        DEBUG("<dump_theme> Something went wrong with getting swkbd\n");
+        return MAKERESULT(RL_FATAL, RS_CANCELED, RM_UTIL, RD_CANCEL_REQUESTED);
+    }
+
+    u16 path[0x107] = { 0 };
+    struacat(path, "/themes/");
+    struacat(path, output_dir);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, path), FS_ATTRIBUTE_DIRECTORY);
+
+    char *thememanage_buf = NULL;
+    file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
+    ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
+    u32 theme_size = theme_manage->body_size;
+    u32 bgm_size = theme_manage->music_size;
+    free(thememanage_buf);
+
+    char *temp_buf = NULL;
+    file_to_buf(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &temp_buf);
+    u16 path_output[0x107] = { 0 };
+    memcpy(path_output, path, 0x107);
+    struacat(path_output, "/body_LZ.bin");
+    remake_file(fsMakePath(PATH_UTF16, path_output), ArchiveSD, theme_size);
+    buf_to_file(theme_size, fsMakePath(PATH_UTF16, path_output), ArchiveSD, temp_buf);
+    free(temp_buf);
+    temp_buf = NULL;
+
+    file_to_buf(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, &temp_buf);
+    memcpy(path_output, path, 0x107);
+    struacat(path_output, "/bgm.bcstm");
+    remake_file(fsMakePath(PATH_UTF16, path_output), ArchiveSD, bgm_size);
+    buf_to_file(bgm_size, fsMakePath(PATH_UTF16, path_output), ArchiveSD, temp_buf);
+    free(temp_buf);
+    temp_buf = NULL;
+
+    char *smdh_file = calloc(1, 0x36c0);
+    smdh_file[0] = 0x53; // SMDH magic
+    smdh_file[1] = 0x4d;
+    smdh_file[2] = 0x44;
+    smdh_file[3] = 0x48;
+
+    struacat((u16 *) (smdh_file + 0x8), output_dir);
+    struacat((u16 *) (smdh_file + 0x88), "No description");
+    struacat((u16 *) (smdh_file + 0x188), "Unknown Author");
+
+    free(output_dir);
+
+    u16 color = rand() % 65535;
+
+    for (int i = 0x2040; i < 0x36c0; i += 2)
+        *(smdh_file + i) = color; 
+    
+    memcpy(path_output, path, 0x107);
+    struacat(path_output, "/info.smdh");
+    remake_file(fsMakePath(PATH_UTF16, path_output), ArchiveSD, 0x36c0);
+    buf_to_file(0x36c0, fsMakePath(PATH_UTF16, path_output), ArchiveSD, smdh_file);
+
+    free(smdh_file);
+
+    return 0;
+}
+
 void themes_check_installed(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;

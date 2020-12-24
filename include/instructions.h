@@ -128,7 +128,7 @@ Instructions_s extra_instructions[3] = {
             },
             {
                 "\uE07B Browse ThemePlaza",
-                NULL,
+                "\uE07C Dump Current Theme"
             },
             {
                 "\uE004 Sorting menu",
