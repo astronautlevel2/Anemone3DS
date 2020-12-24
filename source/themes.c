@@ -396,7 +396,10 @@ Result dump_theme(void)
     u16 color = rand() % 65535;
 
     for (int i = 0x2040; i < 0x36c0; i += 2)
-        *(smdh_file + i) = color; 
+    {
+        *(smdh_file + i) = (color & 0xFF00) >> 8;
+        *(smdh_file + i + 1) = color & 0x00FF;
+    }
     
     memcpy(path_output, path, 0x107);
     struacat(path_output, "/info.smdh");
