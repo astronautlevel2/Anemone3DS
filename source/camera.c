@@ -332,7 +332,19 @@ bool init_qr(void)
         draw_install(INSTALL_DOWNLOAD);
         char * zip_buf = NULL;
         char * filename = NULL;
-        u32 zip_size = http_get((char*)scan_data->payload, &filename, &zip_buf, INSTALL_DOWNLOAD, "application/zip");
+        u32 zip_size;
+        Result res = http_get((char*)scan_data->payload, &filename, &zip_buf, &zip_size, INSTALL_DOWNLOAD, "application/zip");
+        if (R_FAILED(res))
+        {
+            free(filename);
+            free(zip_buf);
+            return false;
+        }
+        else if (R_DESCRIPTION(res) == RD_CANCEL_REQUESTED)
+        {
+            free(filename);
+            return true;
+        }
 
         if(zip_size != 0)
         {

@@ -128,7 +128,12 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         smdh_buf = NULL;
         char * api_url = NULL;
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
-        smdh_size = http_get(api_url, NULL, &smdh_buf, INSTALL_NONE, "application/octet-stream");
+        Result res = http_get(api_url, NULL, &smdh_buf, &smdh_size, INSTALL_NONE, "application/octet-stream");
+        if (R_FAILED(res))
+        {
+            free(smdh_buf);
+            return false;
+        }
         free(api_url);
     }
 
@@ -205,8 +210,14 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     char * page_json = NULL;
     char * api_url = NULL;
     asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode + 1, list->tp_search);
-    u32 json_len = http_get(api_url, NULL, &page_json, INSTALL_NONE, "application/json");
+    u32 json_len;
+    Result res = http_get(api_url, NULL, &page_json, &json_len, INSTALL_NONE, "application/json");
     free(api_url);
+    if (R_FAILED(res))
+    {
+        free(page_json);
+        return;
+    }
 
     if (json_len)
     {
@@ -266,9 +277,13 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int 
         asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry->tp_download_id);
 
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
-
-        preview_size = http_get(preview_url, NULL, &preview_png, INSTALL_LOADING_REMOTE_PREVIEW, "image/png");
+        Result res = http_get(preview_url, NULL, &preview_png, &preview_size, INSTALL_LOADING_REMOTE_PREVIEW, "image/png");
         free(preview_url);
+        if (R_FAILED(res))
+        {
+            free(preview_png);
+            return false;
+        }
     }
 
     if (!preview_size)
@@ -312,8 +327,13 @@ static void load_remote_bgm(Entry_s * entry)
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
 
-        bgm_size = http_get(bgm_url, NULL, &bgm_ogg, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
+        Result res = http_get(bgm_url, NULL, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
         free(bgm_url);
+        if (R_FAILED(res))
+        {
+            free(bgm_ogg);
+            return;
+        }
 
         u16 path[0x107] = { 0 };
         strucat(path, entry->path);
@@ -335,7 +355,13 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     char * zip_buf = NULL;
     char * filename = NULL;
     draw_install(INSTALL_DOWNLOAD);
-    u32 zip_size = http_get(download_url, &filename, &zip_buf, INSTALL_DOWNLOAD, "application/zip");
+    u32 zip_size;
+    if(R_FAILED(http_get(download_url, &filename, &zip_buf, &zip_size, INSTALL_DOWNLOAD, "application/zip")))
+    {
+        free(download_url);
+        free(filename);
+        return;
+    }
     free(download_url);
 
     char path_to_file[0x107] = { 0 };
@@ -346,7 +372,7 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     if (extension == NULL || strcmp(extension, ".zip"))
         strcat(path_to_file, ".zip");
 
-    DEBUG("Saving to sd: %s\n", path_to_file);
+    DEBUG("Saving to SD: %s\n", path_to_file);
     remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
     buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
     free(zip_buf);
@@ -412,10 +438,10 @@ static void search_menu(Entry_List_s * list)
 
     SwkbdState swkbd;
 
-    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
+    swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, max_chars);
     swkbdSetHintText(&swkbd, "Which tags do you want to search for?");
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cance", false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Search", true);
     swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
 
@@ -728,8 +754,9 @@ bool themeplaza_browser(EntryMode mode)
 
 typedef struct header
 {
-    char * filename; // allocated in parse_header; if NULL, this is user-provided
+    char ** filename; // pointer to location for filename; if NULL, no filename is parsed
     u32 file_size; // if == 0, fall back to chunked read
+    Result result_code;
 } header;
 
 typedef enum ParseResult
@@ -737,8 +764,8 @@ typedef enum ParseResult
     SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
     REDIRECT, // 301/302/303/307/308
     HTTPC_ERROR,
+    ABORTED,
     SERVER_IS_MISBEHAVING,
-    NO_FILENAME, // provisional
     HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
     HTTP_NOT_FOUND = 404,
@@ -755,14 +782,29 @@ typedef enum ParseResult
     HTTP_GATEWAY_TIMEOUT = 504,
 } ParseResult;
 
-// the good paths for this function return SUCCESS or REDIRECT;
+static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+{
+    (void)textlen;
+    (void)user;
+    *ppMessage = "Input must not contain:\n><\"?;:/\\+,.|[=]";
+    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    {
+        DEBUG("illegal filename: %s\n", text);
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+
+    return SWKBD_CALLBACK_OK;
+}
+
+// the good paths for this function return SUCCESS, ABORTED, or REDIRECT;
 // all other paths are failures
-static ParseResult parse_header(struct header * out, httpcContext * context, bool get_filename, const char * mime)
+static ParseResult parse_header(struct header * out, httpcContext * context, const char * mime)
 {
     // status code
     u32 status_code;
 
-    if (httpcGetResponseStatusCode(context, &status_code))
+    out->result_code = httpcGetResponseStatusCode(context, &status_code);
+    if (R_FAILED(out->result_code))
     {
         DEBUG("httpcGetResponseStatusCode\n");
         return HTTPC_ERROR;
@@ -783,23 +825,28 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         return (ParseResult)status_code;
     }
 
-    char * content_buf = calloc(1024, sizeof(char));
+    char content_buf[1024] = {0};
 
     // Content-Type
 
     if (mime)
     {
-        httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
+        out->result_code = httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
+        if (R_FAILED(out->result_code))
+        {
+            return HTTPC_ERROR;
+        }
+
         if (!strstr(mime, content_buf))
         {
-            free(content_buf);
             return SERVER_IS_MISBEHAVING;
         }
     }
 
     // Content-Length
 
-    if (httpcGetDownloadSizeState(context, NULL, &out->file_size))
+    out->result_code = httpcGetDownloadSizeState(context, NULL, &out->file_size);
+    if (R_FAILED(out->result_code))
     {
         DEBUG("httpcGetDownloadSizeState\n");
         return HTTPC_ERROR; // no need to free, program dies anyway
@@ -807,11 +854,11 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
 
     // Content-Disposition
 
-    if (get_filename)
+    if (out->filename)
     {
-        if (httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024))
+        out->result_code = httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024);
+        if (R_FAILED(out->result_code))
         {
-            free(content_buf);
             DEBUG("httpcGetResponseHeader\n");
             return HTTPC_ERROR;
         }
@@ -821,8 +868,31 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
         if (!filename)
         {
-            free(content_buf);
-            return NO_FILENAME;
+            const int max_chars = 250;
+            // needs to be heap allocated only because the call site is expected to free it
+            *out->filename = malloc(max_chars + 5); // + .zip and the null term
+
+            SwkbdState swkbd;
+
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, max_chars / 2);
+            swkbdSetHintText(&swkbd, "Choose a filename");
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT | SWKBD_DARKEN_TOP_SCREEN);
+
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Download", true);
+            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, SWKBD_FILTER_CALLBACK, -1);
+            swkbdSetFilterCallback(&swkbd, &fat32filter, NULL);
+
+            SwkbdButton button = swkbdInputText(&swkbd, *out->filename, max_chars);
+
+            if (button != SWKBD_BUTTON_CONFIRM)
+            {
+                out->result_code = swkbdGetResult(&swkbd);
+                return ABORTED;
+            }
+
+            strcat(*out->filename, ".zip");
+            return SUCCESS;
         }
 
         filename = strpbrk(filename, "=") + 1; // <filename>;?
@@ -842,50 +912,35 @@ static ParseResult parse_header(struct header * out, httpcContext * context, boo
         while ((illegal_char = strpbrk(filename, "><\"?;:/\\+,.|[=]")))
             *illegal_char = '-';
 
-        out->filename = malloc(strlen(filename) + 1);
-        strcpy(out->filename, filename);
-        DEBUG("%s\n", out->filename);
+        *out->filename = malloc(strlen(filename) + 1);
+        strcpy(*out->filename, filename);
     }
     return SUCCESS;
-}
-
-static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
-{
-    (void)textlen;
-    (void)user;
-    *ppMessage = "Input must not contain:\n><\"?;:/\\+,.|[=]";
-    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
-    {
-        DEBUG("illegal filename: %s\n", text);
-        return SWKBD_CALLBACK_CONTINUE;
-    }
-
-    return SWKBD_CALLBACK_OK;
 }
 
 #define ZIP_NOT_AVAILABLE "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator"
 
 /*
- * call example: written = http_get("url", &filename, &buffer_to_download_to, INSTALL_DOWNLOAD, "application/json");
+ * call example: written = http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
  */
-u32 http_get(const char * url, char ** filename, char ** buf, InstallType install_type, const char * acceptable_mime_types)
+Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
     Result ret;
     httpcContext context;
     char redirect_url[0x824] = {0};
     char new_url[0x824] = {0};
 
-    struct header _header = {};
+    struct header _header = { .filename = filename };
 
     DEBUG("Original URL: %s\n", url);
 
 redirect: // goto here if we need to redirect
     ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
-    if (ret != 0)
+    if (R_FAILED(ret))
     {
         httpcCloseContext(&context);
         DEBUG("httpcOpenContext %.8lx\n", ret);
-        return 0;
+        return ret;
     }
 
     httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
@@ -896,20 +951,24 @@ redirect: // goto here if we need to redirect
         httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
 
     ret = httpcBeginRequest(&context);
-    if (ret != 0)
+    if (R_FAILED(ret))
     {
         httpcCloseContext(&context);
         DEBUG("httpcBeginRequest %.8lx\n", ret);
-        return 0;
+        return ret;
     }
 
-    ParseResult parse = parse_header(&_header, &context, (bool)filename, acceptable_mime_types);
+    char err_buf[0x69];
+    ParseResult parse = parse_header(&_header, &context, acceptable_mime_types);
     switch (parse)
     {
-    char err_buf[0x69];
-    case NO_FILENAME:
     case SUCCESS:
         break;
+    case ABORTED:
+        ret = httpcCloseContext(&context);
+        if(R_FAILED(ret))
+            return ret;
+        return MAKERESULT(RL_SUCCESS, RS_CANCELED, RM_APPLICATION, RD_CANCEL_REQUESTED);
     case REDIRECT:
         httpcGetResponseHeader(&context, "Location", redirect_url, 0x824);
         httpcCloseContext(&context);
@@ -939,7 +998,8 @@ redirect: // goto here if we need to redirect
         DEBUG("httpc error\n");
         throw_error("Error in HTTPC sysmodule.\nIf you are seeing this, please contact an Anemone developer\non the ThemePlaza Discord.", ERROR_LEVEL_ERROR);
         quit = true;
-        return httpcCloseContext(&context);
+        httpcCloseContext(&context);
+        return _header.result_code;
     case HTTP_NOT_FOUND:
     case HTTP_GONE: ;
         // TODO: check if we're looking at a TP URL, if we are, suggest that it might be missing
@@ -998,36 +1058,6 @@ redirect: // goto here if we need to redirect
         return httpcCloseContext(&context);
     }
 
-    if (filename)
-    {
-        if (parse != NO_FILENAME)
-            *filename = _header.filename;
-        else
-        {
-            const int max_chars = 250;
-            // needs to be heap allocated only because the call site is expected to free it
-            *filename = malloc(max_chars + 5); // + .zip and the null term
-
-            SwkbdState swkbd;
-
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, max_chars / 2);
-            swkbdSetHintText(&swkbd, "Choose a filename.");
-            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT | SWKBD_DARKEN_TOP_SCREEN);
-
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Download", true);
-            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, SWKBD_FILTER_CALLBACK, -1);
-            swkbdSetFilterCallback(&swkbd, &fat32filter, NULL);
-
-            SwkbdButton button = swkbdInputText(&swkbd, *filename, max_chars);
-
-            if (button != SWKBD_BUTTON_CONFIRM)
-                return httpcCloseContext(&context);
-
-            strcat(*filename, ".zip");
-        }
-    }
-
     u32 chunk_size;
     if (_header.file_size)
         // the only reason we chunk this at all is for the download bar;
@@ -1039,42 +1069,52 @@ redirect: // goto here if we need to redirect
 
     *buf = NULL;
     char * new_buf;
-    u32 size = 0;
+    *size = 0;
     u32 read_size = 0;
 
     do
     {
-        new_buf = realloc(*buf, size + chunk_size);
+        new_buf = realloc(*buf, *size + chunk_size);
         if (new_buf == NULL)
         {
             httpcCloseContext(&context);
             free(*buf);
             DEBUG("realloc failed in http_get - file possibly too large?\n"); // TODO: report this?
-            return 0;
+            return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
         }
         *buf = new_buf;
 
         // download exactly chunk_size bytes and toss them into buf.
         // size contains the current offset into buf.
-        ret = httpcDownloadData(&context, (u8*)(*buf) + size, chunk_size, &read_size);
-        size += read_size;
+        ret = httpcDownloadData(&context, (u8*)(*buf) + *size, chunk_size, &read_size);
+        /* FIXME: I have no idea why this doesn't work, but it causes problems. Look into it later
+        if (R_FAILED(ret))
+        {
+            httpcCloseContext(&context);
+            free(*buf);
+            DEBUG("download failed in http_get\n");
+            return ret;
+        }
+        */
+        *size += read_size;
 
         if (_header.file_size && install_type != INSTALL_NONE)
-            draw_loading_bar(size, _header.file_size, install_type);
-    } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
+            draw_loading_bar(*size, _header.file_size, install_type);
+    } while (ret == (Result)HTTPC_RESULTCODE_DOWNLOADPENDING);
     httpcCloseContext(&context);
 
     // shrink to size
-    new_buf = realloc(*buf, size);
+    new_buf = realloc(*buf, *size);
     if (new_buf == NULL)
     {
         httpcCloseContext(&context);
         free(*buf);
         DEBUG("shrinking realloc failed\n"); // 何？
-        return 0;
+        return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
     }
     *buf = new_buf;
 
-    DEBUG("size: %lu\n", size);
-    return size;
+    DEBUG("size: %lu\n", *size);
+    if (filename) { DEBUG("filename: %s\n", *filename); }
+    return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
 }
