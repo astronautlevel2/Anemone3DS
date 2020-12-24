@@ -1002,11 +1002,15 @@ redirect: // goto here if we need to redirect
         return _header.result_code;
     case HTTP_NOT_FOUND:
     case HTTP_GONE: ;
-        // TODO: check if we're looking at a TP URL, if we are, suggest that it might be missing
         const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
         DEBUG("HTTP %s; URL: %s\n", http_error, url);
-        snprintf(err_buf, 0x69, "HTTP %s\nCheck that the URL is correct.", http_error);
-        throw_error(err_buf, ERROR_LEVEL_WARNING);
+        if (strstr(url, THEMEPLAZA_BASE_URL) && parse == HTTP_NOT_FOUND)
+            throw_error("HTTP 404 Not Found\nHas this theme been approved?", ERROR_LEVEL_WARNING);
+        else
+        {
+            snprintf(err_buf, 0x69, "HTTP %s\nCheck that the URL is correct.", http_error);
+            throw_error(err_buf, ERROR_LEVEL_WARNING);
+        }
         return httpcCloseContext(&context);
     case HTTP_UNAUTHORIZED:
     case HTTP_FORBIDDEN:
@@ -1021,7 +1025,7 @@ redirect: // goto here if we need to redirect
         return httpcCloseContext(&context);
     case HTTP_URI_TOO_LONG:
         DEBUG("HTTP 414; URL is too long, maybe too many redirects?\n");
-        throw_error("HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nContact the site administrator.", ERROR_LEVEL_WARNING);
+        throw_error("HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.", ERROR_LEVEL_WARNING);
         return httpcCloseContext(&context);
     case HTTP_IM_A_TEAPOT:
         DEBUG("HTTP 418 I'm a teapot\n");
