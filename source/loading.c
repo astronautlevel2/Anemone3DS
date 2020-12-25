@@ -185,13 +185,13 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
         if (!strcmp(dir_entry.shortExt, "ZIP"))
         {
-            u32 size = zip_file_to_buf("info.smdh", path, &buf);
+            zip_file_to_buf("info.smdh", path, &buf);
         }
         else
         {
             const ssize_t len = strulen(path, 0x106);
             struacat(path, "/info.smdh");
-            u32 size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &buf);
+            file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &buf);
             memset(&path[len], 0, (0x106 - len) * sizeof(u16));
         }
 
