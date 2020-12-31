@@ -952,7 +952,8 @@ redirect: // goto here if we need to redirect
         return ret;
     }
 
-    char err_buf[0x69];
+#define ERROR_BUFFER_SIZE 0x70
+    char err_buf[ERROR_BUFFER_SIZE];
     ParseResult parse = parse_header(&_header, &context, acceptable_mime_types);
     switch (parse)
     {
@@ -982,15 +983,15 @@ redirect: // goto here if we need to redirect
         goto redirect;
     case HTTP_UNACCEPTABLE:
         DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
-        throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
+        goto error;
     case SERVER_IS_MISBEHAVING:
         DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
-        throw_error(ZIP_NOT_AVAILABLE, ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
+        goto error;
     case HTTPC_ERROR:
         DEBUG("httpc error\n");
-        throw_error("Error in HTTPC sysmodule.\nIf you are seeing this, please contact an Anemone developer\non the ThemePlaza Discord.", ERROR_LEVEL_ERROR);
+        throw_error("Error in HTTPC sysmodule.\nIf you are seeing this, please\ncontact an Anemone developer on\nthe ThemePlaza Discord.", ERROR_LEVEL_ERROR);
         quit = true;
         httpcCloseContext(&context);
         return _header.result_code;
@@ -999,63 +1000,63 @@ redirect: // goto here if we need to redirect
         const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
         DEBUG("HTTP %s; URL: %s\n", http_error, url);
         if (strstr(url, THEMEPLAZA_BASE_URL) && parse == HTTP_NOT_FOUND)
-            throw_error("HTTP 404 Not Found\nHas this theme been approved?", ERROR_LEVEL_WARNING);
+            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 404 Not Found\nHas this theme been approved?");
         else
-        {
-            snprintf(err_buf, 0x69, "HTTP %s\nCheck that the URL is correct.", http_error);
-            throw_error(err_buf, ERROR_LEVEL_WARNING);
-        }
-        return httpcCloseContext(&context);
+            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %s\nCheck that the URL is correct.", http_error);
+        goto error;
     case HTTP_UNAUTHORIZED:
     case HTTP_FORBIDDEN:
     case HTTP_PROXY_UNAUTHORIZED:
         DEBUG("HTTP %u: device not authenticated\n", parse);
-        snprintf(err_buf, 0x69, "HTTP %s\nContact the site administrator.", parse == HTTP_UNAUTHORIZED
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %s\nContact the site administrator.", parse == HTTP_UNAUTHORIZED
             ? "401 Unauthorized"
             : parse == HTTP_FORBIDDEN
             ? "403 Forbidden"
             : "407 Proxy Authentication Required");
-        throw_error(err_buf, ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        goto error;
     case HTTP_URI_TOO_LONG:
         DEBUG("HTTP 414; URL is too long, maybe too many redirects?\n");
-        throw_error("HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.");
+        goto error;
     case HTTP_IM_A_TEAPOT:
         DEBUG("HTTP 418 I'm a teapot\n");
-        throw_error("HTTP 418 I'm a teapot\nContact the site administrator.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 418 I'm a teapot\nContact the site administrator.");
+        goto error;
     case HTTP_UPGRADE_REQUIRED:
         DEBUG("HTTP 426; HTTP/2 required\n");
-        throw_error("HTTP 426 Upgrade Required\nThe 3DS does not support this website.\nContact the site administrator.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 426 Upgrade Required\nThe 3DS cannot connect to this server.\nContact the site administrator.");
+        goto error;
     case HTTP_LEGAL_REASONS:
         DEBUG("HTTP 451; URL: %s\n", url);
-        throw_error("HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.");
+        goto error;
     case HTTP_INTERNAL_SERVER_ERROR:
-        DEBUG("HTTP 500\n");
-        throw_error("HTTP 500 Internal Server Error\nContact the site administrator.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        DEBUG("HTTP 500; URL: %s\n", url);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 500 Internal Server Error\nContact the site administrator.");
+        goto error;
     case HTTP_BAD_GATEWAY:
-        DEBUG("HTTP 502\n");
-        throw_error("HTTP 502 Bad Gateway\nContact the site administrator.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        DEBUG("HTTP 502; URL: %s\n", url);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 502 Bad Gateway\nContact the site administrator.");
+        goto error;
     case HTTP_SERVICE_UNAVAILABLE:
-        DEBUG("HTTP 503\n");
-        throw_error("HTTP 503 Service Unavailable\nContact the site administrator.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        DEBUG("HTTP 503; URL: %s\n", url);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 503 Service Unavailable\nContact the site administrator.");
+        goto error;
     case HTTP_GATEWAY_TIMEOUT:
-        DEBUG("HTTP 504\n");
-        throw_error("HTTP 504 Gateway Timeout\nContact the site administrator.", ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        DEBUG("HTTP 504; URL: %s\n", url);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 504 Gateway Timeout\nContact the site administrator.");
+        goto error;
     default:
-        DEBUG("HTTP %u\n", parse);
-        snprintf(err_buf, 0x69, "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.", parse);
-        throw_error(err_buf, ERROR_LEVEL_WARNING);
-        return httpcCloseContext(&context);
+        DEBUG("HTTP %u; URL: %s\n", parse, url);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.", parse);
+        goto error;
     }
 
+    goto no_error;
+error:
+    throw_error(err_buf, ERROR_LEVEL_WARNING);
+    return httpcCloseContext(&context);
+no_error:;
     u32 chunk_size;
     if (_header.file_size)
         // the only reason we chunk this at all is for the download bar;
