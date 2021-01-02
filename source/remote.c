@@ -469,6 +469,7 @@ static void change_selected(Entry_List_s * list, int change_value)
             newval += list->entries_per_screen_h;
         if (newval / list->entries_per_screen_h != list->selected_entry / list->entries_per_screen_h)
             newval += list->entries_per_screen_h * (-change_value);
+        newval %= list->entries_count;
     }
     else
     {
