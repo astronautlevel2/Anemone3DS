@@ -953,7 +953,7 @@ redirect: // goto here if we need to redirect
         return ret;
     }
 
-#define ERROR_BUFFER_SIZE 0x70
+#define ERROR_BUFFER_SIZE 0x80
     char err_buf[ERROR_BUFFER_SIZE];
     ParseResult parse = parse_header(&_header, &context, acceptable_mime_types);
     switch (parse)
@@ -991,8 +991,9 @@ redirect: // goto here if we need to redirect
         snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
         goto error;
     case HTTPC_ERROR:
-        DEBUG("httpc error\n");
-        throw_error("Error in HTTPC sysmodule.\nIf you are seeing this, please\ncontact an Anemone developer on\nthe ThemePlaza Discord.", ERROR_LEVEL_ERROR);
+        DEBUG("httpc error %lx\n", _header.result_code);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "Error in HTTPC sysmodule - 0x%lx.\nIf you are seeing this, please contact an\nAnemone developer on the ThemePlaza Discord.", _header.result_code);
+        throw_error(err_buf, ERROR_LEVEL_ERROR);
         quit = true;
         httpcCloseContext(&context);
         return _header.result_code;

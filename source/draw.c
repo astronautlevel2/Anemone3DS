@@ -301,7 +301,7 @@ void throw_error(char* error, ErrorLevel level)
 
         draw_base_interface();
         draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[text_color], error);
-        draw_c2d_text_center(GFX_TOP, 150, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[bottom_text]);
+        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[bottom_text]);
         end_frame();
 
         if(kDown & KEY_A) break;
