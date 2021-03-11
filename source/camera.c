@@ -340,7 +340,7 @@ bool init_qr(void)
             free(zip_buf);
             return false;
         }
-        else if (R_DESCRIPTION(res) == RD_CANCEL_REQUESTED)
+        else if (R_DESCRIPTION(res) == RD_NO_DATA || R_DESCRIPTION(res) == RD_CANCEL_REQUESTED)
         {
             free(filename);
             return true;

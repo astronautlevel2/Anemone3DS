@@ -250,7 +250,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
         json_decref(root);
     }
     else
-        throw_error("Couldn't download ThemePlaza data.\nMake sure WiFi is on.", ERROR_LEVEL_WARNING);
+        throw_error("Couldn't download Theme Plaza data.\nMake sure WiFi is on.", ERROR_LEVEL_WARNING);
 
     free(page_json);
 }
@@ -757,10 +757,11 @@ typedef struct header
 typedef enum ParseResult
 {
     SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
-    REDIRECT, // 301/302/303/307/308
+    REDIRECT, // 301/302/307/308
     HTTPC_ERROR,
     ABORTED,
     SERVER_IS_MISBEHAVING,
+    SEE_OTHER = 303, // Theme Plaza returns these
     HTTP_UNAUTHORIZED = 401,
     HTTP_FORBIDDEN = 403,
     HTTP_NOT_FOUND = 404,
@@ -965,6 +966,24 @@ redirect: // goto here if we need to redirect
         if(R_FAILED(ret))
             return ret;
         return MAKERESULT(RL_SUCCESS, RS_CANCELED, RM_APPLICATION, RD_CANCEL_REQUESTED);
+    case HTTPC_ERROR:
+        DEBUG("httpc error %lx\n", _header.result_code);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "Error in HTTPC sysmodule - 0x%08lx.\nIf you are seeing this, please contact an\nAnemone developer on the Theme Plaza Discord.", _header.result_code);
+        throw_error(err_buf, ERROR_LEVEL_ERROR);
+        quit = true;
+        httpcCloseContext(&context);
+        return _header.result_code;
+    case SEE_OTHER:
+        if (strstr(url, THEMEPLAZA_BASE_URL))
+        {
+            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 303 See Other (Theme Plaza)\nHas this theme been approved?");
+            goto error;
+        }
+        else
+        {
+            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 303 See Other\nDownload the resource directly\nor contact the site administrator.");
+            goto error;
+        }
     case REDIRECT:
         httpcGetResponseHeader(&context, "Location", redirect_url, 0x824);
         httpcCloseContext(&context);
@@ -982,21 +1001,10 @@ redirect: // goto here if we need to redirect
         }
         DEBUG("HTTP Redirect: %s %s\n", new_url, *redirect_url == '/' ? "relative" : "absolute");
         goto redirect;
-    case HTTP_UNACCEPTABLE:
-        DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
-        goto error;
     case SERVER_IS_MISBEHAVING:
         DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
         snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
         goto error;
-    case HTTPC_ERROR:
-        DEBUG("httpc error %lx\n", _header.result_code);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "Error in HTTPC sysmodule - 0x%lx.\nIf you are seeing this, please contact an\nAnemone developer on the ThemePlaza Discord.", _header.result_code);
-        throw_error(err_buf, ERROR_LEVEL_ERROR);
-        quit = true;
-        httpcCloseContext(&context);
-        return _header.result_code;
     case HTTP_NOT_FOUND:
     case HTTP_GONE: ;
         const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
@@ -1005,6 +1013,10 @@ redirect: // goto here if we need to redirect
             snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 404 Not Found\nHas this theme been approved?");
         else
             snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %s\nCheck that the URL is correct.", http_error);
+        goto error;
+    case HTTP_UNACCEPTABLE:
+        DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
         goto error;
     case HTTP_UNAUTHORIZED:
     case HTTP_FORBIDDEN:
@@ -1057,7 +1069,9 @@ redirect: // goto here if we need to redirect
     goto no_error;
 error:
     throw_error(err_buf, ERROR_LEVEL_WARNING);
-    return httpcCloseContext(&context);
+    Result res = httpcCloseContext(&context);
+    if (R_FAILED(res)) return res;
+    return MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
 no_error:;
     u32 chunk_size;
     if (_header.file_size)
@@ -1118,4 +1132,4 @@ no_error:;
     DEBUG("size: %lu\n", *size);
     if (filename) { DEBUG("filename: %s\n", *filename); }
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
-}
+ }
