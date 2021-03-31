@@ -264,7 +264,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     savedata->theme_entry.type = 3;
     savedata->theme_entry.index = 0xff;
 
-    savedata->shuffle = (installmode & THEME_INSTALL_SHUFFLE);
+    savedata->shuffle = (installmode & THEME_INSTALL_SHUFFLE) ? 1 : 0;
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
         memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s)*MAX_SHUFFLE_THEMES);
@@ -273,6 +273,9 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
             savedata->shuffle_themes[i].type = 3;
             savedata->shuffle_themes[i].index = i;
         }
+        const u8 shuffle_seed[0xB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+        memcpy(savedata->shuffle_seedA, shuffle_seed, 0xB);
+        memcpy(savedata->shuffle_seedB, shuffle_seed, 0xA);
     }
 
     res = buf_to_file(savedata_size, fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
