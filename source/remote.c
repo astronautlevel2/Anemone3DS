@@ -852,17 +852,22 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
 
     if (out->filename)
     {
+        bool present = 1;
         out->result_code = httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024);
         if (R_FAILED(out->result_code))
         {
-            DEBUG("httpcGetResponseHeader\n");
-            return HTTPC_ERROR;
+            if (out->result_code == 0xD8A0A028)
+                present = 0;
+            else
+            {
+                DEBUG("httpcGetResponseHeader\n");
+                return HTTPC_ERROR;
+            }
         }
 
         // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
 
-        char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
-        if (!filename)
+        if (!present)
         {
             const int max_chars = 250;
             // needs to be heap allocated only because the call site is expected to free it
@@ -891,6 +896,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
             return SUCCESS;
         }
 
+        char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
         filename = strpbrk(filename, "=") + 1; // <filename>;?
         char * end = strpbrk(filename, ";");
         if (end)
