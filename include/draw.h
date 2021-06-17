@@ -160,7 +160,7 @@ void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
 
-void throw_error(char* error, ErrorLevel level);
+void throw_error(const char* error, ErrorLevel level);
 bool draw_confirm(const char* conf_msg, Entry_List_s* list);
 
 void draw_preview(C2D_Image preview, int preview_offset);

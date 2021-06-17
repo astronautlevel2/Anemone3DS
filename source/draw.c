@@ -275,7 +275,7 @@ void draw_base_interface(void)
     set_screen(top);
 }
 
-void throw_error(char* error, ErrorLevel level)
+void throw_error(const char* error, ErrorLevel level)
 {
     Text bottom_text = TEXT_AMOUNT;
     Color text_color = COLOR_WHITE;
