@@ -770,18 +770,45 @@ typedef enum ParseResult
     HTTP_GATEWAY_TIMEOUT = 504,
 } ParseResult;
 
-static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+// unescapes URL-encoded string non-destructively
+static char * unescape(const char * url)
 {
-    (void)textlen;
-    (void)user;
-    *ppMessage = "Input must not contain:\n><\"?;:/\\+,.|[=]";
-    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    char * unescaped = malloc(strlen(url) + 1);
+    // source shamelessly ripped from https://stackoverflow.com/a/14530993/4073959
+    char a;
+    char b;
+    while (*url)
     {
-        DEBUG("illegal filename: %s\n", text);
-        return SWKBD_CALLBACK_CONTINUE;
+        if ((*url == '%') &&
+            ((a = url[1]) && (b = url[2])) &&
+            (isxdigit(a) && isxdigit(b))) {
+            if (a >= 'a')
+                a -= 'a' - 'A';
+            if (a >= 'A')
+                a -= ('A' - 10);
+            else
+                a -= '0';
+            if (b >= 'a')
+                b -= 'a' - 'A';
+            if (b >= 'A')
+                b -= ('A' - 10);
+            else
+                b -= '0';
+            *unescaped++ = 16 * a + b;
+            url += 3;
+        }
+        else if (*url == '+')
+        {
+            *unescaped++ = ' ';
+            url++;
+        }
+        else
+        {
+            *unescaped++ = *url++;
+        }
     }
-
-    return SWKBD_CALLBACK_OK;
+    *unescaped++ = '\0';
+    return unescaped;
 }
 
 // the good paths for this function return SUCCESS, ABORTED, or REDIRECT;
@@ -1105,6 +1132,13 @@ no_error:;
     *buf = new_buf;
 
     DEBUG("size: %lu\n", *size);
-    if (filename) { DEBUG("filename: %s\n", *filename); }
+    if (filename) {
+        if (*filename == NULL)
+        {
+            // Content-Disposition extraction failed somehow
+            *filename = basename(unescape(url));
+        }
+        DEBUG("filename: %s\n", *filename);
+    }
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
  }
