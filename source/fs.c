@@ -27,6 +27,7 @@
 #include <strings.h>
 
 #include "fs.h"
+#include "draw.h"
 #include "unicode.h"
 
 #include <archive.h>
@@ -350,4 +351,117 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
     char *buf = calloc(size, 1);
     buf_to_file(size, path, archive, buf);
     free(buf);
+}
+
+#define ILLEGAL_CHARS "><\"?;:/\\+,.|[=]"
+static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+{
+    (void)textlen;
+    (void)user;
+    *ppMessage = "Input must not contain:\n" ILLEGAL_CHARS;
+    if(strpbrk(text, ILLEGAL_CHARS))
+    {
+        DEBUG("illegal filename: %s\n", text);
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+
+    return SWKBD_CALLBACK_OK;
+}
+
+// assumes the input buffer is a ZIP. if it isn't, why are you calling this?
+void save_zip_to_sd(char * filename, u32 size, char * buf, EntryMode mode)
+{
+    static char path_to_file[32761]; // FAT32 paths can be quite long.
+    const int max_chars = 250;
+    char new_filename[max_chars + 5]; // .zip + \0
+renamed:
+    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+
+    // filter out characters illegal in FAT32 filenames
+    char * curr_filename = strrchr(path_to_file, '/') + 1;
+    char * illegal_char = curr_filename;
+    while ((illegal_char = strpbrk(illegal_char, ILLEGAL_CHARS)))
+    {
+        DEBUG("Illegal char found in filename: %c\n", *illegal_char);
+        if (*illegal_char == '.')
+        {
+            // skip initial . (this is allowed)
+            if (illegal_char == curr_filename)
+                continue;
+            // skip extension delimiter
+            if (strpbrk(illegal_char + 1, ".") == NULL)
+            {
+                illegal_char++;
+                continue;
+            }
+        }
+        *illegal_char = '-';
+    }
+
+    // ensure the extension is .zip
+    char * extension = strrchr(path_to_file, '.');
+    if (extension == NULL || strcmp(extension, ".zip"))
+        strcat(path_to_file, ".zip");
+
+    DEBUG("path: %s\n", path_to_file);
+    FS_Path path = fsMakePath(PATH_ASCII, path_to_file);
+
+    // check if file already exists, and if it does, prompt the user
+    // to overwrite or change name (or exit)
+    Result res = FSUSER_CreateFile(ArchiveSD, path, 0, size);
+    if (R_FAILED(res))
+    {
+        if (res == (long)0xC82044BE)
+        {
+            DEBUG("File already exists\n");
+
+            SwkbdState swkbd;
+
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 3, max_chars / 2);
+            swkbdSetHintText(&swkbd, "Choose a new filename or tap Overwrite");
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT | SWKBD_DARKEN_TOP_SCREEN);
+
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "Overwrite", false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Rename", true);
+            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, SWKBD_FILTER_CALLBACK, -1);
+            swkbdSetFilterCallback(&swkbd, &fat32filter, NULL);
+
+            SwkbdButton button = swkbdInputText(&swkbd, new_filename, max_chars);
+
+            switch (button)
+            {
+            case SWKBD_BUTTON_RIGHT:
+                DEBUG("Renaming to %s\n", new_filename);
+                strcat(new_filename, ".zip");
+                filename = new_filename;
+                goto renamed;
+            case SWKBD_BUTTON_MIDDLE:
+                // we good
+                DEBUG("Overwriting %s\n", filename);
+                break;
+            case SWKBD_BUTTON_LEFT:
+                // do nothing
+                DEBUG("File rename cancelled\n");
+                return;
+            case SWKBD_BUTTON_NONE:
+                DEBUG("SWKBD broke wtf??? :- %x\n", swkbdGetResult(&swkbd));
+                return throw_error("???\nTry a USB keyboard", ERROR_LEVEL_WARNING);
+            }
+        }
+        else if (res == (long)0xC86044D2)
+        {
+            DEBUG("SD card is full\n");
+            return throw_error("SD card is full.\nDelete some themes to make space.", ERROR_LEVEL_WARNING);
+        }
+        else
+        {
+            DEBUG("error: %lx\n", res);
+            return throw_error("FS Error:\nGet a new SD card.", ERROR_LEVEL_ERROR);
+        }
+    }
+
+    DEBUG("Saving to SD: %s\n", path_to_file);
+    remake_file(path, ArchiveSD, size);
+    buf_to_file(size, path, ArchiveSD, buf);
 }

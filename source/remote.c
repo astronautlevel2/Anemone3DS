@@ -24,6 +24,8 @@
 *         reasonable ways as different from the original version.
 */
 
+#include <ctype.h>
+
 #include "remote.h"
 #include "loading.h"
 #include "fs.h"
@@ -358,17 +360,8 @@ static void download_remote_entry(Entry_s * entry, EntryMode mode)
     }
     free(download_url);
 
-    char path_to_file[0x107] = { 0 };
-    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+    save_zip_to_sd(filename, zip_size, zip_buf, mode);
     free(filename);
-
-    char * extension = strrchr(path_to_file, '.');
-    if (extension == NULL || strcmp(extension, ".zip"))
-        strcat(path_to_file, ".zip");
-
-    DEBUG("Saving to SD: %s\n", path_to_file);
-    remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
-    buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
     free(zip_buf);
 }
 
@@ -759,7 +752,6 @@ typedef enum ParseResult
     SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
     REDIRECT, // 301/302/307/308
     HTTPC_ERROR,
-    ABORTED,
     SERVER_IS_MISBEHAVING,
     SEE_OTHER = 303, // Theme Plaza returns these
     HTTP_UNAUTHORIZED = 401,
@@ -856,7 +848,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
         out->result_code = httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024);
         if (R_FAILED(out->result_code))
         {
-            if (out->result_code == 0xD8A0A028)
+            if (out->result_code == (long)0xD8A0A028L)
                 present = 0;
             else
             {
@@ -867,55 +859,37 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
 
         // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
 
-        if (!present)
+        if (present)
         {
-            const int max_chars = 250;
-            // needs to be heap allocated only because the call site is expected to free it
-            *out->filename = malloc(max_chars + 5); // + .zip and the null term
-
-            SwkbdState swkbd;
-
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, max_chars / 2);
-            swkbdSetHintText(&swkbd, "Choose a filename");
-            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT | SWKBD_DARKEN_TOP_SCREEN);
-
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Download", true);
-            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, SWKBD_FILTER_CALLBACK, -1);
-            swkbdSetFilterCallback(&swkbd, &fat32filter, NULL);
-
-            SwkbdButton button = swkbdInputText(&swkbd, *out->filename, max_chars);
-
-            if (button != SWKBD_BUTTON_CONFIRM)
+            char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
+            // in the extreme fringe case that filename is missing:
+            if (filename != NULL)
             {
-                out->result_code = swkbdGetResult(&swkbd);
-                return ABORTED;
+                filename = strpbrk(filename, "=") + 1; // <filename>;?
+                char * end = strpbrk(filename, ";");
+                if (end)
+                    *end = '\0'; // <filename>
+
+                // safe to assume the filename is quoted
+                // (if it isn't, then we already have a null-terminated string <filename>)
+                if (filename[0] == '"')
+                {
+                    filename[strlen(filename) - 1] = '\0';
+                    filename++;
+                }
+
+                *out->filename = malloc(strlen(filename) + 1);
+                strcpy(*out->filename, filename);
             }
-
-            strcat(*out->filename, ".zip");
-            return SUCCESS;
+            else
+            {
+                *out->filename = NULL;
+            }
         }
-
-        char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
-        filename = strpbrk(filename, "=") + 1; // <filename>;?
-        char * end = strpbrk(filename, ";");
-        if (end)
-            *end = '\0'; // <filename>
-
-        if (filename[0] == '"')
-            // safe to assume the filename is quoted
+        else
         {
-            filename[strlen(filename) - 1] = '\0';
-            filename++;
+            *out->filename = NULL;
         }
-
-        char * illegal_char;
-        // filter out characters illegal in FAT32 filenames
-        while ((illegal_char = strpbrk(filename, "><\"?;:/\\+,.|[=]")))
-            *illegal_char = '-';
-
-        *out->filename = malloc(strlen(filename) + 1);
-        strcpy(*out->filename, filename);
     }
     return SUCCESS;
 }
@@ -967,11 +941,6 @@ redirect: // goto here if we need to redirect
     {
     case SUCCESS:
         break;
-    case ABORTED:
-        ret = httpcCloseContext(&context);
-        if(R_FAILED(ret))
-            return ret;
-        return MAKERESULT(RL_SUCCESS, RS_CANCELED, RM_APPLICATION, RD_CANCEL_REQUESTED);
     case HTTPC_ERROR:
         DEBUG("httpc error %lx\n", _header.result_code);
         snprintf(err_buf, ERROR_BUFFER_SIZE, "Error in HTTPC sysmodule - 0x%08lx.\nIf you are seeing this, please contact an\nAnemone developer on the Theme Plaza Discord.", _header.result_code);

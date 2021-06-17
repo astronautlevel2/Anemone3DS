@@ -391,14 +391,7 @@ bool init_qr(void)
 
                 if(mode != MODE_AMOUNT)
                 {
-                    char path_to_file[0x107] = {0};
-                    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
-                    char * extension = strrchr(path_to_file, '.');
-                    if (extension == NULL || strcmp(extension, ".zip"))
-                        strcat(path_to_file, ".zip");
-
-                    remake_file(fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_size);
-                    buf_to_file(zip_size, fsMakePath(PATH_ASCII, path_to_file), ArchiveSD, zip_buf);
+                    save_zip_to_sd(filename, zip_size, zip_buf, mode);
                     success = true;
                 }
                 else
