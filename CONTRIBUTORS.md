@@ -1,6 +1,6 @@
 # Main Contributors
 * Alex Taber ([@astronautlevel2](https://github.com/astronautlevel2))
-* [@LiquidFenrir](https://github.com/LiquidFenrir)
+* Théo B. ([@LiquidFenrir](https://github.com/LiquidFenrir))
 * Dawid Eckert ([@daedreth](https://github.com/daedreth))
 * Dylan G. ([@helloman892](https://github.com/helloman892))
 * Nils P. ([@ZetaDesigns](https://github.com/ZetaDesigns))
