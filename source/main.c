@@ -401,8 +401,8 @@ int main(void)
             {
                 if(key_l)
                     index = 0;
-                // else if(key_r)  // uncomment when we use the right menu. we don't for now
-                    // index = 2;
+                else if(key_r)  // uncomment when we use the right menu. we don't for now
+                    index = 2;
             }
             instructions = extra_instructions[index];
         }
@@ -648,13 +648,6 @@ int main(void)
                     {
                         load_icons_first(current_list, false);
                     }
-                    else if((kDown | kHeld) & KEY_DRIGHT)
-                    {
-                        draw_install(INSTALL_DUMPING_THEME);
-                        Result res = dump_theme();
-                        if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
-                        else load_lists(lists);
-                    }
                 }
                 else if(key_l)
                 {
@@ -675,6 +668,23 @@ int main(void)
                         sort_author:
                         sort_by_author(current_list);
                         load_icons_first(current_list, false);
+                    }
+                }
+                else if(key_r)
+                {
+                    if(((kDown | kHeld)) & KEY_DUP)
+                    {
+                        draw_install(INSTALL_DUMPING_THEME);
+                        Result res = dump_current_theme();
+                        if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
+                        else load_lists(lists);
+                    }
+                    else if(((kDown | kHeld)) & KEY_DDOWN)
+                    {
+                        draw_install(INSTALL_DUMPING_ALL_THEMES);
+                        Result res = dump_all_themes();
+                        if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
+                        else load_lists(lists);
                     }
                 }
             }

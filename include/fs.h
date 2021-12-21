@@ -29,6 +29,8 @@
 
 #include "common.h"
 
+#define ILLEGAL_CHARS "><\"?;:/\\+,.|[=]"
+
 extern FS_Archive ArchiveSD;
 extern FS_Archive ArchiveHomeExt;
 extern FS_Archive ArchiveThemeExt;

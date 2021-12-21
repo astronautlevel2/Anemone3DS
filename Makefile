@@ -89,7 +89,7 @@ CFLAGS	:=	-g -Wall -Wextra -O2 -mword-relocations \
 			-ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -D_GNU_SOURCE -DVERSION="\"$(VERSION)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(VERSION)\"" -DAPP_TITLE="\"$(APP_TITLE)\""
+CFLAGS	+=	$(INCLUDE) -D__3DS__ -D_GNU_SOURCE -DVERSION="\"$(VERSION)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(VERSION)\"" -DAPP_TITLE="\"$(APP_TITLE)\""
 ifneq ($(strip $(CITRA_MODE)),)
 	CFLAGS += -DCITRA_MODE
 endif

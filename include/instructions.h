@@ -128,11 +128,11 @@ Instructions_s extra_instructions[3] = {
             },
             {
                 "\uE07B Browse ThemePlaza",
-                "\uE07C Dump Current Theme"
+                NULL
             },
             {
                 "\uE004 Sorting menu",
-                NULL
+                "\uE005 Dumping menu"
             },
             {
                 "Exit",
@@ -140,6 +140,27 @@ Instructions_s extra_instructions[3] = {
             }
         }
     },
+    {
+        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to dump",
+        .instructions = {
+            {
+                "\uE079 Dump Current Theme",
+                "\uE07A Dump All Themes"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Exit",
+                NULL
+            }
+        }
+    }
 };
 
 #endif

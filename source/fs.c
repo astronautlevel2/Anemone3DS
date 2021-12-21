@@ -353,7 +353,6 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
     free(buf);
 }
 
-#define ILLEGAL_CHARS "><\"?;:/\\+,.|[=]"
 static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
 {
     (void)textlen;
