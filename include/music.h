@@ -34,7 +34,7 @@
 #include <tremor/ivorbisfile.h>
 #include <tremor/ivorbiscodec.h>
 
-#define BUF_TO_READ 40960 // How much data should be buffered at a time
+#define BUF_TO_READ 48000 // How much data should be buffered at a time
 
 typedef struct {
     OggVorbis_File vf;
