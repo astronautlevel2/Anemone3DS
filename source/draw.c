@@ -126,6 +126,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, "Downloading preview, please wait...");
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, "Downloading BGM, please wait...");
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, "Dumping theme, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, "Dumping official themes, please wait...");
 
     for(int i = 0; i < TEXT_AMOUNT; i++)
         C2D_TextOptimize(&text[i]);

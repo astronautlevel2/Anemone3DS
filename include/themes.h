@@ -76,7 +76,8 @@ Result bgm_install(Entry_s theme);
 
 Result shuffle_install(Entry_List_s themes);
 
-Result dump_theme(void);
+Result dump_current_theme(void);
+Result dump_all_themes(void);
 
 void themes_check_installed(void * void_arg);
 

@@ -334,7 +334,7 @@ dir_name_callback(void *data, const char ** ppMessage, const char * text, size_t
     return SWKBD_CALLBACK_OK;
 }
 
-Result dump_theme(void)
+Result dump_current_theme(void)
 {
     const int max_chars = 255;
     char * output_dir = calloc(max_chars + 1, sizeof(char));
@@ -419,6 +419,244 @@ Result dump_theme(void)
     free(smdh_file);
 
     return 0;
+}
+
+Result dump_all_themes(void)
+{
+    const u32 high_id = 0x0004008c;
+    u32 low_id = 0;
+    u8 regionCode, language;
+    Result res = CFGU_SecureInfoGetRegion(&regionCode);
+    if(R_FAILED(res))
+        return res;
+
+    res = CFGU_GetSystemLanguage(&language);
+    if(R_FAILED(res))
+        return res;
+
+    switch(regionCode)
+    {
+        case CFG_REGION_JPN:
+            low_id = 0x00008200;
+            break;
+        case CFG_REGION_USA:
+            low_id = 0x00008f00;
+            break;
+        case CFG_REGION_EUR:
+            low_id = 0x00009800;
+            break;
+        default:
+            return -1;
+    }
+
+    const char* region_arr[4] = {
+        "JPN",
+        "USA",
+        "EUR",
+        "AUS",
+    };
+
+    const char* language_arr[12] = {
+        "jp",
+        "en",
+        "fr",
+        "de",
+        "it",
+        "es",
+        "zh",
+        "ko",
+        "nl",
+        "pt",
+        "ru",
+        "tw",
+    };
+
+    res = amAppInit();
+    if(R_FAILED(res))
+        return res;
+
+    Icon_s* smdh_data = calloc(1, sizeof(Icon_s));
+    smdh_data->_padding1[0] = 0x53; // SMDH magic
+    smdh_data->_padding1[1] = 0x4d;
+    smdh_data->_padding1[2] = 0x44;
+    smdh_data->_padding1[3] = 0x48;
+
+    utf8_to_utf16(smdh_data->author, (u8*)"Nintendo", 0x40);
+    utf8_to_utf16(smdh_data->desc, (u8*)"Official theme. For personal use only. Do not redistribute.", 0x80);
+
+    for(u32 dlc_index = 0; dlc_index <= 0xFF; ++dlc_index)
+    {
+        const u64 titleId = ((u64)high_id << 32) | (low_id | dlc_index);
+
+        u32 count = 0;
+        res = AMAPP_GetDLCContentInfoCount(&count, MEDIATYPE_SD, titleId);
+        if(res == (Result)0xd8a083fa)
+        {
+            res = 0;
+            break;
+        }
+        else if(R_FAILED(res))
+        {
+            break;
+        }
+
+        AM_ContentInfo* contentInfos = calloc(count, sizeof(AM_ContentInfo));
+        u32 readcount = 0;
+        res = AMAPP_ListDLCContentInfos(&readcount, MEDIATYPE_SD, titleId, count, 0, contentInfos);
+        if(R_FAILED(res))
+        {
+            break;
+        }
+
+        u32 archivePath[4] = {low_id | dlc_index, high_id, MEDIATYPE_SD, 0};
+        FS_Path ncch_path;
+        ncch_path.type = PATH_BINARY;
+        ncch_path.size = 0x10;
+        ncch_path.data = archivePath;
+
+        FS_Archive ncch_archive;
+        res = FSUSER_OpenArchive(&ncch_archive, ARCHIVE_SAVEDATA_AND_CONTENT, ncch_path);
+        if(R_FAILED(res))
+        {
+            free(contentInfos);
+            break;
+        }
+
+        u32 metadataPath[5] = {0, 0, 0, 0, 0};
+        FS_Path metadata_path;
+        metadata_path.type = PATH_BINARY;
+        metadata_path.size = 0x14;
+        metadata_path.data = metadataPath;
+
+        Handle metadata_fh;
+        res = FSUSER_OpenFile(&metadata_fh, ncch_archive, metadata_path, FS_OPEN_READ, 0);
+        if(R_FAILED(res))
+        {
+            FSUSER_CloseArchive(ncch_archive);
+            free(contentInfos);
+            break;
+        }
+
+        res = romfsMountFromFile(metadata_fh, 0, "meta");
+        if(R_FAILED(res))
+        {
+            FSFILE_Close(metadata_fh);
+            FSUSER_CloseArchive(ncch_archive);
+            free(contentInfos);
+            break;
+        }
+
+        char contentinfoarchive_path[40] = {0};
+        sprintf(contentinfoarchive_path, "meta:/ContentInfoArchive_%s_%s.bin", region_arr[regionCode], language_arr[language]);
+
+        FILE* fh = fopen(contentinfoarchive_path, "rb");
+
+        for(u32 i = 0; i < readcount; ++i)
+        {
+            if(i == 0) continue;
+            AM_ContentInfo* content = &contentInfos[i];
+            if((content->flags & (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED)) == (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED))
+            {
+                long off = 0x8 + 0xC8 * i;
+                fseek(fh, off, SEEK_SET);
+                char content_data[0xc8] = {0};
+                fread(content_data, 1, 0xc8, fh);
+                u32 extra_index = 0;
+                memcpy(&extra_index, content_data + 0xC0, 4);
+
+                metadataPath[1] = content->index;
+
+                Handle theme_fh;
+                res = FSUSER_OpenFile(&theme_fh, ncch_archive, metadata_path, FS_OPEN_READ, 0);
+                if(R_FAILED(res))
+                {
+                    DEBUG("theme open romfs error: %08lx\n", res);
+                    fclose(fh);
+                    free(contentInfos);
+                    romfsUnmount("meta");
+                    FSUSER_CloseArchive(ncch_archive);
+                    free(contentInfos);
+                    break;
+                }
+
+                romfsMountFromFile(theme_fh, 0, "theme");
+
+                char themename[0x41] = {0};
+                memcpy(themename, content_data, 0x40);
+                char * illegal_char = themename;
+                while ((illegal_char = strpbrk(illegal_char, ILLEGAL_CHARS)))
+                {
+                    *illegal_char = '-';
+                }
+
+                char path[0x107] = { 0 };
+                sprintf(path, "/Themes/Dump-%02lx-%ld-%s", dlc_index, extra_index, themename);
+                DEBUG("theme folder to create: %s\n", path);
+                FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, path), FS_ATTRIBUTE_DIRECTORY);
+
+                memset(smdh_data->name, 0, sizeof(smdh_data->name));
+                utf8_to_utf16(smdh_data->name, (u8*)(content_data + 0), 0x40);
+
+                FILE* theme_file = fopen("theme:/body_LZ.bin", "rb");
+                if(theme_file)
+                {
+                    fseek(theme_file, 0, SEEK_END);
+                    long theme_size = ftell(theme_file);
+                    fseek(theme_file, 0, SEEK_CUR);
+                    char* theme_data = malloc(theme_size);
+                    fread(theme_data, 1, theme_size, theme_file);
+                    fclose(theme_file);
+
+                    char themepath[0x107] = {0};
+                    sprintf(themepath, "%s/body_LZ.bin", path);
+                    remake_file(fsMakePath(PATH_ASCII, themepath), ArchiveSD, theme_size);
+                    buf_to_file(theme_size, fsMakePath(PATH_ASCII, themepath), ArchiveSD, theme_data);
+                    free(theme_data);
+                }
+
+                FILE* bgm_file = fopen("theme:/bgm.bcstm", "rb");
+                if(bgm_file)
+                {
+                    fseek(bgm_file, 0, SEEK_END);
+                    long bgm_size = ftell(bgm_file);
+                    fseek(bgm_file, 0, SEEK_CUR);
+                    char* bgm_data = malloc(bgm_size);
+                    fread(bgm_data, 1, bgm_size, bgm_file);
+                    fclose(bgm_file);
+
+                    char bgmpath[0x107] = {0};
+                    sprintf(bgmpath, "%s/bgm.bcstm", path);
+                    remake_file(fsMakePath(PATH_ASCII, bgmpath), ArchiveSD, bgm_size);
+                    buf_to_file(bgm_size, fsMakePath(PATH_ASCII, bgmpath), ArchiveSD, bgm_data);
+                    free(bgm_data);
+                }
+
+                romfsUnmount("theme");
+                char icondatapath[0x107] = {0};
+                sprintf(icondatapath, "meta:/icons/%ld.icn", extra_index);
+                FILE* iconfile = fopen(icondatapath, "rb");
+                fread(smdh_data->big_icon, 1, sizeof(smdh_data->big_icon), iconfile);
+                fclose(iconfile);
+
+                strcat(path, "/info.smdh");
+                remake_file(fsMakePath(PATH_ASCII, path), ArchiveSD, 0x36c0);
+                buf_to_file(0x36c0, fsMakePath(PATH_ASCII, path), ArchiveSD, (char*)smdh_data);
+            }
+        }
+
+        fclose(fh);
+        fh = NULL;
+        free(contentInfos);
+        contentInfos = NULL;
+
+        romfsUnmount("meta");
+        // don't need to close the file opened for the metadata, romfsUnmount took ownership
+         FSUSER_CloseArchive(ncch_archive);
+    }
+
+    free(smdh_data);
+    amExit();
+    return res;
 }
 
 void themes_check_installed(void * void_arg)
