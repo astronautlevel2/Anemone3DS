@@ -49,8 +49,9 @@ typedef struct {
     u8 _padding1[0x13b8];
     ThemeEntry_s theme_entry;
     ThemeEntry_s shuffle_themes[MAX_SHUFFLE_THEMES];
-    u8 _padding2[0xb];
-    bool shuffle;
+    u8 shuffle_seedA[0xb];
+    u8 shuffle;
+    u8 shuffle_seedB[0xa];
 } SaveData_dat_s;
 
 typedef struct {

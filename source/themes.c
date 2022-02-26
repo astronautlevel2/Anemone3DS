@@ -261,18 +261,24 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     SaveData_dat_s* savedata = (SaveData_dat_s*)savedata_buf;
 
     memset(&savedata->theme_entry, 0, sizeof(ThemeEntry_s));
-    savedata->theme_entry.type = 3;
-    savedata->theme_entry.index = 0xff;
 
-    savedata->shuffle = (installmode & THEME_INSTALL_SHUFFLE);
+    savedata->shuffle = (installmode & THEME_INSTALL_SHUFFLE) ? 1 : 0;
+    memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s)*MAX_SHUFFLE_THEMES);
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s)*MAX_SHUFFLE_THEMES);
         for(int i = 0; i < themes.shuffle_count; i++)
         {
             savedata->shuffle_themes[i].type = 3;
             savedata->shuffle_themes[i].index = i;
         }
+        const u8 shuffle_seed[0xB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+        memcpy(savedata->shuffle_seedA, shuffle_seed, 0xB);
+        memcpy(savedata->shuffle_seedB, shuffle_seed, 0xA);
+    }
+    else
+    {
+        savedata->theme_entry.type = 3;
+        savedata->theme_entry.index = 0xff;
     }
 
     res = buf_to_file(savedata_size, fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
