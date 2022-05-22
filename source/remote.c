@@ -1136,7 +1136,9 @@ no_error:;
         if (*filename == NULL)
         {
             // Content-Disposition extraction failed somehow
-            *filename = basename(unescape(url));
+            char * tmp = unescape(url);
+            *filename = strdup(basename(tmp));
+            free(tmp);
         }
         DEBUG("filename: %s\n", *filename);
     }
