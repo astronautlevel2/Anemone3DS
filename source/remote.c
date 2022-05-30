@@ -31,6 +31,7 @@
 #include "fs.h"
 #include "unicode.h"
 #include "music.h"
+#include "urls.h"
 
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
     {
@@ -436,18 +437,11 @@ static void search_menu(Entry_List_s * list)
     if (button == SWKBD_BUTTON_CONFIRM)
     {
         free(list->tp_search);
-        for (unsigned int i = 0; i < strlen(search); i++)
-        {
-            if (search[i] == ' ')
-                search[i] = '+';
-        }
-        list->tp_search = search;
+        list->tp_search = url_escape(search);
+        DEBUG("Search escaped: %s -> %s\n", search, list->tp_search);
         load_remote_list(list, 1, list->mode, false);
     }
-    else
-    {
-        free(search);
-    }
+    free(search);
 }
 
 static void change_selected(Entry_List_s * list, int change_value)
