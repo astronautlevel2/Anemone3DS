@@ -377,7 +377,7 @@ renamed:
     sprintf(path_to_file, "%s%s", main_paths[mode], filename);
 
     // filter out characters illegal in FAT32 filenames
-    char * curr_filename = strrchr(path_to_file, '/') + 1;
+    char * curr_filename = path_to_file + strlen(main_paths[mode]);
     char * illegal_char = curr_filename;
     while ((illegal_char = strpbrk(illegal_char, ILLEGAL_CHARS)))
     {
