@@ -1,6 +1,6 @@
 ![# Anemone3DS](https://github.com/astronautlevel2/Anemone3DS/blob/master/meta/banner.png)
 
-A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.\
+A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.
 
 # Dependencies
  * devkitARM, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
