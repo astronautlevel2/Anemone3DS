@@ -505,6 +505,7 @@ Result dump_all_themes(void)
         res = AMAPP_ListDLCContentInfos(&readcount, MEDIATYPE_SD, titleId, count, 0, contentInfos);
         if(R_FAILED(res))
         {
+            free(contentInfos);
             break;
         }
 
@@ -551,107 +552,105 @@ Result dump_all_themes(void)
 
         FILE* fh = fopen(contentinfoarchive_path, "rb");
 
-        for(u32 i = 0; i < readcount; ++i)
+        if(fh != NULL)
         {
-            if(i == 0) continue;
-            AM_ContentInfo* content = &contentInfos[i];
-            if((content->flags & (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED)) == (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED))
+            for(u32 i = 0; i < readcount; ++i)
             {
-                long off = 0x8 + 0xC8 * i;
-                fseek(fh, off, SEEK_SET);
-                char content_data[0xc8] = {0};
-                fread(content_data, 1, 0xc8, fh);
-                u32 extra_index = 0;
-                memcpy(&extra_index, content_data + 0xC0, 4);
-
-                metadataPath[1] = content->index;
-
-                Handle theme_fh;
-                res = FSUSER_OpenFile(&theme_fh, ncch_archive, metadata_path, FS_OPEN_READ, 0);
-                if(R_FAILED(res))
+                if(i == 0) continue;
+                AM_ContentInfo* content = &contentInfos[i];
+                if((content->flags & (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED)) == (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED))
                 {
-                    DEBUG("theme open romfs error: %08lx\n", res);
-                    fclose(fh);
-                    free(contentInfos);
-                    romfsUnmount("meta");
-                    FSUSER_CloseArchive(ncch_archive);
-                    free(contentInfos);
-                    break;
+                    long off = 0x8 + 0xC8 * i;
+                    fseek(fh, off, SEEK_SET);
+                    char content_data[0xc8] = {0};
+                    fread(content_data, 1, 0xc8, fh);
+                    u32 extra_index = 0;
+                    memcpy(&extra_index, content_data + 0xC0, 4);
+
+                    metadataPath[1] = content->index;
+
+                    Handle theme_fh;
+                    res = FSUSER_OpenFile(&theme_fh, ncch_archive, metadata_path, FS_OPEN_READ, 0);
+                    if(R_FAILED(res))
+                    {
+                        DEBUG("theme open romfs error: %08lx\n", res);
+                        break;
+                    }
+
+                    romfsMountFromFile(theme_fh, 0, "theme");
+
+                    char themename[0x41] = {0};
+                    memcpy(themename, content_data, 0x40);
+                    char * illegal_char = themename;
+                    while ((illegal_char = strpbrk(illegal_char, ILLEGAL_CHARS)))
+                    {
+                        *illegal_char = '-';
+                    }
+
+                    char path[0x107] = { 0 };
+                    sprintf(path, "/Themes/Dump-%02lx-%ld-%s", dlc_index, extra_index, themename);
+                    DEBUG("theme folder to create: %s\n", path);
+                    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, path), FS_ATTRIBUTE_DIRECTORY);
+
+                    memset(smdh_data->name, 0, sizeof(smdh_data->name));
+                    utf8_to_utf16(smdh_data->name, (u8*)(content_data + 0), 0x40);
+
+                    FILE* theme_file = fopen("theme:/body_LZ.bin", "rb");
+                    if(theme_file)
+                    {
+                        fseek(theme_file, 0, SEEK_END);
+                        long theme_size = ftell(theme_file);
+                        fseek(theme_file, 0, SEEK_SET);
+                        char* theme_data = malloc(theme_size);
+                        fread(theme_data, 1, theme_size, theme_file);
+                        fclose(theme_file);
+
+                        char themepath[0x107] = {0};
+                        sprintf(themepath, "%s/body_LZ.bin", path);
+                        remake_file(fsMakePath(PATH_ASCII, themepath), ArchiveSD, theme_size);
+                        buf_to_file(theme_size, fsMakePath(PATH_ASCII, themepath), ArchiveSD, theme_data);
+                        free(theme_data);
+                    }
+
+                    FILE* bgm_file = fopen("theme:/bgm.bcstm", "rb");
+                    if(bgm_file)
+                    {
+                        fseek(bgm_file, 0, SEEK_END);
+                        long bgm_size = ftell(bgm_file);
+                        fseek(bgm_file, 0, SEEK_SET);
+                        char* bgm_data = malloc(bgm_size);
+                        fread(bgm_data, 1, bgm_size, bgm_file);
+                        fclose(bgm_file);
+
+                        char bgmpath[0x107] = {0};
+                        sprintf(bgmpath, "%s/bgm.bcstm", path);
+                        remake_file(fsMakePath(PATH_ASCII, bgmpath), ArchiveSD, bgm_size);
+                        buf_to_file(bgm_size, fsMakePath(PATH_ASCII, bgmpath), ArchiveSD, bgm_data);
+                        free(bgm_data);
+                    }
+
+                    romfsUnmount("theme");
+                    char icondatapath[0x107] = {0};
+                    sprintf(icondatapath, "meta:/icons/%ld.icn", extra_index);
+                    FILE* iconfile = fopen(icondatapath, "rb");
+                    fread(smdh_data->big_icon, 1, sizeof(smdh_data->big_icon), iconfile);
+                    fclose(iconfile);
+
+                    strcat(path, "/info.smdh");
+                    remake_file(fsMakePath(PATH_ASCII, path), ArchiveSD, 0x36c0);
+                    buf_to_file(0x36c0, fsMakePath(PATH_ASCII, path), ArchiveSD, (char*)smdh_data);
                 }
-
-                romfsMountFromFile(theme_fh, 0, "theme");
-
-                char themename[0x41] = {0};
-                memcpy(themename, content_data, 0x40);
-                char * illegal_char = themename;
-                while ((illegal_char = strpbrk(illegal_char, ILLEGAL_CHARS)))
-                {
-                    *illegal_char = '-';
-                }
-
-                char path[0x107] = { 0 };
-                sprintf(path, "/Themes/Dump-%02lx-%ld-%s", dlc_index, extra_index, themename);
-                DEBUG("theme folder to create: %s\n", path);
-                FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, path), FS_ATTRIBUTE_DIRECTORY);
-
-                memset(smdh_data->name, 0, sizeof(smdh_data->name));
-                utf8_to_utf16(smdh_data->name, (u8*)(content_data + 0), 0x40);
-
-                FILE* theme_file = fopen("theme:/body_LZ.bin", "rb");
-                if(theme_file)
-                {
-                    fseek(theme_file, 0, SEEK_END);
-                    long theme_size = ftell(theme_file);
-                    fseek(theme_file, 0, SEEK_CUR);
-                    char* theme_data = malloc(theme_size);
-                    fread(theme_data, 1, theme_size, theme_file);
-                    fclose(theme_file);
-
-                    char themepath[0x107] = {0};
-                    sprintf(themepath, "%s/body_LZ.bin", path);
-                    remake_file(fsMakePath(PATH_ASCII, themepath), ArchiveSD, theme_size);
-                    buf_to_file(theme_size, fsMakePath(PATH_ASCII, themepath), ArchiveSD, theme_data);
-                    free(theme_data);
-                }
-
-                FILE* bgm_file = fopen("theme:/bgm.bcstm", "rb");
-                if(bgm_file)
-                {
-                    fseek(bgm_file, 0, SEEK_END);
-                    long bgm_size = ftell(bgm_file);
-                    fseek(bgm_file, 0, SEEK_CUR);
-                    char* bgm_data = malloc(bgm_size);
-                    fread(bgm_data, 1, bgm_size, bgm_file);
-                    fclose(bgm_file);
-
-                    char bgmpath[0x107] = {0};
-                    sprintf(bgmpath, "%s/bgm.bcstm", path);
-                    remake_file(fsMakePath(PATH_ASCII, bgmpath), ArchiveSD, bgm_size);
-                    buf_to_file(bgm_size, fsMakePath(PATH_ASCII, bgmpath), ArchiveSD, bgm_data);
-                    free(bgm_data);
-                }
-
-                romfsUnmount("theme");
-                char icondatapath[0x107] = {0};
-                sprintf(icondatapath, "meta:/icons/%ld.icn", extra_index);
-                FILE* iconfile = fopen(icondatapath, "rb");
-                fread(smdh_data->big_icon, 1, sizeof(smdh_data->big_icon), iconfile);
-                fclose(iconfile);
-
-                strcat(path, "/info.smdh");
-                remake_file(fsMakePath(PATH_ASCII, path), ArchiveSD, 0x36c0);
-                buf_to_file(0x36c0, fsMakePath(PATH_ASCII, path), ArchiveSD, (char*)smdh_data);
             }
-        }
 
-        fclose(fh);
-        fh = NULL;
+            fclose(fh);
+            fh = NULL;
+        }
         free(contentInfos);
         contentInfos = NULL;
 
         romfsUnmount("meta");
         // don't need to close the file opened for the metadata, romfsUnmount took ownership
-         FSUSER_CloseArchive(ncch_archive);
+        FSUSER_CloseArchive(ncch_archive);
     }
 
     free(smdh_data);
