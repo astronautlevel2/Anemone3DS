@@ -483,7 +483,7 @@ bool themeplaza_browser(EntryMode mode)
 
     bool extra_mode = false;
 
-    while (aptMainLoop())
+    while (aptMainLoop() && !quit)
     {
         if (current_list->entries == NULL)
             break;
@@ -511,12 +511,6 @@ bool themeplaza_browser(EntryMode mode)
         exit:
             quit = true;
             downloaded = false;
-            if (audio)
-            {
-                audio->stop = true;
-                svcWaitSynchronization(audio->finished, U64_MAX);
-                audio = NULL;
-            }
             break;
         }
 
@@ -723,6 +717,13 @@ bool themeplaza_browser(EntryMode mode)
                 }
             }
         }
+    }
+
+    if (audio)
+    {
+        audio->stop = true;
+        svcWaitSynchronization(audio->finished, U64_MAX);
+        audio = NULL;
     }
 
     free_preview(preview);

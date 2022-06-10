@@ -109,6 +109,12 @@ static void stop_install_check(void)
     {
         installCheckThreads_arg[i].run_thread = false;
     }
+    for(int i = 0; i < MODE_AMOUNT; i++)
+    {
+        threadJoin(installCheckThreads[i], U64_MAX);
+        threadFree(installCheckThreads[i]);
+        installCheckThreads[i] = NULL;
+    }
 }
 
 static void exit_thread(void)
@@ -121,6 +127,7 @@ static void exit_thread(void)
         svcWaitSynchronization(update_icons_mutex, U64_MAX);
         threadJoin(iconLoadingThread, U64_MAX);
         threadFree(iconLoadingThread);
+        iconLoadingThread = NULL;
     }
 }
 
@@ -138,6 +145,7 @@ static void free_icons(Entry_List_s * list)
         free(list->icons[i]);
     }
     free(list->icons);
+    list->icons = NULL;
 }
 
 void free_lists(void)
@@ -230,7 +238,7 @@ static void load_lists(Entry_List_s * lists)
 
             if(install_check_function != NULL)
             {
-                installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, true);
+                installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
                 svcSleepThread(1e8);
             }
         }
