@@ -46,9 +46,10 @@ typedef struct {
     u32 filesize;
     
     volatile bool stop;
-    Handle finished;
+    Thread playing_thread;
 } audio_s;
 
 void play_audio(audio_s *);
+void stop_audio(audio_s**);
 
 #endif

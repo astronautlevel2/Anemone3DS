@@ -608,7 +608,6 @@ Result load_audio(Entry_s entry, audio_s *audio)
     }
 
     audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
-    svcCreateEvent(&audio->finished, RESET_STICKY);
 
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
     ndspChnSetMix(0, audio->mix); // See mix comment above

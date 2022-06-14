@@ -69,17 +69,26 @@ void thread_audio(void* data) {
     while(!audio->stop) {
         update_audio(audio);
     }
-    free(audio->filebuf);
+    ndspChnWaveBufClear(0);
+    ndspChnReset(0);
     ov_clear(&audio->vf);
+    free(audio->filebuf);
     linearFree((void*)audio->wave_buf[0].data_vaddr);
     linearFree((void*)audio->wave_buf[1].data_vaddr);
-    while (audio->wave_buf[0].status != NDSP_WBUF_DONE || audio->wave_buf[1].status != NDSP_WBUF_DONE) svcSleepThread(1e7);
-    svcSignalEvent(audio->finished);
-    svcSleepThread(1e8);
-    svcCloseHandle(audio->finished);
-    free(audio);
 }
 
 void play_audio(audio_s *audio) {
-    threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, true);
+    audio->playing_thread = threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, false);
+}
+
+void stop_audio(audio_s** audio_ptr) {
+    audio_s* audio = *audio_ptr;
+    if(audio->playing_thread)
+    {
+        audio->stop = true;
+        threadJoin(audio->playing_thread, U64_MAX);
+        threadFree(audio->playing_thread);
+    }
+    free(audio);
+    *audio_ptr = NULL;
 }
