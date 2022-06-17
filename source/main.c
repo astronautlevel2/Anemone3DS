@@ -37,7 +37,7 @@
 
 bool quit = false;
 bool dspfirm = false;
-audio_s * audio = NULL;
+static audio_s * audio = NULL;
 static bool homebrew = false;
 static bool installed_themes = false;
 
@@ -165,8 +165,7 @@ void exit_function(bool power_pressed)
 {
     if(audio)
     {
-        audio->stop = true;
-        svcWaitSynchronization(audio->finished, U64_MAX);
+        stop_audio(&audio);
     }
     free_lists();
     svcCloseHandle(update_icons_mutex);
@@ -512,9 +511,7 @@ int main(void)
                     preview_mode = false;
                     if(current_mode == MODE_THEMES && audio)
                     {
-                        audio->stop = true;
-                        svcWaitSynchronization(audio->finished, U64_MAX);
-                        audio = NULL;
+                        stop_audio(&audio);
                     }
                 }
                 continue;
@@ -524,9 +521,7 @@ int main(void)
                 preview_mode = false;
                 if(current_mode == MODE_THEMES && audio)
                 {
-                    audio->stop = true;
-                    svcWaitSynchronization(audio->finished, U64_MAX);
-                    audio = NULL;
+                    stop_audio(&audio);
                 }
                 continue;
             }
