@@ -33,6 +33,10 @@
 #include "music.h"
 #include "urls.h"
 
+// forward declaration of special case used only here
+// TODO: replace this travesty with a proper handler
+static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error);
+
 static Instructions_s browser_instructions[MODE_AMOUNT] = {
     {
         .info_line = NULL,
@@ -327,9 +331,12 @@ static void load_remote_bgm(Entry_s * entry)
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
 
-        Result res = http_get(bgm_url, NULL, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
+        Result res = http_get_with_not_found_flag(bgm_url, NULL, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg", false);
         free(bgm_url);
         if (R_FAILED(res))
+            return;
+        // if bgm doesn't exist on the server
+        if (R_SUMMARY(res) == RS_NOTFOUND && R_MODULE(res) == RM_FILE_SERVER)
             return;
 
         u16 path[0x107] = { 0 };
@@ -757,7 +764,7 @@ typedef enum ParseResult
     HTTP_GATEWAY_TIMEOUT = 504,
 } ParseResult;
 
-static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+/*static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
 {
     (void)textlen;
     (void)user;
@@ -769,7 +776,7 @@ static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const
     }
 
     return SWKBD_CALLBACK_OK;
-}
+}*/
 
 // the good paths for this function return SUCCESS, ABORTED, or REDIRECT;
 // all other paths are failures
@@ -888,6 +895,11 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
  */
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
+    return http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
+}
+
+static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
+{
     Result ret;
     httpcContext context;
     char redirect_url[0x824] = {0};
@@ -923,6 +935,7 @@ redirect: // goto here if we need to redirect
 
 #define ERROR_BUFFER_SIZE 0x80
     char err_buf[ERROR_BUFFER_SIZE];
+    Result res;
     ParseResult parse = parse_header(&_header, &context, acceptable_mime_types);
     switch (parse)
     {
@@ -968,7 +981,10 @@ redirect: // goto here if we need to redirect
         snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
         goto error;
     case HTTP_NOT_FOUND:
-    case HTTP_GONE: ;
+        if (!not_found_is_error)
+            goto not_found_non_error;
+        [[fallthrough]];
+    case HTTP_GONE:
         const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
         DEBUG("HTTP %s; URL: %s\n", http_error, url);
         if (strstr(url, THEMEPLAZA_BASE_URL) && parse == HTTP_NOT_FOUND)
@@ -1031,9 +1047,13 @@ redirect: // goto here if we need to redirect
     goto no_error;
 error:
     throw_error(err_buf, ERROR_LEVEL_WARNING);
-    Result res = httpcCloseContext(&context);
+    res = httpcCloseContext(&context);
     if (R_FAILED(res)) return res;
     return MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
+not_found_non_error:
+    res = httpcCloseContext(&context);
+    if (R_FAILED(res)) return res;
+    return MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
 no_error:;
     u32 chunk_size;
     if (_header.file_size)
