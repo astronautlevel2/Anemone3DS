@@ -558,6 +558,96 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
     return true;
 }
 
+static void rotate_rgba_counterclockwise(char** bufp, size_t size, size_t width)
+{
+    uint32_t* buf = (uint32_t*)*bufp;
+    uint32_t* out = malloc(size);
+
+    size_t pixel_count = (size/4);
+    size_t height = pixel_count/width;
+
+    for (uint32_t h = 0; h < height; ++h)
+    {
+        for (uint32_t w = 0; w < width; ++w)
+        {
+            size_t buf_index = (w + (h * width));
+            size_t out_index = (height * (width-1)) - (height * w) + h;
+
+            out[out_index] = buf[buf_index];
+        }
+    }
+
+    free(*bufp);
+    *bufp = (char*)out;
+}
+
+static size_t bin_to_rgba(char** bufp, size_t size)
+{
+    size_t out_size = (size / 3) * 4;
+    char* buf = malloc(out_size);
+
+    for (size_t i = 0, j = 0; i < size; i+=3, j+=4)
+    {
+        (buf+j)[0] = (*bufp+i)[2];
+        (buf+j)[1] = (*bufp+i)[1];
+        (buf+j)[2] = (*bufp+i)[0];
+        (buf+j)[3] = 0xFF;
+    }
+    free(*bufp);
+    *bufp = buf;
+
+    rotate_rgba_counterclockwise(bufp, out_size, 240);
+
+    return out_size;
+}
+
+static size_t rgba_to_png(char** bufp, size_t size)
+{
+    uint32_t* buf = (uint32_t*)*bufp;
+
+    size_t out_size = size;
+    uint32_t* out = malloc(out_size);
+    memset(out, 0, out_size);
+    //FILE *fp = fopen("out.png", "wb");
+    FILE* fp = fmemopen(out, size, "wb");
+    png_bytep* row_pointers = NULL;
+
+    uint32_t h = 480;
+    uint32_t w = (uint32_t)((size/4)/h);
+
+    /* initialize stuff */
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_infop info_ptr = png_create_info_struct(png);
+
+    png_init_io(png, fp);
+
+    png_set_IHDR(png, info_ptr, w, h,
+                 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    png_write_info(png, info_ptr);
+
+    row_pointers = malloc(sizeof(png_bytep) * h);
+    for(uint32_t y = 0; y < h; y++)
+    {
+        row_pointers[y] = (png_byte*)(buf+(w*y));
+    }
+
+    png_write_image(png, row_pointers);
+
+    png_write_end(png, NULL);
+
+    free(row_pointers);
+    fclose(fp);
+
+    while (!out[out_size/4]) --out_size;
+    
+    free(buf);
+    *bufp = (char*)out;
+
+    return out_size;
+}
+
 static u16 previous_path_preview[0x106] = {0};
 bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset)
 {
@@ -573,8 +663,47 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
     if(!size)
     {
         free(preview_buffer);
-        throw_error("No preview found.", ERROR_LEVEL_WARNING);
-        return false;
+
+        const int top_size = 400 * 240 * 4;
+        const int out_size = top_size * 2;
+
+        char* rgba_buffer = malloc(out_size);
+        memset(rgba_buffer, 0, out_size);
+        bool found_splash = false;
+
+        // try to assembly a preview from the splash screens
+        size = load_data("/splash.bin", entry, &preview_buffer);
+        if (size)
+        {
+            found_splash = true;
+            bin_to_rgba(&preview_buffer, size);
+
+            memcpy(rgba_buffer, preview_buffer, top_size);
+            free(preview_buffer);
+        }
+
+        size = load_data("/splashbottom.bin", entry, &preview_buffer);
+        if (size)
+        {
+            found_splash = true;
+            bin_to_rgba(&preview_buffer, size);
+
+            for (int i = 0; i < 240; ++i)
+                memcpy(rgba_buffer + top_size + (400 * 4 * i) + (40 * 4), preview_buffer + (320 * 4 * i), 320*4);
+    
+            free(preview_buffer);
+        }
+
+        if (!found_splash)
+        {
+            free(rgba_buffer);
+            throw_error("No preview found.", ERROR_LEVEL_WARNING);
+            return false;
+        }
+
+        size = out_size;
+        rgba_to_png(&rgba_buffer, out_size);
+        preview_buffer = rgba_buffer;
     }
 
     bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset);
