@@ -118,7 +118,7 @@ void sort_by_filename(Entry_List_s * list);
 
 void delete_entry(Entry_s * entry, bool is_file);
 Result load_entries(const char * loading_path, Entry_List_s * list);
-bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset);
+bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset);
 bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset);
 void free_preview(C2D_Image preview_image);
 Result load_audio(Entry_s, audio_s *);
