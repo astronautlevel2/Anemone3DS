@@ -523,7 +523,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
         if (size)
         {
             found_splash = true;
-            bin_to_agbr(&preview_buffer, size);
+            bin_to_abgr(&preview_buffer, size);
 
             memcpy(rgba_buffer, preview_buffer, top_size);
             free(preview_buffer);
@@ -533,7 +533,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
         if (size)
         {
             found_splash = true;
-            bin_to_agbr(&preview_buffer, size);
+            bin_to_abgr(&preview_buffer, size);
 
             for (int i = 0; i < 240; ++i)
                 memcpy(rgba_buffer + top_size + (400 * 4 * i) + (40 * 4), preview_buffer + (320 * 4 * i), 320*4);

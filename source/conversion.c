@@ -26,7 +26,7 @@ static void rotate_agbr_counterclockwise(char** bufp, size_t size, size_t width)
     *bufp = (char*)out;
 }
 
-size_t bin_to_agbr(char** bufp, size_t size)
+size_t bin_to_abgr(char** bufp, size_t size)
 {
     size_t out_size = (size / 3) * 4;
     char* buf = malloc(out_size);
