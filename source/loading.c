@@ -32,30 +32,6 @@
 
 #include <png.h>
 
-void delete_entry(Entry_s * entry, bool is_file)
-{
-    if(is_file)
-        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_UTF16, entry->path));
-    else
-        FSUSER_DeleteDirectoryRecursively(ArchiveSD, fsMakePath(PATH_UTF16, entry->path));
-}
-
-u32 load_data(char * filename, Entry_s entry, char ** buf)
-{
-    if(entry.is_zip)
-    {
-        return zip_file_to_buf(filename+1, entry.path, buf); //the first character will always be '/' because of the other case
-    }
-    else
-    {
-        u16 path[0x106] = {0};
-        strucat(path, entry.path);
-        struacat(path, filename);
-
-        return file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, buf);
-    }
-}
-
 // Function taken and adapted from https://github.com/BernardoGiordano/Checkpoint/blob/master/3ds/source/title.cpp
 C2D_Image * loadTextureIcon(Icon_s *icon)
 {
@@ -83,7 +59,6 @@ C2D_Image * loadTextureIcon(Icon_s *icon)
 
 void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
 {
- 
     if(icon == NULL)
     {
         memcpy(entry->name, fallback_name, 0x80);
@@ -93,133 +68,21 @@ void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
         return;
     }
 
-
     memcpy(entry->name, icon->name, 0x40*sizeof(u16));
     memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
     memcpy(entry->author, icon->author, 0x40*sizeof(u16));
 }
 
-static C2D_Image * load_entry_icon(Entry_s entry)
+static C2D_Image * load_entry_icon(const Entry_s * entry)
 {
     char *info_buffer = NULL;
-    u64 size = load_data("/info.smdh", entry, &info_buffer);
+    u32 size = load_data("/info.smdh", entry, &info_buffer);
     if(!size) return NULL;
 
     Icon_s * smdh = (Icon_s *)info_buffer;
     C2D_Image* out = loadTextureIcon(smdh);
     free(info_buffer);
     return out;
-}
-
-typedef int (*sort_comparator)(const void *, const void *);
-static int compare_entries_by_name(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
-}
-static int compare_entries_by_author(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->author, entry_b->author, 0x40*sizeof(u16));
-}
-static int compare_entries_by_filename(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->path, entry_b->path, 0x106*sizeof(u16));
-}
-
-static void sort_list(Entry_List_s * list, sort_comparator compare_entries)
-{
-    if(list->entries != NULL && list->entries != NULL)
-        qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
-}
-
-void sort_by_name(Entry_List_s * list)
-{
-    sort_list(list, compare_entries_by_name);
-    list->current_sort = SORT_NAME;
-}
-void sort_by_author(Entry_List_s * list)
-{
-    sort_list(list, compare_entries_by_author);
-    list->current_sort = SORT_AUTHOR;
-}
-void sort_by_filename(Entry_List_s * list)
-{
-    sort_list(list, compare_entries_by_filename);
-    list->current_sort = SORT_PATH;
-}
-
-Result load_entries(const char * loading_path, Entry_List_s * list)
-{
-    Handle dir_handle;
-    Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, loading_path));
-    if(R_FAILED(res))
-    {
-        DEBUG("Failed to open folder: %s\n", loading_path);
-        return res;
-    }
-
-    u32 entries_read = 1;
-
-    while(entries_read)
-    {
-        FS_DirectoryEntry dir_entry = {0};
-        res = FSDIR_Read(dir_handle, &entries_read, 1, &dir_entry);
-        if(R_FAILED(res) || entries_read == 0)
-            break;
-
-        if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP"))
-            continue;
-
-        u16 path[0x106] = {0};
-        struacat(path, loading_path);
-        strucat(path, dir_entry.name);
-        char * buf = NULL;
-
-        if (!strcmp(dir_entry.shortExt, "ZIP"))
-        {
-            zip_file_to_buf("info.smdh", path, &buf);
-        }
-        else
-        {
-            const ssize_t len = strulen(path, 0x106);
-            struacat(path, "/info.smdh");
-            file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &buf);
-            memset(&path[len], 0, (0x106 - len) * sizeof(u16));
-        }
-
-        list->entries_count++;
-        Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
-        if(new_list == NULL)
-        {
-            // out of memory: still allow use of currently loaded entries.
-            // Many things might die, depending on the heap layout after
-            list->entries_count--;
-            free(buf);
-            break;
-        }
-        else
-            list->entries = new_list;
-
-        Entry_s * current_entry = &(list->entries[list->entries_count-1]);
-        memset(current_entry, 0, sizeof(Entry_s));
-        parse_smdh((Icon_s *)buf, current_entry, dir_entry.name);
-        free(buf);
-
-        memcpy(current_entry->path, path, 0x106 * sizeof(u16));
-        current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-    }
-
-    FSDIR_Close(dir_handle);
-
-    return res;
 }
 
 void load_icons_first(Entry_List_s * list, bool silent)
@@ -260,7 +123,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
         if(offset >= list->entries_count)
             offset -= list->entries_count;
 
-        Entry_s current_entry = list->entries[offset];
+        const Entry_s * const current_entry = &list->entries[offset];
         icons[i-starti] = load_entry_icon(current_entry);
     }
 }
@@ -406,8 +269,8 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     endi = abs(delta);
     for(int i = starti; i < endi; i++)
     {
-        Entry_s * current_entry = entries[i];
-        int index = indexes[i];
+        const Entry_s * const current_entry = entries[i];
+        const int index = indexes[i];
 
         C2D_Image * image = icons[index];
         if (icons[index] != NULL)
@@ -417,7 +280,7 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
             free(image);
         }
 
-        icons[index] = load_entry_icon(*current_entry);
+        icons[index] = load_entry_icon(current_entry);
 
         if(!released && i > endi/2)
         {
@@ -559,16 +422,16 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 }
 
 static u16 previous_path_preview[0x106] = {0};
-bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset)
+bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset)
 {
-    if(list.entries == NULL) return false;
+    if(list->entries == NULL) return false;
 
-    Entry_s entry = list.entries[list.selected_entry];
+    const Entry_s * entry = &list->entries[list->selected_entry];
 
-    if(!memcmp(&previous_path_preview, &entry.path, 0x106*sizeof(u16))) return true;
+    if(!memcmp(&previous_path_preview, &entry->path, 0x106*sizeof(u16))) return true;
 
     char *preview_buffer = NULL;
-    u64 size = load_data("/preview.png", entry, &preview_buffer);
+    u32 size = load_data("/preview.png", entry, &preview_buffer);
 
     if(!size)
     {
@@ -583,7 +446,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
     if(ret)
     {
         // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
+        memcpy(&previous_path_preview, &entry->path, 0x106*sizeof(u16));
     }
 
     return ret;
@@ -598,7 +461,7 @@ void free_preview(C2D_Image preview)
 }
 
 // Initialize the audio struct
-Result load_audio(Entry_s entry, audio_s *audio) 
+Result load_audio(const Entry_s * entry, audio_s *audio) 
 {
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
     if (audio->filesize == 0) {

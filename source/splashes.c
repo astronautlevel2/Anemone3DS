@@ -34,7 +34,7 @@ void splash_delete(void)
     remove("/luma/splashbottom.bin");
 }
 
-void splash_install(Entry_s splash)
+void splash_install(const Entry_s* splash)
 {
     char *screen_buf = NULL;
 
@@ -103,8 +103,8 @@ void splash_check_installed(void * void_arg)
     for(int i = 0; i < list->entries_count && arg->run_thread; i++)
     {
         Entry_s * splash = &list->entries[i];
-        top_size = load_data("/splash.bin", *splash, &top_buf);
-        bottom_size = load_data("/splashbottom.bin", *splash, &bottom_buf);
+        top_size = load_data("/splash.bin", splash, &top_buf);
+        bottom_size = load_data("/splashbottom.bin", splash, &bottom_buf);
 
         if(!top_size && !bottom_size)
         {

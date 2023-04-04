@@ -32,7 +32,7 @@
 #define BODY_CACHE_SIZE 0x150000
 #define BGM_MAX_SIZE 0x337000
 
-static Result install_theme_internal(Entry_List_s themes, int installmode)
+static Result install_theme_internal(const Entry_List_s * themes, int installmode)
 {
     Result res = 0;
     char* music = NULL;
@@ -44,13 +44,13 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        if(themes.shuffle_count < 2)
+        if(themes->shuffle_count < 2)
         {
             DEBUG("not enough themes selected for shuffle\n");
             return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
         }
 
-        if(themes.shuffle_count > MAX_SHUFFLE_THEMES)
+        if(themes->shuffle_count > MAX_SHUFFLE_THEMES)
         {
             DEBUG("too many themes selected for shuffle\n");
             return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
@@ -67,15 +67,15 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
             FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
         }
 
-        for(int i = 0; i < themes.entries_count; i++)
+        for(int i = 0; i < themes->entries_count; i++)
         {
-            Entry_s * current_theme = &themes.entries[i];
+            const Entry_s * current_theme = &themes->entries[i];
 
             if(current_theme->in_shuffle)
             {
                 if(installmode & THEME_INSTALL_BODY)
                 {
-                    body_size = load_data("/body_LZ.bin", *current_theme, &body);
+                    body_size = load_data("/body_LZ.bin", current_theme, &body);
                     if(body_size == 0)
                     {
                         free(body);
@@ -108,7 +108,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     }
                     else
                     {
-                        music_size = load_data("/bgm.bcstm", *current_theme, &music);
+                        music_size = load_data("/bgm.bcstm", current_theme, &music);
 
                         if(music_size > BGM_MAX_SIZE)
                         {
@@ -162,7 +162,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     }
     else
     {
-        Entry_s current_theme = themes.entries[themes.selected_entry];
+        const Entry_s * current_theme = &themes->entries[themes->selected_entry];
 
         if(installmode & THEME_INSTALL_BODY)
         {
@@ -266,7 +266,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s)*MAX_SHUFFLE_THEMES);
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        for(int i = 0; i < themes.shuffle_count; i++)
+        for(int i = 0; i < themes->shuffle_count; i++)
         {
             savedata->shuffle_themes[i].type = 3;
             savedata->shuffle_themes[i].index = i;
@@ -289,34 +289,34 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     return 0;
 }
 
-inline Result theme_install(Entry_s theme)
+Result theme_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
     list.entries_count = 1;
-    list.entries = &theme;
+    list.entries = theme;
     list.selected_entry = 0;
-    return install_theme_internal(list, THEME_INSTALL_BODY | THEME_INSTALL_BGM);
+    return install_theme_internal(&list, THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
 
-inline Result bgm_install(Entry_s theme)
+Result bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
     list.entries_count = 1;
-    list.entries = &theme;
+    list.entries = theme;
     list.selected_entry = 0;
-    return install_theme_internal(list, THEME_INSTALL_BGM);
+    return install_theme_internal(&list, THEME_INSTALL_BGM);
 }
 
-inline Result no_bgm_install(Entry_s theme)
+Result no_bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
     list.entries_count = 1;
-    list.entries = &theme;
+    list.entries = theme;
     list.selected_entry = 0;
-    return install_theme_internal(list, THEME_INSTALL_BODY);
+    return install_theme_internal(&list, THEME_INSTALL_BODY);
 }
 
-inline Result shuffle_install(Entry_List_s themes)
+Result shuffle_install(const Entry_List_s * themes)
 {
     return install_theme_internal(themes, THEME_INSTALL_SHUFFLE | THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
@@ -715,7 +715,7 @@ void themes_check_installed(void * void_arg)
     {
         Entry_s * theme = &list->entries[i];
         char * theme_body = NULL;
-        u32 theme_body_size = load_data("/body_LZ.bin", *theme, &theme_body);
+        u32 theme_body_size = load_data("/body_LZ.bin", theme, &theme_body);
         if(!theme_body_size) return;
 
         u8 theme_body_hash[HASH_SIZE_BYTES];

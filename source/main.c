@@ -491,7 +491,7 @@ int main(void)
                 toggle_preview:
                 if(!preview_mode)
                 {
-                    preview_mode = load_preview(*current_list, &preview, &preview_offset);
+                    preview_mode = load_preview(current_list, &preview, &preview_offset);
                     if(preview_mode)
                     {
                         end_frame();
@@ -500,7 +500,7 @@ int main(void)
                         if(current_mode == MODE_THEMES && dspfirm)
                         {
                             audio = calloc(1, sizeof(audio_s));
-                            Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
+                            Result r = load_audio(&current_list->entries[current_list->selected_entry], audio);
                             if (R_SUCCEEDED(r)) play_audio(audio);
                             else audio = NULL;
                         }
@@ -542,7 +542,7 @@ int main(void)
                 if((kDown | kHeld) & KEY_DLEFT)
                 {
                     draw_install(INSTALL_BGM);
-                    if(R_SUCCEEDED(bgm_install(*current_entry)))
+                    if(R_SUCCEEDED(bgm_install(current_entry)))
                     {
                         for(int i = 0; i < current_list->entries_count; i++)
                         {
@@ -558,7 +558,7 @@ int main(void)
                 else if((kDown | kHeld) & KEY_DUP)
                 {
                     draw_install(INSTALL_SINGLE);
-                    if(R_SUCCEEDED(theme_install(*current_entry)))
+                    if(R_SUCCEEDED(theme_install(current_entry)))
                     {
                         for(int i = 0; i < current_list->entries_count; i++)
                         {
@@ -574,7 +574,7 @@ int main(void)
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
                     draw_install(INSTALL_NO_BGM);
-                    if(R_SUCCEEDED(no_bgm_install(*current_entry)))
+                    if(R_SUCCEEDED(no_bgm_install(current_entry)))
                     {
                         for(int i = 0; i < current_list->entries_count; i++)
                         {
@@ -600,7 +600,7 @@ int main(void)
                     else
                     {
                         draw_install(INSTALL_SHUFFLE);
-                        Result res = shuffle_install(*current_list);
+                        Result res = shuffle_install(current_list);
                         if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
                         else
                         {
@@ -705,7 +705,7 @@ int main(void)
                     break;
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH);
-                    splash_install(*current_entry);
+                    splash_install(current_entry);
                     for(int i = 0; i < current_list->entries_count; i++)
                     {
                         Entry_s * splash = &current_list->entries[i];

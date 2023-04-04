@@ -42,6 +42,14 @@
         POS(); \
         DEBUG(__VA_ARGS__)
 
+inline int min(const int a, const int b)
+{
+    if(a > b)
+        return b;
+    else
+        return a;
+}
+
 #define FASTSCROLL_WAIT 1e8
 
 typedef enum {

@@ -39,8 +39,8 @@ Result open_archives(void);
 Result close_archives(void);
 
 u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf);
-u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char ** buf);
-u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf);
+u32 zip_memory_to_buf(const char *file_name, void * zip_memory, size_t zip_size, char ** buf);
+u32 zip_file_to_buf(const char *file_name, const u16 *zip_path, char **buf);
 u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char **buf);
 u32 compress_lz_file_fast(FS_Path path, FS_Archive archive, char *in_buf, u32 size);
 

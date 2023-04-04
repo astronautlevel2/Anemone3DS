@@ -124,7 +124,7 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
     return (u32)size;
 }
 
-static u32 zip_to_buf(struct archive *a, char *file_name, char ** buf)
+static u32 zip_to_buf(struct archive *a, const char *file_name, char ** buf)
 {
     struct archive_entry *entry;
 
@@ -152,7 +152,7 @@ static u32 zip_to_buf(struct archive *a, char *file_name, char ** buf)
     return (u32)file_size;
 }
 
-u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char ** buf)
+u32 zip_memory_to_buf(const char *file_name, void * zip_memory, size_t zip_size, char ** buf)
 {
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
@@ -167,7 +167,7 @@ u32 zip_memory_to_buf(char *file_name, void * zip_memory, size_t zip_size, char 
     return zip_to_buf(a, file_name, buf);
 }
 
-u32 zip_file_to_buf(char *file_name, u16 *zip_path, char **buf)
+u32 zip_file_to_buf(const char *file_name, const u16 *zip_path, char **buf)
 {
     ssize_t len = strulen(zip_path, 0x106);
     char *path = calloc(sizeof(char), len*sizeof(u16));

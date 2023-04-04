@@ -125,7 +125,7 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
 {
     bool not_cached = true;
     char * smdh_buf = NULL;
-    u32 smdh_size = load_data("/info.smdh", *entry, &smdh_buf);
+    u32 smdh_size = load_data("/info.smdh", entry, &smdh_buf);
 
     not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
 
@@ -262,16 +262,16 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     free(page_json);
 }
 
-static u16 previous_path_preview[0x106] = { 0 };
+static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int * preview_offset)
+static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset)
 {
     bool not_cached = true;
 
     if (!memcmp(&previous_path_preview, entry->path, 0x106 * sizeof(u16))) return true;
 
     char * preview_png = NULL;
-    u32 preview_size = load_data("/preview.png", *entry, &preview_png);
+    u32 preview_size = load_data("/preview.png", entry, &preview_png);
 
     not_cached = !preview_size;
 
@@ -312,14 +312,14 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int 
     return ret;
 }
 
-static u16 previous_path_bgm[0x106] = { 0 };
+static u16 previous_path_bgm[0x106];
 
-static void load_remote_bgm(Entry_s * entry)
+static void load_remote_bgm(const Entry_s * entry)
 {
     if (!memcmp(&previous_path_bgm, entry->path, 0x106 * sizeof(u16))) return;
 
     char * bgm_ogg = NULL;
-    u32 bgm_size = load_data("/bgm.ogg", *entry, &bgm_ogg);
+    u32 bgm_size = load_data("/bgm.ogg", entry, &bgm_ogg);
 
     if (!bgm_size)
     {
@@ -567,7 +567,7 @@ bool themeplaza_browser(EntryMode mode)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_s));
-                    if (R_FAILED(load_audio(*current_entry, audio))) audio = NULL;
+                    if (R_FAILED(load_audio(current_entry, audio))) audio = NULL;
                     if (audio != NULL) play_audio(audio);
                 }
             }

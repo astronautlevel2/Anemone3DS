@@ -34,12 +34,13 @@ ssize_t strulen(const u16 *input, ssize_t max_len)
 
 void struacat(u16 *input, const char *addition)
 {
-    ssize_t len = strulen(input, 0x106);
-    for (u16 i = len; i < strlen(addition) + len; i++) 
+    const ssize_t len = strulen(input, 0x106);
+    const u16 stop_at = strlen(addition);
+    for (u16 i = 0; i < stop_at; i++) 
     {
-        input[i] = addition[i - len];
+        input[i + len] = addition[stop_at];
     }
-    input[strlen(addition) + len] = 0;
+    input[stop_at + len] = 0;
 }
 
 void printu(u16 *input)
@@ -61,5 +62,6 @@ u16 *strucat(u16 *destination, const u16 *source)
     ssize_t source_len = strulen(source, 0x106);
 
     memcpy(&destination[dest_len], source, source_len * sizeof(u16));
+    destination[min(dest_len + source_len, 0x106 - 1)] = 0;
     return destination;
 }
