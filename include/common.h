@@ -42,7 +42,7 @@
         POS(); \
         DEBUG(__VA_ARGS__)
 
-inline int min(const int a, const int b)
+static inline int min(const int a, const int b)
 {
     if(a > b)
         return b;
