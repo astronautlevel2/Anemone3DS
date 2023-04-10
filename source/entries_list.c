@@ -131,16 +131,17 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
             struacat(loading_entry_path, loading_path);
             strucat(loading_entry_path, dir_entry->name);
             char * buf = NULL;
+            u32 buflen = 0;
 
             if (is_zip)
             {
-                zip_file_to_buf("info.smdh", loading_entry_path, &buf);
+                buflen = zip_file_to_buf("info.smdh", loading_entry_path, &buf);
             }
             else
             {
                 const ssize_t len = strulen(loading_entry_path, 0x106);
                 struacat(loading_entry_path, "/info.smdh");
-                file_to_buf(fsMakePath(PATH_UTF16, loading_entry_path), ArchiveSD, &buf);
+                buflen = file_to_buf(fsMakePath(PATH_UTF16, loading_entry_path), ArchiveSD, &buf);
                 memset(&loading_entry_path[len], 0, (0x106 - len) * sizeof(u16));
             }
 
@@ -156,7 +157,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
             Entry_s * const current_entry = &list->entries[new_entry_index];
             memset(current_entry, 0, sizeof(Entry_s));
-            parse_smdh((Icon_s *)buf, current_entry, dir_entry->name);
+            parse_smdh(buflen == sizeof(Icon_s) ? (Icon_s *)buf : NULL, current_entry, dir_entry->name);
             free(buf);
 
             memcpy(current_entry->path, loading_entry_path, 0x106 * sizeof(u16));

@@ -38,7 +38,7 @@ void struacat(u16 *input, const char *addition)
     const u16 stop_at = strlen(addition);
     for (u16 i = 0; i < stop_at; i++) 
     {
-        input[i + len] = addition[stop_at];
+        input[i + len] = addition[i];
     }
     input[stop_at + len] = 0;
 }
