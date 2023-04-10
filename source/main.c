@@ -213,7 +213,7 @@ static void load_lists(Entry_List_s * lists)
         current_list->entries_per_screen_h = 1;
         current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
         current_list->entry_size = entry_size[i];
-        Result res = load_entries(main_paths[i], current_list);
+        Result res = load_entries(main_paths[i], current_list, loading_screen);
         if(R_SUCCEEDED(res))
         {
             if(current_list->entries_count > current_list->entries_loaded*ICONS_OFFSET_AMOUNT)

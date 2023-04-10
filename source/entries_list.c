@@ -26,6 +26,7 @@
 
 #include "entries_list.h"
 #include "loading.h"
+#include "draw.h"
 #include "fs.h"
 #include "unicode.h"
 
@@ -100,8 +101,7 @@ void sort_by_filename(Entry_List_s * list)
 
 #define LOADING_DIR_ENTRIES_COUNT 16
 static FS_DirectoryEntry loading_dir_entries[LOADING_DIR_ENTRIES_COUNT];
-static u16 loading_entry_path[0x106];
-Result load_entries(const char * loading_path, Entry_List_s * list)
+Result load_entries(const char * loading_path, Entry_List_s * list, const InstallType loading_screen)
 {
     Handle dir_handle;
     Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, loading_path));
@@ -122,50 +122,39 @@ Result load_entries(const char * loading_path, Entry_List_s * list)
 
         for(u32 i = 0; i < entries_read; ++i)
         {
-            const FS_DirectoryEntry* dir_entry = &loading_dir_entries[i];
+            const FS_DirectoryEntry* const dir_entry = &loading_dir_entries[i];
             const bool is_zip = !strcmp(dir_entry->shortExt, "ZIP");
             if(!(dir_entry->attributes & FS_ATTRIBUTE_DIRECTORY) && !is_zip)
                 continue;
-
-            loading_entry_path[0] = 0;
-            struacat(loading_entry_path, loading_path);
-            strucat(loading_entry_path, dir_entry->name);
-            char * buf = NULL;
-            u32 buflen = 0;
-
-            if (is_zip)
-            {
-                buflen = zip_file_to_buf("info.smdh", loading_entry_path, &buf);
-            }
-            else
-            {
-                const ssize_t len = strulen(loading_entry_path, 0x106);
-                struacat(loading_entry_path, "/info.smdh");
-                buflen = file_to_buf(fsMakePath(PATH_UTF16, loading_entry_path), ArchiveSD, &buf);
-                memset(&loading_entry_path[len], 0, (0x106 - len) * sizeof(u16));
-            }
 
             const ssize_t new_entry_index = list_add_entry(list);
             if(new_entry_index < 0)
             {
                 // out of memory: still allow use of currently loaded entries.
                 // Many things might die, depending on the heap layout after
-                free(buf);
                 entries_read = 0;
                 break;
             }
 
             Entry_s * const current_entry = &list->entries[new_entry_index];
             memset(current_entry, 0, sizeof(Entry_s));
-            parse_smdh(buflen == sizeof(Icon_s) ? (Icon_s *)buf : NULL, current_entry, dir_entry->name);
-            free(buf);
-
-            memcpy(current_entry->path, loading_entry_path, 0x106 * sizeof(u16));
+            struacat(current_entry->path, loading_path);
+            strucat(current_entry->path, dir_entry->name);
             current_entry->is_zip = is_zip;
         }
     }
 
     FSDIR_Close(dir_handle);
+
+    for(int i = 0; i < list->entries_count; ++i)
+    {
+        draw_loading_bar(i, list->entries_count, loading_screen);
+        Entry_s* const current_entry = &list->entries[i];
+        char * buf = NULL;
+        u32 buflen = load_data("/info.smdh", current_entry, &buf);
+        parse_smdh(buflen == sizeof(Icon_s) ? (Icon_s *)buf : NULL, current_entry, current_entry->path + strlen(loading_path));
+        free(buf);
+    }
 
     return res;
 }

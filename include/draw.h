@@ -33,7 +33,7 @@
 
 #define MAX_LINES 10
 
-typedef enum {
+typedef enum InstallType_e {
     INSTALL_LOADING_THEMES,
     INSTALL_LOADING_SPLASHES,
     INSTALL_LOADING_ICONS,

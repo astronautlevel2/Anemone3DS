@@ -89,7 +89,8 @@ void sort_by_filename(Entry_List_s * list);
 
 void delete_entry(Entry_s * entry, bool is_file);
 // assumes list has been memset to 0
-Result load_entries(const char * loading_path, Entry_List_s * list);
+typedef enum InstallType_e InstallType;
+Result load_entries(const char * loading_path, Entry_List_s * list, const InstallType loading_screen);
 u32 load_data(const char * filename, const Entry_s * entry, char ** buf);
 
 // assumes list doesn't have any elements yet
