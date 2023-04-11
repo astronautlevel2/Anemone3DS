@@ -108,26 +108,18 @@ static void free_icons(Entry_List_s * list)
 {
     if (list != NULL)
     {
-        if (list->icons != NULL)
-        {
-            for (int i = 0; i < list->entries_count; i++)
-            {
-                C3D_TexDelete(list->icons[i]->tex);
-                free(list->icons[i]->tex);
-                free(list->icons[i]);
-            }
-            free(list->icons);
-        }
+        C3D_TexDelete(&list->icons_texture);
+        free(list->icons_info);
     }
 }
 
-static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
+static void load_remote_smdh(Entry_s * entry, C3D_Tex* into_tex, const Entry_Icon_s * icon_info, bool ignore_cache)
 {
     bool not_cached = true;
     char * smdh_buf = NULL;
     u32 smdh_size = load_data("/info.smdh", entry, &smdh_buf);
 
-    not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
+    not_cached = (smdh_size != sizeof(Icon_s)) || ignore_cache;  // if the size is 0, the file wasn't there
 
     if (not_cached)
     {
@@ -136,15 +128,15 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         char * api_url = NULL;
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
         Result res = http_get(api_url, NULL, &smdh_buf, &smdh_size, INSTALL_NONE, "application/octet-stream");
+        free(api_url);
         if (R_FAILED(res))
         {
             free(smdh_buf);
-            return false;
+            return;
         }
-        free(api_url);
     }
 
-    if (!smdh_size)
+    if (smdh_size != sizeof(Icon_s))
     {
         free(smdh_buf);
         smdh_buf = NULL;
@@ -156,29 +148,28 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
     utf8_to_utf16(fallback_name, (u8 *)"No name", 0x80);
 
     parse_smdh(smdh, entry, fallback_name);
-    C2D_Image * image = loadTextureIcon(smdh);
 
-    if (not_cached)
+    if(smdh_buf != NULL)
     {
-        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, entry->path), FS_ATTRIBUTE_DIRECTORY);
-        u16 path[0x107] = { 0 };
-        strucat(path, entry->path);
-        struacat(path, "/info.smdh");
-        remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_size);
-        buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
+        copy_texture_data(into_tex, smdh->big_icon, icon_info);
+        if (not_cached)
+        {
+            FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, entry->path), FS_ATTRIBUTE_DIRECTORY);
+            u16 path[0x107] = { 0 };
+            strucat(path, entry->path);
+            struacat(path, "/info.smdh");
+            remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_size);
+            buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
+        }
+        free(smdh_buf);
     }
-    free(smdh_buf);
-
-    return image;
 }
 
 static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type)
 {
-    free_icons(list);
-    list->entries_count = json_array_size(ids_array);
     free(list->entries);
+    list->entries_count = json_array_size(ids_array);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
-    list->icons = calloc(list->entries_count, sizeof(C2D_Image * ));
     list->entries_loaded = list->entries_count;
 
     size_t i = 0;
@@ -194,7 +185,7 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
         utf8_to_utf16(current_entry->path, (u8 *)entry_path, 0x106);
         free(entry_path);
 
-        list->icons[i] = load_remote_smdh(current_entry, ignore_cache);
+        load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
     }
 }
 
@@ -485,6 +476,28 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
+
+    C3D_TexInit(&current_list->icons_texture, 512, 256, GPU_RGB565);
+    C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
+    const int entries_icon_count = current_list->entries_per_screen_h * current_list->entries_per_screen_v;
+    current_list->icons_info = calloc(entries_icon_count, sizeof(Entry_Icon_s));
+
+    const float inv_width = 1.0f / current_list->icons_texture.width;
+    const float inv_height = 1.0f / current_list->icons_texture.height;
+    for(int i = 0; i < entries_icon_count; ++i)
+    {
+        Entry_Icon_s* const icon_info = &current_list->icons_info[i];
+        const div_t d = div(i, 10);
+        icon_info->x = d.rem * current_list->entry_size;
+        icon_info->y = d.quot * current_list->entry_size;
+        icon_info->subtex.width = current_list->entry_size;
+        icon_info->subtex.height = current_list->entry_size;
+        icon_info->subtex.left = icon_info->x * inv_width;
+        icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
+        icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
+        icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
+    }
+
     load_remote_list(current_list, 1, mode, false);
     C2D_Image preview = { 0 };
 

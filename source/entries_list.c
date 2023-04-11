@@ -54,25 +54,47 @@ u32 load_data(const char * filename, const Entry_s * entry, char ** buf)
     }
 }
 
+C2D_Image get_icon_at(Entry_List_s * list, size_t index)
+{
+    C2D_Image out;
+    out.tex = &list->icons_texture;
+    out.subtex = &list->icons_info[index].subtex;
+    return out;
+}
+
+static int compare_entries_base(const Entry_s * const a, const Entry_s * const b)
+{
+    return ((int)(a->placeholder_color != 0)) - ((int)(b->placeholder_color != 0));
+}
+
 typedef int (*sort_comparator)(const void *, const void *);
 static int compare_entries_by_name(const void * a, const void * b)
 {
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
+    const Entry_s * const entry_a = (const Entry_s *)a;
+    const Entry_s * const entry_b = (const Entry_s *)b;
+    const int base = compare_entries_base(entry_a, entry_b);
+    if(base)
+        return base;
+    
     return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
 }
 static int compare_entries_by_author(const void * a, const void * b)
 {
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
+    const Entry_s * const entry_a = (const Entry_s *)a;
+    const Entry_s * const entry_b = (const Entry_s *)b;
+    const int base = compare_entries_base(entry_a, entry_b);
+    if(base)
+        return base;
+    
     return memcmp(entry_a->author, entry_b->author, 0x40*sizeof(u16));
 }
 static int compare_entries_by_filename(const void * a, const void * b)
 {
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
+    const Entry_s * const entry_a = (const Entry_s *)a;
+    const Entry_s * const entry_b = (const Entry_s *)b;
+    const int base = compare_entries_base(entry_a, entry_b);
+    if(base)
+        return base;
 
     return memcmp(entry_a->path, entry_b->path, 0x106*sizeof(u16));
 }
@@ -146,6 +168,9 @@ Result load_entries(const char * loading_path, Entry_List_s * list, const Instal
 
     FSDIR_Close(dir_handle);
 
+    list->loading_path = loading_path;
+
+    /*
     for(int i = 0; i < list->entries_count; ++i)
     {
         draw_loading_bar(i, list->entries_count, loading_screen);
@@ -154,6 +179,14 @@ Result load_entries(const char * loading_path, Entry_List_s * list, const Instal
         u32 buflen = load_data("/info.smdh", current_entry, &buf);
         parse_smdh(buflen == sizeof(Icon_s) ? (Icon_s *)buf : NULL, current_entry, current_entry->path + strlen(loading_path));
         free(buf);
+    }
+    */
+    // mark entries as not filled up yet
+    for(int i = 0; i < list->entries_count; ++i)
+    {
+        draw_loading_bar(i, list->entries_count, loading_screen);
+        Entry_s* const current_entry = &list->entries[i];
+        parse_smdh(NULL, current_entry, current_entry->path + strlen(list->loading_path));
     }
 
     return res;

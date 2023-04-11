@@ -32,29 +32,16 @@
 
 #include <png.h>
 
-// Function taken and adapted from https://github.com/BernardoGiordano/Checkpoint/blob/master/3ds/source/title.cpp
-C2D_Image * loadTextureIcon(Icon_s *icon)
+void copy_texture_data(C3D_Tex* texture, const u16* src, const Entry_Icon_s* current_icon)
 {
-    if(icon == NULL)
-        return NULL;
-
-    C2D_Image * image = calloc(1, sizeof(C2D_Image));
-    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
-    static const Tex3DS_SubTexture subt3x = { 48, 48, 0.0f, 48/64.0f, 48/64.0f, 0.0f };
-    image->tex = tex;
-    image->subtex = &subt3x;
-    C3D_TexInit(image->tex, 64, 64, GPU_RGB565);
-
-    u16* dest = (u16*)image->tex->data + (64-48)*64;
-    u16* src = icon->big_icon;
+    u16* dest = (u16*)texture->data + current_icon->y * texture->width + current_icon->x * 8;
     for (int j = 0; j < 48; j += 8)
     {
         memcpy(dest, src, 48*8*sizeof(u16));
         src += 48*8;
-        dest += 64*8;
+        dest += texture->width * 8;
     }
-
-    return image;
+    GSPGPU_InvalidateDataCache(texture->data, texture->size);
 }
 
 void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
@@ -71,18 +58,20 @@ void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
     memcpy(entry->name, icon->name, 0x40*sizeof(u16));
     memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
     memcpy(entry->author, icon->author, 0x40*sizeof(u16));
+    entry->placeholder_color = 0;
 }
 
-static C2D_Image * load_entry_icon(const Entry_s * entry)
+static Icon_s * load_entry_icon(const Entry_s * entry)
 {
     char *info_buffer = NULL;
     u32 size = load_data("/info.smdh", entry, &info_buffer);
-    if(!size) return NULL;
+    if(size != sizeof(Icon_s))
+    {
+        free(info_buffer);
+        return NULL;
+    }
 
-    Icon_s * smdh = (Icon_s *)info_buffer;
-    C2D_Image* out = loadTextureIcon(smdh);
-    free(info_buffer);
-    return out;
+    return (Icon_s *)info_buffer;
 }
 
 void load_icons_first(Entry_List_s * list, bool silent)
@@ -108,36 +97,40 @@ void load_icons_first(Entry_List_s * list, bool silent)
         endi = starti + list->entries_loaded*ICONS_OFFSET_AMOUNT;
     }
 
-    list->icons = calloc(endi-starti, sizeof(C2D_Image*));
-
-    C2D_Image ** icons = list->icons;
-
-    for(int i = starti; i < endi; i++)
+    for(int entry_i = starti, icon_i = 0; entry_i < endi; ++entry_i, ++icon_i)
     {
         if(!silent)
-            draw_loading_bar(i - starti, endi-starti, INSTALL_LOADING_ICONS);
+            draw_loading_bar(icon_i, endi-starti, INSTALL_LOADING_ICONS);
 
-        int offset = i;
+        int offset = entry_i;
         if(offset < 0)
             offset += list->entries_count;
         if(offset >= list->entries_count)
             offset -= list->entries_count;
 
-        const Entry_s * const current_entry = &list->entries[offset];
-        icons[i-starti] = load_entry_icon(current_entry);
+        Entry_s * const current_entry = &list->entries[offset];
+        Icon_s* const smdh = load_entry_icon(current_entry);
+        if(smdh != NULL)
+        {
+            if(current_entry->placeholder_color == 0)
+                parse_smdh(smdh, current_entry, current_entry->path + strlen(list->loading_path));
+            copy_texture_data(&list->icons_texture, smdh->big_icon, &list->icons_info[icon_i]);
+            free(smdh);
+        }
     }
 }
 
-static void reverse(C2D_Image * a[], int sz) {
+static void reverse(Entry_Icon_s a[], int sz) {
     int i, j;
+    Entry_Icon_s tmp;
     for (i = 0, j = sz; i < j; i++, j--) {
-        C2D_Image * tmp = a[i];
-        a[i] = a[j];
-        a[j] = tmp;
+        memcpy(&tmp, &a[i], sizeof(Entry_Icon_s));
+        memcpy(&a[i], &a[j], sizeof(Entry_Icon_s));
+        memcpy(&a[j], &tmp, sizeof(Entry_Icon_s));
     }
 }
 
-static void rotate(C2D_Image * array[], int size, int amt) {
+static void rotate(Entry_Icon_s array[], int size, int amt) {
     if (amt < 0)
         amt = size + amt;
     reverse(array, size-amt-1);
@@ -222,18 +215,18 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     }
 
     int ctr = 0;
-    Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
-    int * indexes = calloc(abs(delta), sizeof(int));
+    Entry_s ** const entries = calloc(abs(delta), sizeof(Entry_s*));
+    int * const indexes = calloc(abs(delta), sizeof(int));
     bool released = false;
 
-    C2D_Image ** icons = current_list->icons;
+    Entry_Icon_s* const icons = current_list->icons_info;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
         int index = 0;
         int offset = i;
 
-        rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
+        rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -SIGN(delta));
 
         if(delta > 0)
         {
@@ -258,7 +251,7 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
 
     #undef SIGN
 
-    if(abs(delta) < 4)
+    if(abs(delta) < current_list->entries_loaded)
     {
         svcReleaseMutex(mutex);
         released = true;
@@ -269,18 +262,18 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     endi = abs(delta);
     for(int i = starti; i < endi; i++)
     {
-        const Entry_s * const current_entry = entries[i];
+        Entry_s * const current_entry = entries[i];
         const int index = indexes[i];
+        const Entry_Icon_s * const current_icon = &icons[index];
 
-        C2D_Image * image = icons[index];
-        if (icons[index] != NULL)
+        Icon_s* const smdh = load_entry_icon(current_entry);
+        if(smdh != NULL)
         {
-            C3D_TexDelete(image->tex);
-            free(image->tex);
-            free(image);
+            if(current_entry->placeholder_color == 0)
+                parse_smdh(smdh, current_entry, current_entry->path + strlen(current_list->loading_path));
+            copy_texture_data(&current_list->icons_texture, smdh->big_icon, current_icon);
+            free(smdh);
         }
-
-        icons[index] = load_entry_icon(current_entry);
 
         if(!released && i > endi/2)
         {
@@ -301,15 +294,13 @@ void load_icons_thread(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
     Handle mutex = *(Handle *)arg->thread_arg[1];
-    do
-    {
+    do {
         svcWaitSynchronization(mutex, U64_MAX);
-        volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_arg[0];
-        bool released = load_icons((Entry_List_s *)current_list, mutex);
+        Entry_List_s * const current_list = *(Entry_List_s ** volatile)arg->thread_arg[0];
+        const bool released = load_icons(current_list, mutex);
         if(!released)
             svcReleaseMutex(mutex);
-    }
-    while(arg->run_thread);
+    } while(arg->run_thread);
 }
 
 bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset)

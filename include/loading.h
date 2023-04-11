@@ -58,7 +58,7 @@ typedef struct {
     volatile bool run_thread;
 } Thread_Arg_s;
 
-C2D_Image * loadTextureIcon(Icon_s *icon);
+void copy_texture_data(C3D_Tex* texture, const u16* src, const Entry_Icon_s* current_icon);
 void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name);
 
 bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset);

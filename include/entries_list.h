@@ -39,28 +39,31 @@ typedef enum {
 } SortMode;
 
 typedef struct {
-    u16 name[0x41];
-    u16 desc[0x81];
-    u16 author[0x41];
-
-    u32 placeholder_color;
-
     u16 path[0x106];
     bool is_zip;
-
     bool in_shuffle;
     bool no_bgm_shuffle;
     bool installed;
+    u32 placeholder_color; // doubles as not-info-loaded when == 0
 
     json_int_t tp_download_id;
+    u16 name[0x41];
+    u16 desc[0x81];
+    u16 author[0x41];
 } Entry_s;
+
+typedef struct {
+    Tex3DS_SubTexture subtex;
+    u16 x, y;
+} Entry_Icon_s;
 
 typedef struct {
     Entry_s * entries;
     int entries_count;
     int entries_capacity;
 
-    C2D_Image ** icons;
+    C3D_Tex icons_texture;
+    Entry_Icon_s * icons_info;
 
     int previous_scroll;
     int scroll;
@@ -81,6 +84,7 @@ typedef struct {
     json_int_t tp_current_page;
     json_int_t tp_page_count;
     char * tp_search;
+    const char* loading_path;
 } Entry_List_s;
 
 void sort_by_name(Entry_List_s * list);
@@ -92,6 +96,7 @@ void delete_entry(Entry_s * entry, bool is_file);
 typedef enum InstallType_e InstallType;
 Result load_entries(const char * loading_path, Entry_List_s * list, const InstallType loading_screen);
 u32 load_data(const char * filename, const Entry_s * entry, char ** buf);
+C2D_Image get_icon_at(Entry_List_s * list, size_t index);
 
 // assumes list doesn't have any elements yet
 void list_init_capacity(Entry_List_s * list, const int init_capacity);
