@@ -445,15 +445,21 @@ Result dump_all_themes(void)
         case CFG_REGION_EUR:
             low_id = 0x00009800;
             break;
+        case CFG_REGION_KOR:
+            low_id = 0x0000a900;
+            break;
         default:
             return -1;
     }
 
-    const char* region_arr[4] = {
+    const char* region_arr[7] = {
         "JPN",
         "USA",
         "EUR",
         "AUS",
+        "CHN",
+        "KOR",
+        "TWN",
     };
 
     const char* language_arr[12] = {
