@@ -90,6 +90,7 @@ CFLAGS	:=	-g -Wall -Wextra -O2 -mword-relocations \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -D__3DS__ -D_GNU_SOURCE -DVERSION="\"$(VERSION)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(VERSION)\"" -DAPP_TITLE="\"$(APP_TITLE)\""
+CFLAGS	+=	`arm-none-eabi-pkg-config --cflags-only-other vorbisidec libarchive jansson libpng`
 ifneq ($(strip $(CITRA_MODE)),)
 	CFLAGS += -DCITRA_MODE
 endif
@@ -99,7 +100,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lpng -lvorbisidec -logg -larchive -ljansson -lcitro2d -lcitro3d -lctrud -lm -lz
+LIBS	:= `arm-none-eabi-pkg-config --libs vorbisidec libarchive jansson libpng` -lcitro2d -lcitro3d -lctrud -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
