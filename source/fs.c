@@ -107,7 +107,7 @@ Result close_archives(void)
     return 0;
 }
 
-u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
+u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf)
 {
     Handle file;
     Result res = 0;
@@ -124,9 +124,9 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
     return (u32)size;
 }
 
-static u32 zip_to_buf(struct archive *a, const char *file_name, char ** buf)
+static u32 zip_to_buf(struct archive * a, const char * file_name, char ** buf)
 {
-    struct archive_entry *entry;
+    struct archive_entry * entry;
 
     bool found = false;
     u64 file_size = 0;
@@ -152,9 +152,9 @@ static u32 zip_to_buf(struct archive *a, const char *file_name, char ** buf)
     return (u32)file_size;
 }
 
-u32 zip_memory_to_buf(const char *file_name, void * zip_memory, size_t zip_size, char ** buf)
+u32 zip_memory_to_buf(const char * file_name, void * zip_memory, size_t zip_size, char ** buf)
 {
-    struct archive *a = archive_read_new();
+    struct archive * a = archive_read_new();
     archive_read_support_format_zip(a);
 
     int r = archive_read_open_memory(a, zip_memory, zip_size);
@@ -167,13 +167,13 @@ u32 zip_memory_to_buf(const char *file_name, void * zip_memory, size_t zip_size,
     return zip_to_buf(a, file_name, buf);
 }
 
-u32 zip_file_to_buf(const char *file_name, const u16 *zip_path, char **buf)
+u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf)
 {
     ssize_t len = strulen(zip_path, 0x106);
-    char *path = calloc(sizeof(char), len*sizeof(u16));
-    utf16_to_utf8((u8*)path, zip_path, len*sizeof(u16));
+    char * path = calloc(sizeof(char), len * sizeof(u16));
+    utf16_to_utf8((u8 *)path, zip_path, len * sizeof(u16));
 
-    struct archive *a = archive_read_new();
+    struct archive * a = archive_read_new();
     archive_read_support_format_zip(a);
 
     int r = archive_read_open_filename(a, path, 0x4000);
@@ -187,7 +187,7 @@ u32 zip_file_to_buf(const char *file_name, const u16 *zip_path, char **buf)
     return zip_to_buf(a, file_name, buf);
 }
 
-Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char *buf)
+Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char * buf)
 {
     Handle handle;
     Result res = 0;
@@ -197,7 +197,7 @@ Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char *buf)
     return 0;
 }
 
-u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char **buf)
+u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char ** buf)
 {
     Handle handle;
     Result res = 0;
@@ -208,7 +208,7 @@ u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char **buf)
     u64 size;
     FSFILE_GetSize(handle, &size);
 
-    char *temp_buf = NULL;
+    char * temp_buf = NULL;
 
     if(size != 0)
     {
@@ -302,9 +302,9 @@ u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char **buf)
 // if i figure out a dynamic programming algorithm which ends up being significantly
 // faster. Otherwise, I think this is probably a fine implementation.
 
-u32 compress_lz_file_fast(FS_Path path, FS_Archive archive, char *in_buf, u32 size)
+u32 compress_lz_file_fast(FS_Path path, FS_Archive archive, char * in_buf, u32 size)
 {
-    char *output_buf = calloc(1, size * 2);
+    char * output_buf = calloc(1, size * 2);
     u32 output_size = 0;
     u32 mask_pos = 0;
     u32 bytes_processed = 0;
@@ -348,12 +348,12 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
         FSUSER_DeleteFile(archive, path);
     }
     FSUSER_CreateFile(archive, path, 0, size);
-    char *buf = calloc(size, 1);
+    char * buf = calloc(size, 1);
     buf_to_file(size, path, archive, buf);
     free(buf);
 }
 
-static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     (void)user;

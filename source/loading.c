@@ -46,26 +46,26 @@ void copy_texture_data(C3D_Tex * texture, const u16 * src, const Entry_Icon_s * 
     GSPGPU_InvalidateDataCache(texture->data, texture->size);
 }
 
-void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
+void parse_smdh(Icon_s * icon, Entry_s * entry, const u16 * fallback_name)
 {
     if(icon == NULL)
     {
         memcpy(entry->name, fallback_name, 0x80);
-        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
-        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
+        utf8_to_utf16(entry->desc, (u8 *)"No description", 0x100);
+        utf8_to_utf16(entry->author, (u8 *)"Unknown author", 0x80);
         entry->placeholder_color = C2D_Color32(rand() % 255, rand() % 255, rand() % 255, 255);
         return;
     }
 
-    memcpy(entry->name, icon->name, 0x40*sizeof(u16));
-    memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
-    memcpy(entry->author, icon->author, 0x40*sizeof(u16));
+    memcpy(entry->name, icon->name, 0x40 * sizeof(u16));
+    memcpy(entry->desc, icon->desc, 0x80 * sizeof(u16));
+    memcpy(entry->author, icon->author, 0x40 * sizeof(u16));
     entry->placeholder_color = 0;
 }
 
 static Icon_s * load_entry_icon(const Entry_s * entry)
 {
-    char *info_buffer = NULL;
+    char * info_buffer = NULL;
     u32 size = load_data("/info.smdh", entry, &info_buffer);
     if(size != sizeof(Icon_s))
     {
@@ -85,7 +85,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     int starti = 0, endi = 0;
 
-    if(list->entries_count <= list->entries_loaded*ICONS_OFFSET_AMOUNT)
+    if(list->entries_count <= list->entries_loaded * ICONS_OFFSET_AMOUNT)
     {
         DEBUG("small load\n");
         // if the list is one that doesnt need swapping, load everything at once
@@ -95,8 +95,8 @@ void load_icons_first(Entry_List_s * list, bool silent)
     {
         DEBUG("extended load\n");
         // otherwise, load around to prepare for swapping
-        starti = list->scroll - list->entries_loaded*ICONS_VISIBLE;
-        endi = starti + list->entries_loaded*ICONS_OFFSET_AMOUNT;
+        starti = list->scroll - list->entries_loaded * ICONS_VISIBLE;
+        endi = starti + list->entries_loaded * ICONS_OFFSET_AMOUNT;
     }
 
     for(int entry_i = starti, icon_i = 0; entry_i < endi; ++entry_i, ++icon_i)
@@ -111,7 +111,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
             offset -= list->entries_count;
 
         Entry_s * const current_entry = &list->entries[offset];
-        Icon_s* const smdh = load_entry_icon(current_entry);
+        Icon_s * const smdh = load_entry_icon(current_entry);
         if(smdh != NULL)
         {
             if(current_entry->placeholder_color == 0)
@@ -150,11 +150,11 @@ void handle_scrolling(Entry_List_s * list)
         {
             int change = 0;
 
-            if(list->entries_count > list->entries_loaded*2 && list->previous_scroll < list->entries_loaded && list->selected_entry >= list->entries_count - list->entries_loaded)
+            if(list->entries_count > list->entries_loaded * 2 && list->previous_scroll < list->entries_loaded && list->selected_entry >= list->entries_count - list->entries_loaded)
             {
                 list->scroll = list->entries_count - list->entries_loaded;
             }
-            else if(list->entries_count > list->entries_loaded*2 && list->selected_entry < list->entries_loaded && list->previous_selected >= list->entries_count - list->entries_loaded)
+            else if(list->entries_count > list->entries_loaded * 2 && list->selected_entry < list->entries_loaded && list->previous_selected >= list->entries_count - list->entries_loaded)
             {
                 list->scroll = 0;
             }
@@ -198,13 +198,13 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
 
     handle_scrolling(current_list);
 
-    if(current_list->entries_count <= current_list->entries_loaded*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
+    if(current_list->entries_count <= current_list->entries_loaded * ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
         return false; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
 
     int delta = current_list->scroll - current_list->previous_scroll;
-    if(abs(delta) >= current_list->entries_count - current_list->entries_loaded*(ICONS_OFFSET_AMOUNT-1))
+    if(abs(delta) >= current_list->entries_count - current_list->entries_loaded * (ICONS_OFFSET_AMOUNT-1))
         delta = -SIGN(delta) * (current_list->entries_count - abs(delta));
 
     int starti = current_list->scroll;
@@ -217,28 +217,28 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     }
 
     int ctr = 0;
-    Entry_s ** const entries = calloc(abs(delta), sizeof(Entry_s*));
+    Entry_s ** const entries = calloc(abs(delta), sizeof(Entry_s *));
     int * const indexes = calloc(abs(delta), sizeof(int));
     bool released = false;
 
-    Entry_Icon_s* const icons = current_list->icons_info;
+    Entry_Icon_s * const icons = current_list->icons_info;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
         int index = 0;
         int offset = i;
 
-        rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -SIGN(delta));
+        rotate(icons, ICONS_OFFSET_AMOUNT * current_list->entries_loaded, -SIGN(delta));
 
         if(delta > 0)
         {
-            index = current_list->entries_loaded*ICONS_OFFSET_AMOUNT - delta + i - starti;
-            offset += current_list->entries_loaded*ICONS_UNDER - delta;
+            index = current_list->entries_loaded * ICONS_OFFSET_AMOUNT - delta + i - starti;
+            offset += current_list->entries_loaded * ICONS_UNDER - delta;
         }
         else
         {
             index = 0 - delta - 1 + i - starti;
-            offset -= current_list->entries_loaded*ICONS_VISIBLE;
+            offset -= current_list->entries_loaded * ICONS_VISIBLE;
             i -= 2; //i-- twice to counter the i++, needed only for this case
         }
 
@@ -268,7 +268,7 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
         const int index = indexes[i];
         const Entry_Icon_s * const current_icon = &icons[index];
 
-        Icon_s* const smdh = load_entry_icon(current_entry);
+        Icon_s * const smdh = load_entry_icon(current_entry);
         if(smdh != NULL)
         {
             if(current_entry->placeholder_color == 0)
@@ -368,7 +368,7 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 
     png_bytep * row_pointers = malloc(sizeof(png_bytep) * height);
     for(int y = 0; y < height; y++) {
-        row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
+        row_pointers[y] = (png_byte *)malloc(png_get_rowbytes(png,info));
     }
 
     png_read_image(png, row_pointers);
@@ -379,7 +379,7 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
 
     free_preview(*preview_image);
 
-    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+    C3D_Tex * tex = malloc(sizeof(C3D_Tex));
     preview_image->tex = tex;
 
     Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
@@ -421,9 +421,9 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
 
     const Entry_s * entry = &list->entries[list->selected_entry];
 
-    if(!memcmp(&previous_path_preview, &entry->path, 0x106*sizeof(u16))) return true;
+    if(!memcmp(&previous_path_preview, &entry->path, 0x106 * sizeof(u16))) return true;
 
-    char *preview_buffer = NULL;
+    char * preview_buffer = NULL;
     u32 size = load_data("/preview.png", entry, &preview_buffer);
 
     if(!size)
@@ -439,7 +439,7 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
     if(ret)
     {
         // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, &entry->path, 0x106*sizeof(u16));
+        memcpy(&previous_path_preview, &entry->path, 0x106 * sizeof(u16));
     }
 
     return ret;
@@ -450,11 +450,11 @@ void free_preview(C2D_Image preview)
     if(preview.tex)
         C3D_TexDelete(preview.tex);
     free(preview.tex);
-    free((Tex3DS_SubTexture*)preview.subtex);
+    free((Tex3DS_SubTexture *)preview.subtex);
 }
 
 // Initialize the audio struct
-Result load_audio(const Entry_s * entry, audio_s *audio) 
+Result load_audio(const Entry_s * entry, audio_s * audio) 
 {
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
     if (audio->filesize == 0) {
@@ -468,7 +468,7 @@ Result load_audio(const Entry_s * entry, audio_s *audio)
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
     ndspChnSetMix(0, audio->mix); // See mix comment above
 
-    FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
+    FILE * file = fmemopen(audio->filebuf, audio->filesize, "rb");
     DEBUG("<load_audio> Filesize: %ld\n", audio->filesize);
     if(file != NULL) 
     {
@@ -482,7 +482,7 @@ Result load_audio(const Entry_s * entry, audio_s *audio)
             return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
         }
 
-        vorbis_info *vi = ov_info(&audio->vf, -1);
+        vorbis_info * vi = ov_info(&audio->vf, -1);
         ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
         if (vi->channels == 2) {
             DEBUG("<load_audio> Using stereo\n");

@@ -32,8 +32,8 @@
 
 #include <time.h>
 
-C3D_RenderTarget* top;
-C3D_RenderTarget* bottom;
+C3D_RenderTarget * top;
+C3D_RenderTarget * bottom;
 C2D_TextBuf staticBuf, dynamicBuf;
 static C2D_TextBuf widthBuf;
 
@@ -276,7 +276,7 @@ void draw_base_interface(void)
     set_screen(top);
 }
 
-void throw_error(const char* error, ErrorLevel level)
+void throw_error(const char * error, ErrorLevel level)
 {
     Text bottom_text = TEXT_AMOUNT;
     Color text_color = COLOR_WHITE;
@@ -309,7 +309,7 @@ void throw_error(const char* error, ErrorLevel level)
     }
 }
 
-bool draw_confirm(const char* conf_msg, Entry_List_s* list)
+bool draw_confirm(const char * conf_msg, Entry_List_s * list)
 {
     while(aptMainLoop())
     {
@@ -359,7 +359,7 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
     draw_base_interface();
     draw_install_handler(type);
     set_screen(bottom);
-    double percent = 100*((double)current/(double)max);
+    double percent = 100 * ((double)current / (double)max);
     u32 width = (u32)percent;
     width *= 2;
     C2D_DrawRectSolid(60-1, 110-1, 0.5f, 200+2, 20+2, colors[COLOR_CURSOR]);
@@ -433,13 +433,13 @@ void draw_text_wrap(float x, float y, float z, float scaleX, float scaleY, Color
             continue;
         }
 
-        if((consumed = decode_utf8(&codepoint, (unsigned char*)text)) == -1)
+        if((consumed = decode_utf8(&codepoint, (unsigned char *)text)) == -1)
             break;
 
         float character_width = scaleX * (fontGetCharWidthInfo(NULL, fontGlyphIndexFromCodePoint(NULL, codepoint))->charWidth);
         if((current_width += character_width) > max_width)
         {
-            char* last_space = NULL;
+            char * last_space = NULL;
             for(int i = idx; i >= 0; i--)
             {
                 if(result[i] == ' ')
@@ -489,27 +489,27 @@ void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * 
 static void draw_entry_info(Entry_s * entry)
 {
     char author[0x41] = {0};
-    utf16_to_utf8((u8*)author, entry->author, 0x40);
+    utf16_to_utf8((u8 *)author, entry->author, 0x40);
     draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], &text[TEXT_BY_AUTHOR]);
     float width = 0;
     C2D_TextGetDimensions(&text[TEXT_BY_AUTHOR], 0.5, 0.5, &width, NULL);
     draw_text(20+width, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], author);
 
     char title[0x41] = {0};
-    utf16_to_utf8((u8*)title, entry->name, 0x40);
+    utf16_to_utf8((u8 *)title, entry->name, 0x40);
     draw_text(20, 50, 0.5, 0.7, 0.7, colors[COLOR_WHITE], title);
 
     char description[0x81] = {0};
-    utf16_to_utf8((u8*)description, entry->desc, 0x80);
+    utf16_to_utf8((u8 *)description, entry->desc, 0x80);
     draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description, 363);
 }
 
-void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
+void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
 
-    C2D_Text* mode_string[MODE_AMOUNT] = {
+    C2D_Text * mode_string[MODE_AMOUNT] = {
         &text[TEXT_THEMEPLAZA_THEME_MODE],
         &text[TEXT_THEMEPLAZA_SPLASH_MODE],
     };
@@ -542,7 +542,7 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
         current_entry = &list->entries[i];
 
         char name[0x41] = {0};
-        utf16_to_utf8((u8*)name, current_entry->name, 0x40);
+        utf16_to_utf8((u8 *)name, current_entry->name, 0x40);
 
         int vertical_offset = 0;
         int horizontal_offset = i - list->scroll;
@@ -592,12 +592,12 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_PAGE]);
 }
 
-void draw_interface(Entry_List_s* list, Instructions_s instructions)
+void draw_interface(Entry_List_s * list, Instructions_s instructions)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
 
-    C2D_Text* mode_string[MODE_AMOUNT] = {
+    C2D_Text * mode_string[MODE_AMOUNT] = {
         &text[TEXT_THEME_MODE],
         &text[TEXT_SPLASH_MODE],
     };
@@ -606,7 +606,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
 
     if(list->entries == NULL)
     {
-        C2D_Text* mode_found_string[MODE_AMOUNT] = {
+        C2D_Text * mode_found_string[MODE_AMOUNT] = {
             &text[TEXT_NO_THEME_FOUND],
             &text[TEXT_NO_SPLASH_FOUND],
         };
@@ -614,7 +614,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         draw_c2d_text_center(GFX_TOP, 80, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_found_string[current_mode]);
         draw_c2d_text_center(GFX_TOP, 110, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_DOWNLOAD_FROM_QR]);
 
-        C2D_Text* mode_switch_string[MODE_AMOUNT] = {
+        C2D_Text * mode_switch_string[MODE_AMOUNT] = {
             &text[TEXT_SWITCH_TO_SPLASHES],
             &text[TEXT_SWITCH_TO_THEMES],
         };
@@ -680,7 +680,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         current_entry = &list->entries[i];
 
         char name[0x41] = {0};
-        utf16_to_utf8((u8*)name, current_entry->name, 0x40);
+        utf16_to_utf8((u8 *)name, current_entry->name, 0x40);
 
         int vertical_offset = i - list->scroll;
         int horizontal_offset = 0;

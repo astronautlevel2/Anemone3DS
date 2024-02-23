@@ -149,8 +149,8 @@ typedef struct {
     const char * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 
-extern C3D_RenderTarget* top;
-extern C3D_RenderTarget* bottom;
+extern C3D_RenderTarget * top;
+extern C3D_RenderTarget * bottom;
 extern C2D_TextBuf staticBuf, dynamicBuf;
 
 extern C2D_Text text[TEXT_AMOUNT];
@@ -162,8 +162,8 @@ void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
 
-void throw_error(const char* error, ErrorLevel level);
-bool draw_confirm(const char* conf_msg, Entry_List_s* list);
+void throw_error(const char * error, ErrorLevel level);
+bool draw_confirm(const char * conf_msg, Entry_List_s * list);
 
 void draw_preview(C2D_Image preview, int preview_offset);
 
@@ -176,7 +176,7 @@ void draw_text_wrap_scaled(float x, float y, float z, Color color, const char * 
 void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float scaleY, Color color, const char * text);
 
 void draw_base_interface(void);
-void draw_grid_interface(Entry_List_s* list, Instructions_s instructions);
-void draw_interface(Entry_List_s* list, Instructions_s instructions);
+void draw_grid_interface(Entry_List_s * list, Instructions_s instructions);
+void draw_interface(Entry_List_s * list, Instructions_s instructions);
 
 #endif

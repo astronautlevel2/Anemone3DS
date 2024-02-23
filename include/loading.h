@@ -48,9 +48,9 @@ typedef struct {
     u16 author[0x40];
 
     u8 _padding2[0x2000 - 0x200 + 0x30 + 0x8];
-    u16 small_icon[24*24];
+    u16 small_icon[24 * 24];
 
-    u16 big_icon[48*48];
+    u16 big_icon[48 * 48];
 } Icon_s;
 
 typedef struct {
@@ -58,8 +58,8 @@ typedef struct {
     volatile bool run_thread;
 } Thread_Arg_s;
 
-void copy_texture_data(C3D_Tex* texture, const u16* src, const Entry_Icon_s* current_icon);
-void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name);
+void copy_texture_data(C3D_Tex * texture, const u16 * src, const Entry_Icon_s * current_icon);
+void parse_smdh(Icon_s * icon, Entry_s * entry, const u16 * fallback_name);
 
 bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset);
 bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset);

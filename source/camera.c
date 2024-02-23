@@ -36,7 +36,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-static void start_read(qr_data *data)
+static void start_read(qr_data * data)
 {
     LightLock_Lock(&data->mut);
     while(data->writer_waiting || data->writer_active)
@@ -47,7 +47,7 @@ static void start_read(qr_data *data)
     AtomicIncrement(&data->num_readers_active);
     LightLock_Unlock(&data->mut);
 }
-static void stop_read(qr_data *data)
+static void stop_read(qr_data * data)
 {
     LightLock_Lock(&data->mut);
     AtomicDecrement(&data->num_readers_active);
@@ -57,7 +57,7 @@ static void stop_read(qr_data *data)
     }
     LightLock_Unlock(&data->mut);
 }
-static void start_write(qr_data *data)
+static void start_write(qr_data * data)
 {
     LightLock_Lock(&data->mut);
     data->writer_waiting = true;
@@ -72,7 +72,7 @@ static void start_write(qr_data *data)
 
     LightLock_Unlock(&data->mut);
 }
-static void stop_write(qr_data *data)
+static void stop_write(qr_data * data)
 {
     LightLock_Lock(&data->mut);
 
@@ -82,16 +82,16 @@ static void stop_write(qr_data *data)
     LightLock_Unlock(&data->mut);
 }
 
-static void capture_cam_thread(void *arg)
+static void capture_cam_thread(void * arg)
 {
-    qr_data *data = (qr_data *) arg;
+    qr_data * data = (qr_data *) arg;
 
     Handle cam_events[3] = {0};
     cam_events[0] = data->event_stop;
 
     u32 transferUnit;
     const u32 bufsz = 400 * 240 * sizeof(u16);
-    u16 *buffer = linearAlloc(bufsz);
+    u16 * buffer = linearAlloc(bufsz);
 
     camInit();
     CAMU_SetSize(SELECT_OUT1, SIZE_CTR_TOP_LCD, CONTEXT_A);
@@ -167,9 +167,9 @@ static void capture_cam_thread(void *arg)
     LightEvent_Signal(&data->event_cam_info);
 }
 
-static void update_ui(void *arg)
+static void update_ui(void * arg)
 {
-    qr_data* data = (qr_data*) arg;
+    qr_data * data = (qr_data *) arg;
     C3D_Tex tex;
 
     static const Tex3DS_SubTexture subt3x = { 400, 240, 0.0f, 1.0f, 400.0f/512.0f, 1.0f - (240.0f/256.0f) };
@@ -190,7 +190,7 @@ static void update_ui(void *arg)
                 for(u32 x = 0; x < 400; x++) {
                     const u32 dstPos = ((((y >> 3) * (512 >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3)));
 
-                    ((u16*)tex.data)[dstPos] = data->camera_buffer[srcPos + x];
+                    ((u16 *)tex.data)[dstPos] = data->camera_buffer[srcPos + x];
                 }
             }
             data->any_update = false;
@@ -208,7 +208,7 @@ static void update_ui(void *arg)
     LightEvent_Signal(&data->event_ui_info);
 }
 
-static bool start_capture_cam(qr_data *data) 
+static bool start_capture_cam(qr_data * data) 
 {
     if((data->cam_thread = threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, false)) == NULL)
     {
@@ -225,11 +225,11 @@ static bool start_capture_cam(qr_data *data)
     return true;
 }
 
-static bool update_qr(qr_data *data, struct quirc_data* scan_data)
+static bool update_qr(qr_data * data, struct quirc_data * scan_data)
 {
     int w;
     int h;
-    u8 *image = (u8*) quirc_begin(data->context, &w, &h);
+    u8 * image = (u8 *)quirc_begin(data->context, &w, &h);
 
     start_read(data);
     for (int y = 0; y < h; y++) {
@@ -256,7 +256,7 @@ static bool update_qr(qr_data *data, struct quirc_data* scan_data)
     return false;
 }
 
-static void start_qr(qr_data *data)
+static void start_qr(qr_data * data)
 {
     svcCreateEvent(&data->event_stop, RESET_STICKY);
     LightEvent_Init(&data->event_cam_info, RESET_STICKY);
@@ -272,7 +272,7 @@ static void start_qr(qr_data *data)
     quirc_resize(data->context, 400, 240);
     data->camera_buffer = calloc(1, 400 * 240 * sizeof(u16));
 }
-static void exit_qr(qr_data *data)
+static void exit_qr(qr_data * data)
 {
     svcSignalEvent(data->event_stop);
 
@@ -308,7 +308,7 @@ bool init_qr(void)
 
     start_qr(&data);
 
-    struct quirc_data* scan_data = calloc(1, sizeof(struct quirc_data)); 
+    struct quirc_data * scan_data = calloc(1, sizeof(struct quirc_data)); 
     const bool ready = start_capture_cam(&data);
     bool finished = !ready;
 
@@ -333,7 +333,7 @@ bool init_qr(void)
         char * zip_buf = NULL;
         char * filename = NULL;
         u32 zip_size;
-        Result res = http_get((char*)scan_data->payload, &filename, &zip_buf, &zip_size, INSTALL_DOWNLOAD, "application/zip");
+        Result res = http_get((char *)scan_data->payload, &filename, &zip_buf, &zip_size, INSTALL_DOWNLOAD, "application/zip");
         if (R_FAILED(res))
         {
             free(filename);
@@ -350,7 +350,7 @@ bool init_qr(void)
         {
             draw_install(INSTALL_CHECKING_DOWNLOAD);
 
-            struct archive *a = archive_read_new();
+            struct archive * a = archive_read_new();
             archive_read_support_format_zip(a);
 
             int r = archive_read_open_memory(a, zip_buf, zip_size);

@@ -113,7 +113,7 @@ static void free_icons(Entry_List_s * list)
     }
 }
 
-static void load_remote_smdh(Entry_s * entry, C3D_Tex* into_tex, const Entry_Icon_s * icon_info, bool ignore_cache)
+static void load_remote_smdh(Entry_s * entry, C3D_Tex * into_tex, const Entry_Icon_s * icon_info, bool ignore_cache)
 {
     bool not_cached = true;
     char * smdh_buf = NULL;
@@ -486,8 +486,9 @@ bool themeplaza_browser(EntryMode mode)
     const float inv_height = 1.0f / current_list->icons_texture.height;
     for(int i = 0; i < entries_icon_count; ++i)
     {
-        Entry_Icon_s* const icon_info = &current_list->icons_info[i];
-        const div_t d = div(i, 10);
+        Entry_Icon_s * const icon_info = &current_list->icons_info[i];
+        // division by how many icons can fit horizontally
+        const div_t d = div(i, (current_list->icons_texture.width / 48));
         icon_info->x = d.rem * current_list->entry_size;
         icon_info->y = d.quot * current_list->entry_size;
         icon_info->subtex.width = current_list->entry_size;
@@ -777,7 +778,7 @@ typedef enum ParseResult
     HTTP_GATEWAY_TIMEOUT = 504,
 } ParseResult;
 
-/*static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+/*static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     (void)user;
@@ -1096,7 +1097,7 @@ no_error:;
 
         // download exactly chunk_size bytes and toss them into buf.
         // size contains the current offset into buf.
-        ret = httpcDownloadData(&context, (u8*)(*buf) + *size, chunk_size, &read_size);
+        ret = httpcDownloadData(&context, (u8 *)(*buf) + *size, chunk_size, &read_size);
         /* FIXME: I have no idea why this doesn't work, but it causes problems. Look into it later
         if (R_FAILED(ret))
         {

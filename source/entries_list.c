@@ -42,7 +42,7 @@ u32 load_data(const char * filename, const Entry_s * entry, char ** buf)
 {
     if(entry->is_zip)
     {
-        return zip_file_to_buf(filename+1, entry->path, buf); //the first character will always be '/' because of the other case
+        return zip_file_to_buf(filename + 1, entry->path, buf); //the first character will always be '/' because of the other case
     }
     else
     {
@@ -80,8 +80,8 @@ static int compare_entries_by_name(const void * a, const void * b)
     const int base = compare_entries_base(entry_a, entry_b);
     if(base)
         return base;
-    
-    return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
+
+    return memcmp(entry_a->name, entry_b->name, 0x40 * sizeof(u16));
 }
 static int compare_entries_by_author(const void * a, const void * b)
 {
@@ -90,8 +90,8 @@ static int compare_entries_by_author(const void * a, const void * b)
     const int base = compare_entries_base(entry_a, entry_b);
     if(base)
         return base;
-    
-    return memcmp(entry_a->author, entry_b->author, 0x40*sizeof(u16));
+
+    return memcmp(entry_a->author, entry_b->author, 0x40 * sizeof(u16));
 }
 static int compare_entries_by_filename(const void * a, const void * b)
 {
@@ -101,7 +101,7 @@ static int compare_entries_by_filename(const void * a, const void * b)
     if(base)
         return base;
 
-    return memcmp(entry_a->path, entry_b->path, 0x106*sizeof(u16));
+    return memcmp(entry_a->path, entry_b->path, 0x106 * sizeof(u16));
 }
 
 static void sort_list(Entry_List_s * list, sort_comparator compare_entries)
@@ -149,7 +149,7 @@ Result load_entries(const char * loading_path, Entry_List_s * list, const Instal
 
         for(u32 i = 0; i < entries_read; ++i)
         {
-            const FS_DirectoryEntry* const dir_entry = &loading_dir_entries[i];
+            const FS_DirectoryEntry * const dir_entry = &loading_dir_entries[i];
             const bool is_zip = !strcmp(dir_entry->shortExt, "ZIP");
             if(!(dir_entry->attributes & FS_ATTRIBUTE_DIRECTORY) && !is_zip)
                 continue;

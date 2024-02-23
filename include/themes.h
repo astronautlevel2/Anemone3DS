@@ -64,7 +64,7 @@ typedef struct {
     u32 dlc_theme_content_index;
     u32 use_theme_cache;
 
-    u8 _padding1[0x338 - 8*sizeof(u32)];
+    u8 _padding1[0x338 - 8 * sizeof(u32)];
 
     u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES];
     u32 shuffle_music_sizes[MAX_SHUFFLE_THEMES];
