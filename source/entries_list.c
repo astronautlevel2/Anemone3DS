@@ -56,10 +56,10 @@ u32 load_data(const char * filename, const Entry_s * entry, char ** buf)
 
 C2D_Image get_icon_at(Entry_List_s * list, size_t index)
 {
-    C2D_Image out;
-    out.tex = &list->icons_texture;
-    out.subtex = &list->icons_info[index].subtex;
-    return out;
+    return (C2D_Image){
+        .tex = &list->icons_texture,
+        .subtex = &list->icons_info[index].subtex,
+    };
 }
 
 static int compare_entries_base(const Entry_s * const a, const Entry_s * const b)
