@@ -46,8 +46,8 @@ static Thread_Arg_s iconLoadingThread_arg = {0};
 static Handle update_icons_mutex;
 static bool released = false;
 
-static Thread installCheckThreads[MODE_AMOUNT] = {0};
-static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
+static Thread install_check_threads[MODE_AMOUNT] = {0};
+static Thread_Arg_s install_check_threads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
 
@@ -107,16 +107,16 @@ static void stop_install_check(void)
 {
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
-        installCheckThreads_arg[i].run_thread = false;
+        install_check_threads_arg[i].run_thread = false;
     }
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
-        if(installCheckThreads[i] == NULL)
+        if(install_check_threads[i] == NULL)
             continue;
 
-        threadJoin(installCheckThreads[i], U64_MAX);
-        threadFree(installCheckThreads[i]);
-        installCheckThreads[i] = NULL;
+        threadJoin(install_check_threads[i], U64_MAX);
+        threadFree(install_check_threads[i]);
+        install_check_threads[i] = NULL;
     }
 }
 
@@ -181,7 +181,7 @@ static void start_thread(void)
     }
 }
 
-static u32 nextOrEqualPo2(u32 v)
+static u32 next_or_equal_power_of_2(u32 v)
 {
     v--;
     v |= v >> 1;
@@ -215,9 +215,13 @@ static void load_lists(Entry_List_s * lists)
 
         const int x_component = max(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
         const int y_component = min(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+        // A texture must have power of 2 dimensions (not necessarily the same)
+        // so, get the power of two greater than or equal to:
+        // - the size of the largest length (row or column) of icons for the width
+        // - the size of all of those lengths to fit the total for the height
         C3D_TexInit(&current_list->icons_texture,
-            nextOrEqualPo2(x_component * current_list->entry_size),
-            nextOrEqualPo2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
+            next_or_equal_power_of_2(x_component * current_list->entry_size),
+            next_or_equal_power_of_2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
             GPU_RGB565);
         C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
 
@@ -244,7 +248,7 @@ static void load_lists(Entry_List_s * lists)
         Result res = load_entries(main_paths[i], current_list, loading_screen);
         if(R_SUCCEEDED(res))
         {
-            if(current_list->entries_count > current_list->entries_loaded*ICONS_OFFSET_AMOUNT)
+            if(current_list->entries_count > current_list->entries_loaded * ICONS_OFFSET_AMOUNT)
                 iconLoadingThread_arg.run_thread = true;
 
             DEBUG("total: %i\n", current_list->entries_count);
@@ -252,19 +256,19 @@ static void load_lists(Entry_List_s * lists)
             load_icons_first(current_list, false);
             sort_by_name(current_list);
 
-            void (*install_check_function)(void*) = NULL;
+            void (*install_check_function)(void *) = NULL;
             if(i == MODE_THEMES)
                 install_check_function = themes_check_installed;
             else if(i == MODE_SPLASHES)
                 install_check_function = splash_check_installed;
 
-            Thread_Arg_s * current_arg = &installCheckThreads_arg[i];
+            Thread_Arg_s * current_arg = &install_check_threads_arg[i];
             current_arg->run_thread = true;
-            current_arg->thread_arg = (void**)current_list;
+            current_arg->thread_arg = (void **)current_list;
 
             if(install_check_function != NULL)
             {
-                installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
+                install_check_threads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
                 svcSleepThread(1e8);
             }
         }
@@ -272,11 +276,11 @@ static void load_lists(Entry_List_s * lists)
     start_thread();
 }
 
-static SwkbdCallbackResult jump_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
+static SwkbdCallbackResult jump_menu_callback(void * entries_count, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     int typed_value = atoi(text);
-    if(typed_value > *(int*)entries_count)
+    if(typed_value > *(int *)entries_count)
     {
         *ppMessage = "The new position has to be\nsmaller or equal to the\nnumber of entries!";
         return SWKBD_CALLBACK_CONTINUE;
@@ -898,7 +902,7 @@ int main(void)
                 {
                     for(int i = 0; i < current_list->entries_loaded; i++)
                     {
-                        u16 miny = 24 + current_list->entry_size*i;
+                        u16 miny = 24 + current_list->entry_size * i;
                         u16 maxy = miny + current_list->entry_size;
                         if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
                         {

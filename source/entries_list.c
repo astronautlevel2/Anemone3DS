@@ -64,6 +64,11 @@ C2D_Image get_icon_at(Entry_List_s * list, size_t index)
 
 static int compare_entries_base(const Entry_s * const a, const Entry_s * const b)
 {
+    // entry->placeholder_color == 0 means it is not filled (no name, author, description)
+    // if a is filled and b is filled, return == 0
+    // if a is not filled and b is not filled, return == 0
+    // if a is not filled, return < 0
+    // if b is an unfilled entry, return > 0
     return ((int)(a->placeholder_color != 0)) - ((int)(b->placeholder_color != 0));
 }
 
@@ -169,24 +174,21 @@ Result load_entries(const char * loading_path, Entry_List_s * list, const Instal
     FSDIR_Close(dir_handle);
 
     list->loading_path = loading_path;
+    const int loading_bar_ticks = list->entries_count / 10;
 
-    /*
-    for(int i = 0; i < list->entries_count; ++i)
+    for(int i = 0, j = 0; i < list->entries_count; ++i)
     {
-        draw_loading_bar(i, list->entries_count, loading_screen);
-        Entry_s* const current_entry = &list->entries[i];
+        // replaces (i % loading_bar_ticks) == 0
+        if(++j >= loading_bar_ticks)
+        {
+            j = 0;
+            draw_loading_bar(i, list->entries_count, loading_screen);
+        }
+        Entry_s * const current_entry = &list->entries[i];
         char * buf = NULL;
         u32 buflen = load_data("/info.smdh", current_entry, &buf);
         parse_smdh(buflen == sizeof(Icon_s) ? (Icon_s *)buf : NULL, current_entry, current_entry->path + strlen(loading_path));
         free(buf);
-    }
-    */
-    // mark entries as not filled up yet
-    for(int i = 0; i < list->entries_count; ++i)
-    {
-        draw_loading_bar(i, list->entries_count, loading_screen);
-        Entry_s* const current_entry = &list->entries[i];
-        parse_smdh(NULL, current_entry, current_entry->path + strlen(list->loading_path));
     }
 
     return res;

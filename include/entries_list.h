@@ -74,17 +74,17 @@ typedef struct {
     int shuffle_count;
 
     EntryMode mode;
-    int entries_per_screen_v;
-    int entries_per_screen_h;
-    int entries_loaded;
-    int entry_size;
+    int entries_per_screen_v; // rows of entries on 1 screen
+    int entries_per_screen_h; // columns of entries on 1 screen
+    int entries_loaded; // amount of entries on 1 screen
+    int entry_size; // size in pixels of an entry icon
 
     SortMode current_sort;
 
     json_int_t tp_current_page;
     json_int_t tp_page_count;
     char * tp_search;
-    const char* loading_path;
+    const char * loading_path;
 } Entry_List_s;
 
 void sort_by_name(Entry_List_s * list);

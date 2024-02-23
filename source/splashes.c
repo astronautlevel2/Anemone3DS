@@ -34,7 +34,7 @@ void splash_delete(void)
     remove("/luma/splashbottom.bin");
 }
 
-void splash_install(const Entry_s* splash)
+void splash_install(const Entry_s * splash)
 {
     char *screen_buf = NULL;
 

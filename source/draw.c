@@ -721,8 +721,11 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         if(current_entry->placeholder_color != 0)
         {
             C2D_Image image;
-            if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
-                image = get_icon_at(list, ICONS_VISIBLE*list->entries_loaded + (i - list->scroll));
+            if(list->entries_count > list->entries_loaded * ICONS_OFFSET_AMOUNT)
+            {
+                const int offset_to_visible_icons = ICONS_VISIBLE * list->entries_loaded;
+                image = get_icon_at(list, offset_to_visible_icons + vertical_offset);
+            }
             else
                 image = get_icon_at(list, i);
             C2D_DrawImageAt(image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);

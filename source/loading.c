@@ -32,13 +32,15 @@
 
 #include <png.h>
 
-void copy_texture_data(C3D_Tex* texture, const u16* src, const Entry_Icon_s* current_icon)
+void copy_texture_data(C3D_Tex * texture, const u16 * src, const Entry_Icon_s * current_icon)
 {
-    u16* dest = (u16*)texture->data + current_icon->y * texture->width + current_icon->x * 8;
+    // pointer to rgb565, offset by the number of rows and columns specified by current_icon
+    // (reminder that this is z order curve storage)
+    u16 * dest = ((u16 *)texture->data) + (current_icon->y * texture->width) + (current_icon->x * 8);
     for (int j = 0; j < 48; j += 8)
     {
-        memcpy(dest, src, 48*8*sizeof(u16));
-        src += 48*8;
+        memcpy(dest, src, 48 * 8 * sizeof(u16));
+        src += 48 * 8;
         dest += texture->width * 8;
     }
     GSPGPU_InvalidateDataCache(texture->data, texture->size);
