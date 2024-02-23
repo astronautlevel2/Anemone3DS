@@ -45,17 +45,11 @@
 
 static inline int min(const int a, const int b)
 {
-    if(a > b)
-        return b;
-    else
-        return a;
+    return a > b ? b : a;
 }
 static inline int max(const int a, const int b)
 {
-    if(a < b)
-        return b;
-    else
-        return a;
+    return a < b ? b : a;
 }
 
 #define FASTSCROLL_WAIT 1e8
