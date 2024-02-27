@@ -452,8 +452,8 @@ void load_icons_thread(void * void_arg)
 
 bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset)
 {
-    int height = 480;
-    int width = (uint32_t)((size/4)/height);
+    int height = SCREEN_HEIGHT * 2;
+    int width = (uint32_t)((size / 4) / height);
 
     free_preview(*preview_image);
 
@@ -483,7 +483,7 @@ bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview
         }
     }
 
-    *preview_offset = (width-400)/2;
+    *preview_offset = (width - TOP_SCREEN_WIDTH) / 2;
 
     return true;
 }
@@ -511,7 +511,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
     {
         free(preview_buffer);
 
-        const int top_size = 400 * 240 * 4;
+        const int top_size =  TOP_SCREEN_WIDTH * SCREEN_HEIGHT * 4;
         const int out_size = top_size * 2;
 
         char* rgba_buffer = malloc(out_size);
@@ -535,8 +535,9 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
             found_splash = true;
             bin_to_abgr(&preview_buffer, size);
 
-            for (int i = 0; i < 240; ++i)
-                memcpy(rgba_buffer + top_size + (400 * 4 * i) + (40 * 4), preview_buffer + (320 * 4 * i), 320*4);
+            // Store the bottom splash screen under the top splash and centered
+            for (int i = 0; i < SCREEN_HEIGHT; ++i)
+                memcpy(rgba_buffer + top_size + ( TOP_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i) + ((TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2 * SCREEN_COLOR_DEPTH), preview_buffer + (BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i), BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH);
     
             free(preview_buffer);
         }

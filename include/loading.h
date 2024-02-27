@@ -31,6 +31,12 @@
 #include "music.h"
 #include <jansson.h>
 
+// These values assume a horizontal orientation
+#define TOP_SCREEN_WIDTH 400
+#define BOTTOM_SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 240
+#define SCREEN_COLOR_DEPTH 4
+
 enum ICON_IDS_OFFSET {
     ICONS_ABOVE = 0,
     ICONS_VISIBLE,
