@@ -32,6 +32,7 @@
 #include "unicode.h"
 #include "music.h"
 #include "urls.h"
+#include "conversion.h"
 
 // forward declaration of special case used only here
 // TODO: replace this travesty with a proper handler
@@ -296,7 +297,18 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int 
         return false;
     }
 
-    bool ret = load_preview_from_buffer(preview_png, preview_size, preview_image, preview_offset);
+    char * preview_buf = malloc(preview_size);
+    u32 preview_buf_size = preview_size;
+    memcpy(preview_buf, preview_png, preview_size);
+
+    if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size)))
+    {
+        free(preview_buf);
+        return false;
+    }
+
+    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset);
+    free(preview_buf);
 
     if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
     {
