@@ -511,7 +511,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
     {
         free(preview_buffer);
 
-        const int top_size =  TOP_SCREEN_WIDTH * SCREEN_HEIGHT * 4;
+        const int top_size =  TOP_SCREEN_WIDTH * SCREEN_HEIGHT * SCREEN_COLOR_DEPTH;
         const int out_size = top_size * 2;
 
         char * rgba_buffer = malloc(out_size);
@@ -535,11 +535,16 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
             found_splash = true;
             bin_to_abgr(&preview_buffer, size);
 
+            const int buffer_width = TOP_SCREEN_WIDTH * SCREEN_COLOR_DEPTH;
+            const int bottom_buffer_width = BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH;
+            const int bottom_centered_offset = (TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2;
+
             // Store the bottom splash screen under the top splash and centered
             for (int i = 0; i < SCREEN_HEIGHT; ++i)
                 memcpy(
-                    rgba_buffer + top_size + (TOP_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i) + ((TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2 * SCREEN_COLOR_DEPTH),
-                    preview_buffer + (BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i), BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH
+                    rgba_buffer + top_size + (buffer_width * i) + (bottom_centered_offset * SCREEN_COLOR_DEPTH),
+                    preview_buffer + (bottom_buffer_width * i),
+                    bottom_buffer_width
                 );
     
             free(preview_buffer);
