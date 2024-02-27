@@ -64,6 +64,10 @@ Result open_archives(void)
             archive1 = 0x000002ce;
             archive2 = 0x00000098;
             break;
+        case 5:
+            archive1 = 0x000002cf;
+            archive2 = 0x000000a9;
+            break;
         default:
             archive1 = 0x00;
             archive2 = 0x00;
