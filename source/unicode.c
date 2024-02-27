@@ -26,40 +26,42 @@
 
 #include "unicode.h"
 
-ssize_t strulen(const u16 *input, ssize_t max_len)
+ssize_t strulen(const u16 * input, ssize_t max_len)
 {
     for (int i = 0; i < max_len; i++) if (input[i] == 0) return i;
     return max_len;
 }
 
-void struacat(u16 *input, const char *addition)
+void struacat(u16 * input, const char * addition)
 {
-    ssize_t len = strulen(input, 0x106);
-    for (u16 i = len; i < strlen(addition) + len; i++) 
+    const ssize_t len = strulen(input, 0x106);
+    const u16 stop_at = strlen(addition);
+    for (u16 i = 0; i < stop_at; i++) 
     {
-        input[i] = addition[i - len];
+        input[i + len] = addition[i];
     }
-    input[strlen(addition) + len] = 0;
+    input[stop_at + len] = 0;
 }
 
-void printu(u16 *input)
+void printu(u16 * input)
 {
     ssize_t in_len = strulen(input, 0x106);
     ssize_t buf_len = in_len + 1; // Plus 1 for proper null termination
-    wchar_t *buf = calloc(buf_len, sizeof(wchar_t));
-    utf16_to_utf32((u32*)buf, input, buf_len);
+    wchar_t * buf = calloc(buf_len, sizeof(wchar_t));
+    utf16_to_utf32((u32 *)buf, input, buf_len);
     char cbuf[0x106];
     sprintf(cbuf, "%ls\n", buf);
     DEBUG(cbuf);
     free(buf);
 }
 
-u16 *strucat(u16 *destination, const u16 *source)
+u16 * strucat(u16 * destination, const u16 * source)
 {
     ssize_t dest_len = strulen(destination, 0x106);
 
     ssize_t source_len = strulen(source, 0x106);
 
     memcpy(&destination[dest_len], source, source_len * sizeof(u16));
+    destination[min(dest_len + source_len, 0x106 - 1)] = 0;
     return destination;
 }

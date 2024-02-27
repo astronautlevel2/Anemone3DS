@@ -38,9 +38,19 @@
 #define DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #define POS() DEBUG("%s (line %d)...\n", __func__, __LINE__)
 
-#define DEBUGPOS(...) \
+#define DEBUGPOS(...) do {\
         POS(); \
-        DEBUG(__VA_ARGS__)
+        DEBUG(__VA_ARGS__); \
+    } while(0)
+
+static inline int min(const int a, const int b)
+{
+    return a > b ? b : a;
+}
+static inline int max(const int a, const int b)
+{
+    return a < b ? b : a;
+}
 
 #define FASTSCROLL_WAIT 1e8
 

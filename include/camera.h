@@ -30,7 +30,7 @@
 #include "common.h"
 
 typedef struct {
-    u16* camera_buffer;
+    u16 * camera_buffer;
 
     Handle event_stop;
     Thread cam_thread, ui_thread;
@@ -45,7 +45,7 @@ typedef struct {
 
     bool any_update;
 
-    struct quirc* context;
+    struct quirc * context;
 } qr_data;
 
 bool init_qr(void);
