@@ -514,7 +514,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
         const int top_size =  TOP_SCREEN_WIDTH * SCREEN_HEIGHT * 4;
         const int out_size = top_size * 2;
 
-        char* rgba_buffer = malloc(out_size);
+        char * rgba_buffer = malloc(out_size);
         memset(rgba_buffer, 0, out_size);
         bool found_splash = false;
 

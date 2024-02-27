@@ -3,10 +3,10 @@
 
 #include <png.h>
 
-static void rotate_agbr_counterclockwise(char** bufp, size_t size, size_t width)
+static void rotate_agbr_counterclockwise(char ** bufp, size_t size, size_t width)
 {
-    uint32_t* buf = (uint32_t*)*bufp;
-    uint32_t* out = malloc(size);
+    uint32_t * buf = (uint32_t*)*bufp;
+    uint32_t * out = malloc(size);
 
     size_t pixel_count = (size/4);
     size_t height = pixel_count/width;
@@ -26,7 +26,7 @@ static void rotate_agbr_counterclockwise(char** bufp, size_t size, size_t width)
     *bufp = (char*)out;
 }
 
-size_t bin_to_abgr(char** bufp, size_t size)
+size_t bin_to_abgr(char ** bufp, size_t size)
 {
     size_t out_size = (size / 3) * 4;
     char* buf = malloc(out_size);
@@ -49,7 +49,7 @@ size_t bin_to_abgr(char** bufp, size_t size)
     return out_size;
 }
 
-size_t png_to_abgr(char** bufp, size_t size)
+size_t png_to_abgr(char ** bufp, size_t size)
 {
     size_t out_size = 0;
     if(size < 8 || png_sig_cmp((png_bytep)*bufp, 0, 8))
@@ -58,10 +58,10 @@ size_t png_to_abgr(char** bufp, size_t size)
         return out_size;
     }
 
-    uint32_t* buf = (uint32_t*)*bufp;
+    uint32_t * buf = (uint32_t*)*bufp;
 
-    FILE* fp = fmemopen(buf, size, "rb");;
-    png_bytep* row_pointers = NULL;
+    FILE * fp = fmemopen(buf, size, "rb");;
+    png_bytep * row_pointers = NULL;
 
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_infop info = png_create_info_struct(png);
@@ -109,7 +109,7 @@ size_t png_to_abgr(char** bufp, size_t size)
 
     row_pointers = malloc(sizeof(png_bytep) * height);
     out_size = sizeof(u32) * (width * height);
-    u32* out = malloc(out_size);
+    u32 * out = malloc(out_size);
     for(u32 y = 0; y < height; y++)
     {
         row_pointers[y] = (png_bytep)(out + (width * y));
