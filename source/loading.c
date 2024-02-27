@@ -537,7 +537,10 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
 
             // Store the bottom splash screen under the top splash and centered
             for (int i = 0; i < SCREEN_HEIGHT; ++i)
-                memcpy(rgba_buffer + top_size + ( TOP_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i) + ((TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2 * SCREEN_COLOR_DEPTH), preview_buffer + (BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i), BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH);
+                memcpy(
+                    rgba_buffer + top_size + (TOP_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i) + ((TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2 * SCREEN_COLOR_DEPTH),
+                    preview_buffer + (BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH * i), BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH
+                );
     
             free(preview_buffer);
         }
