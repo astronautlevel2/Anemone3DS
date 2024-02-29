@@ -48,4 +48,6 @@ Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char *buf);
 void remake_file(FS_Path path, FS_Archive archive, u32 size);
 void save_zip_to_sd(char * filename, u32 size, char * buf, EntryMode mode);
 
+Result getKorPatch(void);
+
 #endif

@@ -2,6 +2,9 @@
 
 A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.
 
+# For Korean system users
+You must install [this Patch](https://github.com/ZeroSkill1/CTR-Hacking/tree/master/General-Hacking/Korean%20HOME%20Menu%20Theme%20Patch) in order to be able to install and use themes. Refer to the "How to use" section in the Readme of this patch for installation instructions.
+
 # Dependencies
  * devkitARM, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
  * jansson, libvorbisidec, libpng, and libarchive, which can be retrieved from [devkitPro pacman](https://devkitpro.org/viewtopic.php?f=13&t=8702).

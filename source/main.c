@@ -355,6 +355,12 @@ int main(void)
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
 
+    u8 regionCode;
+    Result korCheck = 0;
+    CFGU_SecureInfoGetRegion(&regionCode);
+    if(regionCode == 5)
+        korCheck = getKorPatch();
+
     #ifndef CITRA_MODE
     if(R_SUCCEEDED(archive_result))
         load_lists(lists);
@@ -380,6 +386,12 @@ int main(void)
             return 0;
         }
 
+        if (R_FAILED(korCheck) && current_mode == MODE_THEMES){
+            throw_error("You must install patches in order to\nuse themes. Check the Readme in\ngithub.com/astronautlevel2/Anemone3DS", ERROR_LEVEL_ERROR);
+            quit = true;
+            continue;
+        }
+        
         #ifndef CITRA_MODE
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {

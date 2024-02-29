@@ -468,3 +468,11 @@ renamed:
     remake_file(path, ArchiveSD, size);
     buf_to_file(size, path, ArchiveSD, buf);
 }
+
+Result getKorPatch(){
+    Handle handle;
+    Result res = 0;
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, "/luma/titles/000400300000A902/code.ips"), FS_OPEN_READ, 0))) return res;
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, "/luma/titles/000400300000A902/romfs/petit_LZ.bin"), FS_OPEN_READ, 0))) return res;
+    return 0;
+}
