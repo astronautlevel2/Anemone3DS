@@ -474,5 +474,6 @@ Result getKorPatch(){
     Result res = 0;
     if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, "/luma/titles/000400300000A902/code.ips"), FS_OPEN_READ, 0))) return res;
     if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, "/luma/titles/000400300000A902/romfs/petit_LZ.bin"), FS_OPEN_READ, 0))) return res;
+    FSFILE_Close(handle);
     return 0;
 }
