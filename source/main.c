@@ -362,6 +362,12 @@ int main(void)
     load_lists(lists);
     #endif
 
+    u8 regionCode;
+    Result korCheck = 0;
+    CFGU_SecureInfoGetRegion(&regionCode);
+    if(regionCode == 5)
+        korCheck = korPatchInstalled(archive_result);
+
     EntryMode current_mode = MODE_THEMES;
 
     bool preview_mode = false;
@@ -378,6 +384,12 @@ int main(void)
             free_preview(preview);
             exit_function(false);
             return 0;
+        }
+
+        if (R_FAILED(korCheck) && current_mode == MODE_THEMES){
+            throw_error("Korean HOME Menu patch not found.\nYou must install it in order\nto use themes.", ERROR_LEVEL_ERROR);
+            quit = true;
+            continue;
         }
 
         #ifndef CITRA_MODE
