@@ -470,3 +470,14 @@ renamed:
     remake_file(path, ArchiveSD, size);
     buf_to_file(size, path, ArchiveSD, buf);
 }
+
+Result korPatchInstalled(Result archive_result){
+    Handle handle;
+    Result res = 0;
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, "/luma/titles/000400300000A902/code.ips"), FS_OPEN_READ, 0))) return res;
+    FSFILE_Close(handle);
+    // The following file is needed to get the "change theme" button on the Home Menu allowing to create extdata, not needed if extdata is already created
+    if (R_FAILED(archive_result) && R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, "/luma/titles/000400300000A902/romfs/petit_LZ.bin"), FS_OPEN_READ, 0))) return res;
+    FSFILE_Close(handle);
+    return 0;
+}
