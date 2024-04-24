@@ -407,7 +407,9 @@ renamed:
         strcat(path_to_file, ".zip");
 
     DEBUG("path: %s\n", path_to_file);
-    FS_Path path = fsMakePath(PATH_ASCII, path_to_file);
+    u16 utf16path[0x106] = {0};
+    utf8_to_utf16(utf16path, path_to_file, 0x106);
+    FS_Path path = fsMakePath(PATH_UTF16, utf16path);
 
     // check if file already exists, and if it does, prompt the user
     // to overwrite or change name (or exit)
