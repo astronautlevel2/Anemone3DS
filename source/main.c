@@ -40,8 +40,8 @@ bool dspfirm = false;
 static audio_s * audio = NULL;
 static bool homebrew = false;
 static bool installed_themes = false;
-static bool home_displayed = false;
-static u64 time_home_pressed = 0;
+bool home_displayed = false;
+u64 time_home_pressed = 0;
 
 static Thread iconLoadingThread = {0};
 static Thread_Arg_s iconLoadingThread_arg = {0};
@@ -382,10 +382,10 @@ int main(void)
         }
 
 	    if (aptCheckHomePressRejected() && !home_displayed)
-	    {
+        {
             time_home_pressed = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
             home_displayed = true;
-	    }
+        }
 
         #ifndef CITRA_MODE
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)

@@ -501,11 +501,19 @@ bool themeplaza_browser(EntryMode mode)
     C2D_Image preview = { 0 };
 
     bool extra_mode = false;
+    extern u64 time_home_pressed;
+    extern bool home_displayed;
 
     while (aptMainLoop() && !quit)
     {
         if (current_list->entries == NULL)
             break;
+
+        if (aptCheckHomePressRejected() && !home_displayed)
+        {
+            time_home_pressed = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+            home_displayed = true;
+        }
 
         if (preview_mode)
         {
@@ -517,6 +525,13 @@ bool themeplaza_browser(EntryMode mode)
             if (extra_mode)
                 instructions = extra_instructions;
             draw_grid_interface(current_list, instructions);
+        }
+
+        if (home_displayed)
+        {
+            u64 cur_time = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+            draw_home(time_home_pressed, cur_time);
+            if (cur_time - time_home_pressed > 2000) home_displayed = false;
         }
         end_frame();
 
