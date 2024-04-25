@@ -1,6 +1,6 @@
 /*
 *   This file is part of Anemone3DS
-*   Copyright (C) 2016-2020 Contributors in CONTRIBUTORS.md
+*   Copyright (C) 2015-2020 Contributors in CONTRIBUTORS.md
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ bool dspfirm = false;
 static audio_s * audio = NULL;
 static bool homebrew = false;
 static bool installed_themes = false;
+static bool home_displayed = false;
+static u64 time_home_pressed = 0;
 
 static Thread iconLoadingThread = {0};
 static Thread_Arg_s iconLoadingThread_arg = {0};
@@ -81,7 +83,6 @@ static void init_services(void)
     dspfirm = !ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
-    // aptSetHomeAllowed(false);
     httpcInit(0);
     archive_result = open_archives();
     if(envIsHomebrew())
@@ -380,6 +381,12 @@ int main(void)
             return 0;
         }
 
+	    if (aptCheckHomePressRejected() && !home_displayed)
+	    {
+            time_home_pressed = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+            home_displayed = true;
+	    }
+
         #ifndef CITRA_MODE
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
@@ -438,6 +445,13 @@ int main(void)
 
             svcSleepThread(1e7);
             released = false;
+        }
+
+        if (home_displayed)
+        {
+            u64 cur_time = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+            draw_home(time_home_pressed, cur_time);
+            if (cur_time - time_home_pressed > 2000) home_displayed = false;
         }
 
         end_frame();
@@ -553,6 +567,7 @@ int main(void)
                                 theme->installed = false;
                         }
                         installed_themes = true;
+                        aptSetHomeAllowed(false);
                     }
                 }
                 else if((kDown | kHeld) & KEY_DUP)
@@ -569,6 +584,7 @@ int main(void)
                                 theme->installed = false;
                         }
                         installed_themes = true;
+                        aptSetHomeAllowed(false);
                     }
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
@@ -585,6 +601,7 @@ int main(void)
                                 theme->installed = false;
                         }
                         installed_themes = true;
+                        aptSetHomeAllowed(false);
                     }
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
@@ -616,6 +633,7 @@ int main(void)
                             }
                             current_list->shuffle_count = 0;
                             installed_themes = true;
+                            aptSetHomeAllowed(false);
                         }
                     }
                 }
