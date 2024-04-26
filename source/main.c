@@ -381,7 +381,7 @@ int main(void)
             return 0;
         }
 
-	    if (aptCheckHomePressRejected() && !home_displayed)
+        if (aptCheckHomePressRejected() && !home_displayed)
         {
             time_home_pressed = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
             home_displayed = true;
@@ -555,6 +555,7 @@ int main(void)
             {
                 if((kDown | kHeld) & KEY_DLEFT)
                 {
+                    aptSetHomeAllowed(false);
                     draw_install(INSTALL_BGM);
                     if(R_SUCCEEDED(bgm_install(*current_entry)))
                     {
@@ -567,11 +568,11 @@ int main(void)
                                 theme->installed = false;
                         }
                         installed_themes = true;
-                        aptSetHomeAllowed(false);
                     }
                 }
                 else if((kDown | kHeld) & KEY_DUP)
                 {
+                    aptSetHomeAllowed(false);
                     draw_install(INSTALL_SINGLE);
                     if(R_SUCCEEDED(theme_install(*current_entry)))
                     {
@@ -584,11 +585,11 @@ int main(void)
                                 theme->installed = false;
                         }
                         installed_themes = true;
-                        aptSetHomeAllowed(false);
                     }
                 }
                 else if((kDown | kHeld) & KEY_DRIGHT)
                 {
+                    aptSetHomeAllowed(false);
                     draw_install(INSTALL_NO_BGM);
                     if(R_SUCCEEDED(no_bgm_install(*current_entry)))
                     {
@@ -601,7 +602,6 @@ int main(void)
                                 theme->installed = false;
                         }
                         installed_themes = true;
-                        aptSetHomeAllowed(false);
                     }
                 }
                 else if((kDown | kHeld) & KEY_DDOWN)
@@ -616,6 +616,7 @@ int main(void)
                     }
                     else
                     {
+                        aptSetHomeAllowed(false);
                         draw_install(INSTALL_SHUFFLE);
                         Result res = shuffle_install(*current_list);
                         if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
@@ -633,7 +634,6 @@ int main(void)
                             }
                             current_list->shuffle_count = 0;
                             installed_themes = true;
-                            aptSetHomeAllowed(false);
                         }
                     }
                 }
