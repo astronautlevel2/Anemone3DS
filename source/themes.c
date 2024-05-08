@@ -41,6 +41,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     char* body = NULL;
     u32 body_size = 0;
     u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES] = {0};
+    bool mono_audio = false;
 
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
@@ -66,6 +67,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
             remake_file(fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), ArchiveThemeExt, BODY_CACHE_SIZE * MAX_SHUFFLE_THEMES);
             FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
         }
+
 
         for(int i = 0; i < themes.entries_count; i++)
         {
@@ -115,6 +117,11 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                             free(music);
                             DEBUG("bgm too big\n");
                             return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+                        }
+
+                        if (music[0x62] == 1)
+                        {
+                            mono_audio = true;
                         }
                     }
 
@@ -193,6 +200,11 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
 
             if (music_size != 0)
             {
+                if (music[0x62] == 1)
+                {
+                    mono_audio = true;
+                }
+
                 remake_file(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, BGM_MAX_SIZE);
                 res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
                 free(music);
@@ -285,7 +297,10 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     free(savedata_buf);
     if(R_FAILED(res)) return res;
     //----------------------------------------
-
+    if (mono_audio)
+    {
+        throw_error("One or more installed themes use mono audio.\nMono audio causes a number of issues.\nCheck the wiki for more information.", ERROR_LEVEL_WARNING);
+    }
     return 0;
 }
 
