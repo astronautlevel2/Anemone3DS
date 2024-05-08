@@ -111,6 +111,17 @@ Result close_archives(void)
     return 0;
 }
 
+Result load_parental_controls(Parental_Restrictions_s *restrictions)
+{
+    char parental_data[0xC0] = {0};
+    Result res;
+
+    if (R_FAILED(res = CFG_GetConfigInfoBlk8(0xC0, 0x000C0000, &parental_data))) return res;
+    memcpy(restrictions, parental_data, 4);
+
+    return 0;
+}
+
 u32 file_to_buf(FS_Path path, FS_Archive archive, char** buf)
 {
     Handle file;

@@ -490,6 +490,26 @@ bool themeplaza_browser(EntryMode mode)
 {
     bool downloaded = false;
 
+    Parental_Restrictions_s restrictions = {0};
+    Result res = load_parental_controls(&restrictions);
+    if (R_SUCCEEDED(res))
+    {
+        if (restrictions.enable && restrictions.browser)
+        {
+            SwkbdState swkbd;
+            char entered[5] = {0};
+            swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, 4);
+            swkbdSetFeatures(&swkbd, SWKBD_PARENTAL);
+
+            swkbdInputText(&swkbd, entered, 5);
+            SwkbdResult swkbd_res = swkbdGetResult(&swkbd);
+            if (swkbd_res != SWKBD_PARENTAL_OK)
+            {
+                return downloaded;
+            }
+        }
+    }
+
     bool preview_mode = false;
     int preview_offset = 0;
     audio_s * audio = NULL;
