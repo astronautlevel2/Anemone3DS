@@ -505,6 +505,7 @@ bool themeplaza_browser(EntryMode mode)
             SwkbdResult swkbd_res = swkbdGetResult(&swkbd);
             if (swkbd_res != SWKBD_PARENTAL_OK)
             {
+                throw_error("Parental Control validation failed!\nBrowser Access restricted.", ERROR_LEVEL_WARNING);
                 return downloaded;
             }
         }
