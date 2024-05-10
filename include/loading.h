@@ -32,6 +32,12 @@
 #include "music.h"
 #include <jansson.h>
 
+// These values assume a horizontal orientation
+#define TOP_SCREEN_WIDTH 400
+#define BOTTOM_SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 240
+#define SCREEN_COLOR_DEPTH 4
+
 enum ICON_IDS_OFFSET {
     ICONS_ABOVE = 0,
     ICONS_VISIBLE,
@@ -61,6 +67,9 @@ typedef struct {
 void copy_texture_data(C3D_Tex * texture, const u16 * src, const Entry_Icon_s * current_icon);
 void parse_smdh(Icon_s * icon, Entry_s * entry, const u16 * fallback_name);
 
+
+void delete_entry(Entry_s * entry, bool is_file);
+Result load_entries(const char * loading_path, Entry_List_s * list);
 bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset);
 bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset);
 void free_preview(C2D_Image preview_image);

@@ -35,8 +35,26 @@ extern FS_Archive ArchiveSD;
 extern FS_Archive ArchiveHomeExt;
 extern FS_Archive ArchiveThemeExt;
 
+typedef struct {
+    u32 enable : 1;
+    u32 browser: 1;
+    u32 stereoscopic : 1;
+    u32 media_share : 1;
+    u32 online : 1;
+    u32 streetpass : 1;
+    u32 friends : 1;
+    u32 dsdownload : 1;
+    u32 shopping : 1;
+    u32 videos : 1;
+    u32 miiverse : 1;
+    u32 post : 1;
+    u32 null : 19;
+    u32 coppa : 1;
+} Parental_Restrictions_s;
+
 Result open_archives(void);
 Result close_archives(void);
+Result load_parental_controls(Parental_Restrictions_s *restrictions);
 
 u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf);
 u32 zip_memory_to_buf(const char * file_name, void * zip_memory, size_t zip_size, char ** buf);

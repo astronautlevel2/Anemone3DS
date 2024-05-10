@@ -29,6 +29,7 @@
 #include "unicode.h"
 #include "music.h"
 #include "draw.h"
+#include "conversion.h"
 
 #include <png.h>
 
@@ -305,77 +306,10 @@ void load_icons_thread(void * void_arg)
     } while(arg->run_thread);
 }
 
-bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, int * preview_offset)
+bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset)
 {
-    if(size < 8 || png_sig_cmp(buf, 0, 8))
-    {
-        throw_error("Invalid preview.png", ERROR_LEVEL_WARNING);
-        return false;
-    }
-
-    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-
-    png_infop info = png_create_info_struct(png);
-
-    if(setjmp(png_jmpbuf(png)))
-    {
-        png_destroy_read_struct(&png, &info, NULL);
-        return false;
-    }
-
-    FILE * fp = fmemopen(buf, size, "rb");
-
-    png_init_io(png, fp);
-    png_read_info(png, info);
-
-    int width = png_get_image_width(png, info);
-    int height = png_get_image_height(png, info);
-
-    png_byte color_type = png_get_color_type(png, info);
-    png_byte bit_depth  = png_get_bit_depth(png, info);
-
-    // Read any color_type into 8bit depth, ABGR format.
-    // See http://www.libpng.org/pub/png/libpng-manual.txt
-
-    if(bit_depth == 16)
-        png_set_strip_16(png);
-
-    if(color_type == PNG_COLOR_TYPE_PALETTE)
-        png_set_palette_to_rgb(png);
-
-    // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16bit depth.
-    if(color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-        png_set_expand_gray_1_2_4_to_8(png);
-
-    if(png_get_valid(png, info, PNG_INFO_tRNS))
-        png_set_tRNS_to_alpha(png);
-
-    // These color_type don't have an alpha channel then fill it with 0xff.
-    if(color_type == PNG_COLOR_TYPE_RGB ||
-       color_type == PNG_COLOR_TYPE_GRAY ||
-       color_type == PNG_COLOR_TYPE_PALETTE)
-        png_set_add_alpha(png, 0xFF, PNG_FILLER_BEFORE);
-
-    if(color_type == PNG_COLOR_TYPE_GRAY ||
-       color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-        png_set_gray_to_rgb(png);
-
-    //output ABGR
-    png_set_bgr(png);
-    png_set_swap_alpha(png);
-
-    png_read_update_info(png, info);
-
-    png_bytep * row_pointers = malloc(sizeof(png_bytep) * height);
-    for(int y = 0; y < height; y++) {
-        row_pointers[y] = (png_byte *)malloc(png_get_rowbytes(png,info));
-    }
-
-    png_read_image(png, row_pointers);
-
-    fclose(fp);
-    png_destroy_read_struct(&png, &info, NULL);
-
+    int height = SCREEN_HEIGHT * 2;
+    int width = (uint32_t)((size / 4) / height);
 
     free_preview(*preview_image);
 
@@ -396,20 +330,16 @@ bool load_preview_from_buffer(void * buf, u32 size, C2D_Image * preview_image, i
     memset(preview_image->tex->data, 0, preview_image->tex->size);
 
     for(int j = 0; j < height; j++) {
-        png_bytep row = row_pointers[j];
+        png_bytep row = (png_bytep)(row_pointers + (width * 4 * j));
         for(int i = 0; i < width; i++) {
             png_bytep px = &(row[i * 4]);
             u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
 
             memcpy(preview_image->tex->data + dst, px, sizeof(u32));
         }
-
-        free(row_pointers[j]);
     }
 
-    free(row_pointers);
-
-    *preview_offset = (width-400)/2;
+    *preview_offset = (width - TOP_SCREEN_WIDTH) / 2;
 
     return true;
 }
@@ -426,11 +356,65 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
     char * preview_buffer = NULL;
     u32 size = load_data("/preview.png", entry, &preview_buffer);
 
-    if(!size)
+    if(size)
+    {
+        if (!(size = png_to_abgr(&preview_buffer, size)))
+        {
+            return false;
+        }
+    }
+    else
     {
         free(preview_buffer);
-        throw_error("No preview found.", ERROR_LEVEL_WARNING);
-        return false;
+
+        const int top_size =  TOP_SCREEN_WIDTH * SCREEN_HEIGHT * SCREEN_COLOR_DEPTH;
+        const int out_size = top_size * 2;
+
+        char * rgba_buffer = malloc(out_size);
+        memset(rgba_buffer, 0, out_size);
+        bool found_splash = false;
+
+        // try to assembly a preview from the splash screens
+        size = load_data("/splash.bin", entry, &preview_buffer);
+        if (size)
+        {
+            found_splash = true;
+            bin_to_abgr(&preview_buffer, size);
+
+            memcpy(rgba_buffer, preview_buffer, top_size);
+            free(preview_buffer);
+        }
+
+        size = load_data("/splashbottom.bin", entry, &preview_buffer);
+        if (size)
+        {
+            found_splash = true;
+            bin_to_abgr(&preview_buffer, size);
+
+            const int buffer_width = TOP_SCREEN_WIDTH * SCREEN_COLOR_DEPTH;
+            const int bottom_buffer_width = BOTTOM_SCREEN_WIDTH * SCREEN_COLOR_DEPTH;
+            const int bottom_centered_offset = (TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2;
+
+            // Store the bottom splash screen under the top splash and centered
+            for (int i = 0; i < SCREEN_HEIGHT; ++i)
+                memcpy(
+                    rgba_buffer + top_size + (buffer_width * i) + (bottom_centered_offset * SCREEN_COLOR_DEPTH),
+                    preview_buffer + (bottom_buffer_width * i),
+                    bottom_buffer_width
+                );
+    
+            free(preview_buffer);
+        }
+
+        if (!found_splash)
+        {
+            free(rgba_buffer);
+            throw_error("No preview found.", ERROR_LEVEL_WARNING);
+            return false;
+        }
+
+        size = out_size;
+        preview_buffer = rgba_buffer;
     }
 
     bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset);

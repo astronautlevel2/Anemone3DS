@@ -32,6 +32,7 @@
 #include "unicode.h"
 #include "music.h"
 #include "urls.h"
+#include "conversion.h"
 
 // forward declaration of special case used only here
 // TODO: replace this travesty with a proper handler
@@ -287,7 +288,18 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
         return false;
     }
 
-    bool ret = load_preview_from_buffer(preview_png, preview_size, preview_image, preview_offset);
+    char * preview_buf = malloc(preview_size);
+    u32 preview_buf_size = preview_size;
+    memcpy(preview_buf, preview_png, preview_size);
+
+    if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size)))
+    {
+        free(preview_buf);
+        return false;
+    }
+
+    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset);
+    free(preview_buf);
 
     if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
     {
@@ -469,6 +481,27 @@ bool themeplaza_browser(EntryMode mode)
 {
     bool downloaded = false;
 
+    Parental_Restrictions_s restrictions = {0};
+    Result res = load_parental_controls(&restrictions);
+    if (R_SUCCEEDED(res))
+    {
+        if (restrictions.enable && restrictions.browser)
+        {
+            SwkbdState swkbd;
+            char entered[5] = {0};
+            swkbdInit(&swkbd, SWKBD_TYPE_NUMPAD, 2, 4);
+            swkbdSetFeatures(&swkbd, SWKBD_PARENTAL);
+
+            swkbdInputText(&swkbd, entered, 5);
+            SwkbdResult swkbd_res = swkbdGetResult(&swkbd);
+            if (swkbd_res != SWKBD_PARENTAL_OK)
+            {
+                throw_error("Parental Control validation failed!\nBrowser Access restricted.", ERROR_LEVEL_WARNING);
+                return downloaded;
+            }
+        }
+    }
+
     bool preview_mode = false;
     int preview_offset = 0;
     audio_s * audio = NULL;
@@ -503,11 +536,19 @@ bool themeplaza_browser(EntryMode mode)
     C2D_Image preview = { 0 };
 
     bool extra_mode = false;
+    extern u64 time_home_pressed;
+    extern bool home_displayed;
 
     while (aptMainLoop() && !quit)
     {
         if (current_list->entries == NULL)
             break;
+
+        if (aptCheckHomePressRejected() && !home_displayed)
+        {
+            time_home_pressed = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+            home_displayed = true;
+        }
 
         if (preview_mode)
         {
@@ -519,6 +560,13 @@ bool themeplaza_browser(EntryMode mode)
             if (extra_mode)
                 instructions = extra_instructions;
             draw_grid_interface(current_list, instructions);
+        }
+
+        if (home_displayed)
+        {
+            u64 cur_time = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+            draw_home(time_home_pressed, cur_time);
+            if (cur_time - time_home_pressed > 2000) home_displayed = false;
         }
         end_frame();
 

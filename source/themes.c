@@ -41,6 +41,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
     char * body = NULL;
     u32 body_size = 0;
     u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES] = {0};
+    bool mono_audio = false;
 
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
@@ -115,6 +116,11 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
                             free(music);
                             DEBUG("bgm too big\n");
                             return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
+                        }
+
+                        if (music[0x62] == 1)
+                        {
+                            mono_audio = true;
                         }
                     }
 
@@ -193,6 +199,11 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
 
             if (music_size != 0)
             {
+                if (music[0x62] == 1)
+                {
+                    mono_audio = true;
+                }
+
                 remake_file(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, BGM_MAX_SIZE);
                 res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
                 free(music);
@@ -285,7 +296,10 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
     free(savedata_buf);
     if(R_FAILED(res)) return res;
     //----------------------------------------
-
+    if (mono_audio)
+    {
+        throw_error("One or more installed themes use mono audio.\nMono audio causes a number of issues.\nCheck the wiki for more information.", ERROR_LEVEL_WARNING);
+    }
     return 0;
 }
 

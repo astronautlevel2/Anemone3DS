@@ -111,6 +111,17 @@ Result close_archives(void)
     return 0;
 }
 
+Result load_parental_controls(Parental_Restrictions_s *restrictions)
+{
+    char parental_data[0xC0] = {0};
+    Result res;
+
+    if (R_FAILED(res = CFGU_GetConfigInfoBlk2(0xC0, 0x000C0000, &parental_data))) return res;
+    memcpy(restrictions, parental_data, 4);
+
+    return 0;
+}
+
 u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf)
 {
     Handle file;
@@ -407,7 +418,9 @@ renamed:
         strcat(path_to_file, ".zip");
 
     DEBUG("path: %s\n", path_to_file);
-    FS_Path path = fsMakePath(PATH_ASCII, path_to_file);
+    u16 utf16path[0x106] = {0};
+    utf8_to_utf16(utf16path, (u8 *) path_to_file, 0x106);
+    FS_Path path = fsMakePath(PATH_UTF16, utf16path);
 
     // check if file already exists, and if it does, prompt the user
     // to overwrite or change name (or exit)

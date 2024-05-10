@@ -167,6 +167,15 @@ static void draw_image(int image_id, float x, float y)
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, image_id), x, y, 0.6f, NULL, 1.0f, 1.0f);
 }
 
+void draw_home(u64 start_time, u64 cur_time)
+{
+    float time_sec = (cur_time - start_time)/1000.0f;
+    float alpha = fmin(-1.333f * time_sec * time_sec + 2.666f * time_sec, 1.0f); // Quadratic regression to create fade effect
+    C2D_ImageTint tint = {};
+    C2D_AlphaImageTint(&tint, alpha);
+    C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_no_home_idx), (320-64)/2, (240-64)/2, 1.0f, &tint, 1.0f, 1.0f);
+}
+
 static void get_text_dimensions(const char * text, float scaleX, float scaleY, float * width, float * height)
 {
     C2D_Text c2d_text;
