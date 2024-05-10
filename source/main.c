@@ -369,6 +369,7 @@ int main(void)
     int preview_offset = 0;
 
     bool install_mode = false;
+    DrawMode draw_mode = DRAW_MODE_LIST;
     bool extra_mode = false;
     C2D_Image preview = {0};
 
@@ -441,7 +442,7 @@ int main(void)
                 svcWaitSynchronization(update_icons_mutex, U64_MAX);
             }
 
-            draw_interface(current_list, instructions);
+            draw_interface(current_list, instructions, draw_mode);
 
             svcSleepThread(1e7);
             released = false;
@@ -549,92 +550,137 @@ int main(void)
 
         if(install_mode)
         {
-            if(kUp & KEY_A)
-                install_mode = false;
-            if(!install_mode)
+            if ((kDown | kHeld) & KEY_TOUCH)
             {
-                if((kDown | kHeld) & KEY_DLEFT)
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+
+                if (kDown & KEY_TOUCH)
                 {
-                    aptSetHomeAllowed(false);
-                    draw_install(INSTALL_BGM);
-                    if(R_SUCCEEDED(bgm_install(*current_entry)))
+                    if (y < 24)
                     {
-                        for(int i = 0; i < current_list->entries_count; i++)
+                        if (BETWEEN(320-24, x, 320))
                         {
-                            Entry_s * theme = &current_list->entries[i];
-                            if(theme == current_entry)
-                                theme->installed = true;
-                            else
-                                theme->installed = false;
+                            goto install_theme_single;
+                        } else if (BETWEEN(320-48, x, 320-24))
+                        {
+                            goto install_theme_shuffle;
+                        } else if (BETWEEN(320-72, x, 320-48))
+                        {
+                            goto install_theme_no_bgm;
+                        } else if (BETWEEN(320-96, x, 320-72))
+                        {
+                            goto install_theme_bgm_only;
+                        } else if (BETWEEN(320-120, x, 320-96))
+                        {
+                            goto install_leave;
                         }
-                        installed_themes = true;
                     }
                 }
-                else if((kDown | kHeld) & KEY_DUP)
+            }
+
+            if(kDown & KEY_B)
+            {
+                install_leave:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+            }
+            else if(kDown & KEY_DLEFT)
+            {
+                install_theme_bgm_only:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                aptSetHomeAllowed(false);
+                draw_install(INSTALL_BGM);
+                if(R_SUCCEEDED(bgm_install(*current_entry)))
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+            #define BETWEEN(min, x, max) (min < x && x < max)
+                        Entry_s * theme = &current_list->entries[i];
+                        if(theme == current_entry)
+                            theme->installed = true;
+                        else
+                            theme->installed = false;
+                    }
+                    installed_themes = true;
+                }
+            }
+            else if(kDown & KEY_DUP)
+            {
+                install_theme_single:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                aptSetHomeAllowed(false);
+                draw_install(INSTALL_SINGLE);
+                if(R_SUCCEEDED(theme_install(*current_entry)))
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * theme = &current_list->entries[i];
+                        if(theme == current_entry)
+                            theme->installed = true;
+                        else
+                            theme->installed = false;
+                    }
+                    installed_themes = true;
+                }
+            }
+            else if(kDown & KEY_DRIGHT)
+            {
+                install_theme_no_bgm:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                aptSetHomeAllowed(false);
+                draw_install(INSTALL_NO_BGM);
+                if(R_SUCCEEDED(no_bgm_install(*current_entry)))
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * theme = &current_list->entries[i];
+                        if(theme == current_entry)
+                            theme->installed = true;
+                        else
+                            theme->installed = false;
+                    }
+                    installed_themes = true;
+                }
+            }
+            else if(kDown & KEY_DDOWN)
+            {
+                install_theme_shuffle:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
+                {
+                    throw_error("You have too many themes selected.", ERROR_LEVEL_WARNING);
+                }
+                else if(current_list->shuffle_count < 2)
+                {
+                    throw_error("You don't have enough themes selected.", ERROR_LEVEL_WARNING);
+                }
+                else
                 {
                     aptSetHomeAllowed(false);
-                    draw_install(INSTALL_SINGLE);
-                    if(R_SUCCEEDED(theme_install(*current_entry)))
-                    {
-                        for(int i = 0; i < current_list->entries_count; i++)
-                        {
-                            Entry_s * theme = &current_list->entries[i];
-                            if(theme == current_entry)
-                                theme->installed = true;
-                            else
-                                theme->installed = false;
-                        }
-                        installed_themes = true;
-                    }
-                }
-                else if((kDown | kHeld) & KEY_DRIGHT)
-                {
-                    aptSetHomeAllowed(false);
-                    draw_install(INSTALL_NO_BGM);
-                    if(R_SUCCEEDED(no_bgm_install(*current_entry)))
-                    {
-                        for(int i = 0; i < current_list->entries_count; i++)
-                        {
-                            Entry_s * theme = &current_list->entries[i];
-                            if(theme == current_entry)
-                                theme->installed = true;
-                            else
-                                theme->installed = false;
-                        }
-                        installed_themes = true;
-                    }
-                }
-                else if((kDown | kHeld) & KEY_DDOWN)
-                {
-                    if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
-                    {
-                        throw_error("You have too many themes selected.", ERROR_LEVEL_WARNING);
-                    }
-                    else if(current_list->shuffle_count < 2)
-                    {
-                        throw_error("You don't have enough themes selected.", ERROR_LEVEL_WARNING);
-                    }
+                    draw_install(INSTALL_SHUFFLE);
+                    Result res = shuffle_install(*current_list);
+                    if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
                     else
                     {
-                        aptSetHomeAllowed(false);
-                        draw_install(INSTALL_SHUFFLE);
-                        Result res = shuffle_install(*current_list);
-                        if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
-                        else
+                        for(int i = 0; i < current_list->entries_count; i++)
                         {
-                            for(int i = 0; i < current_list->entries_count; i++)
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme->in_shuffle)
                             {
-                                Entry_s * theme = &current_list->entries[i];
-                                if(theme->in_shuffle)
-                                {
-                                    theme->in_shuffle = false;
-                                    theme->installed = true;
-                                }
-                                else theme->installed = false;
+                                theme->in_shuffle = false;
+                                theme->installed = true;
                             }
-                            current_list->shuffle_count = 0;
-                            installed_themes = true;
+                            else theme->installed = false;
                         }
+                        current_list->shuffle_count = 0;
+                        installed_themes = true;
                     }
                 }
             }
@@ -720,6 +766,7 @@ int main(void)
             {
                 case MODE_THEMES:
                     install_mode = true;
+                    draw_mode = DRAW_MODE_INSTALL;
                     break;
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH);
@@ -745,7 +792,7 @@ int main(void)
                     toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
+                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list, draw_mode))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -761,7 +808,7 @@ int main(void)
         }
         else if(kDown & KEY_SELECT)
         {
-            if(draw_confirm("Are you sure you would like to delete this?", current_list))
+            if(draw_confirm("Are you sure you would like to delete this?", current_list, draw_mode))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(current_entry, current_entry->is_zip);
@@ -820,18 +867,37 @@ int main(void)
             u16 x = touch.px;
             u16 y = touch.py;
 
-            u16 arrowStartX = 152;
+            u16 arrowStartX = 136;
             u16 arrowEndX = arrowStartX+16;
 
-            #define BETWEEN(min, x, max) (min < x && x < max)
 
             if(kDown & KEY_TOUCH)
             {
                 if(y < 24)
                 {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    if(BETWEEN(320-192, x, 320-168))
                     {
-                        change_selected(current_list, -current_list->entries_per_screen_v);
+                        toggle_shuffle(current_list);
+                    }
+                    if(BETWEEN(320-168, x, 320-144))
+                    {
+                        if (current_mode == MODE_THEMES)
+                        {
+                            install_mode = true;
+                            draw_mode = DRAW_MODE_INSTALL;
+                        } else if (current_mode == MODE_SPLASHES)
+                        {
+                            draw_install(INSTALL_SPLASH);
+                            splash_install(*current_entry);
+                            for(int i = 0; i < current_list->entries_count; i++)
+                            {
+                                Entry_s * splash = &current_list->entries[i];
+                                if(splash == current_entry)
+                                    splash->installed = true;
+                                else
+                                    splash->installed = false;
+                            }
+                        }
                     }
                     else if(BETWEEN(320-144, x, 320-120))
                     {
@@ -873,7 +939,11 @@ int main(void)
                 }
                 else if(y >= 216)
                 {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - current_list->entries_per_screen_v)
+                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    {
+                        change_selected(current_list, -current_list->entries_per_screen_v);
+                    }
+                    else if(current_list->entries != NULL && BETWEEN(arrowStartX + 16, x, arrowEndX + 16) && current_list->scroll < current_list->entries_count - current_list->entries_per_screen_v)
                     {
                         change_selected(current_list, current_list->entries_per_screen_v);
                     }

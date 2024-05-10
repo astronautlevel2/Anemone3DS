@@ -35,7 +35,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
         .info_line = NULL,
         .instructions = {
             {
-                "\uE000 Hold to install",
+                "\uE000 Install Theme(s)",
                 "\uE001 Queue shuffle theme"
             },
             {
@@ -76,7 +76,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
 };
 
 Instructions_s install_instructions = {
-    .info_line = "Release \uE000 to cancel or hold \uE006 and release \uE000 to install",
+    .info_line = "\uE001 Return to main options",
     .instructions = {
         {
             "\uE079 Normal install",

@@ -318,12 +318,12 @@ void throw_error(const char* error, ErrorLevel level)
     }
 }
 
-bool draw_confirm(const char* conf_msg, Entry_List_s* list)
+bool draw_confirm(const char* conf_msg, Entry_List_s* list, DrawMode draw_mode)
 {
     while(aptMainLoop())
     {
         Instructions_s instructions = {0};
-        draw_interface(list, instructions);
+        draw_interface(list, instructions, draw_mode);
         set_screen(top);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
         draw_c2d_text_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
@@ -603,7 +603,7 @@ void draw_grid_interface(Entry_List_s* list, Instructions_s instructions)
     draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_PAGE]);
 }
 
-void draw_interface(Entry_List_s* list, Instructions_s instructions)
+void draw_interface(Entry_List_s* list, Instructions_s instructions, DrawMode draw_mode)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
@@ -643,7 +643,7 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         set_screen(bottom);
 
         draw_image(sprites_sort_idx, 320-144, 0);
-        draw_image(sprites_download_idx, 320-120, 0);
+        draw_image(sprites_qr_idx, 320-120, 0);
         draw_image(sprites_browse_idx, 320-96, 0);
         draw_image(sprites_exit_idx, 320-72, 0);
         draw_image(sprites_preview_idx, 320-48, 0);
@@ -669,18 +669,33 @@ void draw_interface(Entry_List_s* list, Instructions_s instructions)
         free(shuffle_count_string);
     }
 
-    draw_image(sprites_sort_idx, 320-144, 0);
-    draw_image(sprites_download_idx, 320-120, 0);
-    draw_image(sprites_browse_idx, 320-96, 0);
-    draw_image(sprites_exit_idx, 320-72, 0);
-    draw_image(sprites_preview_idx, 320-48, 0);
-
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+    if (draw_mode == DRAW_MODE_LIST)
+    {
+        draw_image(sprites_install_idx, 320-168, 0);
+        draw_image(sprites_sort_idx, 320-144, 0);
+        draw_image(sprites_qr_idx, 320-120, 0);
+        draw_image(sprites_browse_idx, 320-96, 0);
+        draw_image(sprites_exit_idx, 320-72, 0);
+        draw_image(sprites_preview_idx, 320-48, 0);
+        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+        if (current_mode == MODE_THEMES)
+        {
+            draw_image(sprites_shuffle_idx, 320-192, 0);
+        }
+    }
+    else if (draw_mode == DRAW_MODE_INSTALL)
+    {
+        draw_image(sprites_install_idx, 320-24, 0);
+        draw_image(sprites_shuffle_idx, 320-48, 0);
+        draw_image(sprites_shuffle_no_bgm_idx, 320-72, 0);
+        draw_image(sprites_bgm_only_idx, 320-96, 0);
+        draw_image(sprites_back_idx, 320-120, 0);
+    }
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
-        draw_image(sprites_arrow_up_idx, 152, 4);
+        draw_image(sprites_arrow_up_idx, 136, 220);
     if(list->scroll + list->entries_loaded < list->entries_count)
         draw_image(sprites_arrow_down_idx, 152, 220);
 
