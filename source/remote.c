@@ -222,9 +222,6 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     {
         list->tp_current_page = page;
         list->mode = mode;
-        list->entry_size = entry_size[mode];
-        list->entries_per_screen_v = entries_per_screen_v[mode];
-        list->entries_per_screen_h = entries_per_screen_h[mode];
 
         json_error_t error;
         json_t * root = json_loadb(page_json, json_len, 0, &error);
@@ -510,6 +507,9 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
 
+    list.entries_per_screen_v = entries_per_screen_v[mode];
+    list.entries_per_screen_h = entries_per_screen_h[mode];
+    list.entry_size = entry_size[mode];
     C3D_TexInit(&current_list->icons_texture, 512, 256, GPU_RGB565);
     C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
     const int entries_icon_count = current_list->entries_per_screen_h * current_list->entries_per_screen_v;

@@ -564,7 +564,7 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
         horizontal_offset += 16;
 
 
-        if(current_entry->placeholder_color != 0)
+        if(current_entry->placeholder_color == 0)
         {
             const C2D_Image image = get_icon_at(list, i);
             C2D_DrawImageAt(image, horizontal_offset, vertical_offset, 0.5f, NULL, 1.0f, 1.0f);
@@ -727,13 +727,13 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions)
             C2D_DrawSpriteTinted(&sprite_installed, &tint);
         }
 
-        if(current_entry->placeholder_color != 0)
+        if(current_entry->placeholder_color == 0)
         {
             C2D_Image image;
             if(list->entries_count > list->entries_loaded * ICONS_OFFSET_AMOUNT)
             {
                 const int offset_to_visible_icons = ICONS_VISIBLE * list->entries_loaded;
-                image = get_icon_at(list, offset_to_visible_icons + vertical_offset);
+                image = get_icon_at(list, offset_to_visible_icons + (i - list->scroll));
             }
             else
                 image = get_icon_at(list, i);
