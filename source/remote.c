@@ -109,26 +109,18 @@ static void free_icons(Entry_List_s * list)
 {
     if (list != NULL)
     {
-        if (list->icons != NULL)
-        {
-            for (int i = 0; i < list->entries_count; i++)
-            {
-                C3D_TexDelete(list->icons[i]->tex);
-                free(list->icons[i]->tex);
-                free(list->icons[i]);
-            }
-            free(list->icons);
-        }
+        C3D_TexDelete(&list->icons_texture);
+        free(list->icons_info);
     }
 }
 
-static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
+static void load_remote_smdh(Entry_s * entry, C3D_Tex * into_tex, const Entry_Icon_s * icon_info, bool ignore_cache)
 {
     bool not_cached = true;
     char * smdh_buf = NULL;
-    u32 smdh_size = load_data("/info.smdh", *entry, &smdh_buf);
+    u32 smdh_size = load_data("/info.smdh", entry, &smdh_buf);
 
-    not_cached = !smdh_size || ignore_cache;  // if the size is 0, the file wasn't there
+    not_cached = (smdh_size != sizeof(Icon_s)) || ignore_cache;  // if the size is 0, the file wasn't there
 
     if (not_cached)
     {
@@ -137,15 +129,15 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
         char * api_url = NULL;
         asprintf(&api_url, THEMEPLAZA_SMDH_FORMAT, entry->tp_download_id);
         Result res = http_get(api_url, NULL, &smdh_buf, &smdh_size, INSTALL_NONE, "application/octet-stream");
+        free(api_url);
         if (R_FAILED(res))
         {
             free(smdh_buf);
-            return false;
+            return;
         }
-        free(api_url);
     }
 
-    if (!smdh_size)
+    if (smdh_size != sizeof(Icon_s))
     {
         free(smdh_buf);
         smdh_buf = NULL;
@@ -157,29 +149,28 @@ static C2D_Image * load_remote_smdh(Entry_s * entry, bool ignore_cache)
     utf8_to_utf16(fallback_name, (u8 *)"No name", 0x80);
 
     parse_smdh(smdh, entry, fallback_name);
-    C2D_Image * image = loadTextureIcon(smdh);
 
-    if (not_cached)
+    if(smdh_buf != NULL)
     {
-        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, entry->path), FS_ATTRIBUTE_DIRECTORY);
-        u16 path[0x107] = { 0 };
-        strucat(path, entry->path);
-        struacat(path, "/info.smdh");
-        remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_size);
-        buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
+        copy_texture_data(into_tex, smdh->big_icon, icon_info);
+        if (not_cached)
+        {
+            FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, entry->path), FS_ATTRIBUTE_DIRECTORY);
+            u16 path[0x107] = { 0 };
+            strucat(path, entry->path);
+            struacat(path, "/info.smdh");
+            remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_size);
+            buf_to_file(smdh_size, fsMakePath(PATH_UTF16, path), ArchiveSD, smdh_buf);
+        }
+        free(smdh_buf);
     }
-    free(smdh_buf);
-
-    return image;
 }
 
 static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type)
 {
-    free_icons(list);
-    list->entries_count = json_array_size(ids_array);
     free(list->entries);
+    list->entries_count = json_array_size(ids_array);
     list->entries = calloc(list->entries_count, sizeof(Entry_s));
-    list->icons = calloc(list->entries_count, sizeof(C2D_Image * ));
     list->entries_loaded = list->entries_count;
 
     size_t i = 0;
@@ -195,7 +186,7 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
         utf8_to_utf16(current_entry->path, (u8 *)entry_path, 0x106);
         free(entry_path);
 
-        list->icons[i] = load_remote_smdh(current_entry, ignore_cache);
+        load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
     }
 }
 
@@ -231,9 +222,6 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     {
         list->tp_current_page = page;
         list->mode = mode;
-        list->entry_size = entry_size[mode];
-        list->entries_per_screen_v = entries_per_screen_v[mode];
-        list->entries_per_screen_h = entries_per_screen_h[mode];
 
         json_error_t error;
         json_t * root = json_loadb(page_json, json_len, 0, &error);
@@ -263,16 +251,16 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     free(page_json);
 }
 
-static u16 previous_path_preview[0x106] = { 0 };
+static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int * preview_offset)
+static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset)
 {
     bool not_cached = true;
 
     if (!memcmp(&previous_path_preview, entry->path, 0x106 * sizeof(u16))) return true;
 
     char * preview_png = NULL;
-    u32 preview_size = load_data("/preview.png", *entry, &preview_png);
+    u32 preview_size = load_data("/preview.png", entry, &preview_png);
 
     not_cached = !preview_size;
 
@@ -324,14 +312,14 @@ static bool load_remote_preview(Entry_s * entry, C2D_Image * preview_image, int 
     return ret;
 }
 
-static u16 previous_path_bgm[0x106] = { 0 };
+static u16 previous_path_bgm[0x106];
 
-static void load_remote_bgm(Entry_s * entry)
+static void load_remote_bgm(const Entry_s * entry)
 {
     if (!memcmp(&previous_path_bgm, entry->path, 0x106 * sizeof(u16))) return;
 
     char * bgm_ogg = NULL;
-    u32 bgm_size = load_data("/bgm.ogg", *entry, &bgm_ogg);
+    u32 bgm_size = load_data("/bgm.ogg", entry, &bgm_ogg);
 
     if (!bgm_size)
     {
@@ -518,6 +506,32 @@ bool themeplaza_browser(EntryMode mode)
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
+
+    list.entries_per_screen_v = entries_per_screen_v[mode];
+    list.entries_per_screen_h = entries_per_screen_h[mode];
+    list.entry_size = entry_size[mode];
+    C3D_TexInit(&current_list->icons_texture, 512, 256, GPU_RGB565);
+    C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
+    const int entries_icon_count = current_list->entries_per_screen_h * current_list->entries_per_screen_v;
+    current_list->icons_info = calloc(entries_icon_count, sizeof(Entry_Icon_s));
+
+    const float inv_width = 1.0f / current_list->icons_texture.width;
+    const float inv_height = 1.0f / current_list->icons_texture.height;
+    for(int i = 0; i < entries_icon_count; ++i)
+    {
+        Entry_Icon_s * const icon_info = &current_list->icons_info[i];
+        // division by how many icons can fit horizontally
+        const div_t d = div(i, (current_list->icons_texture.width / 48));
+        icon_info->x = d.rem * current_list->entry_size;
+        icon_info->y = d.quot * current_list->entry_size;
+        icon_info->subtex.width = current_list->entry_size;
+        icon_info->subtex.height = current_list->entry_size;
+        icon_info->subtex.left = icon_info->x * inv_width;
+        icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
+        icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
+        icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
+    }
+
     load_remote_list(current_list, 1, mode, false);
     C2D_Image preview = { 0 };
 
@@ -615,7 +629,7 @@ bool themeplaza_browser(EntryMode mode)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_s));
-                    if (R_FAILED(load_audio(*current_entry, audio))) audio = NULL;
+                    if (R_FAILED(load_audio(current_entry, audio))) audio = NULL;
                     if (audio != NULL) play_audio(audio);
                 }
             }
@@ -812,7 +826,7 @@ typedef enum ParseResult
     HTTP_GATEWAY_TIMEOUT = 504,
 } ParseResult;
 
-/*static SwkbdCallbackResult fat32filter(void *user, const char **ppMessage, const char *text, size_t textlen)
+/*static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     (void)user;
@@ -1131,7 +1145,7 @@ no_error:;
 
         // download exactly chunk_size bytes and toss them into buf.
         // size contains the current offset into buf.
-        ret = httpcDownloadData(&context, (u8*)(*buf) + *size, chunk_size, &read_size);
+        ret = httpcDownloadData(&context, (u8 *)(*buf) + *size, chunk_size, &read_size);
         /* FIXME: I have no idea why this doesn't work, but it causes problems. Look into it later
         if (R_FAILED(ret))
         {

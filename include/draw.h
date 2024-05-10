@@ -33,7 +33,7 @@
 
 #define MAX_LINES 10
 
-typedef enum {
+typedef enum InstallType_e {
     INSTALL_LOADING_THEMES,
     INSTALL_LOADING_SPLASHES,
     INSTALL_LOADING_ICONS,
@@ -149,8 +149,8 @@ typedef struct {
     const char * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 
-extern C3D_RenderTarget* top;
-extern C3D_RenderTarget* bottom;
+extern C3D_RenderTarget * top;
+extern C3D_RenderTarget * bottom;
 extern C2D_TextBuf staticBuf, dynamicBuf;
 
 extern C2D_Text text[TEXT_AMOUNT];
@@ -162,8 +162,8 @@ void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
 
-void throw_error(const char* error, ErrorLevel level);
-bool draw_confirm(const char* conf_msg, Entry_List_s* list, DrawMode draw_mode);
+void throw_error(const char * error, ErrorLevel level);
+bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);
 
 void draw_preview(C2D_Image preview, int preview_offset);
 
@@ -177,7 +177,7 @@ void draw_text_center(gfxScreen_t target, float y, float z, float scaleX, float 
 void draw_home(u64 start_time, u64 cur_time);
 
 void draw_base_interface(void);
-void draw_grid_interface(Entry_List_s* list, Instructions_s instructions);
-void draw_interface(Entry_List_s* list, Instructions_s instructions, DrawMode draw_mode);
+void draw_grid_interface(Entry_List_s * list, Instructions_s instructions);
+void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode);
 
 #endif

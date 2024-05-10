@@ -48,8 +48,8 @@ static Thread_Arg_s iconLoadingThread_arg = {0};
 static Handle update_icons_mutex;
 static bool released = false;
 
-static Thread installCheckThreads[MODE_AMOUNT] = {0};
-static Thread_Arg_s installCheckThreads_arg[MODE_AMOUNT] = {0};
+static Thread install_check_threads[MODE_AMOUNT] = {0};
+static Thread_Arg_s install_check_threads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
 
@@ -108,13 +108,16 @@ static void stop_install_check(void)
 {
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
-        installCheckThreads_arg[i].run_thread = false;
+        install_check_threads_arg[i].run_thread = false;
     }
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
-        threadJoin(installCheckThreads[i], U64_MAX);
-        threadFree(installCheckThreads[i]);
-        installCheckThreads[i] = NULL;
+        if(install_check_threads[i] == NULL)
+            continue;
+
+        threadJoin(install_check_threads[i], U64_MAX);
+        threadFree(install_check_threads[i]);
+        install_check_threads[i] = NULL;
     }
 }
 
@@ -132,30 +135,14 @@ static void exit_thread(void)
     }
 }
 
-static void free_icons(Entry_List_s * list)
-{
-    int amount = list->entries_count;
-    if(list->entries_count > list->entries_loaded*ICONS_OFFSET_AMOUNT)
-        amount = list->entries_loaded*ICONS_OFFSET_AMOUNT;
-
-    for(int i = 0; i < amount; i++)
-    {
-        if (list->icons[i] == NULL) continue;
-        C3D_TexDelete(list->icons[i]->tex);
-        free(list->icons[i]->tex);
-        free(list->icons[i]);
-    }
-    free(list->icons);
-    list->icons = NULL;
-}
-
 void free_lists(void)
 {
     stop_install_check();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
-        Entry_List_s * current_list = &lists[i];
-        free_icons(current_list);
+        Entry_List_s * const current_list = &lists[i];
+        C3D_TexDelete(&current_list->icons_texture);
+        free(current_list->icons_info);
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
     }
@@ -195,6 +182,18 @@ static void start_thread(void)
     }
 }
 
+static u32 next_or_equal_power_of_2(u32 v)
+{
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+
 static void load_lists(Entry_List_s * lists)
 {
     free_lists();
@@ -208,37 +207,69 @@ static void load_lists(Entry_List_s * lists)
 
         draw_install(loading_screen);
 
-        Entry_List_s * current_list = &lists[i];
+        Entry_List_s * const current_list = &lists[i];
         current_list->mode = i;
         current_list->entries_per_screen_v = entries_per_screen_v[i];
         current_list->entries_per_screen_h = 1;
         current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
         current_list->entry_size = entry_size[i];
-        Result res = load_entries(main_paths[i], current_list);
+
+        const int x_component = max(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+        const int y_component = min(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+        // A texture must have power of 2 dimensions (not necessarily the same)
+        // so, get the power of two greater than or equal to:
+        // - the size of the largest length (row or column) of icons for the width
+        // - the size of all of those lengths to fit the total for the height
+        C3D_TexInit(&current_list->icons_texture,
+            next_or_equal_power_of_2(x_component * current_list->entry_size),
+            next_or_equal_power_of_2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
+            GPU_RGB565);
+        C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
+
+        const float inv_width = 1.0f / current_list->icons_texture.width;
+        const float inv_height = 1.0f / current_list->icons_texture.height;
+        current_list->icons_info = (Entry_Icon_s *)calloc(x_component * y_component * ICONS_OFFSET_AMOUNT, sizeof(Entry_Icon_s));
+        for(int j = 0; j < y_component * ICONS_OFFSET_AMOUNT; ++j)
+        {
+            const int index = j * x_component;
+            for(int h = 0; h < x_component; ++h)
+            {
+                Entry_Icon_s * const icon_info = &current_list->icons_info[index + h];
+                icon_info->x = h * current_list->entry_size;
+                icon_info->y = j * current_list->entry_size;
+                icon_info->subtex.width = current_list->entry_size;
+                icon_info->subtex.height = current_list->entry_size;
+                icon_info->subtex.left = icon_info->x * inv_width;
+                icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
+                icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
+                icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
+            }
+        }
+
+        Result res = load_entries(main_paths[i], current_list, loading_screen);
         if(R_SUCCEEDED(res))
         {
-            if(current_list->entries_count > current_list->entries_loaded*ICONS_OFFSET_AMOUNT)
+            if(current_list->entries_count > current_list->entries_loaded * ICONS_OFFSET_AMOUNT)
                 iconLoadingThread_arg.run_thread = true;
-
-            sort_by_name(current_list);
 
             DEBUG("total: %i\n", current_list->entries_count);
 
             load_icons_first(current_list, false);
+            sort_by_name(current_list);
 
-            void (*install_check_function)(void*) = NULL;
+            void (*install_check_function)(void *) = NULL;
             if(i == MODE_THEMES)
                 install_check_function = themes_check_installed;
             else if(i == MODE_SPLASHES)
                 install_check_function = splash_check_installed;
 
-            Thread_Arg_s * current_arg = &installCheckThreads_arg[i];
+            Thread_Arg_s * current_arg = &install_check_threads_arg[i];
             current_arg->run_thread = true;
-            current_arg->thread_arg = (void**)current_list;
+            current_arg->thread_arg = (void **)current_list;
 
             if(install_check_function != NULL)
             {
-                installCheckThreads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
+                install_check_threads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
                 svcSleepThread(1e8);
             }
         }
@@ -246,11 +277,11 @@ static void load_lists(Entry_List_s * lists)
     start_thread();
 }
 
-static SwkbdCallbackResult jump_menu_callback(void* entries_count, const char** ppMessage, const char* text, size_t textlen)
+static SwkbdCallbackResult jump_menu_callback(void * entries_count, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     int typed_value = atoi(text);
-    if(typed_value > *(int*)entries_count)
+    if(typed_value > *(int *)entries_count)
     {
         *ppMessage = "The new position has to be\nsmaller or equal to the\nnumber of entries!";
         return SWKBD_CALLBACK_CONTINUE;
@@ -506,7 +537,7 @@ int main(void)
                 toggle_preview:
                 if(!preview_mode)
                 {
-                    preview_mode = load_preview(*current_list, &preview, &preview_offset);
+                    preview_mode = load_preview(current_list, &preview, &preview_offset);
                     if(preview_mode)
                     {
                         end_frame();
@@ -515,7 +546,7 @@ int main(void)
                         if(current_mode == MODE_THEMES && dspfirm)
                         {
                             audio = calloc(1, sizeof(audio_s));
-                            Result r = load_audio(current_list->entries[current_list->selected_entry], audio);
+                            Result r = load_audio(&current_list->entries[current_list->selected_entry], audio);
                             if (R_SUCCEEDED(r)) play_audio(audio);
                             else audio = NULL;
                         }
@@ -618,6 +649,7 @@ int main(void)
                 if(R_SUCCEEDED(theme_install(*current_entry)))
                 {
                     for(int i = 0; i < current_list->entries_count; i++)
+
                     {
                         Entry_s * theme = &current_list->entries[i];
                         if(theme == current_entry)
@@ -770,7 +802,7 @@ int main(void)
                     break;
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH);
-                    splash_install(*current_entry);
+                    splash_install(current_entry);
                     for(int i = 0; i < current_list->entries_count; i++)
                     {
                         Entry_s * splash = &current_list->entries[i];
@@ -959,7 +991,7 @@ int main(void)
                 {
                     for(int i = 0; i < current_list->entries_loaded; i++)
                     {
-                        u16 miny = 24 + current_list->entry_size*i;
+                        u16 miny = 24 + current_list->entry_size * i;
                         u16 maxy = miny + current_list->entry_size;
                         if(BETWEEN(miny, y, maxy) && current_list->scroll + i < current_list->entries_count)
                         {

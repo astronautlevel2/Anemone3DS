@@ -32,26 +32,26 @@
 #define BODY_CACHE_SIZE 0x150000
 #define BGM_MAX_SIZE 0x337000
 
-static Result install_theme_internal(Entry_List_s themes, int installmode)
+static Result install_theme_internal(const Entry_List_s * themes, int installmode)
 {
     Result res = 0;
-    char* music = NULL;
+    char * music = NULL;
     u32 music_size = 0;
     u32 shuffle_music_sizes[MAX_SHUFFLE_THEMES] = {0};
-    char* body = NULL;
+    char * body = NULL;
     u32 body_size = 0;
     u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES] = {0};
     bool mono_audio = false;
 
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        if(themes.shuffle_count < 2)
+        if(themes->shuffle_count < 2)
         {
             DEBUG("not enough themes selected for shuffle\n");
             return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
         }
 
-        if(themes.shuffle_count > MAX_SHUFFLE_THEMES)
+        if(themes->shuffle_count > MAX_SHUFFLE_THEMES)
         {
             DEBUG("too many themes selected for shuffle\n");
             return MAKERESULT(RL_USAGE, RS_INVALIDARG, RM_COMMON, RD_INVALID_SELECTION);
@@ -68,16 +68,15 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
             FSUSER_OpenFile(&body_cache_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/BodyCache_rd.bin"), FS_OPEN_WRITE, 0);
         }
 
-
-        for(int i = 0; i < themes.entries_count; i++)
+        for(int i = 0; i < themes->entries_count; i++)
         {
-            Entry_s * current_theme = &themes.entries[i];
+            const Entry_s * current_theme = &themes->entries[i];
 
             if(current_theme->in_shuffle)
             {
                 if(installmode & THEME_INSTALL_BODY)
                 {
-                    body_size = load_data("/body_LZ.bin", *current_theme, &body);
+                    body_size = load_data("/body_LZ.bin", current_theme, &body);
                     if(body_size == 0)
                     {
                         free(body);
@@ -110,7 +109,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                     }
                     else
                     {
-                        music_size = load_data("/bgm.bcstm", *current_theme, &music);
+                        music_size = load_data("/bgm.bcstm", current_theme, &music);
 
                         if(music_size > BGM_MAX_SIZE)
                         {
@@ -172,7 +171,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     }
     else
     {
-        Entry_s current_theme = themes.entries[themes.selected_entry];
+        const Entry_s * current_theme = &themes->entries[themes->selected_entry];
 
         if(installmode & THEME_INSTALL_BODY)
         {
@@ -212,7 +211,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                 res = buf_to_file(music_size, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, music);
                 free(music);
 
-                char *body_buf = NULL;
+                char * body_buf = NULL;
                 u32 uncompressed_size = decompress_lz_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &body_buf);
                 if (body_buf[5] != 1)
                 {
@@ -234,7 +233,7 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     }
 
      //----------------------------------------
-    char* thememanage_buf = NULL;
+    char * thememanage_buf = NULL;
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
 
@@ -271,17 +270,17 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     //----------------------------------------
 
     //----------------------------------------
-    char* savedata_buf = NULL;
+    char * savedata_buf = NULL;
     u32 savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
-    SaveData_dat_s* savedata = (SaveData_dat_s*)savedata_buf;
+    SaveData_dat_s * savedata = (SaveData_dat_s *)savedata_buf;
 
     memset(&savedata->theme_entry, 0, sizeof(ThemeEntry_s));
 
     savedata->shuffle = (installmode & THEME_INSTALL_SHUFFLE) ? 1 : 0;
-    memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s)*MAX_SHUFFLE_THEMES);
+    memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s) * MAX_SHUFFLE_THEMES);
     if(installmode & THEME_INSTALL_SHUFFLE)
     {
-        for(int i = 0; i < themes.shuffle_count; i++)
+        for(int i = 0; i < themes->shuffle_count; i++)
         {
             savedata->shuffle_themes[i].type = 3;
             savedata->shuffle_themes[i].index = i;
@@ -307,40 +306,40 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
     return 0;
 }
 
-inline Result theme_install(Entry_s theme)
+Result theme_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
     list.entries_count = 1;
-    list.entries = &theme;
+    list.entries = theme;
     list.selected_entry = 0;
-    return install_theme_internal(list, THEME_INSTALL_BODY | THEME_INSTALL_BGM);
+    return install_theme_internal(&list, THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
 
-inline Result bgm_install(Entry_s theme)
+Result bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
     list.entries_count = 1;
-    list.entries = &theme;
+    list.entries = theme;
     list.selected_entry = 0;
-    return install_theme_internal(list, THEME_INSTALL_BGM);
+    return install_theme_internal(&list, THEME_INSTALL_BGM);
 }
 
-inline Result no_bgm_install(Entry_s theme)
+Result no_bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
     list.entries_count = 1;
-    list.entries = &theme;
+    list.entries = theme;
     list.selected_entry = 0;
-    return install_theme_internal(list, THEME_INSTALL_BODY);
+    return install_theme_internal(&list, THEME_INSTALL_BODY);
 }
 
-inline Result shuffle_install(Entry_List_s themes)
+Result shuffle_install(const Entry_List_s * themes)
 {
     return install_theme_internal(themes, THEME_INSTALL_SHUFFLE | THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
 
 static SwkbdCallbackResult
-dir_name_callback(void *data, const char ** ppMessage, const char * text, size_t textlen)
+dir_name_callback(void * data, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
     (void)data;
@@ -380,14 +379,14 @@ Result dump_current_theme(void)
     struacat(path, output_dir);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, path), FS_ATTRIBUTE_DIRECTORY);
 
-    char *thememanage_buf = NULL;
+    char * thememanage_buf = NULL;
     file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
     u32 theme_size = theme_manage->body_size;
     u32 bgm_size = theme_manage->music_size;
     free(thememanage_buf);
 
-    char *temp_buf = NULL;
+    char * temp_buf = NULL;
     file_to_buf(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &temp_buf);
     u16 path_output[0x107] = { 0 };
     memcpy(path_output, path, 0x107);
@@ -405,7 +404,7 @@ Result dump_current_theme(void)
     free(temp_buf);
     temp_buf = NULL;
 
-    char *smdh_file = calloc(1, 0x36c0);
+    char * smdh_file = calloc(1, 0x36c0);
     smdh_file[0] = 0x53; // SMDH magic
     smdh_file[1] = 0x4d;
     smdh_file[2] = 0x44;
@@ -470,7 +469,7 @@ Result dump_all_themes(void)
             return -1;
     }
 
-    const char* region_arr[7] = {
+    const char * region_arr[7] = {
         "JPN",
         "USA",
         "EUR",
@@ -480,7 +479,7 @@ Result dump_all_themes(void)
         "TWN",
     };
 
-    const char* language_arr[12] = {
+    const char * language_arr[12] = {
         "jp",
         "en",
         "fr",
@@ -499,14 +498,14 @@ Result dump_all_themes(void)
     if(R_FAILED(res))
         return res;
 
-    Icon_s* smdh_data = calloc(1, sizeof(Icon_s));
+    Icon_s * smdh_data = calloc(1, sizeof(Icon_s));
     smdh_data->_padding1[0] = 0x53; // SMDH magic
     smdh_data->_padding1[1] = 0x4d;
     smdh_data->_padding1[2] = 0x44;
     smdh_data->_padding1[3] = 0x48;
 
-    utf8_to_utf16(smdh_data->author, (u8*)"Nintendo", 0x40);
-    utf8_to_utf16(smdh_data->desc, (u8*)"Official theme. For personal use only. Do not redistribute.", 0x80);
+    utf8_to_utf16(smdh_data->author, (u8 *)"Nintendo", 0x40);
+    utf8_to_utf16(smdh_data->desc, (u8 *)"Official theme. For personal use only. Do not redistribute.", 0x80);
 
     for(u32 dlc_index = 0; dlc_index <= 0xFF; ++dlc_index)
     {
@@ -524,7 +523,7 @@ Result dump_all_themes(void)
             break;
         }
 
-        AM_ContentInfo* contentInfos = calloc(count, sizeof(AM_ContentInfo));
+        AM_ContentInfo * contentInfos = calloc(count, sizeof(AM_ContentInfo));
         u32 readcount = 0;
         res = AMAPP_ListDLCContentInfos(&readcount, MEDIATYPE_SD, titleId, count, 0, contentInfos);
         if(R_FAILED(res))
@@ -574,14 +573,14 @@ Result dump_all_themes(void)
         char contentinfoarchive_path[40] = {0};
         sprintf(contentinfoarchive_path, "meta:/ContentInfoArchive_%s_%s.bin", region_arr[regionCode], language_arr[language]);
 
-        FILE* fh = fopen(contentinfoarchive_path, "rb");
+        FILE * fh = fopen(contentinfoarchive_path, "rb");
 
         if(fh != NULL)
         {
             for(u32 i = 0; i < readcount; ++i)
             {
                 if(i == 0) continue;
-                AM_ContentInfo* content = &contentInfos[i];
+                AM_ContentInfo * content = &contentInfos[i];
                 if((content->flags & (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED)) == (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED))
                 {
                     long off = 0x8 + 0xC8 * i;
@@ -617,15 +616,15 @@ Result dump_all_themes(void)
                     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, path), FS_ATTRIBUTE_DIRECTORY);
 
                     memset(smdh_data->name, 0, sizeof(smdh_data->name));
-                    utf8_to_utf16(smdh_data->name, (u8*)(content_data + 0), 0x40);
+                    utf8_to_utf16(smdh_data->name, (u8 *)(content_data + 0), 0x40);
 
-                    FILE* theme_file = fopen("theme:/body_LZ.bin", "rb");
+                    FILE * theme_file = fopen("theme:/body_LZ.bin", "rb");
                     if(theme_file)
                     {
                         fseek(theme_file, 0, SEEK_END);
                         long theme_size = ftell(theme_file);
                         fseek(theme_file, 0, SEEK_SET);
-                        char* theme_data = malloc(theme_size);
+                        char * theme_data = malloc(theme_size);
                         fread(theme_data, 1, theme_size, theme_file);
                         fclose(theme_file);
 
@@ -636,13 +635,13 @@ Result dump_all_themes(void)
                         free(theme_data);
                     }
 
-                    FILE* bgm_file = fopen("theme:/bgm.bcstm", "rb");
+                    FILE * bgm_file = fopen("theme:/bgm.bcstm", "rb");
                     if(bgm_file)
                     {
                         fseek(bgm_file, 0, SEEK_END);
                         long bgm_size = ftell(bgm_file);
                         fseek(bgm_file, 0, SEEK_SET);
-                        char* bgm_data = malloc(bgm_size);
+                        char * bgm_data = malloc(bgm_size);
                         fread(bgm_data, 1, bgm_size, bgm_file);
                         fclose(bgm_file);
 
@@ -656,13 +655,13 @@ Result dump_all_themes(void)
                     romfsUnmount("theme");
                     char icondatapath[0x107] = {0};
                     sprintf(icondatapath, "meta:/icons/%ld.icn", extra_index);
-                    FILE* iconfile = fopen(icondatapath, "rb");
+                    FILE * iconfile = fopen(icondatapath, "rb");
                     fread(smdh_data->big_icon, 1, sizeof(smdh_data->big_icon), iconfile);
                     fclose(iconfile);
 
                     strcat(path, "/info.smdh");
                     remake_file(fsMakePath(PATH_ASCII, path), ArchiveSD, 0x36c0);
-                    buf_to_file(0x36c0, fsMakePath(PATH_ASCII, path), ArchiveSD, (char*)smdh_data);
+                    buf_to_file(0x36c0, fsMakePath(PATH_ASCII, path), ArchiveSD, (char *)smdh_data);
                 }
             }
 
@@ -689,25 +688,25 @@ void themes_check_installed(void * void_arg)
     if(list == NULL || list->entries == NULL) return;
 
     #ifndef CITRA_MODE
-    char* savedata_buf = NULL;
+    char * savedata_buf = NULL;
     u32 savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
     if(!savedata_size) return;
-    SaveData_dat_s* savedata = (SaveData_dat_s*)savedata_buf;
+    SaveData_dat_s * savedata = (SaveData_dat_s *)savedata_buf;
     bool shuffle = savedata->shuffle;
     free(savedata_buf);
 
     #define HASH_SIZE_BYTES 256/8
     u8 body_hash[MAX_SHUFFLE_THEMES][HASH_SIZE_BYTES];
-    memset(body_hash, 0, MAX_SHUFFLE_THEMES*HASH_SIZE_BYTES);
+    memset(body_hash, 0, MAX_SHUFFLE_THEMES * HASH_SIZE_BYTES);
 
-    char* thememanage_buf = NULL;
+    char * thememanage_buf = NULL;
     u32 theme_manage_size = file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
     if(!theme_manage_size) return;
     ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
 
     u32 single_body_size = theme_manage->body_size;
     u32 shuffle_body_sizes[MAX_SHUFFLE_THEMES] = {0};
-    memcpy(shuffle_body_sizes, theme_manage->shuffle_body_sizes, sizeof(u32)*MAX_SHUFFLE_THEMES);
+    memcpy(shuffle_body_sizes, theme_manage->shuffle_body_sizes, sizeof(u32) * MAX_SHUFFLE_THEMES);
     free(thememanage_buf);
 
     if(shuffle)
@@ -718,7 +717,7 @@ void themes_check_installed(void * void_arg)
 
         for(int i = 0; i < MAX_SHUFFLE_THEMES; i++)
         {
-            FSUSER_UpdateSha256Context(body_buf + BODY_CACHE_SIZE*i, shuffle_body_sizes[i], body_hash[i]);
+            FSUSER_UpdateSha256Context(body_buf + BODY_CACHE_SIZE * i, shuffle_body_sizes[i], body_hash[i]);
         }
 
         free(body_buf);
@@ -739,7 +738,7 @@ void themes_check_installed(void * void_arg)
     {
         Entry_s * theme = &list->entries[i];
         char * theme_body = NULL;
-        u32 theme_body_size = load_data("/body_LZ.bin", *theme, &theme_body);
+        u32 theme_body_size = load_data("/body_LZ.bin", theme, &theme_body);
         if(!theme_body_size) return;
 
         u8 theme_body_hash[HASH_SIZE_BYTES];

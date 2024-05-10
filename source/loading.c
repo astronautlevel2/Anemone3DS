@@ -33,194 +33,48 @@
 
 #include <png.h>
 
-void delete_entry(Entry_s * entry, bool is_file)
+void copy_texture_data(C3D_Tex * texture, const u16 * src, const Entry_Icon_s * current_icon)
 {
-    if(is_file)
-        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_UTF16, entry->path));
-    else
-        FSUSER_DeleteDirectoryRecursively(ArchiveSD, fsMakePath(PATH_UTF16, entry->path));
-}
-
-u32 load_data(char * filename, Entry_s entry, char ** buf)
-{
-    if(entry.is_zip)
-    {
-        return zip_file_to_buf(filename+1, entry.path, buf); //the first character will always be '/' because of the other case
-    }
-    else
-    {
-        u16 path[0x106] = {0};
-        strucat(path, entry.path);
-        struacat(path, filename);
-
-        return file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, buf);
-    }
-}
-
-// Function taken and adapted from https://github.com/BernardoGiordano/Checkpoint/blob/master/3ds/source/title.cpp
-C2D_Image * loadTextureIcon(Icon_s *icon)
-{
-    if(icon == NULL)
-        return NULL;
-
-    C2D_Image * image = calloc(1, sizeof(C2D_Image));
-    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
-    static const Tex3DS_SubTexture subt3x = { 48, 48, 0.0f, 48/64.0f, 48/64.0f, 0.0f };
-    image->tex = tex;
-    image->subtex = &subt3x;
-    C3D_TexInit(image->tex, 64, 64, GPU_RGB565);
-
-    u16* dest = (u16*)image->tex->data + (64-48)*64;
-    u16* src = icon->big_icon;
+    // pointer to rgb565, offset by the number of rows and columns specified by current_icon
+    // (reminder that this is z order curve storage)
+    u16 * dest = ((u16 *)texture->data) + (current_icon->y * texture->width) + (current_icon->x * 8);
     for (int j = 0; j < 48; j += 8)
     {
-        memcpy(dest, src, 48*8*sizeof(u16));
-        src += 48*8;
-        dest += 64*8;
+        memcpy(dest, src, 48 * 8 * sizeof(u16));
+        src += 48 * 8;
+        dest += texture->width * 8;
     }
-
-    return image;
+    GSPGPU_InvalidateDataCache(texture->data, texture->size);
 }
 
-void parse_smdh(Icon_s *icon, Entry_s * entry, const u16 * fallback_name)
+void parse_smdh(Icon_s * icon, Entry_s * entry, const u16 * fallback_name)
 {
- 
     if(icon == NULL)
     {
         memcpy(entry->name, fallback_name, 0x80);
-        utf8_to_utf16(entry->desc, (u8*)"No description", 0x100);
-        utf8_to_utf16(entry->author, (u8*)"Unknown author", 0x80);
+        utf8_to_utf16(entry->desc, (u8 *)"No description", 0x100);
+        utf8_to_utf16(entry->author, (u8 *)"Unknown author", 0x80);
         entry->placeholder_color = C2D_Color32(rand() % 255, rand() % 255, rand() % 255, 255);
         return;
     }
 
-
-    memcpy(entry->name, icon->name, 0x40*sizeof(u16));
-    memcpy(entry->desc, icon->desc, 0x80*sizeof(u16));
-    memcpy(entry->author, icon->author, 0x40*sizeof(u16));
+    memcpy(entry->name, icon->name, 0x40 * sizeof(u16));
+    memcpy(entry->desc, icon->desc, 0x80 * sizeof(u16));
+    memcpy(entry->author, icon->author, 0x40 * sizeof(u16));
+    entry->placeholder_color = 0;
 }
 
-static C2D_Image * load_entry_icon(Entry_s entry)
+static Icon_s * load_entry_icon(const Entry_s * entry)
 {
-    char *info_buffer = NULL;
-    u64 size = load_data("/info.smdh", entry, &info_buffer);
-    if(!size) return NULL;
-
-    Icon_s * smdh = (Icon_s *)info_buffer;
-    C2D_Image* out = loadTextureIcon(smdh);
-    free(info_buffer);
-    return out;
-}
-
-typedef int (*sort_comparator)(const void *, const void *);
-static int compare_entries_by_name(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->name, entry_b->name, 0x40*sizeof(u16));
-}
-static int compare_entries_by_author(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->author, entry_b->author, 0x40*sizeof(u16));
-}
-static int compare_entries_by_filename(const void * a, const void * b)
-{
-    Entry_s *entry_a = (Entry_s *)a;
-    Entry_s *entry_b = (Entry_s *)b;
-
-    return memcmp(entry_a->path, entry_b->path, 0x106*sizeof(u16));
-}
-
-static void sort_list(Entry_List_s * list, sort_comparator compare_entries)
-{
-    if(list->entries != NULL && list->entries != NULL)
-        qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
-}
-
-void sort_by_name(Entry_List_s * list)
-{
-    sort_list(list, compare_entries_by_name);
-    list->current_sort = SORT_NAME;
-}
-void sort_by_author(Entry_List_s * list)
-{
-    sort_list(list, compare_entries_by_author);
-    list->current_sort = SORT_AUTHOR;
-}
-void sort_by_filename(Entry_List_s * list)
-{
-    sort_list(list, compare_entries_by_filename);
-    list->current_sort = SORT_PATH;
-}
-
-Result load_entries(const char * loading_path, Entry_List_s * list)
-{
-    Handle dir_handle;
-    Result res = FSUSER_OpenDirectory(&dir_handle, ArchiveSD, fsMakePath(PATH_ASCII, loading_path));
-    if(R_FAILED(res))
+    char * info_buffer = NULL;
+    u32 size = load_data("/info.smdh", entry, &info_buffer);
+    if(size != sizeof(Icon_s))
     {
-        DEBUG("Failed to open folder: %s\n", loading_path);
-        return res;
+        free(info_buffer);
+        return NULL;
     }
 
-    u32 entries_read = 1;
-
-    while(entries_read)
-    {
-        FS_DirectoryEntry dir_entry = {0};
-        res = FSDIR_Read(dir_handle, &entries_read, 1, &dir_entry);
-        if(R_FAILED(res) || entries_read == 0)
-            break;
-
-        if(!(dir_entry.attributes & FS_ATTRIBUTE_DIRECTORY) && strcmp(dir_entry.shortExt, "ZIP"))
-            continue;
-
-        u16 path[0x106] = {0};
-        struacat(path, loading_path);
-        strucat(path, dir_entry.name);
-        char * buf = NULL;
-
-        if (!strcmp(dir_entry.shortExt, "ZIP"))
-        {
-            zip_file_to_buf("info.smdh", path, &buf);
-        }
-        else
-        {
-            const ssize_t len = strulen(path, 0x106);
-            struacat(path, "/info.smdh");
-            file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &buf);
-            memset(&path[len], 0, (0x106 - len) * sizeof(u16));
-        }
-
-        list->entries_count++;
-        Entry_s * new_list = realloc(list->entries, list->entries_count * sizeof(Entry_s));
-        if(new_list == NULL)
-        {
-            // out of memory: still allow use of currently loaded entries.
-            // Many things might die, depending on the heap layout after
-            list->entries_count--;
-            free(buf);
-            break;
-        }
-        else
-            list->entries = new_list;
-
-        Entry_s * current_entry = &(list->entries[list->entries_count-1]);
-        memset(current_entry, 0, sizeof(Entry_s));
-        parse_smdh((Icon_s *)buf, current_entry, dir_entry.name);
-        free(buf);
-
-        memcpy(current_entry->path, path, 0x106 * sizeof(u16));
-        current_entry->is_zip = !strcmp(dir_entry.shortExt, "ZIP");
-    }
-
-    FSDIR_Close(dir_handle);
-
-    return res;
+    return (Icon_s *)info_buffer;
 }
 
 void load_icons_first(Entry_List_s * list, bool silent)
@@ -232,7 +86,7 @@ void load_icons_first(Entry_List_s * list, bool silent)
 
     int starti = 0, endi = 0;
 
-    if(list->entries_count <= list->entries_loaded*ICONS_OFFSET_AMOUNT)
+    if(list->entries_count <= list->entries_loaded * ICONS_OFFSET_AMOUNT)
     {
         DEBUG("small load\n");
         // if the list is one that doesnt need swapping, load everything at once
@@ -242,40 +96,44 @@ void load_icons_first(Entry_List_s * list, bool silent)
     {
         DEBUG("extended load\n");
         // otherwise, load around to prepare for swapping
-        starti = list->scroll - list->entries_loaded*ICONS_VISIBLE;
-        endi = starti + list->entries_loaded*ICONS_OFFSET_AMOUNT;
+        starti = list->scroll - list->entries_loaded * ICONS_VISIBLE;
+        endi = starti + list->entries_loaded * ICONS_OFFSET_AMOUNT;
     }
 
-    list->icons = calloc(endi-starti, sizeof(C2D_Image*));
-
-    C2D_Image ** icons = list->icons;
-
-    for(int i = starti; i < endi; i++)
+    for(int entry_i = starti, icon_i = 0; entry_i < endi; ++entry_i, ++icon_i)
     {
         if(!silent)
-            draw_loading_bar(i - starti, endi-starti, INSTALL_LOADING_ICONS);
+            draw_loading_bar(icon_i, endi-starti, INSTALL_LOADING_ICONS);
 
-        int offset = i;
+        int offset = entry_i;
         if(offset < 0)
             offset += list->entries_count;
         if(offset >= list->entries_count)
             offset -= list->entries_count;
 
-        Entry_s current_entry = list->entries[offset];
-        icons[i-starti] = load_entry_icon(current_entry);
+        Entry_s * const current_entry = &list->entries[offset];
+        Icon_s * const smdh = load_entry_icon(current_entry);
+        if(smdh != NULL)
+        {
+            if(current_entry->placeholder_color == 0)
+                parse_smdh(smdh, current_entry, current_entry->path + strlen(list->loading_path));
+            copy_texture_data(&list->icons_texture, smdh->big_icon, &list->icons_info[icon_i]);
+            free(smdh);
+        }
     }
 }
 
-static void reverse(C2D_Image * a[], int sz) {
+static void reverse(Entry_Icon_s a[], int sz) {
     int i, j;
+    Entry_Icon_s tmp;
     for (i = 0, j = sz; i < j; i++, j--) {
-        C2D_Image * tmp = a[i];
-        a[i] = a[j];
-        a[j] = tmp;
+        memcpy(&tmp, &a[i], sizeof(Entry_Icon_s));
+        memcpy(&a[i], &a[j], sizeof(Entry_Icon_s));
+        memcpy(&a[j], &tmp, sizeof(Entry_Icon_s));
     }
 }
 
-static void rotate(C2D_Image * array[], int size, int amt) {
+static void rotate(Entry_Icon_s array[], int size, int amt) {
     if (amt < 0)
         amt = size + amt;
     reverse(array, size-amt-1);
@@ -293,11 +151,11 @@ void handle_scrolling(Entry_List_s * list)
         {
             int change = 0;
 
-            if(list->entries_count > list->entries_loaded*2 && list->previous_scroll < list->entries_loaded && list->selected_entry >= list->entries_count - list->entries_loaded)
+            if(list->entries_count > list->entries_loaded * 2 && list->previous_scroll < list->entries_loaded && list->selected_entry >= list->entries_count - list->entries_loaded)
             {
                 list->scroll = list->entries_count - list->entries_loaded;
             }
-            else if(list->entries_count > list->entries_loaded*2 && list->selected_entry < list->entries_loaded && list->previous_selected >= list->entries_count - list->entries_loaded)
+            else if(list->entries_count > list->entries_loaded * 2 && list->selected_entry < list->entries_loaded && list->previous_selected >= list->entries_count - list->entries_loaded)
             {
                 list->scroll = 0;
             }
@@ -341,13 +199,13 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
 
     handle_scrolling(current_list);
 
-    if(current_list->entries_count <= current_list->entries_loaded*ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
+    if(current_list->entries_count <= current_list->entries_loaded * ICONS_OFFSET_AMOUNT || current_list->previous_scroll == current_list->scroll)
         return false; // return if the list is one that doesnt need swapping, or if nothing changed
 
     #define SIGN(x) (x > 0 ? 1 : ((x < 0) ? -1 : 0))
 
     int delta = current_list->scroll - current_list->previous_scroll;
-    if(abs(delta) >= current_list->entries_count - current_list->entries_loaded*(ICONS_OFFSET_AMOUNT-1))
+    if(abs(delta) >= current_list->entries_count - current_list->entries_loaded * (ICONS_OFFSET_AMOUNT-1))
         delta = -SIGN(delta) * (current_list->entries_count - abs(delta));
 
     int starti = current_list->scroll;
@@ -360,28 +218,28 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     }
 
     int ctr = 0;
-    Entry_s ** entries = calloc(abs(delta), sizeof(Entry_s *));
-    int * indexes = calloc(abs(delta), sizeof(int));
+    Entry_s ** const entries = calloc(abs(delta), sizeof(Entry_s *));
+    int * const indexes = calloc(abs(delta), sizeof(int));
     bool released = false;
 
-    C2D_Image ** icons = current_list->icons;
+    Entry_Icon_s * const icons = current_list->icons_info;
 
     for(int i = starti; i != endi; i++, ctr++)
     {
         int index = 0;
         int offset = i;
 
-        rotate(icons, ICONS_OFFSET_AMOUNT*current_list->entries_loaded, -1*SIGN(delta));
+        rotate(icons, ICONS_OFFSET_AMOUNT * current_list->entries_loaded, -SIGN(delta));
 
         if(delta > 0)
         {
-            index = current_list->entries_loaded*ICONS_OFFSET_AMOUNT - delta + i - starti;
-            offset += current_list->entries_loaded*ICONS_UNDER - delta;
+            index = current_list->entries_loaded * ICONS_OFFSET_AMOUNT - delta + i - starti;
+            offset += current_list->entries_loaded * ICONS_UNDER - delta;
         }
         else
         {
             index = 0 - delta - 1 + i - starti;
-            offset -= current_list->entries_loaded*ICONS_VISIBLE;
+            offset -= current_list->entries_loaded * ICONS_VISIBLE;
             i -= 2; //i-- twice to counter the i++, needed only for this case
         }
 
@@ -396,7 +254,7 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
 
     #undef SIGN
 
-    if(abs(delta) < 4)
+    if(abs(delta) <= current_list->entries_loaded)
     {
         svcReleaseMutex(mutex);
         released = true;
@@ -407,18 +265,18 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
     endi = abs(delta);
     for(int i = starti; i < endi; i++)
     {
-        Entry_s * current_entry = entries[i];
-        int index = indexes[i];
+        Entry_s * const current_entry = entries[i];
+        const int index = indexes[i];
+        const Entry_Icon_s * const current_icon = &icons[index];
 
-        C2D_Image * image = icons[index];
-        if (icons[index] != NULL)
+        Icon_s * const smdh = load_entry_icon(current_entry);
+        if(smdh != NULL)
         {
-            C3D_TexDelete(image->tex);
-            free(image->tex);
-            free(image);
+            if(current_entry->placeholder_color == 0)
+                parse_smdh(smdh, current_entry, current_entry->path + strlen(current_list->loading_path));
+            copy_texture_data(&current_list->icons_texture, smdh->big_icon, current_icon);
+            free(smdh);
         }
-
-        icons[index] = load_entry_icon(*current_entry);
 
         if(!released && i > endi/2)
         {
@@ -439,15 +297,13 @@ void load_icons_thread(void * void_arg)
 {
     Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
     Handle mutex = *(Handle *)arg->thread_arg[1];
-    do
-    {
+    do {
         svcWaitSynchronization(mutex, U64_MAX);
-        volatile Entry_List_s * current_list = *(volatile Entry_List_s **)arg->thread_arg[0];
-        bool released = load_icons((Entry_List_s *)current_list, mutex);
+        Entry_List_s * const current_list = *(Entry_List_s ** volatile)arg->thread_arg[0];
+        const bool released = load_icons(current_list, mutex);
         if(!released)
             svcReleaseMutex(mutex);
-    }
-    while(arg->run_thread);
+    } while(arg->run_thread);
 }
 
 bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset)
@@ -457,7 +313,7 @@ bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview
 
     free_preview(*preview_image);
 
-    C3D_Tex* tex = malloc(sizeof(C3D_Tex));
+    C3D_Tex * tex = malloc(sizeof(C3D_Tex));
     preview_image->tex = tex;
 
     Tex3DS_SubTexture * subt3x = malloc(sizeof(Tex3DS_SubTexture));
@@ -489,16 +345,16 @@ bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview
 }
 
 static u16 previous_path_preview[0x106] = {0};
-bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_offset)
+bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset)
 {
-    if(list.entries == NULL) return false;
+    if(list->entries == NULL) return false;
 
-    Entry_s entry = list.entries[list.selected_entry];
+    const Entry_s * entry = &list->entries[list->selected_entry];
 
-    if(!memcmp(&previous_path_preview, &entry.path, 0x106*sizeof(u16))) return true;
+    if(!memcmp(&previous_path_preview, &entry->path, 0x106 * sizeof(u16))) return true;
 
-    char *preview_buffer = NULL;
-    u64 size = load_data("/preview.png", entry, &preview_buffer);
+    char * preview_buffer = NULL;
+    u32 size = load_data("/preview.png", entry, &preview_buffer);
 
     if(size)
     {
@@ -567,7 +423,7 @@ bool load_preview(Entry_List_s list, C2D_Image * preview_image, int * preview_of
     if(ret)
     {
         // mark the new preview as loaded for optimisation
-        memcpy(&previous_path_preview, &entry.path, 0x106*sizeof(u16));
+        memcpy(&previous_path_preview, &entry->path, 0x106 * sizeof(u16));
     }
 
     return ret;
@@ -578,11 +434,11 @@ void free_preview(C2D_Image preview)
     if(preview.tex)
         C3D_TexDelete(preview.tex);
     free(preview.tex);
-    free((Tex3DS_SubTexture*)preview.subtex);
+    free((Tex3DS_SubTexture *)preview.subtex);
 }
 
 // Initialize the audio struct
-Result load_audio(Entry_s entry, audio_s *audio) 
+Result load_audio(const Entry_s * entry, audio_s * audio) 
 {
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
     if (audio->filesize == 0) {
@@ -596,7 +452,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
     ndspChnSetMix(0, audio->mix); // See mix comment above
 
-    FILE *file = fmemopen(audio->filebuf, audio->filesize, "rb");
+    FILE * file = fmemopen(audio->filebuf, audio->filesize, "rb");
     DEBUG("<load_audio> Filesize: %ld\n", audio->filesize);
     if(file != NULL) 
     {
@@ -610,7 +466,7 @@ Result load_audio(Entry_s entry, audio_s *audio)
             return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
         }
 
-        vorbis_info *vi = ov_info(&audio->vf, -1);
+        vorbis_info * vi = ov_info(&audio->vf, -1);
         ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
         if (vi->channels == 2) {
             DEBUG("<load_audio> Using stereo\n");
