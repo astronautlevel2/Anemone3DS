@@ -119,9 +119,12 @@ static Result install_theme_internal(Entry_List_s themes, int installmode)
                             return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_TOO_LARGE);
                         }
 
-                        if (music[0x62] == 1)
+                        if (music_size > 0)
                         {
-                            mono_audio = true;
+                            if (music[0x62] == 1)
+                            {
+                                mono_audio = true;
+                            }
                         }
                     }
 
