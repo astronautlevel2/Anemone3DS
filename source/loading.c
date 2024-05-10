@@ -254,7 +254,7 @@ static bool load_icons(Entry_List_s * current_list, Handle mutex)
 
     #undef SIGN
 
-    if(abs(delta) < current_list->entries_loaded)
+    if(abs(delta) <= current_list->entries_loaded)
     {
         svcReleaseMutex(mutex);
         released = true;
