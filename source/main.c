@@ -625,7 +625,7 @@ int main(void)
                 draw_mode = DRAW_MODE_LIST;
                 aptSetHomeAllowed(false);
                 draw_install(INSTALL_BGM);
-                if(R_SUCCEEDED(bgm_install(*current_entry)))
+                if(R_SUCCEEDED(bgm_install(current_entry)))
                 {
                     for(int i = 0; i < current_list->entries_count; i++)
                     {
@@ -646,7 +646,7 @@ int main(void)
                 draw_mode = DRAW_MODE_LIST;
                 aptSetHomeAllowed(false);
                 draw_install(INSTALL_SINGLE);
-                if(R_SUCCEEDED(theme_install(*current_entry)))
+                if(R_SUCCEEDED(theme_install(current_entry)))
                 {
                     for(int i = 0; i < current_list->entries_count; i++)
 
@@ -667,7 +667,7 @@ int main(void)
                 draw_mode = DRAW_MODE_LIST;
                 aptSetHomeAllowed(false);
                 draw_install(INSTALL_NO_BGM);
-                if(R_SUCCEEDED(no_bgm_install(*current_entry)))
+                if(R_SUCCEEDED(no_bgm_install(current_entry)))
                 {
                     for(int i = 0; i < current_list->entries_count; i++)
                     {
@@ -697,7 +697,7 @@ int main(void)
                 {
                     aptSetHomeAllowed(false);
                     draw_install(INSTALL_SHUFFLE);
-                    Result res = shuffle_install(*current_list);
+                    Result res = shuffle_install(current_list);
                     if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
                     else
                     {
@@ -920,7 +920,7 @@ int main(void)
                         } else if (current_mode == MODE_SPLASHES)
                         {
                             draw_install(INSTALL_SPLASH);
-                            splash_install(*current_entry);
+                            splash_install(current_entry);
                             for(int i = 0; i < current_list->entries_count; i++)
                             {
                                 Entry_s * splash = &current_list->entries[i];
