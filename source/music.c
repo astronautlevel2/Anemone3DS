@@ -28,7 +28,7 @@
 #include "loading.h"
 
 // Play a given audio struct
-Result update_audio(audio_s *audio) 
+Result update_audio(audio_s * audio) 
 {
     u32 size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
     DEBUG("<update_audio> Audio Size: %ld\n", size);
@@ -36,7 +36,7 @@ Result update_audio(audio_s *audio)
     { 
         DEBUG("<update_audio> Attempting ov_read\n");
         int bitstream;
-        u32 read = ov_read(&audio->vf, (char*)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
+        u32 read = ov_read(&audio->vf, (char *)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
         DEBUG("<update_audio> ov_read successful\n");
 
         if (read <= 0) // EoF or error
@@ -64,8 +64,8 @@ Result update_audio(audio_s *audio)
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
 }
 
-void thread_audio(void* data) {
-    audio_s *audio = (audio_s*)data;
+void thread_audio(void * data) {
+    audio_s * audio = (audio_s *)data;
     while(!audio->stop) {
         update_audio(audio);
     }
@@ -73,16 +73,16 @@ void thread_audio(void* data) {
     ndspChnReset(0);
     ov_clear(&audio->vf);
     free(audio->filebuf);
-    linearFree((void*)audio->wave_buf[0].data_vaddr);
-    linearFree((void*)audio->wave_buf[1].data_vaddr);
+    linearFree((void *)audio->wave_buf[0].data_vaddr);
+    linearFree((void *)audio->wave_buf[1].data_vaddr);
 }
 
-void play_audio(audio_s *audio) {
+void play_audio(audio_s * audio) {
     audio->playing_thread = threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, false);
 }
 
-void stop_audio(audio_s** audio_ptr) {
-    audio_s* audio = *audio_ptr;
+void stop_audio(audio_s ** audio_ptr) {
+    audio_s * audio = *audio_ptr;
     if(audio->playing_thread)
     {
         audio->stop = true;
