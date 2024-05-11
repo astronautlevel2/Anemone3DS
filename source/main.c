@@ -254,8 +254,8 @@ static void load_lists(Entry_List_s * lists)
 
             DEBUG("total: %i\n", current_list->entries_count);
 
-            load_icons_first(current_list, false);
             sort_by_name(current_list);
+            load_icons_first(current_list, false);
 
             void (*install_check_function)(void *) = NULL;
             if(i == MODE_THEMES)
