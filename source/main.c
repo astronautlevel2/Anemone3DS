@@ -402,6 +402,7 @@ int main(void)
     bool install_mode = false;
     DrawMode draw_mode = DRAW_MODE_LIST;
     bool extra_mode = false;
+    int extra_index = 1;
     C2D_Image preview = {0};
 
     while(aptMainLoop())
@@ -440,17 +441,7 @@ int main(void)
             instructions = install_instructions;
         if(extra_mode)
         {
-            int index = 1;
-            bool key_l = (kDown | kHeld) & KEY_L;
-            bool key_r = (kDown | kHeld) & KEY_R;
-            if(key_l ^ key_r)
-            {
-                if(key_l)
-                    index = 0;
-                else if(key_r)  // uncomment when we use the right menu. we don't for now
-                    index = 2;
-            }
-            instructions = extra_instructions[index];
+            instructions = extra_instructions[extra_index];
         }
 
         if(preview_mode)
@@ -720,71 +711,100 @@ int main(void)
         }
         else if(extra_mode)
         {
-            if(kUp & KEY_X)
-                extra_mode = false;
-            if(!extra_mode)
+            if(extra_index == 1)
             {
-                bool key_l = (kDown | kHeld) & KEY_L;
-                bool key_r = (kDown | kHeld) & KEY_R;
-                if(!(key_l ^ key_r))
+                if(kDown & KEY_B)
                 {
-                    if((kDown | kHeld) & KEY_DLEFT)
+                    extra_mode = false;
+                }
+                else if(kDown & KEY_DLEFT)
+                {
+                    browse_themeplaza:
+                    if(themeplaza_browser(current_mode))
                     {
-                        browse_themeplaza:
-                        if(themeplaza_browser(current_mode))
-                        {
-                            current_mode = MODE_THEMES;
-                            load_lists(lists);
-                        }
+                        current_mode = MODE_THEMES;
+                        load_lists(lists);
                     }
-                    else if((kDown | kHeld) & KEY_DUP)
-                    {
-                        jump:
-                        jump_menu(current_list);
+                    extra_mode = false;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DUP)
+                {
+                    jump:
+                    jump_menu(current_list);
+                    extra_mode = false;
+                    extra_index = 1;
 
-                    }
-                    else if((kDown | kHeld) & KEY_DDOWN)
-                    {
-                        load_icons_first(current_list, false);
-                    }
                 }
-                else if(key_l)
+                else if(kDown & KEY_DDOWN)
                 {
-                    if((kDown | kHeld) & KEY_DLEFT)
-                    {
-                        sort_path:
-                        sort_by_filename(current_list);
-                        load_icons_first(current_list, false);
-                    }
-                    else if(((kDown | kHeld)) & KEY_DUP)
-                    {
-                        sort_name:
-                        sort_by_name(current_list);
-                        load_icons_first(current_list, false);
-                    }
-                    else if(((kDown | kHeld)) & KEY_DDOWN)
-                    {
-                        sort_author:
-                        sort_by_author(current_list);
-                        load_icons_first(current_list, false);
-                    }
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    extra_index = 1;
                 }
-                else if(key_r)
+                else if (kDown & KEY_R)
                 {
-                    if(((kDown | kHeld)) & KEY_DUP)
-                    {
-                        draw_install(INSTALL_DUMPING_THEME);
-                        Result res = dump_current_theme();
-                        if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
-                        else load_lists(lists);
-                    }
-                    else if(((kDown | kHeld)) & KEY_DDOWN)
-                    {
-                        draw_install(INSTALL_DUMPING_ALL_THEMES);
-                        Result res = dump_all_themes();
-                        if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
-                        else load_lists(lists);
-                    }
+                    extra_index = 2;
+                }
+                else if(kDown & KEY_L)
+                {
+                    extra_index = 0;
+                }
+            }
+            else if(extra_index == 0)
+            {
+                if(kDown & KEY_DLEFT)
+                {
+                    sort_path:
+                    sort_by_filename(current_list);
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DUP)
+                {
+                    sort_name:
+                    sort_by_name(current_list);
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DDOWN)
+                {
+                    sort_author:
+                    sort_by_author(current_list);
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    extra_index = 1;
+                }
+                else if (kDown & KEY_B)
+                {
+                    extra_index = 1;
+                }
+            }
+            else if(extra_index == 2)
+            {
+                if(kDown & KEY_DUP)
+                {
+                    draw_install(INSTALL_DUMPING_THEME);
+                    Result res = dump_current_theme();
+                    if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
+                    else load_lists(lists);
+                    extra_mode = false;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DDOWN)
+                {
+                    draw_install(INSTALL_DUMPING_ALL_THEMES);
+                    Result res = dump_all_themes();
+                    if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
+                    else load_lists(lists);
+                    extra_mode = false;
+                    extra_index = 1;
+                }
+                else if(kDown &KEY_B)
+                {
+                    extra_index = 1;
                 }
             }
             continue;

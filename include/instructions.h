@@ -76,7 +76,7 @@ Instructions_s normal_instructions[MODE_AMOUNT] = {
 };
 
 Instructions_s install_instructions = {
-    .info_line = "\uE001 Return to main options",
+    .info_line = "\uE001 Cancel theme install",
     .instructions = {
         {
             "\uE079 Normal install",
@@ -99,7 +99,7 @@ Instructions_s install_instructions = {
 
 Instructions_s extra_instructions[3] = {
     {
-        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to sort",
+        .info_line = "\uE001 Leave sorting menu",
         .instructions = {
             {
                 "\uE079 Sort by name",
@@ -120,7 +120,7 @@ Instructions_s extra_instructions[3] = {
         }
     },
     {
-        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+        .info_line = "\uE001 Leave extra menu",
         .instructions = {
             {
                 "\uE079 Jump in the list",
@@ -141,7 +141,7 @@ Instructions_s extra_instructions[3] = {
         }
     },
     {
-        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to dump",
+        .info_line = "\uE001 Leave dump menu",
         .instructions = {
             {
                 "\uE079 Dump Current Theme",
