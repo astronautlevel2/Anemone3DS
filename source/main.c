@@ -716,6 +716,7 @@ int main(void)
                 if(kDown & KEY_B)
                 {
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                 }
                 else if(kDown & KEY_DLEFT)
                 {
@@ -726,6 +727,7 @@ int main(void)
                         load_lists(lists);
                     }
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if(kDown & KEY_DUP)
@@ -733,6 +735,7 @@ int main(void)
                     jump:
                     jump_menu(current_list);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
 
                 }
@@ -740,6 +743,7 @@ int main(void)
                 {
                     load_icons_first(current_list, false);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if (kDown & KEY_R)
@@ -759,6 +763,7 @@ int main(void)
                     sort_by_filename(current_list);
                     load_icons_first(current_list, false);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if(kDown & KEY_DUP)
@@ -767,6 +772,7 @@ int main(void)
                     sort_by_name(current_list);
                     load_icons_first(current_list, false);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if(kDown & KEY_DDOWN)
@@ -775,6 +781,7 @@ int main(void)
                     sort_by_author(current_list);
                     load_icons_first(current_list, false);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if (kDown & KEY_B)
@@ -791,6 +798,7 @@ int main(void)
                     if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
                     else load_lists(lists);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if(kDown & KEY_DDOWN)
@@ -800,6 +808,7 @@ int main(void)
                     if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
                     else load_lists(lists);
                     extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
                 else if(kDown &KEY_B)
@@ -857,6 +866,7 @@ int main(void)
         else if(kDown & KEY_X)
         {
             extra_mode = true;
+            draw_mode = DRAW_MODE_EXTRA;
         }
         else if(kDown & KEY_SELECT)
         {
@@ -927,11 +937,11 @@ int main(void)
             {
                 if(y < 24)
                 {
-                    if(BETWEEN(320-192, x, 320-168))
+                    if(BETWEEN(320-168, x, 320-144))
                     {
                         toggle_shuffle(current_list);
                     }
-                    if(BETWEEN(320-168, x, 320-144))
+                    if(BETWEEN(320-144, x, 320-120))
                     {
                         if (current_mode == MODE_THEMES)
                         {
@@ -951,7 +961,7 @@ int main(void)
                             }
                         }
                     }
-                    else if(BETWEEN(320-144, x, 320-120))
+                    else if(BETWEEN(320-120, x, 320-96))
                     {
                         switch(current_list->current_sort)
                         {
@@ -968,13 +978,9 @@ int main(void)
                                 break;
                         }
                     }
-                    else if(BETWEEN(320-120, x, 320-96))
-                    {
-                        goto enable_qr;
-                    }
                     else if(BETWEEN(320-96, x, 320-72))
                     {
-                        goto browse_themeplaza;
+                        goto enable_qr;
                     }
                     else if(BETWEEN(320-72, x, 320-48))
                     {

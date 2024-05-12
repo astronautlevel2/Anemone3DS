@@ -669,25 +669,30 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     if (draw_mode == DRAW_MODE_LIST)
     {
-        draw_image(sprites_install_idx, 320-168, 0);
-        draw_image(sprites_sort_idx, 320-144, 0);
-        draw_image(sprites_qr_idx, 320-120, 0);
-        draw_image(sprites_browse_idx, 320-96, 0);
+        draw_image(sprites_install_idx, 320-144, 0);
+        draw_image(sprites_sort_idx, 320-120, 0);
+        draw_image(sprites_qr_idx, 320-96, 0);
         draw_image(sprites_exit_idx, 320-72, 0);
         draw_image(sprites_preview_idx, 320-48, 0);
         draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
         if (current_mode == MODE_THEMES)
         {
-            draw_image(sprites_shuffle_idx, 320-192, 0);
+            draw_image(sprites_shuffle_idx, 320-168, 0);
         }
     }
-    else if (draw_mode == DRAW_MODE_INSTALL)
+    else
     {
-        draw_image(sprites_install_idx, 320-24, 0);
-        draw_image(sprites_shuffle_idx, 320-48, 0);
-        draw_image(sprites_shuffle_no_bgm_idx, 320-72, 0);
-        draw_image(sprites_bgm_only_idx, 320-96, 0);
-        draw_image(sprites_back_idx, 320-120, 0);
+        if (draw_mode == DRAW_MODE_INSTALL)
+        {
+            draw_image(sprites_install_idx, 320-24, 0);
+            draw_image(sprites_shuffle_idx, 320-48, 0);
+            draw_image(sprites_shuffle_no_bgm_idx, 320-72, 0);
+            draw_image(sprites_bgm_only_idx, 320-96, 0);
+            draw_image(sprites_back_idx, 320-120, 0);
+        } else if (draw_mode == DRAW_MODE_EXTRA)
+        {
+            // TODO
+        }
     }
 
     // Show arrows if there are themes out of bounds
@@ -778,4 +783,8 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED]);
     else
         draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED_SHORT]);
+    if(draw_mode != DRAW_MODE_LIST)
+    {
+        C2D_DrawRectSolid(0, 24, 1.0f, 320, 240-48, C2D_Color32(0, 0, 0, 128));
+    }
 }

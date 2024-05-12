@@ -66,6 +66,7 @@ typedef enum {
 typedef enum {
     DRAW_MODE_LIST = 0,
     DRAW_MODE_INSTALL,
+    DRAW_MODE_EXTRA,
 
     DRAW_MODE_AMOUNT,
 } DrawMode;
