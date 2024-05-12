@@ -344,17 +344,17 @@ const Language_s language_english = {
     },
     .splashes =
     {
-        "No splash.bin or splashbottom.bin found.\nIs this a splash?",
-        "WARNING: Splashes are disabled in Luma Config",
+        .no_splash_found = "No splash.bin or splashbottom.bin found.\nIs this a splash?",
+        .splash_disabled = "WARNING: Splashes are disabled in Luma Config",
     },
     .themes =
     {
-        "No body_LZ.bin found - is this a theme?",
-        "One or more installed themes use mono audio.\nMono audio causes a number of issues.\nCheck the wiki for more information.",
-        "Illegal character used.",
-        "Name of output folder",
-        "Cancel",
-        "Done"
+        .no_body_found = "No body_LZ.bin found - is this a theme?",
+        .mono_warn = "One or more installed themes use mono audio.\nMono audio causes a number of issues.\nCheck the wiki for more information.",
+        .illegal_char = "Illegal character used.",
+        .name_folder = "Name of output folder",
+        .cancel = "Cancel",
+        .done = "Done"
     }
 };
 
@@ -374,6 +374,8 @@ Language_s init_strings(CFG_Language lang)
         case CFG_LANGUAGE_RU:
         case CFG_LANGUAGE_TW:
         case CFG_LANGUAGE_EN:
+            return language_english;
+        default:
             return language_english;
     }
 }
