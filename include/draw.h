@@ -163,7 +163,7 @@ void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
 
 void throw_error(const char * error, ErrorLevel level);
-bool draw_confirm(const char * conf_msg, Entry_List_s * list);
+bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);
 
 void draw_preview(C2D_Image preview, int preview_offset);
 
@@ -178,6 +178,6 @@ void draw_home(u64 start_time, u64 cur_time);
 
 void draw_base_interface(void);
 void draw_grid_interface(Entry_List_s * list, Instructions_s instructions);
-void draw_interface(Entry_List_s * list, Instructions_s instructions);
+void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode);
 
 #endif

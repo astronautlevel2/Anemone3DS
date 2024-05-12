@@ -30,6 +30,7 @@
 #include "music.h"
 #include "draw.h"
 #include "conversion.h"
+#include "ui_strings.h"
 
 #include <png.h>
 
@@ -306,9 +307,8 @@ void load_icons_thread(void * void_arg)
     } while(arg->run_thread);
 }
 
-bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset)
+bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset, int height)
 {
-    int height = SCREEN_HEIGHT * 2;
     int width = (uint32_t)((size / 4) / height);
 
     free_preview(*preview_image);
@@ -355,10 +355,11 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
 
     char * preview_buffer = NULL;
     u32 size = load_data("/preview.png", entry, &preview_buffer);
+    u32 height = 480;
 
     if(size)
     {
-        if (!(size = png_to_abgr(&preview_buffer, size)))
+        if (!(size = png_to_abgr(&preview_buffer, size, &height)))
         {
             return false;
         }
@@ -409,7 +410,7 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
         if (!found_splash)
         {
             free(rgba_buffer);
-            throw_error("No preview found.", ERROR_LEVEL_WARNING);
+            throw_error(language.loading.no_preview, ERROR_LEVEL_WARNING);
             return false;
         }
 
@@ -417,7 +418,7 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
         preview_buffer = rgba_buffer;
     }
 
-    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset);
+    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset, height);
     free(preview_buffer);
 
     if(ret)

@@ -54,12 +54,22 @@ static inline int max(const int a, const int b)
 
 #define FASTSCROLL_WAIT 1e8
 
+#define BETWEEN(min, x, max) (min < x && x < max)
+
 typedef enum {
     MODE_THEMES = 0,
     MODE_SPLASHES,
 
     MODE_AMOUNT,
 } EntryMode;
+
+typedef enum {
+    DRAW_MODE_LIST = 0,
+    DRAW_MODE_INSTALL,
+    DRAW_MODE_EXTRA,
+
+    DRAW_MODE_AMOUNT,
+} DrawMode;
 
 extern const char * main_paths[MODE_AMOUNT];
 extern const int entries_per_screen_v[MODE_AMOUNT];

@@ -32,7 +32,7 @@
 #include "camera.h"
 #include "music.h"
 #include "remote.h"
-#include "instructions.h"
+#include "ui_strings.h"
 #include <time.h>
 
 bool quit = false;
@@ -52,6 +52,8 @@ static Thread install_check_threads[MODE_AMOUNT] = {0};
 static Thread_Arg_s install_check_threads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
+
+Language_s language = {0};
 
 int __stacksize__ = 64 * 1024;
 Result archive_result;
@@ -254,8 +256,8 @@ static void load_lists(Entry_List_s * lists)
 
             DEBUG("total: %i\n", current_list->entries_count);
 
-            load_icons_first(current_list, false);
             sort_by_name(current_list);
+            load_icons_first(current_list, false);
 
             void (*install_check_function)(void *) = NULL;
             if(i == MODE_THEMES)
@@ -283,12 +285,12 @@ static SwkbdCallbackResult jump_menu_callback(void * entries_count, const char *
     int typed_value = atoi(text);
     if(typed_value > *(int *)entries_count)
     {
-        *ppMessage = "The new position has to be\nsmaller or equal to the\nnumber of entries!";
+        *ppMessage = language.main.position_too_big;
         return SWKBD_CALLBACK_CONTINUE;
     }
     else if(typed_value == 0)
     {
-        *ppMessage = "The new position has to\nbe positive!";
+        *ppMessage = language.main.position_zero;
         return SWKBD_CALLBACK_CONTINUE;
     }
     return SWKBD_CALLBACK_OK;
@@ -309,11 +311,11 @@ static void jump_menu(Entry_List_s * list)
     sprintf(numbuf, "%i", list->selected_entry);
     swkbdSetInitialText(&swkbd, numbuf);
 
-    sprintf(numbuf, "Where do you want to jump to?\nMay cause icons to reload.");
+    sprintf(numbuf, language.main.jump_q);
     swkbdSetHintText(&swkbd, numbuf);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.main.cancel, false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.main.jump, true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
     swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->entries_count);
 
@@ -375,6 +377,9 @@ int main(void)
 {
     srand(time(NULL));
     init_services();
+    CFG_Language lang;
+    CFGU_GetSystemLanguage(&lang);
+    language = init_strings(lang);
     init_screens();
 
     svcCreateMutex(&update_icons_mutex, true);
@@ -400,7 +405,9 @@ int main(void)
     int preview_offset = 0;
 
     bool install_mode = false;
+    DrawMode draw_mode = DRAW_MODE_LIST;
     bool extra_mode = false;
+    int extra_index = 1;
     C2D_Image preview = {0};
 
     while(aptMainLoop())
@@ -421,7 +428,7 @@ int main(void)
         #ifndef CITRA_MODE
         if(R_FAILED(archive_result) && current_mode == MODE_THEMES)
         {
-            throw_error("Theme extdata does not exist!\nSet a default theme from the home menu.", ERROR_LEVEL_ERROR);
+            throw_error(language.main.no_theme_extdata, ERROR_LEVEL_ERROR);
             quit = true;
             continue;
         }
@@ -434,22 +441,12 @@ int main(void)
 
         current_list = &lists[current_mode];
 
-        Instructions_s instructions = normal_instructions[current_mode];
+        Instructions_s instructions = language.normal_instructions[current_mode];
         if(install_mode)
-            instructions = install_instructions;
+            instructions = language.install_instructions;
         if(extra_mode)
         {
-            int index = 1;
-            bool key_l = (kDown | kHeld) & KEY_L;
-            bool key_r = (kDown | kHeld) & KEY_R;
-            if(key_l ^ key_r)
-            {
-                if(key_l)
-                    index = 0;
-                else if(key_r)  // uncomment when we use the right menu. we don't for now
-                    index = 2;
-            }
-            instructions = extra_instructions[index];
+            instructions = language.extra_instructions[extra_index];
         }
 
         if(preview_mode)
@@ -472,7 +469,7 @@ int main(void)
                 svcWaitSynchronization(update_icons_mutex, U64_MAX);
             }
 
-            draw_interface(current_list, instructions);
+            draw_interface(current_list, instructions, draw_mode);
 
             svcSleepThread(1e7);
             released = false;
@@ -502,7 +499,7 @@ int main(void)
             {
                 enable_qr:
                 draw_base_interface();
-                draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], "Loading QR Scanner...");
+                draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], language.main.loading_qr);
                 end_frame();
                 if(R_SUCCEEDED(camInit()))
                 {
@@ -518,15 +515,15 @@ int main(void)
                     }
                     else
                     {
-                        throw_error("Please connect to Wi-Fi before scanning QR codes", ERROR_LEVEL_WARNING);
+                        throw_error(language.main.no_wifi, ERROR_LEVEL_WARNING);
                     }
                 }
                 else
                 {
                     if(homebrew)
-                        throw_error("QR scanning doesnt work from the Homebrew\nLauncher, use the ThemePlaza browser instead.", ERROR_LEVEL_WARNING);
+                        throw_error(language.main.qr_homebrew, ERROR_LEVEL_WARNING);
                     else
-                        throw_error("Your camera seems to have a problem,\nunable to scan QR codes.", ERROR_LEVEL_WARNING);
+                        throw_error(language.main.camera_broke, ERROR_LEVEL_WARNING);
                 }
 
                 continue;
@@ -580,92 +577,138 @@ int main(void)
 
         if(install_mode)
         {
-            if(kUp & KEY_A)
-                install_mode = false;
-            if(!install_mode)
+            if ((kDown | kHeld) & KEY_TOUCH)
             {
-                if((kDown | kHeld) & KEY_DLEFT)
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+
+                if (kDown & KEY_TOUCH)
                 {
-                    aptSetHomeAllowed(false);
-                    draw_install(INSTALL_BGM);
-                    if(R_SUCCEEDED(bgm_install(current_entry)))
+                    if (y < 24)
                     {
-                        for(int i = 0; i < current_list->entries_count; i++)
+                        if (BETWEEN(320-24, x, 320))
                         {
-                            Entry_s * theme = &current_list->entries[i];
-                            if(theme == current_entry)
-                                theme->installed = true;
-                            else
-                                theme->installed = false;
+                            goto install_theme_single;
+                        } else if (BETWEEN(320-48, x, 320-24))
+                        {
+                            goto install_theme_shuffle;
+                        } else if (BETWEEN(320-72, x, 320-48))
+                        {
+                            goto install_theme_no_bgm;
+                        } else if (BETWEEN(320-96, x, 320-72))
+                        {
+                            goto install_theme_bgm_only;
+                        } else if (BETWEEN(320-120, x, 320-96))
+                        {
+                            goto install_leave;
                         }
-                        installed_themes = true;
                     }
                 }
-                else if((kDown | kHeld) & KEY_DUP)
+            }
+
+            if(kDown & KEY_B)
+            {
+                install_leave:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+            }
+            else if(kDown & KEY_DLEFT)
+            {
+                install_theme_bgm_only:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                aptSetHomeAllowed(false);
+                draw_install(INSTALL_BGM);
+                if(R_SUCCEEDED(bgm_install(current_entry)))
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+            #define BETWEEN(min, x, max) (min < x && x < max)
+                        Entry_s * theme = &current_list->entries[i];
+                        if(theme == current_entry)
+                            theme->installed = true;
+                        else
+                            theme->installed = false;
+                    }
+                    installed_themes = true;
+                }
+            }
+            else if(kDown & KEY_DUP)
+            {
+                install_theme_single:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                aptSetHomeAllowed(false);
+                draw_install(INSTALL_SINGLE);
+                if(R_SUCCEEDED(theme_install(current_entry)))
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+
+                    {
+                        Entry_s * theme = &current_list->entries[i];
+                        if(theme == current_entry)
+                            theme->installed = true;
+                        else
+                            theme->installed = false;
+                    }
+                    installed_themes = true;
+                }
+            }
+            else if(kDown & KEY_DRIGHT)
+            {
+                install_theme_no_bgm:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                aptSetHomeAllowed(false);
+                draw_install(INSTALL_NO_BGM);
+                if(R_SUCCEEDED(no_bgm_install(current_entry)))
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * theme = &current_list->entries[i];
+                        if(theme == current_entry)
+                            theme->installed = true;
+                        else
+                            theme->installed = false;
+                    }
+                    installed_themes = true;
+                }
+            }
+            else if(kDown & KEY_DDOWN)
+            {
+                install_theme_shuffle:
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
+                {
+                    throw_error(language.main.too_many_themes, ERROR_LEVEL_WARNING);
+                }
+                else if(current_list->shuffle_count < 2)
+                {
+                    throw_error(language.main.not_enough_themes, ERROR_LEVEL_WARNING);
+                }
+                else
                 {
                     aptSetHomeAllowed(false);
-                    draw_install(INSTALL_SINGLE);
-                    if(R_SUCCEEDED(theme_install(current_entry)))
-                    {
-                        for(int i = 0; i < current_list->entries_count; i++)
-                        {
-                            Entry_s * theme = &current_list->entries[i];
-                            if(theme == current_entry)
-                                theme->installed = true;
-                            else
-                                theme->installed = false;
-                        }
-                        installed_themes = true;
-                    }
-                }
-                else if((kDown | kHeld) & KEY_DRIGHT)
-                {
-                    aptSetHomeAllowed(false);
-                    draw_install(INSTALL_NO_BGM);
-                    if(R_SUCCEEDED(no_bgm_install(current_entry)))
-                    {
-                        for(int i = 0; i < current_list->entries_count; i++)
-                        {
-                            Entry_s * theme = &current_list->entries[i];
-                            if(theme == current_entry)
-                                theme->installed = true;
-                            else
-                                theme->installed = false;
-                        }
-                        installed_themes = true;
-                    }
-                }
-                else if((kDown | kHeld) & KEY_DDOWN)
-                {
-                    if(current_list->shuffle_count > MAX_SHUFFLE_THEMES)
-                    {
-                        throw_error("You have too many themes selected.", ERROR_LEVEL_WARNING);
-                    }
-                    else if(current_list->shuffle_count < 2)
-                    {
-                        throw_error("You don't have enough themes selected.", ERROR_LEVEL_WARNING);
-                    }
+                    draw_install(INSTALL_SHUFFLE);
+                    Result res = shuffle_install(current_list);
+                    if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
                     else
                     {
-                        aptSetHomeAllowed(false);
-                        draw_install(INSTALL_SHUFFLE);
-                        Result res = shuffle_install(current_list);
-                        if(R_FAILED(res)) DEBUG("shuffle install result: %lx\n", res);
-                        else
+                        for(int i = 0; i < current_list->entries_count; i++)
                         {
-                            for(int i = 0; i < current_list->entries_count; i++)
+                            Entry_s * theme = &current_list->entries[i];
+                            if(theme->in_shuffle)
                             {
-                                Entry_s * theme = &current_list->entries[i];
-                                if(theme->in_shuffle)
-                                {
-                                    theme->in_shuffle = false;
-                                    theme->installed = true;
-                                }
-                                else theme->installed = false;
+                                theme->in_shuffle = false;
+                                theme->installed = true;
                             }
-                            current_list->shuffle_count = 0;
-                            installed_themes = true;
+                            else theme->installed = false;
                         }
+                        current_list->shuffle_count = 0;
+                        installed_themes = true;
                     }
                 }
             }
@@ -673,71 +716,151 @@ int main(void)
         }
         else if(extra_mode)
         {
-            if(kUp & KEY_X)
-                extra_mode = false;
-            if(!extra_mode)
+            if((kDown | kHeld) & KEY_TOUCH)
             {
-                bool key_l = (kDown | kHeld) & KEY_L;
-                bool key_r = (kDown | kHeld) & KEY_R;
-                if(!(key_l ^ key_r))
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if (kDown & KEY_TOUCH)
                 {
-                    if((kDown | kHeld) & KEY_DLEFT)
+                    if (y < 24)
                     {
-                        browse_themeplaza:
-                        if(themeplaza_browser(current_mode))
+                        if (BETWEEN(320-24, x, 320))
                         {
-                            current_mode = MODE_THEMES;
-                            load_lists(lists);
+                            goto browse_themeplaza;
+                        } else if (BETWEEN(320-48, x, 320-24))
+                        {
+                            goto dump_single;
+                        } else if (BETWEEN(320-72, x, 320-48))
+                        {
+                            switch (current_list->current_sort)
+                            {
+                                case SORT_NAME:
+                                    goto sort_author;
+                                    break;
+                                case SORT_AUTHOR:
+                                    goto sort_path;
+                                    break;
+                                case SORT_PATH:
+                                    goto sort_name;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        } else if (BETWEEN(320-96, x, 320-72))
+                        {
+                            extra_mode = false;
+                            extra_index = 1;
+                            draw_mode = DRAW_MODE_LIST;
                         }
                     }
-                    else if((kDown | kHeld) & KEY_DUP)
+                }
+            }
+            else if(extra_index == 1)
+            {
+                if(kDown & KEY_B)
+                {
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                }
+                else if(kDown & KEY_DLEFT)
+                {
+                    browse_themeplaza:
+                    if(themeplaza_browser(current_mode))
                     {
-                        jump:
-                        jump_menu(current_list);
+                        current_mode = MODE_THEMES;
+                        load_lists(lists);
+                    }
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DUP)
+                {
+                    jump:
+                    jump_menu(current_list);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
 
-                    }
-                    else if((kDown | kHeld) & KEY_DDOWN)
-                    {
-                        load_icons_first(current_list, false);
-                    }
                 }
-                else if(key_l)
+                else if(kDown & KEY_DDOWN)
                 {
-                    if((kDown | kHeld) & KEY_DLEFT)
-                    {
-                        sort_path:
-                        sort_by_filename(current_list);
-                        load_icons_first(current_list, false);
-                    }
-                    else if(((kDown | kHeld)) & KEY_DUP)
-                    {
-                        sort_name:
-                        sort_by_name(current_list);
-                        load_icons_first(current_list, false);
-                    }
-                    else if(((kDown | kHeld)) & KEY_DDOWN)
-                    {
-                        sort_author:
-                        sort_by_author(current_list);
-                        load_icons_first(current_list, false);
-                    }
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
                 }
-                else if(key_r)
+                else if (kDown & KEY_R)
                 {
-                    if(((kDown | kHeld)) & KEY_DUP)
-                    {
-                        draw_install(INSTALL_DUMPING_THEME);
-                        Result res = dump_current_theme();
-                        if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
-                        else load_lists(lists);
-                    }
-                    else if(((kDown | kHeld)) & KEY_DDOWN)
-                    {
-                        draw_install(INSTALL_DUMPING_ALL_THEMES);
-                        Result res = dump_all_themes();
-                        if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
-                        else load_lists(lists);
-                    }
+                    extra_index = 2;
+                }
+                else if(kDown & KEY_L)
+                {
+                    extra_index = 0;
+                }
+            }
+            else if(extra_index == 0)
+            {
+                if(kDown & KEY_DLEFT)
+                {
+                    sort_path:
+                    sort_by_filename(current_list);
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DUP)
+                {
+                    sort_name:
+                    sort_by_name(current_list);
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DDOWN)
+                {
+                    sort_author:
+                    sort_by_author(current_list);
+                    load_icons_first(current_list, false);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if (kDown & KEY_B)
+                {
+                    extra_index = 1;
+                }
+            }
+            else if(extra_index == 2)
+            {
+                if(kDown & KEY_DUP)
+                {
+                    dump_single:
+                    draw_install(INSTALL_DUMPING_THEME);
+                    Result res = dump_current_theme();
+                    if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
+                    else load_lists(lists);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_DDOWN)
+                {
+                    draw_install(INSTALL_DUMPING_ALL_THEMES);
+                    Result res = dump_all_themes();
+                    if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
+                    else load_lists(lists);
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if(kDown &KEY_B)
+                {
+                    extra_index = 1;
                 }
             }
             continue;
@@ -751,6 +874,7 @@ int main(void)
             {
                 case MODE_THEMES:
                     install_mode = true;
+                    draw_mode = DRAW_MODE_INSTALL;
                     break;
                 case MODE_SPLASHES:
                     draw_install(INSTALL_SPLASH);
@@ -776,7 +900,7 @@ int main(void)
                     toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm("Are you sure you would like to delete\nthe installed splash?", current_list))
+                    if(draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -789,10 +913,11 @@ int main(void)
         else if(kDown & KEY_X)
         {
             extra_mode = true;
+            draw_mode = DRAW_MODE_EXTRA;
         }
         else if(kDown & KEY_SELECT)
         {
-            if(draw_confirm("Are you sure you would like to delete this?", current_list))
+            if(draw_confirm(language.main.delete_confirm, current_list, draw_mode))
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(current_entry, current_entry->is_zip);
@@ -851,43 +976,49 @@ int main(void)
             u16 x = touch.px;
             u16 y = touch.py;
 
-            u16 arrowStartX = 152;
+            u16 arrowStartX = 136;
             u16 arrowEndX = arrowStartX+16;
 
-            #define BETWEEN(min, x, max) (min < x && x < max)
 
             if(kDown & KEY_TOUCH)
             {
                 if(y < 24)
                 {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    if(BETWEEN(320-168, x, 320-144))
                     {
-                        change_selected(current_list, -current_list->entries_per_screen_v);
+                        if (current_mode == MODE_THEMES)
+                        {
+                            toggle_shuffle(current_list);
+                        }
                     }
                     else if(BETWEEN(320-144, x, 320-120))
                     {
-                        switch(current_list->current_sort)
-                        {
-                            case SORT_NAME:
-                                goto sort_author;
-                                break;
-                            case SORT_AUTHOR:
-                                goto sort_path;
-                                break;
-                            case SORT_PATH:
-                                goto sort_name;
-                                break;
-                            default:
-                                break;
-                        }
+                        extra_mode = true;
+                        draw_mode = DRAW_MODE_EXTRA;
                     }
                     else if(BETWEEN(320-120, x, 320-96))
                     {
-                        goto enable_qr;
+                        if (current_mode == MODE_THEMES)
+                        {
+                            install_mode = true;
+                            draw_mode = DRAW_MODE_INSTALL;
+                        } else if (current_mode == MODE_SPLASHES)
+                        {
+                            draw_install(INSTALL_SPLASH);
+                            splash_install(current_entry);
+                            for(int i = 0; i < current_list->entries_count; i++)
+                            {
+                                Entry_s * splash = &current_list->entries[i];
+                                if(splash == current_entry)
+                                    splash->installed = true;
+                                else
+                                    splash->installed = false;
+                            }
+                        }
                     }
                     else if(BETWEEN(320-96, x, 320-72))
                     {
-                        goto browse_themeplaza;
+                        goto enable_qr;
                     }
                     else if(BETWEEN(320-72, x, 320-48))
                     {
@@ -904,7 +1035,11 @@ int main(void)
                 }
                 else if(y >= 216)
                 {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll < current_list->entries_count - current_list->entries_per_screen_v)
+                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    {
+                        change_selected(current_list, -current_list->entries_per_screen_v);
+                    }
+                    else if(current_list->entries != NULL && BETWEEN(arrowStartX + 16, x, arrowEndX + 16) && current_list->scroll < current_list->entries_count - current_list->entries_per_screen_v)
                     {
                         change_selected(current_list, current_list->entries_per_screen_v);
                     }

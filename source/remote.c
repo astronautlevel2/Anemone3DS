@@ -33,77 +33,11 @@
 #include "music.h"
 #include "urls.h"
 #include "conversion.h"
+#include "ui_strings.h"
 
 // forward declaration of special case used only here
 // TODO: replace this travesty with a proper handler
 static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error);
-
-static Instructions_s browser_instructions[MODE_AMOUNT] = {
-    {
-        .info_line = NULL,
-        .instructions = {
-            {
-                "\uE000 Download theme",
-                "\uE001 Go back"
-            },
-            {
-                "\uE002 Hold for more",
-                "\uE003 Preview theme"
-            },
-            {
-                "\uE004 Previous page",
-                "\uE005 Next page"
-            },
-            {
-                "Exit",
-                NULL
-            }
-        }
-    },
-    {
-        .info_line = NULL,
-        .instructions = {
-            {
-                "\uE000 Download splash",
-                "\uE001 Go back"
-            },
-            {
-                "\uE002 Hold for more",
-                "\uE003 Preview splash"
-            },
-            {
-                "\uE004 Previous page",
-                "\uE005 Next page"
-            },
-            {
-                "Exit",
-                NULL
-            }
-        }
-    }
-};
-
-static Instructions_s extra_instructions = {
-    .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
-    .instructions = {
-        {
-            "\uE079 Jump to page",
-            "\uE07A Search tags"
-        },
-        {
-            "\uE07B Toggle splash/theme",
-            "\uE07C Reload without cache"
-        },
-        {
-            NULL,
-            NULL
-        },
-        {
-            "Exit",
-            NULL
-        }
-    }
-};
 
 static void free_icons(Entry_List_s * list)
 {
@@ -237,7 +171,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
                     load_remote_entries(list, value, ignore_cache, loading_screen);
                 else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE)
                     && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
-                    throw_error("No results for this search.", ERROR_LEVEL_WARNING);
+                    throw_error(language.remote.no_results, ERROR_LEVEL_WARNING);
             }
         }
         else
@@ -246,7 +180,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
         json_decref(root);
     }
     else
-        throw_error("Couldn't download Theme Plaza data.\nMake sure WiFi is on.", ERROR_LEVEL_WARNING);
+        throw_error(language.remote.check_wifi, ERROR_LEVEL_WARNING);
 
     free(page_json);
 }
@@ -288,14 +222,15 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     char * preview_buf = malloc(preview_size);
     u32 preview_buf_size = preview_size;
     memcpy(preview_buf, preview_png, preview_size);
+    u32 height = 480;
 
-    if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size)))
+    if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size, &height)))
     {
         free(preview_buf);
         return false;
     }
 
-    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset);
+    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset, height);
     free(preview_buf);
 
     if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
@@ -380,12 +315,12 @@ jump_menu_callback(void * page_number, const char ** ppMessage, const char * tex
     int typed_value = atoi(text);
     if (typed_value > *(json_int_t *)page_number)
     {
-        *ppMessage = "The new page has to be\nsmaller or equal to the\nnumber of pages!";
+        *ppMessage = language.remote.new_page_big;
         return SWKBD_CALLBACK_CONTINUE;
     }
     else if (typed_value == 0)
     {
-        *ppMessage = "The new position has to\nbe positive!";
+        *ppMessage = language.remote.new_page_zero;
         return SWKBD_CALLBACK_CONTINUE;
     }
     return SWKBD_CALLBACK_OK;
@@ -408,11 +343,11 @@ static void jump_menu(Entry_List_s * list)
     JSON_INTEGER_FORMAT, list->tp_current_page);
     swkbdSetInitialText(&swkbd, numbuf);
 
-    sprintf(numbuf, "Which page do you want to jump to?");
+    sprintf(numbuf, language.remote.jump_page);
     swkbdSetHintText(&swkbd, numbuf);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Jump", true);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.remote.cancel, false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.remote.jump, true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
     swkbdSetFilterCallback(&swkbd, jump_menu_callback, &list->tp_page_count);
 
@@ -434,10 +369,10 @@ static void search_menu(Entry_List_s * list)
     SwkbdState swkbd;
 
     swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, max_chars);
-    swkbdSetHintText(&swkbd, "Which tags do you want to search for?");
+    swkbdSetHintText(&swkbd, language.remote.tags);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Search", true);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.remote.cancel, false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.remote.search, true);
     swkbdSetValidation(&swkbd, SWKBD_NOTBLANK, 0, max_chars);
 
     SwkbdButton button = swkbdInputText(&swkbd, search, max_chars);
@@ -493,7 +428,7 @@ bool themeplaza_browser(EntryMode mode)
             SwkbdResult swkbd_res = swkbdGetResult(&swkbd);
             if (swkbd_res != SWKBD_PARENTAL_OK)
             {
-                throw_error("Parental Control validation failed!\nBrowser Access restricted.", ERROR_LEVEL_WARNING);
+                throw_error(language.remote.parental_fail, ERROR_LEVEL_WARNING);
                 return downloaded;
             }
         }
@@ -556,9 +491,9 @@ bool themeplaza_browser(EntryMode mode)
         }
         else
         {
-            Instructions_s instructions = browser_instructions[mode];
+            Instructions_s instructions = language.remote_instructions[mode];
             if (extra_mode)
-                instructions = extra_instructions;
+                instructions = language.remote_extra_instructions;
             draw_grid_interface(current_list, instructions);
         }
 
@@ -950,7 +885,6 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
     return SUCCESS;
 }
 
-#define ZIP_NOT_AVAILABLE "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator"
 
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
@@ -962,6 +896,7 @@ Result http_get(const char * url, char ** filename, char ** buf, u32 * size, Ins
 
 static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
 {
+    const char *zip_not_available = language.remote.zip_not_found;
     Result ret;
     httpcContext context;
     char redirect_url[0x824] = {0};
@@ -1005,7 +940,7 @@ redirect: // goto here if we need to redirect
         break;
     case HTTPC_ERROR:
         DEBUG("httpc error %lx\n", _header.result_code);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "Error in HTTPC sysmodule - 0x%08lx.\nIf you are seeing this, please contact an\nAnemone developer on the Theme Plaza Discord.", _header.result_code);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.generic_httpc_error, _header.result_code);
         throw_error(err_buf, ERROR_LEVEL_ERROR);
         quit = true;
         httpcCloseContext(&context);
@@ -1013,12 +948,12 @@ redirect: // goto here if we need to redirect
     case SEE_OTHER:
         if (strstr(url, THEMEPLAZA_BASE_URL))
         {
-            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 303 See Other (Theme Plaza)\nHas this theme been approved?");
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http303_tp);
             goto error;
         }
         else
         {
-            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 303 See Other\nDownload the resource directly\nor contact the site administrator.");
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http303);
             goto error;
         }
     case REDIRECT:
@@ -1040,7 +975,7 @@ redirect: // goto here if we need to redirect
         goto redirect;
     case SERVER_IS_MISBEHAVING:
         DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
         goto error;
     case HTTP_NOT_FOUND:
         if (!not_found_is_error)
@@ -1050,59 +985,59 @@ redirect: // goto here if we need to redirect
         const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
         DEBUG("HTTP %s; URL: %s\n", http_error, url);
         if (strstr(url, THEMEPLAZA_BASE_URL) && parse == HTTP_NOT_FOUND)
-            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 404 Not Found\nHas this theme been approved?");
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http404);
         else
-            snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %s\nCheck that the URL is correct.", http_error);
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_err_url, http_error);
         goto error;
     case HTTP_UNACCEPTABLE:
         DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, ZIP_NOT_AVAILABLE);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
         goto error;
     case HTTP_UNAUTHORIZED:
     case HTTP_FORBIDDEN:
     case HTTP_PROXY_UNAUTHORIZED:
         DEBUG("HTTP %u: device not authenticated\n", parse);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %s\nContact the site administrator.", parse == HTTP_UNAUTHORIZED
-            ? "401 Unauthorized"
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_errcode_generic, parse == HTTP_UNAUTHORIZED
+            ? language.remote.http401
             : parse == HTTP_FORBIDDEN
-            ? "403 Forbidden"
-            : "407 Proxy Authentication Required");
+            ? language.remote.http403
+            : language.remote.http407);
         goto error;
     case HTTP_URI_TOO_LONG:
         DEBUG("HTTP 414; URL is too long, maybe too many redirects?\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http414);
         goto error;
     case HTTP_IM_A_TEAPOT:
         DEBUG("HTTP 418 I'm a teapot\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 418 I'm a teapot\nContact the site administrator.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http418);
         goto error;
     case HTTP_UPGRADE_REQUIRED:
         DEBUG("HTTP 426; HTTP/2 required\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 426 Upgrade Required\nThe 3DS cannot connect to this server.\nContact the site administrator.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http426);
         goto error;
     case HTTP_LEGAL_REASONS:
         DEBUG("HTTP 451; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http451);
         goto error;
     case HTTP_INTERNAL_SERVER_ERROR:
         DEBUG("HTTP 500; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 500 Internal Server Error\nContact the site administrator.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http500);
         goto error;
     case HTTP_BAD_GATEWAY:
         DEBUG("HTTP 502; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 502 Bad Gateway\nContact the site administrator.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http502);
         goto error;
     case HTTP_SERVICE_UNAVAILABLE:
         DEBUG("HTTP 503; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 503 Service Unavailable\nContact the site administrator.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http503);
         goto error;
     case HTTP_GATEWAY_TIMEOUT:
         DEBUG("HTTP 504; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP 504 Gateway Timeout\nContact the site administrator.");
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http504);
         goto error;
     default:
         DEBUG("HTTP %u; URL: %s\n", parse, url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.", parse);
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_unexpected, parse);
         goto error;
     }
 

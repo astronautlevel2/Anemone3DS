@@ -27,6 +27,7 @@
 #include "draw.h"
 #include "unicode.h"
 #include "colors.h"
+#include "ui_strings.h"
 
 #include "sprites.h"
 
@@ -77,56 +78,56 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_VERSION], staticBuf, VERSION);
 
-    C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, "Theme mode");
-    C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, "Splash mode");
+    C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, language.draw.theme_mode);
+    C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, language.draw.splash_mode);
 
-    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, "No theme found");
-    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, "No splash found");
+    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, language.draw.no_themes);
+    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, language.draw.no_splashes);
 
-    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, "Press \uE005 to download from QR");
+    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, language.draw.qr_download);
 
-    C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, "Or \uE004 to switch to splashes");
-    C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, "Or \uE004 to switch to themes");
+    C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, language.draw.switch_splashes);
+    C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, language.draw.switch_themes);
 
-    C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, "Or        to quit");
+    C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, language.draw.quit);
 
-    C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, "By ");
-    C2D_TextParse(&text[TEXT_SELECTED], staticBuf, "Selected:");
-    C2D_TextParse(&text[TEXT_SELECTED_SHORT], staticBuf, "Sel.:");
+    C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, language.draw.by);
+    C2D_TextParse(&text[TEXT_SELECTED], staticBuf, language.draw.selected);
+    C2D_TextParse(&text[TEXT_SELECTED_SHORT], staticBuf, language.draw.sel);
 
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, "ThemePlaza Theme mode");
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, "ThemePlaza Splash mode");
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, language.draw.tp_theme_mode);
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, language.draw.tp_splash_mode);
 
-    C2D_TextParse(&text[TEXT_SEARCH], staticBuf, "Search...");
-    C2D_TextParse(&text[TEXT_PAGE], staticBuf, "Page:");
+    C2D_TextParse(&text[TEXT_SEARCH], staticBuf, language.draw.search);
+    C2D_TextParse(&text[TEXT_PAGE], staticBuf, language.draw.page);
 
-    C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, "Press \uE000 to quit.");
-    C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, "Press \uE000 to continue.");
+    C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, language.draw.err_quit);
+    C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, language.draw.warn_continue);
 
-    C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, "\uE000 Yes   \uE001 No");
+    C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, language.draw.yes_no);
 
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, "Loading themes, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, "Loading splashes, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, "Loading icons, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, language.draw.load_themes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, language.draw.load_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, language.draw.load_icons);
 
-    C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, "Installing a splash...");
-    C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, "Deleting installed splash...");
+    C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, language.draw.install_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, language.draw.delete_splash);
 
-    C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, "Installing a single theme...");
-    C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, "Installing shuffle themes...");
-    C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, "Installing BGM-only theme...");
-    C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, "Installing theme without BGM...");
+    C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, language.draw.install_theme);
+    C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, language.draw.install_shuffle);
+    C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, language.draw.install_bgm);
+    C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, language.draw.install_no_bgm);
 
-    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, "Downloading...");
-    C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, "Checking downloaded file...");
-    C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, "Deleting from SD...");
+    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, language.draw.downloading);
+    C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, language.draw.checking_dl);
+    C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, language.draw.delete_sd);
 
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, "Downloading theme list, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, "Downloading splash list, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, "Downloading preview, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, "Downloading BGM, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, "Dumping theme, please wait...");
-    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, "Dumping official themes, please wait...");
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, language.draw.download_themes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, language.draw.download_splashes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, language.draw.download_preview);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, language.draw.download_bgm);
+    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, language.draw.dump_single);
+    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, language.draw.dump_all_official);
 
     for(int i = 0; i < TEXT_AMOUNT; i++)
         C2D_TextOptimize(&text[i]);
@@ -318,12 +319,12 @@ void throw_error(const char * error, ErrorLevel level)
     }
 }
 
-bool draw_confirm(const char * conf_msg, Entry_List_s * list)
+bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode)
 {
     while(aptMainLoop())
     {
         Instructions_s instructions = {0};
-        draw_interface(list, instructions);
+        draw_interface(list, instructions, draw_mode);
         set_screen(top);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
         draw_c2d_text_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
@@ -535,7 +536,7 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
 
     draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_SEARCH]);
 
-    draw_image(sprites_list_idx, 320-96, 0);
+    draw_image(sprites_back_idx, 320-96, 0);
     draw_image(sprites_exit_idx, 320-72, 0);
     draw_image(sprites_preview_idx, 320-48, 0);
 
@@ -601,7 +602,7 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
     draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_PAGE]);
 }
 
-void draw_interface(Entry_List_s * list, Instructions_s instructions)
+void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
@@ -613,7 +614,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions)
 
     draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
 
-    if(list->entries == NULL)
+    if(list->entries == NULL || list->entries_count == 0)
     {
         C2D_Text * mode_found_string[MODE_AMOUNT] = {
             &text[TEXT_NO_THEME_FOUND],
@@ -633,7 +634,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions)
 
         C2D_ImageTint yellow_tint;
         C2D_PlainImageTint(&yellow_tint, colors[COLOR_YELLOW], 1.0f);
-        C2D_SpriteSetPos(&sprite_start, 162, 173);
+        C2D_SpriteSetPos(&sprite_start, language.draw.start_pos, 173);
         C2D_SpriteSetScale(&sprite_start, 1.25f, 1.4f);
         C2D_DrawSpriteTinted(&sprite_start, &yellow_tint);
         C2D_SpriteSetScale(&sprite_start, 1.0f, 1.0f);
@@ -641,7 +642,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions)
         set_screen(bottom);
 
         draw_image(sprites_sort_idx, 320-144, 0);
-        draw_image(sprites_download_idx, 320-120, 0);
+        draw_image(sprites_qr_idx, 320-120, 0);
         draw_image(sprites_browse_idx, 320-96, 0);
         draw_image(sprites_exit_idx, 320-72, 0);
         draw_image(sprites_preview_idx, 320-48, 0);
@@ -667,18 +668,41 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions)
         free(shuffle_count_string);
     }
 
-    draw_image(sprites_sort_idx, 320-144, 0);
-    draw_image(sprites_download_idx, 320-120, 0);
-    draw_image(sprites_browse_idx, 320-96, 0);
-    draw_image(sprites_exit_idx, 320-72, 0);
-    draw_image(sprites_preview_idx, 320-48, 0);
-
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+    if (draw_mode == DRAW_MODE_LIST)
+    {
+        draw_image(sprites_install_idx, 320-120, 0);
+        draw_image(sprites_qr_idx, 320-96, 0);
+        draw_image(sprites_exit_idx, 320-72, 0);
+        draw_image(sprites_preview_idx, 320-48, 0);
+        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+        draw_image(sprites_menu_idx, 320-144, 0);
+        if (current_mode == MODE_THEMES)
+        {
+            draw_image(sprites_shuffle_idx, 320-168, 0);
+        }
+    }
+    else
+    {
+        if (draw_mode == DRAW_MODE_INSTALL)
+        {
+            draw_image(sprites_install_idx, 320-24, 0);
+            draw_image(sprites_shuffle_idx, 320-48, 0);
+            draw_image(sprites_shuffle_no_bgm_idx, 320-72, 0);
+            draw_image(sprites_bgm_only_idx, 320-96, 0);
+            draw_image(sprites_back_idx, 320-120, 0);
+        } else if (draw_mode == DRAW_MODE_EXTRA)
+        {
+            draw_image(sprites_browse_idx, 320-24, 0);
+            draw_image(sprites_dump_idx, 320-48, 0);
+            draw_image(sprites_sort_idx, 320-72, 0);
+            draw_image(sprites_back_idx, 320-96, 0);
+        }
+    }
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
-        draw_image(sprites_arrow_up_idx, 152, 4);
+        draw_image(sprites_arrow_up_idx, 136, 220);
     if(list->scroll + list->entries_loaded < list->entries_count)
         draw_image(sprites_arrow_down_idx, 152, 220);
 
@@ -763,4 +787,8 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions)
         draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED]);
     else
         draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED_SHORT]);
+    if(draw_mode != DRAW_MODE_LIST)
+    {
+        C2D_DrawRectSolid(0, 24, 1.0f, 320, 240-48, C2D_Color32(0, 0, 0, 128));
+    }
 }

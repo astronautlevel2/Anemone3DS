@@ -29,6 +29,7 @@
 #include "fs.h"
 #include "draw.h"
 #include "unicode.h"
+#include "ui_strings.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -372,7 +373,8 @@ static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, con
 {
     (void)textlen;
     (void)user;
-    *ppMessage = "Input must not contain:\n" ILLEGAL_CHARS;
+
+    *ppMessage = language.fs.illegal_input;
     if(strpbrk(text, ILLEGAL_CHARS))
     {
         DEBUG("illegal filename: %s\n", text);
@@ -434,12 +436,12 @@ renamed:
             SwkbdState swkbd;
 
             swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 3, max_chars / 2);
-            swkbdSetHintText(&swkbd, "Choose a new filename or tap Overwrite");
+            swkbdSetHintText(&swkbd, language.fs.new_or_overwrite);
             swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT | SWKBD_DARKEN_TOP_SCREEN);
 
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, "Overwrite", false);
-            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Rename", true);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.fs.cancel, false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_MIDDLE, language.fs.overwrite, false);
+            swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.fs.rename, true);
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, SWKBD_FILTER_CALLBACK, -1);
             swkbdSetFilterCallback(&swkbd, &fat32filter, NULL);
 
@@ -462,18 +464,18 @@ renamed:
                 return;
             case SWKBD_BUTTON_NONE:
                 DEBUG("SWKBD broke wtf??? :- %x\n", swkbdGetResult(&swkbd));
-                return throw_error("???\nTry a USB keyboard", ERROR_LEVEL_WARNING);
+                return throw_error(language.fs.swkbd_fail, ERROR_LEVEL_WARNING);
             }
         }
         else if (res == (long)0xC86044D2)
         {
             DEBUG("SD card is full\n");
-            return throw_error("SD card is full.\nDelete some themes to make space.", ERROR_LEVEL_WARNING);
+            return throw_error(language.fs.sd_full, ERROR_LEVEL_WARNING);
         }
         else
         {
             DEBUG("error: %lx\n", res);
-            return throw_error("FS Error:\nGet a new SD card.", ERROR_LEVEL_ERROR);
+            return throw_error(language.fs.fs_error, ERROR_LEVEL_ERROR);
         }
     }
 

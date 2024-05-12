@@ -27,6 +27,7 @@
 #include "unicode.h"
 #include "fs.h"
 #include "draw.h"
+#include "ui_strings.h"
 
 void splash_delete(void)
 {
@@ -54,7 +55,7 @@ void splash_install(const Entry_s * splash)
 
     if(size == 0 && bottom_size == 0)
     {
-        throw_error("No splash.bin or splashbottom.bin found.\nIs this a splash?", ERROR_LEVEL_WARNING);
+        throw_error(language.splashes.no_splash_found, ERROR_LEVEL_WARNING);
     }
     else
     {
@@ -65,7 +66,7 @@ void splash_install(const Entry_s * splash)
             if(config_buf[0xC] == 0)
             {
                 free(config_buf);
-                throw_error("WARNING: Splashes are disabled in Luma Config", ERROR_LEVEL_WARNING);
+                throw_error(language.splashes.splash_disabled, ERROR_LEVEL_WARNING);
             }
         }
     }
