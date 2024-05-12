@@ -201,7 +201,7 @@ static void update_ui(void * arg)
         C2D_DrawImageAt((C2D_Image){ &tex, &subt3x }, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
 
         set_screen(bottom);
-        draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], language.camera[0]); // Press R to quit
+        draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], language.camera.quit);
         end_frame();
     }
 
@@ -213,7 +213,7 @@ static bool start_capture_cam(qr_data * data)
 {
     if((data->cam_thread = threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, false)) == NULL)
     {
-        throw_error(language.camera[1], ERROR_LEVEL_ERROR); // Thread creation failed
+        throw_error(language.camera.thread_error, ERROR_LEVEL_ERROR);
         LightEvent_Signal(&data->event_cam_info);
         LightEvent_Signal(&data->event_ui_info);
         return false;
@@ -398,18 +398,18 @@ bool init_qr(void)
                 }
                 else
                 {
-                    throw_error(language.camera[2], ERROR_LEVEL_WARNING); // Zip downloaded isn't a splash or theme
+                    throw_error(language.camera.zip_not_theme_splash, ERROR_LEVEL_WARNING);
                 }
             }
             else
             {
-                throw_error(language.camera[3], ERROR_LEVEL_WARNING); // File downloaded isn't a zip
+                throw_error(language.camera.file_not_zip, ERROR_LEVEL_WARNING);
             }
             free(zip_buf);
         }
         else
         {
-            throw_error(language.camera[4], ERROR_LEVEL_WARNING); // Download failed
+            throw_error(language.camera.download_failed, ERROR_LEVEL_WARNING);
         }
 
         free(filename);

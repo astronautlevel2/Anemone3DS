@@ -78,56 +78,56 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_VERSION], staticBuf, VERSION);
 
-    C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, language.draw[0]); // Theme mode
-    C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, language.draw[1]); // Splash mode
+    C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, language.draw.theme_mode);
+    C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, language.draw.splash_mode);
 
-    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, language.draw[2]); // No theme
-    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, language.draw[3]); // No splash
+    C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, language.draw.no_themes);
+    C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, language.draw.no_splashes);
 
-    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, language.draw[4]); // QR download
+    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, language.draw.qr_download);
 
-    C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, language.draw[5]); // Switch splashes
-    C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, language.draw[6]); // Switch themes
+    C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, language.draw.switch_splashes);
+    C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, language.draw.switch_themes);
 
-    C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, language.draw[7]); // Quit
+    C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, language.draw.quit);
 
-    C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, language.draw[8]); // By
-    C2D_TextParse(&text[TEXT_SELECTED], staticBuf, language.draw[9]); // Selected
-    C2D_TextParse(&text[TEXT_SELECTED_SHORT], staticBuf, language.draw[10]); // Sel
+    C2D_TextParse(&text[TEXT_BY_AUTHOR], staticBuf, language.draw.by);
+    C2D_TextParse(&text[TEXT_SELECTED], staticBuf, language.draw.selected);
+    C2D_TextParse(&text[TEXT_SELECTED_SHORT], staticBuf, language.draw.sel);
 
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, language.draw[11]); // TP Themes
-    C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, language.draw[12]); // TP Splash
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, language.draw.tp_theme_mode);
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, language.draw.tp_splash_mode);
 
-    C2D_TextParse(&text[TEXT_SEARCH], staticBuf, language.draw[13]); // Search
-    C2D_TextParse(&text[TEXT_PAGE], staticBuf, language.draw[14]); // Page
+    C2D_TextParse(&text[TEXT_SEARCH], staticBuf, language.draw.search);
+    C2D_TextParse(&text[TEXT_PAGE], staticBuf, language.draw.page);
 
-    C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, language.draw[15]); // Quit err
-    C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, language.draw[16]); // Continue warn
+    C2D_TextParse(&text[TEXT_ERROR_QUIT], staticBuf, language.draw.err_quit);
+    C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, language.draw.warn_continue);
 
-    C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, language.draw[17]); // Yes/no
+    C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, language.draw.yes_no);
 
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, language.draw[18]); // Load themes
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, language.draw[19]); // Load splash
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, language.draw[20]); // Load icons
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, language.draw.load_themes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, language.draw.load_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_ICONS], staticBuf, language.draw.load_icons);
 
-    C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, language.draw[21]); // install splash
-    C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, language.draw[22]); // delete splash
+    C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, language.draw.install_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, language.draw.delete_splash);
 
-    C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, language.draw[23]); // Install theme
-    C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, language.draw[24]); // Install shuffle
-    C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, language.draw[25]); // Install BGM
-    C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, language.draw[26]); // Install Body
+    C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, language.draw.install_theme);
+    C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, language.draw.install_shuffle);
+    C2D_TextParse(&text[TEXT_INSTALL_BGM], staticBuf, language.draw.install_bgm);
+    C2D_TextParse(&text[TEXT_INSTALL_NO_BGM], staticBuf, language.draw.install_no_bgm);
 
-    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, language.draw[27]); // Download
-    C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, language.draw[28]); // Check DL
-    C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, language.draw[29]); // Deleting
+    C2D_TextParse(&text[TEXT_INSTALL_DOWNLOAD], staticBuf, language.draw.downloading);
+    C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, language.draw.checking_dl);
+    C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, language.draw.delete_sd);
 
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, language.draw[30]); // Load TP Themes
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, language.draw[31]); // Load TP splashes
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, language.draw[32]); // Load Remote Previews
-    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, language.draw[33]); // Load remote BGM
-    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, language.draw[34]); // Dump theme
-    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, language.draw[35]); // Dump all themes
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, language.draw.download_themes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, language.draw.download_splashes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, language.draw.download_preview);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, language.draw.download_bgm);
+    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, language.draw.dump_single);
+    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, language.draw.dump_all_official);
 
     for(int i = 0; i < TEXT_AMOUNT; i++)
         C2D_TextOptimize(&text[i]);
