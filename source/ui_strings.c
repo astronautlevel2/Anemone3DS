@@ -181,6 +181,7 @@ const Language_s language_english = {
         .switch_splashes = "Or \uE004 to switch to splashes",
         .switch_themes = "Or \uE004 to switch to themes",
         .quit = "Or        to quit",
+        .start_pos = 162, // Adjust x pos of start glyph to line up with quit string
         .by = "By ",
         .selected = "Selected:",
         .sel = "Sel.:",
@@ -223,24 +224,24 @@ const Language_s language_english = {
     },
     .loading =
     {
-        "No preview found.",
+        .no_preview = "No preview found.",
     },
     .main =
     {
-        "The new position has to be\nsmaller or equal to the\nnumber of entries!",
-        "The new position has to\nbe positive!",
-        "Where do you want to jump to?\nMay cause icons to reload.",
-        "Cancel",
-        "Jump",
-        "Theme extdata does not exist!\nSet a default theme from the home menu.",
-        "Loading QR Scanner...",
-        "Please connect to Wi-Fi before scanning QR codes",
-        "QR scanning doesnt work from the Homebrew\nLauncher, use the ThemePlaza browser instead.",
-        "Your camera seems to have a problem,\nunable to scan QR codes.",
-        "You have too many themes selected.",
-        "You don't have enough themes selected.",
-        "Are you sure you would like to delete\nthe installed splash?",
-        "Are you sure you would like to delete this?",
+        .position_too_big = "The new position has to be\nsmaller or equal to the\nnumber of entries!",
+        .position_zero = "The new position has to\nbe positive!",
+        .jump_q = "Where do you want to jump to?\nMay cause icons to reload.",
+        .cancel = "Cancel",
+        .jump = "Jump",
+        .no_theme_extdata = "Theme extdata does not exist!\nSet a default theme from the home menu.",
+        .loading_qr = "Loading QR Scanner...",
+        .no_wifi = "Please connect to Wi-Fi before scanning QR codes",
+        .qr_homebrew = "QR scanning doesnt work from the Homebrew\nLauncher, use the ThemePlaza browser instead.",
+        .camera_broke = "Your camera seems to have a problem,\nunable to scan QR codes.",
+        .too_many_themes = "You have too many themes selected.",
+        .not_enough_themes = "You don't have enough themes selected.",
+        .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
+        .delete_confirm = "Are you sure you would like to delete this?",
     },
     .remote =
     {

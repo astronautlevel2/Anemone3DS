@@ -614,7 +614,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
 
-    if(list->entries == NULL)
+    if(list->entries == NULL || list->entries_count == 0)
     {
         C2D_Text * mode_found_string[MODE_AMOUNT] = {
             &text[TEXT_NO_THEME_FOUND],
@@ -634,7 +634,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         C2D_ImageTint yellow_tint;
         C2D_PlainImageTint(&yellow_tint, colors[COLOR_YELLOW], 1.0f);
-        C2D_SpriteSetPos(&sprite_start, 162, 173);
+        C2D_SpriteSetPos(&sprite_start, language.draw.start_pos, 173);
         C2D_SpriteSetScale(&sprite_start, 1.25f, 1.4f);
         C2D_DrawSpriteTinted(&sprite_start, &yellow_tint);
         C2D_SpriteSetScale(&sprite_start, 1.0f, 1.0f);

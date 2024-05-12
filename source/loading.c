@@ -30,6 +30,7 @@
 #include "music.h"
 #include "draw.h"
 #include "conversion.h"
+#include "ui_strings.h"
 
 #include <png.h>
 
@@ -409,7 +410,7 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
         if (!found_splash)
         {
             free(rgba_buffer);
-            throw_error("No preview found.", ERROR_LEVEL_WARNING);
+            throw_error(language.loading.no_preview, ERROR_LEVEL_WARNING);
             return false;
         }
 

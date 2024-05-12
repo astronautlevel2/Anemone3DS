@@ -30,10 +30,6 @@
 #include "colors.h"
 #include "draw.h"
 
-#define CAMERA_STRINGS 5
-#define DRAW_STRINGS 36
-#define FS_STRINGS 8
-#define LOADING_STRINGS 1
 #define MAIN_STRINGS 14
 #define REMOTE_STRINGS 29
 #define SPLASHES_STRINGS 2
@@ -84,6 +80,7 @@ typedef struct {
     const char *download_bgm;
     const char *dump_single;
     const char *dump_all_official;
+    float start_pos;
 } Draw_Strings_s;
 
 typedef struct {
@@ -98,14 +95,35 @@ typedef struct {
 } FS_Strings_s;
 
 typedef struct {
+    const char *no_preview;
+} Loading_Strings_s;
+
+typedef struct {
+    const char *position_too_big;
+    const char *position_zero;
+    const char *jump_q;
+    const char *cancel;
+    const char *jump;
+    const char *no_theme_extdata;
+    const char *loading_qr;
+    const char *no_wifi;
+    const char *qr_homebrew;
+    const char *camera_broke;
+    const char *too_many_themes;
+    const char *not_enough_themes;
+    const char *uninstall_confirm;
+    const char *delete_confirm;
+} Main_Strings_s;
+
+typedef struct {
     Instructions_s normal_instructions[MODE_AMOUNT];
     Instructions_s install_instructions;
     Instructions_s extra_instructions[3];
     Camera_Strings_s camera;
     Draw_Strings_s draw;
     FS_Strings_s fs;
-    char *loading[LOADING_STRINGS];
-    char *main[MAIN_STRINGS];
+    Loading_Strings_s loading;
+    Main_Strings_s main;
     char *remote[REMOTE_STRINGS];
     char *splashes[SPLASHES_STRINGS];
     char *themes[THEMES_STRINGS];
