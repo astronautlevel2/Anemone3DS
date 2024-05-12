@@ -939,7 +939,10 @@ int main(void)
                 {
                     if(BETWEEN(320-168, x, 320-144))
                     {
-                        toggle_shuffle(current_list);
+                        if (current_mode == MODE_THEMES)
+                        {
+                            toggle_shuffle(current_list);
+                        }
                     }
                     if(BETWEEN(320-144, x, 320-120))
                     {
