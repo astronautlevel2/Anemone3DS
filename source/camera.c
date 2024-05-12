@@ -37,8 +37,6 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-extern Language_s language;
-
 static void start_read(qr_data * data)
 {
     LightLock_Lock(&data->mut);

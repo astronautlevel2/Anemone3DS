@@ -377,8 +377,8 @@ int main(void)
 {
     srand(time(NULL));
     init_services();
-    init_screens();
     language = languages[LANGUAGE_EN];
+    init_screens();
 
     svcCreateMutex(&update_icons_mutex, true);
 
