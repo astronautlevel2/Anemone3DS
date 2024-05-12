@@ -327,6 +327,8 @@ static void jump_menu(Entry_List_s * list)
         list->scroll = list->selected_entry;
         if(list->scroll >= list->entries_count - list->entries_loaded)
             list->scroll = list->entries_count - list->entries_loaded - 1;
+        if (list->scroll < 0)
+            list->scroll = 0;
     }
 }
 
