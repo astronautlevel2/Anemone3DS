@@ -28,6 +28,7 @@
 #include "unicode.h"
 #include "fs.h"
 #include "draw.h"
+#include "ui_strings.h"
 
 #define BODY_CACHE_SIZE 0x150000
 #define BGM_MAX_SIZE 0x337000
@@ -81,7 +82,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
                     {
                         free(body);
                         DEBUG("body not found\n");
-                        throw_error("No body_LZ.bin found - is this a theme?", ERROR_LEVEL_WARNING);
+                        throw_error(language.themes.no_body_found, ERROR_LEVEL_WARNING);
                         return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
                     }
 
@@ -180,7 +181,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
             {
                 free(body);
                 DEBUG("body not found\n");
-                throw_error("No body_LZ.bin found - is this a theme?", ERROR_LEVEL_WARNING);
+                throw_error(language.themes.no_body_found, ERROR_LEVEL_WARNING);
                 return MAKERESULT(RL_PERMANENT, RS_CANCELED, RM_APPLICATION, RD_NOT_FOUND);
             }
 
@@ -301,7 +302,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
     //----------------------------------------
     if (mono_audio)
     {
-        throw_error("One or more installed themes use mono audio.\nMono audio causes a number of issues.\nCheck the wiki for more information.", ERROR_LEVEL_WARNING);
+        throw_error(language.themes.mono_warn, ERROR_LEVEL_WARNING);
     }
     return 0;
 }
@@ -345,7 +346,7 @@ dir_name_callback(void * data, const char ** ppMessage, const char * text, size_
     (void)data;
     if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
     {
-        *ppMessage = "Illegal character used.";
+        *ppMessage = language.themes.illegal_char;
         return SWKBD_CALLBACK_CONTINUE;
     }
     return SWKBD_CALLBACK_OK;
@@ -359,10 +360,10 @@ Result dump_current_theme(void)
     SwkbdState swkbd;
 
     swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
-    swkbdSetHintText(&swkbd, "Name of output folder");
+    swkbdSetHintText(&swkbd, language.themes.name_folder);
 
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Cancel", false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Done", true);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.themes.cancel, false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.themes.done, true);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
     swkbdSetFilterCallback(&swkbd, dir_name_callback, NULL);
 

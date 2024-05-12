@@ -147,6 +147,20 @@ typedef struct {
 } Remote_Strings_s;
 
 typedef struct {
+    const char *no_splash_found;
+    const char *splash_disabled;
+} Splashes_Strings_s;
+
+typedef struct {
+    const char *no_body_found;
+    const char *mono_warn;
+    const char *illegal_char;
+    const char *name_folder;
+    const char *cancel;
+    const char *done;
+} Themes_Strings_s;
+
+typedef struct {
     Instructions_s normal_instructions[MODE_AMOUNT];
     Instructions_s install_instructions;
     Instructions_s extra_instructions[3];
@@ -158,8 +172,8 @@ typedef struct {
     Remote_Strings_s remote;
     Instructions_s remote_instructions[MODE_AMOUNT];
     Instructions_s remote_extra_instructions;
-    char *splashes[SPLASHES_STRINGS];
-    char *themes[THEMES_STRINGS];
+    Splashes_Strings_s splashes;
+    Themes_Strings_s themes;
 } Language_s;
 
 typedef enum {
