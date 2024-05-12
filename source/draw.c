@@ -535,7 +535,7 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
 
     draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_SEARCH]);
 
-    draw_image(sprites_list_idx, 320-96, 0);
+    draw_image(sprites_back_idx, 320-96, 0);
     draw_image(sprites_exit_idx, 320-72, 0);
     draw_image(sprites_preview_idx, 320-48, 0);
 
@@ -669,12 +669,12 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     if (draw_mode == DRAW_MODE_LIST)
     {
-        draw_image(sprites_install_idx, 320-144, 0);
-        draw_image(sprites_sort_idx, 320-120, 0);
+        draw_image(sprites_install_idx, 320-120, 0);
         draw_image(sprites_qr_idx, 320-96, 0);
         draw_image(sprites_exit_idx, 320-72, 0);
         draw_image(sprites_preview_idx, 320-48, 0);
         draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+        draw_image(sprites_menu_idx, 320-144, 0);
         if (current_mode == MODE_THEMES)
         {
             draw_image(sprites_shuffle_idx, 320-168, 0);
@@ -691,7 +691,10 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
             draw_image(sprites_back_idx, 320-120, 0);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
-            // TODO
+            draw_image(sprites_browse_idx, 320-24, 0);
+            draw_image(sprites_dump_idx, 320-48, 0);
+            draw_image(sprites_sort_idx, 320-72, 0);
+            draw_image(sprites_back_idx, 320-96, 0);
         }
     }
 

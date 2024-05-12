@@ -711,7 +711,48 @@ int main(void)
         }
         else if(extra_mode)
         {
-            if(extra_index == 1)
+            if((kDown | kHeld) & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if (kDown & KEY_TOUCH)
+                {
+                    if (y < 24)
+                    {
+                        if (BETWEEN(320-24, x, 320))
+                        {
+                            goto browse_themeplaza;
+                        } else if (BETWEEN(320-48, x, 320-24))
+                        {
+                            goto dump_single;
+                        } else if (BETWEEN(320-72, x, 320-48))
+                        {
+                            switch (current_list->current_sort)
+                            {
+                                case SORT_NAME:
+                                    goto sort_author;
+                                    break;
+                                case SORT_AUTHOR:
+                                    goto sort_path;
+                                    break;
+                                case SORT_PATH:
+                                    goto sort_name;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        } else if (BETWEEN(320-96, x, 320-72))
+                        {
+                            extra_mode = false;
+                            extra_index = 1;
+                            draw_mode = DRAW_MODE_LIST;
+                        }
+                    }
+                }
+            }
+            else if(extra_index == 1)
             {
                 if(kDown & KEY_B)
                 {
@@ -793,6 +834,7 @@ int main(void)
             {
                 if(kDown & KEY_DUP)
                 {
+                    dump_single:
                     draw_install(INSTALL_DUMPING_THEME);
                     Result res = dump_current_theme();
                     if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
@@ -944,7 +986,12 @@ int main(void)
                             toggle_shuffle(current_list);
                         }
                     }
-                    if(BETWEEN(320-144, x, 320-120))
+                    else if(BETWEEN(320-144, x, 320-120))
+                    {
+                        extra_mode = true;
+                        draw_mode = DRAW_MODE_EXTRA;
+                    }
+                    else if(BETWEEN(320-120, x, 320-96))
                     {
                         if (current_mode == MODE_THEMES)
                         {
@@ -962,23 +1009,6 @@ int main(void)
                                 else
                                     splash->installed = false;
                             }
-                        }
-                    }
-                    else if(BETWEEN(320-120, x, 320-96))
-                    {
-                        switch(current_list->current_sort)
-                        {
-                            case SORT_NAME:
-                                goto sort_author;
-                                break;
-                            case SORT_AUTHOR:
-                                goto sort_path;
-                                break;
-                            case SORT_PATH:
-                                goto sort_name;
-                                break;
-                            default:
-                                break;
                         }
                     }
                     else if(BETWEEN(320-96, x, 320-72))
