@@ -32,7 +32,7 @@
 #include "camera.h"
 #include "music.h"
 #include "remote.h"
-#include "instructions.h"
+#include "ui_strings.h"
 #include <time.h>
 
 bool quit = false;
@@ -52,6 +52,8 @@ static Thread install_check_threads[MODE_AMOUNT] = {0};
 static Thread_Arg_s install_check_threads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
+
+Language_s language = {0};
 
 int __stacksize__ = 64 * 1024;
 Result archive_result;
@@ -376,6 +378,7 @@ int main(void)
     srand(time(NULL));
     init_services();
     init_screens();
+    language = languages[LANGUAGE_EN];
 
     svcCreateMutex(&update_icons_mutex, true);
 
@@ -436,12 +439,12 @@ int main(void)
 
         current_list = &lists[current_mode];
 
-        Instructions_s instructions = normal_instructions[current_mode];
+        Instructions_s instructions = language.normal_instructions[current_mode];
         if(install_mode)
-            instructions = install_instructions;
+            instructions = language.install_instructions;
         if(extra_mode)
         {
-            instructions = extra_instructions[extra_index];
+            instructions = language.extra_instructions[extra_index];
         }
 
         if(preview_mode)

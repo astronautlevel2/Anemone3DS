@@ -32,9 +32,12 @@
 #include "fs.h"
 #include "loading.h"
 #include "remote.h"
+#include "ui_strings.h"
 
 #include <archive.h>
 #include <archive_entry.h>
+
+extern Language_s language;
 
 static void start_read(qr_data * data)
 {
@@ -200,7 +203,7 @@ static void update_ui(void * arg)
         C2D_DrawImageAt((C2D_Image){ &tex, &subt3x }, 0.0f, 0.0f, 0.4f, NULL, 1.0f, 1.0f);
 
         set_screen(bottom);
-        draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], "Press \uE005 To Quit");
+        draw_text_center(GFX_BOTTOM, 4, 0.5, 0.5, 0.5, colors[COLOR_WHITE], language.camera[0]); // Press R to quit
         end_frame();
     }
 
@@ -212,7 +215,7 @@ static bool start_capture_cam(qr_data * data)
 {
     if((data->cam_thread = threadCreate(capture_cam_thread, data, 0x10000, 0x1A, 1, false)) == NULL)
     {
-        throw_error("Capture cam thread creation failed\nPlease report this to the developers", ERROR_LEVEL_ERROR);
+        throw_error(language.camera[1], ERROR_LEVEL_ERROR); // Thread creation failed
         LightEvent_Signal(&data->event_cam_info);
         LightEvent_Signal(&data->event_ui_info);
         return false;
@@ -397,18 +400,18 @@ bool init_qr(void)
                 }
                 else
                 {
-                    throw_error("Zip downloaded is neither\na splash nor a theme.", ERROR_LEVEL_WARNING);
+                    throw_error(language.camera[2], ERROR_LEVEL_WARNING); // Zip downloaded isn't a splash or theme
                 }
             }
             else
             {
-                throw_error("File downloaded isn't a zip.", ERROR_LEVEL_WARNING);
+                throw_error(language.camera[3], ERROR_LEVEL_WARNING); // File downloaded isn't a zip
             }
             free(zip_buf);
         }
         else
         {
-            throw_error("Download failed.", ERROR_LEVEL_WARNING);
+            throw_error(language.camera[4], ERROR_LEVEL_WARNING); // Download failed
         }
 
         free(filename);
