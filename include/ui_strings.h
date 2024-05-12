@@ -182,7 +182,7 @@ typedef enum {
     LANGUAGE_AMOUNT,
 } Language_Name;
 
-extern Language_s languages[LANGUAGE_AMOUNT];
+Language_s init_strings(CFG_Language lang);
 extern Language_s language;
 
 #endif

@@ -377,7 +377,9 @@ int main(void)
 {
     srand(time(NULL));
     init_services();
-    language = languages[LANGUAGE_EN];
+    CFG_Language lang;
+    CFGU_GetSystemLanguage(&lang);
+    language = init_strings(lang);
     init_screens();
 
     svcCreateMutex(&update_icons_mutex, true);

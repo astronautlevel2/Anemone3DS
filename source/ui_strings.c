@@ -358,8 +358,22 @@ const Language_s language_english = {
     }
 };
 
-Language_s languages[LANGUAGE_AMOUNT] = 
+Language_s init_strings(CFG_Language lang)
 {
-    language_english,
-};
-
+    switch (lang)
+    {
+        case CFG_LANGUAGE_JP:
+        case CFG_LANGUAGE_FR:
+        case CFG_LANGUAGE_DE:
+        case CFG_LANGUAGE_IT:
+        case CFG_LANGUAGE_ES:
+        case CFG_LANGUAGE_ZH:
+        case CFG_LANGUAGE_KO:
+        case CFG_LANGUAGE_NL:
+        case CFG_LANGUAGE_PT:
+        case CFG_LANGUAGE_RU:
+        case CFG_LANGUAGE_TW:
+        case CFG_LANGUAGE_EN:
+            return language_english;
+    }
+}
