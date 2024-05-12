@@ -210,6 +210,7 @@ const Language_s language_english = {
         .download_bgm = "Downloading BGM, please wait...",
         .dump_single = "Dumping theme, please wait...",
         .dump_all_official = "Dumping official themes, please wait...",
+        .shuffle = "Shuffle: %i/10",
     },
     .fs =
     {
@@ -541,6 +542,7 @@ const Language_s language_french = {
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
+        .shuffle = "Shuffle: %i/10",
     },
     .fs =
     {
@@ -693,18 +695,18 @@ Language_s init_strings(CFG_Language lang)
 {
     switch (lang)
     {
-        case CFG_LANGUAGE_JP:
+        //case CFG_LANGUAGE_JP:
         case CFG_LANGUAGE_FR:
             return language_french;
-        case CFG_LANGUAGE_DE:
-        case CFG_LANGUAGE_IT:
-        case CFG_LANGUAGE_ES:
-        case CFG_LANGUAGE_ZH:
-        case CFG_LANGUAGE_KO:
-        case CFG_LANGUAGE_NL:
-        case CFG_LANGUAGE_PT:
-        case CFG_LANGUAGE_RU:
-        case CFG_LANGUAGE_TW:
+        //case CFG_LANGUAGE_DE:
+        //case CFG_LANGUAGE_IT:
+        //case CFG_LANGUAGE_ES:
+        //case CFG_LANGUAGE_ZH:
+        //case CFG_LANGUAGE_KO:
+        //case CFG_LANGUAGE_NL:
+        //case CFG_LANGUAGE_PT:
+        //case CFG_LANGUAGE_RU:
+        //case CFG_LANGUAGE_TW:
         case CFG_LANGUAGE_EN:
             return language_english;
         default:

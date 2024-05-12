@@ -576,6 +576,7 @@ bool themeplaza_browser(EntryMode mode)
                     stop_audio(&audio);
                 }
             }
+            continue;
         }
         else if (kDown & KEY_B)
         {
@@ -654,7 +655,8 @@ bool themeplaza_browser(EntryMode mode)
                     }
                     continue;
                 }
-                else if (y < 24)
+
+                if (y < 24)
                 {
                     if (BETWEEN(0, x, 80))
                     {
@@ -695,12 +697,7 @@ bool themeplaza_browser(EntryMode mode)
             }
             else
             {
-                if (preview_mode)
-                {
-                    preview_mode = false;
-                    continue;
-                }
-                else if (BETWEEN(24, y, 240 - 24))
+                if (BETWEEN(24, y, 240 - 24))
                 {
                     if (BETWEEN(border, x, 320 - border))
                     {

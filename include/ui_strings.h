@@ -80,6 +80,7 @@ typedef struct {
     const char *dump_single;
     const char *dump_all_official;
     float start_pos;
+    const char *shuffle;
 } Draw_Strings_s;
 
 typedef struct {
