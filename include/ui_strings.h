@@ -29,9 +29,8 @@
 
 #include "colors.h"
 #include "draw.h"
+#include "common.h"
 
-#define MAIN_STRINGS 14
-#define REMOTE_STRINGS 29
 #define SPLASHES_STRINGS 2
 #define THEMES_STRINGS 6
 
@@ -157,6 +156,8 @@ typedef struct {
     Loading_Strings_s loading;
     Main_Strings_s main;
     Remote_Strings_s remote;
+    Instructions_s remote_instructions[MODE_AMOUNT];
+    Instructions_s remote_extra_instructions;
     char *splashes[SPLASHES_STRINGS];
     char *themes[THEMES_STRINGS];
 } Language_s;

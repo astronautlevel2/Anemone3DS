@@ -245,35 +245,102 @@ const Language_s language_english = {
     },
     .remote =
     {
-        "No results for this search.",
-        "Couldn't download Theme Plaza data.\nMake sure WiFi is on.",
-        "The new page has to be\nsmaller or equal to the\nnumber of pages!",
-        "The new position has to\nbe positive!",
-        "Which page do you want to jump to?",
-        "Cancel",
-        "Jump",
-        "Which tags do you want to search for?",
-        "Search",
-        "Parental Control validation failed!\nBrowser Access restricted.",
-        "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator",
-        "Error in HTTPC sysmodule - 0x%08lx.\nIf you are seeing this, please contact an\nAnemone developer on the Theme Plaza Discord.",
-        "HTTP 303 See Other (Theme Plaza)\nHas this theme been approved?",
-        "HTTP 303 See Other\nDownload the resource directly\nor contact the site administrator.",
-        "HTTP 404 Not Found\nHas this theme been approved?",
-        "HTTP %s\nCheck that the URL is correct.",
-        "HTTP %s\nContact the site administrator.",
-        "401 Unauthorized",
-        "403 Forbidden",
-        "407 Proxy Authentication Required",
-        "HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.",
-        "HTTP 418 I'm a teapot\nContact the site administrator.",
-        "HTTP 426 Upgrade Required\nThe 3DS cannot connect to this server.\nContact the site administrator.",
-        "HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.",
-        "HTTP 500 Internal Server Error\nContact the site administrator.",
-        "HTTP 502 Bad Gateway\nContact the site administrator.",
-        "HTTP 503 Service Unavailable\nContact the site administrator.",
-        "HTTP 504 Gateway Timeout\nContact the site administrator.",
-        "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .no_results = "No results for this search.",
+        .check_wifi = "Couldn't download Theme Plaza data.\nMake sure WiFi is on.",
+        .new_page_big = "The new page has to be\nsmaller or equal to the\nnumber of pages!",
+        .new_page_zero = "The new position has to\nbe positive!",
+        .jump_page = "Which page do you want to jump to?",
+        .cancel = "Cancel",
+        .jump = "Jump",
+        .tags = "Which tags do you want to search for?",
+        .search = "Search",
+        .parental_fail = "Parental Control validation failed!\nBrowser Access restricted.",
+        .zip_not_found = "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator",
+        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nIf you are seeing this, please contact an\nAnemone developer on the Theme Plaza Discord.",
+        .http303_tp = "HTTP 303 See Other (Theme Plaza)\nHas this theme been approved?",
+        .http303 = "HTTP 303 See Other\nDownload the resource directly\nor contact the site administrator.",
+        .http404 = "HTTP 404 Not Found\nHas this theme been approved?",
+        .http_err_url = "HTTP %s\nCheck that the URL is correct.",
+        .http_errcode_generic = "HTTP %s\nContact the site administrator.",
+        .http401 = "401 Unauthorized",
+        .http403 = "403 Forbidden",
+        .http407 = "407 Proxy Authentication Required",
+        .http414 = "HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.",
+        .http418 = "HTTP 418 I'm a teapot\nContact the site administrator.",
+        .http426 = "HTTP 426 Upgrade Required\nThe 3DS cannot connect to this server.\nContact the site administrator.",
+        .http451 = "HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.",
+        .http500 = "HTTP 500 Internal Server Error\nContact the site administrator.",
+        .http502 = "HTTP 502 Bad Gateway\nContact the site administrator.",
+        .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
+        .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
+        .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+    },
+    .remote_instructions =
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Download theme",
+                    "\uE001 Go back"
+                },
+                {
+                    "\uE002 Hold for more",
+                    "\uE003 Preview theme"
+                },
+                {
+                    "\uE004 Previous page",
+                    "\uE005 Next page"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Download splash",
+                    "\uE001 Go back"
+                },
+                {
+                    "\uE002 Hold for more",
+                    "\uE003 Preview splash"
+                },
+                {
+                    "\uE004 Previous page",
+                    "\uE005 Next page"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        }
+    },
+    .remote_extra_instructions =
+    {
+        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+        .instructions = {
+            {
+                "\uE079 Jump to page",
+                "\uE07A Search tags"
+            },
+            {
+                "\uE07B Toggle splash/theme",
+                "\uE07C Reload without cache"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Exit",
+                NULL
+            }
+        }
     },
     .splashes =
     {
