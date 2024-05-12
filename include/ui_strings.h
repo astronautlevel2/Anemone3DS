@@ -116,6 +116,38 @@ typedef struct {
 } Main_Strings_s;
 
 typedef struct {
+    const char *no_results;
+    const char *check_wifi;
+    const char *new_page_big;
+    const char *new_page_zero;
+    const char *jump_page;
+    const char *cancel;
+    const char *jump;
+    const char *tags;
+    const char *search;
+    const char *parental_fail;
+    const char *zip_not_found;
+    const char *generic_httpc_error;
+    const char *http303_tp;
+    const char *http303;
+    const char *http404;
+    const char *http_err_url;
+    const char *http_errcode_generic;
+    const char *http401;
+    const char *http403;
+    const char *http407;
+    const char *http414;
+    const char *http418;
+    const char *http426;
+    const char *http451;
+    const char *http500;
+    const char *http502;
+    const char *http503;
+    const char *http504;
+    const char *http_unexpected;
+} Remote_Strings_s;
+
+typedef struct {
     Instructions_s normal_instructions[MODE_AMOUNT];
     Instructions_s install_instructions;
     Instructions_s extra_instructions[3];
@@ -124,7 +156,7 @@ typedef struct {
     FS_Strings_s fs;
     Loading_Strings_s loading;
     Main_Strings_s main;
-    char *remote[REMOTE_STRINGS];
+    Remote_Strings_s remote;
     char *splashes[SPLASHES_STRINGS];
     char *themes[THEMES_STRINGS];
 } Language_s;

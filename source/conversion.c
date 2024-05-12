@@ -49,7 +49,7 @@ size_t bin_to_abgr(char ** bufp, size_t size)
     return out_size;
 }
 
-size_t png_to_abgr(char ** bufp, size_t size)
+size_t png_to_abgr(char ** bufp, size_t size, u32 *height)
 {
     size_t out_size = 0;
     if(size < 8 || png_sig_cmp((png_bytep)*bufp, 0, 8))
@@ -70,7 +70,7 @@ size_t png_to_abgr(char ** bufp, size_t size)
     png_read_info(png, info);
 
     u32 width = png_get_image_width(png, info);
-    u32 height = png_get_image_height(png, info);
+    *height = png_get_image_height(png, info);
 
     png_byte color_type = png_get_color_type(png, info);
     png_byte bit_depth  = png_get_bit_depth(png, info);
@@ -107,10 +107,10 @@ size_t png_to_abgr(char ** bufp, size_t size)
 
     png_read_update_info(png, info);
 
-    row_pointers = malloc(sizeof(png_bytep) * height);
-    out_size = sizeof(u32) * (width * height);
+    row_pointers = malloc(sizeof(png_bytep) * *height);
+    out_size = sizeof(u32) * (width * *height);
     u32 * out = malloc(out_size);
-    for(u32 y = 0; y < height; y++)
+    for(u32 y = 0; y < *height; y++)
     {
         row_pointers[y] = (png_bytep)(out + (width * y));
     }

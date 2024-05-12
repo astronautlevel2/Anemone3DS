@@ -288,14 +288,15 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     char * preview_buf = malloc(preview_size);
     u32 preview_buf_size = preview_size;
     memcpy(preview_buf, preview_png, preview_size);
+    u32 height = 480;
 
-    if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size)))
+    if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size, &height)))
     {
         free(preview_buf);
         return false;
     }
 
-    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset);
+    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset, height);
     free(preview_buf);
 
     if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted

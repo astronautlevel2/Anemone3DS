@@ -68,7 +68,7 @@ void copy_texture_data(C3D_Tex * texture, const u16 * src, const Entry_Icon_s * 
 void parse_smdh(Icon_s * icon, Entry_s * entry, const u16 * fallback_name);
 
 
-bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset);
+bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset, int height);
 bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset);
 void free_preview(C2D_Image preview_image);
 Result load_audio(const Entry_s *, audio_s *);
