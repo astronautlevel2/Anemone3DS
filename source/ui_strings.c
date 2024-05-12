@@ -38,7 +38,7 @@ const Language_s language_english = {
                     "\uE001 Queue shuffle theme"
                 },
                 {
-                    "\uE002 Hold for more",
+                    "\uE002 More options",
                     "\uE003 Preview theme"
                 },
                 {
@@ -59,7 +59,7 @@ const Language_s language_english = {
                     "\uE001 Delete installed splash"
                 },
                 {
-                    "\uE002 Hold for more",
+                    "\uE002 More options",
                     "\uE003 Preview splash"
                 },
                 {
