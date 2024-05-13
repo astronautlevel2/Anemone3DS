@@ -286,7 +286,7 @@ const Language_s language_english = {
                     "\uE001 Go back"
                 },
                 {
-                    "\uE002 Hold for more",
+                    "\uE002 More options",
                     "\uE003 Preview theme"
                 },
                 {
@@ -307,7 +307,7 @@ const Language_s language_english = {
                     "\uE001 Go back"
                 },
                 {
-                    "\uE002 Hold for more",
+                    "\uE002 More options",
                     "\uE003 Preview splash"
                 },
                 {
@@ -323,7 +323,7 @@ const Language_s language_english = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "Release \uE002 to cancel or hold \uE006 and release \uE002 to do stuff",
+        .info_line = "\uE001 Leave extra menu",
         .instructions = {
             {
                 "\uE079 Jump to page",
@@ -542,7 +542,7 @@ const Language_s language_french = {
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
-        .shuffle = "Shuffle: %i/10",
+        .shuffle = "Aléatoire: %i/10",
     },
     .fs =
     {
@@ -618,7 +618,7 @@ const Language_s language_french = {
                     "\uE001 Retour"
                 },
                 {
-                    "\uE002 Maintenir pour +",
+                    "\uE002 Plus d'options",
                     "\uE003 Aperçu"
                 },
                 {
@@ -639,7 +639,7 @@ const Language_s language_french = {
                     "\uE001 Retour"
                 },
                 {
-                    "\uE002 Maintenir pour +",
+                    "\uE002 Plus d'options",
                     "\uE003 Aperçu"
                 },
                 {
@@ -655,7 +655,7 @@ const Language_s language_french = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "Relâcher \uE002: annuler. Maintenir \uE006 et relâcher \uE002: choisir",
+        .info_line = "\uE001 Retour",
         .instructions = {
             {
                 "\uE079 Aller à la page",

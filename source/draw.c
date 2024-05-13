@@ -514,7 +514,7 @@ static void draw_entry_info(Entry_s * entry)
     draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description, 363);
 }
 
-void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
+void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int extra_mode)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
@@ -583,6 +583,11 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions)
             C2D_DrawRectSolid(horizontal_offset, vertical_offset+list->entry_size-border_width, 0.5f, list->entry_size, border_width, colors[COLOR_CURSOR]);
             C2D_DrawRectSolid(horizontal_offset+list->entry_size-border_width, vertical_offset, 0.5f, border_width, list->entry_size, colors[COLOR_CURSOR]);
         }
+    }
+    
+    if (extra_mode)
+    {
+        C2D_DrawRectSolid(0, 24, 0.6f, 320, 240-48, C2D_Color32(0, 0, 0, 128));
     }
 
     char entries_count_str[0x20] = {0};

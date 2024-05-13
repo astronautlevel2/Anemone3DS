@@ -494,7 +494,7 @@ bool themeplaza_browser(EntryMode mode)
             Instructions_s instructions = language.remote_instructions[mode];
             if (extra_mode)
                 instructions = language.remote_extra_instructions;
-            draw_grid_interface(current_list, instructions);
+            draw_grid_interface(current_list, instructions, extra_mode);
         }
 
         if (home_displayed)
@@ -520,33 +520,36 @@ bool themeplaza_browser(EntryMode mode)
 
         if (extra_mode)
         {
-            if (kUp & KEY_X)
-                extra_mode = false;
-            if (!extra_mode)
+            if (kDown & KEY_B)
             {
-                if ((kDown | kHeld) & KEY_DLEFT)
-                {
-                change_mode:
-                    mode++;
-                    mode %= MODE_AMOUNT;
+                extra_mode = false;
+            }
+            else if (kDown & KEY_DLEFT)
+            {
+                extra_mode = false;
+            change_mode:
+                mode++;
+                mode %= MODE_AMOUNT;
 
-                    free(current_list->tp_search);
-                    current_list->tp_search = strdup("");
+                free(current_list->tp_search);
+                current_list->tp_search = strdup("");
 
-                    load_remote_list(current_list, 1, mode, false);
-                }
-                else if ((kDown | kHeld) & KEY_DUP)
-                {
-                    jump_menu(current_list);
-                }
-                else if ((kDown | kHeld) & KEY_DRIGHT)
-                {
-                    load_remote_list(current_list, current_list->tp_current_page, mode, true);
-                }
-                else if ((kDown | kHeld) & KEY_DDOWN)
-                {
-                    search_menu(current_list);
-                }
+                load_remote_list(current_list, 1, mode, false);
+            }
+            else if (kDown & KEY_DUP)
+            {
+                extra_mode = false;
+                jump_menu(current_list);
+            }
+            else if (kDown & KEY_DRIGHT)
+            {
+                extra_mode = false;
+                load_remote_list(current_list, current_list->tp_current_page, mode, true);
+            }
+            else if (kDown & KEY_DDOWN)
+            {
+                extra_mode = false;
+                search_menu(current_list);
             }
             continue;
         }
