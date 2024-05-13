@@ -707,7 +707,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar para splashes",
-                    "\uE005 Escanear QR code"
+                    "\uE005 Escanear código QR"
                 },
                 {
                     "Sair",
@@ -901,7 +901,7 @@ const Language_s language_portuguese = {
         .no_theme_extdata = "O extdata do tema não existe!\nDefina um tema padrão no HOME Menu.",
         .loading_qr = "Carregando o leitor QR...",
         .no_wifi = "Por favor conecte-se ao Wi-Fi antes de escanear códigos QR",
-        .qr_homebrew = "O escaneador QR não funciona no Homebrew\nLauncher, use o navegador ThemePlaza em vez disso.",
+        .qr_homebrew = "O leitor QR não funciona no Homebrew\nLauncher, use o navegador ThemePlaza em vez disso.",
         .camera_broke = "Sua câmera parece ter um problema,\nincapaz de escanear códigos QR.",
         .too_many_themes = "Você tem muitos temas selecionados.",
         .not_enough_themes = "Você não tem temas suficientes selecionados.",
