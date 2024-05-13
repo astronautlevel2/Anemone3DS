@@ -17,3 +17,6 @@
 * Joel ([@joel16](https://github.com/joel16))
 * [@thedax](https://github.com/thedax)
 * [@Wryyyong](https://github.com/Wryyyong)
+
+# Translation Contributors
+* [@cooolgamer](https://github.com/cooolgamer/) for French
