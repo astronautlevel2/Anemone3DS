@@ -1037,7 +1037,7 @@ Language_s init_strings(CFG_Language lang)
         //case CFG_LANGUAGE_KO:
         //case CFG_LANGUAGE_NL:
         case CFG_LANGUAGE_PT:
-            return language_portuguese
+            return language_portuguese;
         //case CFG_LANGUAGE_RU:
         //case CFG_LANGUAGE_TW:
         case CFG_LANGUAGE_EN:
