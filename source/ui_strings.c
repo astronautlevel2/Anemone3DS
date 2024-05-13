@@ -788,7 +788,7 @@ const Language_s language_portuguese = {
             .info_line = "\uE001 Sair do menu extra",
             .instructions = {
                 {
-                    "\uE079 Saltar na lista",
+                    "\uE079 Ir para a página",
                     "\uE07A Atualizar icones quebrados"
                 },
                 {
@@ -911,7 +911,7 @@ const Language_s language_portuguese = {
     .remote =
     {
         .no_results = "Sem resultados para esta pesquisa.",
-        .check_wifi = "Não foi possível baixar os dados do Theme Plaza.\nCertifique-se de que o WiFi esteja ligado.",
+        .check_wifi = "Não foi possível baixar os dados do Theme Plaza.\nCertifique-se de que o Wi-Fi esteja ligado.",
         .new_page_big = "The new page has to be\nsmaller or equal to the\nnumber of pages!",
         .new_page_zero = "A nova posição precisa\nser positiva!",
         .jump_page = "Para qual página você deseja ir?",
@@ -987,7 +987,7 @@ const Language_s language_portuguese = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "Solte \uE002 para cancelar ou mantenha pressionado \uE006 e solte \uE002 para fazer coisas",
+        .info_line = "\uE001 Sair do menu extra",
         .instructions = {
             {
                 "\uE079 Ir para a página",
