@@ -699,7 +699,7 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Tema(s)",
-                    "\uE001 Adicionar ao aleatório"
+                    "\uE001 Adicionar ao shuffle"
                 },
                 {
                     "\uE002 Mais opções",
@@ -744,7 +744,7 @@ const Language_s language_portuguese = {
         .instructions = {
             {
                 "\uE079 Instalação normal",
-                "\uE07A Instalação aleatória"
+                "\uE07A Instalação shuffle"
             },
             {
                 "\uE07B Instalar só BGM",
@@ -862,7 +862,7 @@ const Language_s language_portuguese = {
         .install_splash = "Instalando um splash...",
         .delete_splash = "Excluindo splash instalado...",
         .install_theme = "Instalando um único tema...",
-        .install_shuffle = "Instalando temas aleatórios...",
+        .install_shuffle = "Instalando temas shuffle...",
         .install_bgm = "Instalando somente o BGM...",
         .install_no_bgm = "Instalando tema sem BGM...",
         .downloading = "Baixando...",
@@ -916,7 +916,7 @@ const Language_s language_portuguese = {
         .new_page_zero = "A nova posição precisa\nser positiva!",
         .jump_page = "Para qual página você deseja ir?",
         .cancel = "Cancelar",
-        .jump = "Saltar",
+        .jump = "Ir para",
         .tags = "Quais tags você deseja pesquisar?",
         .search = "Pesquisar",
         .parental_fail = "A validação dos controles parentais falhou!\nNavegador restrito.",
