@@ -699,7 +699,7 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Tema(s)",
-                    "\uE001 Adicionar ao shuffle"
+                    "\uE001 Adicionar ao aleatório"
                 },
                 {
                     "\uE002 Mais opções",
@@ -728,7 +728,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar para temas",
-                    "\uE005 Escanear QR code"
+                    "\uE005 Escanear código QR"
                 },
                 {
                     "Sair",
@@ -744,7 +744,7 @@ const Language_s language_portuguese = {
         .instructions = {
             {
                 "\uE079 Instalação normal",
-                "\uE07A Instalação shuffle"
+                "\uE07A Instalação aleatória"
             },
             {
                 "\uE07B Instalar só BGM",
@@ -764,7 +764,7 @@ const Language_s language_portuguese = {
     .extra_instructions = 
     {
         {
-            .info_line = "\uE001 Sair do menu de classificação",
+            .info_line = "\uE001 Voltar",
             .instructions = {
                 {
                     "\uE079 Classificar por nome",
@@ -785,7 +785,7 @@ const Language_s language_portuguese = {
             }
         },
         {
-            .info_line = "\uE001 Sair do menu extra",
+            .info_line = "\uE001 Voltar",
             .instructions = {
                 {
                     "\uE079 Ir para a página",
@@ -796,7 +796,7 @@ const Language_s language_portuguese = {
                     NULL
                 },
                 {
-                    "\uE004 Menu de classificação",
+                    "\uE004 Classificar por:",
                     "\uE005 Menu de exportação"
                 },
                 {
@@ -806,7 +806,7 @@ const Language_s language_portuguese = {
             }
         },
         {
-            .info_line = "\uE001 Sair do menu de exportação",
+            .info_line = "\uE001 Voltar",
             .instructions = {
                 {
                     "\uE079 Exportar Tema Atual",
@@ -862,7 +862,7 @@ const Language_s language_portuguese = {
         .install_splash = "Instalando um splash...",
         .delete_splash = "Excluindo splash instalado...",
         .install_theme = "Instalando um único tema...",
-        .install_shuffle = "Instalando temas shuffle...",
+        .install_shuffle = "Instalando temas aleatórios...",
         .install_bgm = "Instalando somente o BGM...",
         .install_no_bgm = "Instalando tema sem BGM...",
         .downloading = "Baixando...",
@@ -912,7 +912,7 @@ const Language_s language_portuguese = {
     {
         .no_results = "Sem resultados para esta pesquisa.",
         .check_wifi = "Não foi possível baixar os dados do Theme Plaza.\nCertifique-se de que o Wi-Fi esteja ligado.",
-        .new_page_big = "The new page has to be\nsmaller or equal to the\nnumber of pages!",
+        .new_page_big = "A nova página deve ser\nmenor ou igual ao\nnúmero de páginas!",
         .new_page_zero = "A nova posição precisa\nser positiva!",
         .jump_page = "Para qual página você deseja ir?",
         .cancel = "Cancelar",
@@ -987,7 +987,7 @@ const Language_s language_portuguese = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "\uE001 Sair do menu extra",
+        .info_line = "\uE001 Voltar",
         .instructions = {
             {
                 "\uE079 Ir para a página",
