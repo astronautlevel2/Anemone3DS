@@ -488,7 +488,41 @@ int main(void)
 
         if(kDown & KEY_START) quit = true;
 
-        if(!install_mode && !extra_mode)
+        if(current_list->entries_count == 0)
+        {
+            if (kDown & KEY_R)
+            {
+                goto enable_qr;
+            } else if (kDown & KEY_L)
+            {
+                goto switch_mode;
+            } else if (kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if (y < 24)
+                {
+                    if(BETWEEN(320-24, x, 320))
+                    {
+                        goto switch_mode;
+                    } else if(BETWEEN(320-48, x, 320-24))
+                    {
+                        quit = true;
+                        continue;
+                    } else if(BETWEEN(320-72, x, 320-48))
+                    {
+                        goto browse_themeplaza;
+                    } else if(BETWEEN(320-96, x, 320-72))
+                    {
+                        goto enable_qr;
+                    }
+                }
+            }
+        }
+        else if(!install_mode && !extra_mode)
         {
             if(!preview_mode && kDown & KEY_L) //toggle between splashes and themes
             {

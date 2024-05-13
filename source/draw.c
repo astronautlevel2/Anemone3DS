@@ -641,11 +641,9 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image(sprites_sort_idx, 320-144, 0);
-        draw_image(sprites_qr_idx, 320-120, 0);
-        draw_image(sprites_browse_idx, 320-96, 0);
-        draw_image(sprites_exit_idx, 320-72, 0);
-        draw_image(sprites_preview_idx, 320-48, 0);
+        draw_image(sprites_qr_idx, 320-96, 0);
+        draw_image(sprites_browse_idx, 320-72, 0);
+        draw_image(sprites_exit_idx, 320-48, 0);
 
         draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
 
