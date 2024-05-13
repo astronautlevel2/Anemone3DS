@@ -20,3 +20,4 @@
 
 # Translation Contributors
 * [@cooolgamer](https://github.com/cooolgamer/) for French
+* Arth ([@iveurne](https://github.com/iveurne)) for Portugese
