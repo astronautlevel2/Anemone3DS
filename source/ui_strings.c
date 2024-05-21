@@ -789,7 +789,7 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE079 Ir para a página",
-                    "\uE07A Atualizar icones quebrados"
+                    "\uE07A Att. icones quebrados"
                 },
                 {
                     "\uE07B Navegar no ThemePlaza",
@@ -810,7 +810,7 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE079 Exportar Tema Atual",
-                    "\uE07A Exportar Todos os Temas"
+                    "\uE07A Exportar Todos Temas"
                 },
                 {
                     NULL,
@@ -898,7 +898,7 @@ const Language_s language_portuguese = {
         .jump_q = "Para qual página você deseja ir?\nPode causar o recarregamento de ícones.",
         .cancel = "Cancelar",
         .jump = "Ir para",
-        .no_theme_extdata = "O extdata do tema não existe!\nDefina um tema padrão no HOME Menu.",
+        .no_theme_extdata = "O extdata do tema não existe!\nDefina um tema padrão no menu HOME.",
         .loading_qr = "Carregando o leitor QR...",
         .no_wifi = "Por favor conecte-se ao Wi-Fi antes de escanear códigos QR",
         .qr_homebrew = "O leitor QR não funciona no Homebrew\nLauncher, use o navegador ThemePlaza em vez disso.",
@@ -914,7 +914,7 @@ const Language_s language_portuguese = {
         .check_wifi = "Não foi possível baixar os dados do Theme Plaza.\nCertifique-se de que o Wi-Fi esteja ligado.",
         .new_page_big = "A nova página deve ser\nmenor ou igual ao\nnúmero de páginas!",
         .new_page_zero = "A nova posição precisa\nser positiva!",
-        .jump_page = "Para qual página você deseja ir?",
+        .jump_page = "Para qual página deseja ir?",
         .cancel = "Cancelar",
         .jump = "Ir para",
         .tags = "Quais tags você deseja pesquisar?",
@@ -950,7 +950,7 @@ const Language_s language_portuguese = {
                     "\uE001 Voltar"
                 },
                 {
-                    "\uE002 Segure para mais",
+                    "\uE002 Mais opções",
                     "\uE003 Prévia do tema"
                 },
                 {
@@ -971,7 +971,7 @@ const Language_s language_portuguese = {
                     "\uE001 Voltar"
                 },
                 {
-                    "\uE002 Segure para mais",
+                    "\uE002 Mais opções",
                     "\uE003 Prévia do splash"
                 },
                 {
@@ -994,8 +994,8 @@ const Language_s language_portuguese = {
                 "\uE07A Pesquisar tags"
             },
             {
-                "\uE07B Alternar o splash/tema",
-                "\uE07C Recarregar sem o cache"
+                "\uE07B Alternar splash/tema",
+                "\uE07C Recarregar sem cache"
             },
             {
                 NULL,
