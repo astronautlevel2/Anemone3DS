@@ -1021,6 +1021,11 @@ static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf
     {
         if (!strstr(acceptable_mime_types, header.mime_type))
         {
+            socExit();
+            free(data.result_buf);
+            free(socubuf);
+            if (header.mime_type) free(header.mime_type);
+            if (header.filename) free(header.filename);
             return -2;
         }
     } 
