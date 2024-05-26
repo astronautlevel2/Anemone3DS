@@ -3,6 +3,7 @@
 A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.
 
 # Dependencies
+ * Make, Git and PKG-Config
  * devkitARM, which can be installed following the instructions [here](https://devkitpro.org/wiki/Getting_Started).
  * jansson, libvorbisidec, libpng, and libarchive, which can be retrieved from [devkitPro pacman](https://devkitpro.org/viewtopic.php?f=13&t=8702).
  * A recent build of [makerom](https://github.com/profi200/Project_CTR) and the latest release of [bannertool](https://github.com/Steveice10/bannertool). These must be added to your PATH.
@@ -11,7 +12,7 @@ A Theme and Splashscreen Manager for the Nintendo 3DS, written in C.
 First of all, make sure devkitARM is properly installed - `$DEVKITPRO` and `$DEVKITARM` should be set to `/opt/devkitpro` and `$DEVKITPRO/devkitARM`, respectively.  
 After that, open the directory you want to clone the repo into, and execute  
 `git clone https://github.com/astronautlevel2/Anemone3DS` (or any other cloning method).  
-To install the prerequisite libraries, begin by ensuring devkitPro pacman (and the base install group, `3ds-dev`) is installed, and then install the dkP packages `3ds-jansson`, `3ds-libvorbisidec`, `3ds-libpng`, `3ds-lz4`, `3ds-libarchive` and `3ds-curl` using `[sudo] [dkp-]pacman -S <package-name>`.  
+To install the prerequisite libraries, begin by ensuring devkitPro pacman (and the base install group, `3ds-dev`) is installed, and then install the dkP packages `3ds-jansson`, `3ds-libvorbisidec`, `3ds-libpng`, `3ds-lz4`, `3ds-libarchive` and `3ds-curl` using `[sudo] [dkp-]pacman -S <package-name>`.  System wide packages `make`, `git` and `pkg-config` are also needed.
 
 After adding [makerom](https://github.com/profi200/Project_CTR) and [bannertool](https://github.com/Steveice10/buildtools) to your PATH, just enter your directory and run `make`. All built binaries will be in `/out/`.
 
