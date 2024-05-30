@@ -79,6 +79,7 @@ typedef struct {
     const char *download_bgm;
     const char *dump_single;
     const char *dump_all_official;
+    const char *install_badges;
     float start_pos;
     const char *shuffle;
 } Draw_Strings_s;
@@ -162,6 +163,10 @@ typedef struct {
 } Themes_Strings_s;
 
 typedef struct {
+    const char *extdata_locked;
+} Badge_Strings_s;
+
+typedef struct {
     Instructions_s normal_instructions[MODE_AMOUNT];
     Instructions_s install_instructions;
     Instructions_s extra_instructions[3];
@@ -175,6 +180,7 @@ typedef struct {
     Instructions_s remote_extra_instructions;
     Splashes_Strings_s splashes;
     Themes_Strings_s themes;
+    Badge_Strings_s badges;
 } Language_s;
 
 typedef enum {

@@ -37,6 +37,34 @@
 FS_Archive ArchiveSD;
 FS_Archive ArchiveHomeExt;
 FS_Archive ArchiveThemeExt;
+FS_Archive ArchiveBadgeExt;
+
+Result createExtSaveData(u32 extdataID)
+{
+    u8 null_smdh[0x36C0] = {0};
+    Handle *handle = fsGetSessionHandle();
+
+    u32 *cmdbuf = getThreadCommandBuffer();
+
+    u32 directory_limit = 1000;
+    u32 file_limit = 1000;
+
+    cmdbuf[0] = 0x08300182;
+    cmdbuf[1] = MEDIATYPE_SD;
+    cmdbuf[2] = extdataID;
+    cmdbuf[3] = 0;
+    cmdbuf[4] = 0x36C0;
+    cmdbuf[5] = directory_limit;
+    cmdbuf[6] = file_limit;
+    cmdbuf[7] = (0x36C0 << 4) | 0xA;
+    cmdbuf[8] = (u32)&null_smdh;
+
+    Result ret = 0;
+    if ((ret = svcSendSyncRequest(*handle)))
+        return ret;
+
+    return cmdbuf[1];
+}
 
 Result open_archives(void)
 {
@@ -49,6 +77,7 @@ Result open_archives(void)
 
     FS_Path home;
     FS_Path theme;
+    FS_Path badge;
 
     CFGU_SecureInfoGetRegion(&regionCode);
     switch(regionCode)
@@ -78,6 +107,7 @@ Result open_archives(void)
 
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Badges"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
@@ -93,6 +123,24 @@ Result open_archives(void)
     theme.size = 0xC;
     theme.data = themePath;
     if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
+
+    u32 badgePath[3] = {MEDIATYPE_SD, 0x000014d1, 0};
+    badge.type = PATH_BINARY;
+    badge.size = 0xC;
+    badge.data = badgePath;
+    if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge)))
+    {
+        if (R_SUMMARY(res) == RS_NOTFOUND) 
+        {
+            createExtSaveData(0x000014d1);
+            FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge);
+            remake_file(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, BADGE_MNG_SIZE);
+            remake_file(fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, BADGE_DATA_SIZE);
+        } else
+        {
+            return res;
+        }
+    }
 
     Handle test_handle;
     if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0))) return res;

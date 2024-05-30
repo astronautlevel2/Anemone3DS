@@ -129,7 +129,7 @@ const Language_s language_english = {
                 },
                 {
                     "\uE07B Browse ThemePlaza",
-                    NULL
+                    "\uE07C Install Badges"
                 },
                 {
                     "\uE004 Sorting menu",
@@ -210,6 +210,7 @@ const Language_s language_english = {
         .download_bgm = "Downloading BGM, please wait...",
         .dump_single = "Dumping theme, please wait...",
         .dump_all_official = "Dumping official themes, please wait...",
+        .install_badges = "Installing badges, please wait...",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -356,6 +357,10 @@ const Language_s language_english = {
         .name_folder = "Name of output folder",
         .cancel = "Cancel",
         .done = "Done"
+    },
+    .badges = 
+    {
+        .extdata_locked = "Ext Data Locked\nTry restarting Anemone3DS, or using\nthe CIA version instead."
     }
 };
 
@@ -542,6 +547,7 @@ const Language_s language_french = {
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
+        .install_badges = "Installing badges, please wait...",
         .shuffle = "Aléatoire: %i/10",
     },
     .fs =
@@ -688,6 +694,10 @@ const Language_s language_french = {
         .name_folder = "Nom du dossier de destination",
         .cancel = "Annuler",
         .done = "OK"
+    },
+    .badges = 
+    {
+        .extdata_locked = "Ext Data Locked\nTry restarting Anemone3DS, or using\nthe CIA version instead."
     }
 };
 
@@ -874,6 +884,7 @@ const Language_s language_portuguese = {
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
         .dump_all_official = "Exportando temas oficiais, aguarde...",
+        .install_badges = "Installing badges, please wait...",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -934,7 +945,7 @@ const Language_s language_portuguese = {
         .http418 = "HTTP 418 I'm a teapot\nContate o administrador do site.",
         .http426 = "HTTP 426 Upgrade Required\nO 3DS não consegue acessar este servidor.\nContate o administrador do site.",
         .http451 = "HTTP 451 Unavailable for Legal Reasons\nAlguma entidade está impedindo\no acesso ao servidor host por razões legais.",
-        .http500 = "HTTP 500 Internal Server Error\Contate o administrador do site.",
+        .http500 = "HTTP 500 Internal Server Error\nContate o administrador do site.",
         .http502 = "HTTP 502 Bad Gateway\nContate o administrador do site.",
         .http503 = "HTTP 503 Service Unavailable\nContate o administrador do site.",
         .http504 = "HTTP 504 Gateway Timeout\nContate o administrador do site.",
@@ -1020,6 +1031,10 @@ const Language_s language_portuguese = {
         .name_folder = "Nome da pasta de saída",
         .cancel = "Cancelar",
         .done = "Pronto"
+    },
+    .badges = 
+    {
+        .extdata_locked = "Ext Data Locked\nTry restarting Anemone3DS, or using\nthe CIA version instead."
     }
 };
 

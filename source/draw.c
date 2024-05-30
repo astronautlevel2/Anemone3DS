@@ -128,6 +128,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, language.draw.download_bgm);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, language.draw.dump_single);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, language.draw.dump_all_official);
+    C2D_TextParse(&text[TEXT_INSTALL_BADGES], staticBuf, language.draw.install_badges);
 
     for(int i = 0; i < TEXT_AMOUNT; i++)
         C2D_TextOptimize(&text[i]);

@@ -57,6 +57,7 @@ typedef enum InstallType_e {
 
     INSTALL_DUMPING_THEME,
     INSTALL_DUMPING_ALL_THEMES,
+    INSTALL_BADGES,
 
     INSTALL_NONE,
 } InstallType;
@@ -86,6 +87,7 @@ typedef enum {
 
     TEXT_INSTALL_DUMPING_THEME,
     TEXT_INSTALL_DUMPING_ALL_THEMES,
+    TEXT_INSTALL_BADGES,
 
     // Other text
     TEXT_VERSION,

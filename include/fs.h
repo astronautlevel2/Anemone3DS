@@ -28,12 +28,14 @@
 #define FS_H
 
 #include "common.h"
+#include "badges.h"
 
 #define ILLEGAL_CHARS "><\"?;:/\\+,.|[=]*"
 
 extern FS_Archive ArchiveSD;
 extern FS_Archive ArchiveHomeExt;
 extern FS_Archive ArchiveThemeExt;
+extern FS_Archive ArchiveBadgeExt;
 
 typedef struct {
     u32 enable : 1;

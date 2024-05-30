@@ -33,6 +33,7 @@
 #include "music.h"
 #include "remote.h"
 #include "ui_strings.h"
+#include "badges.h"
 #include <time.h>
 
 bool quit = false;
@@ -827,6 +828,11 @@ int main(void)
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
+                }
+                else if (kDown & KEY_DRIGHT)
+                {
+                    draw_install(INSTALL_BADGES);
+                    install_badges();
                 }
                 else if (kDown & KEY_R)
                 {
