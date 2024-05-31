@@ -97,6 +97,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, language.draw.tp_theme_mode);
     C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, language.draw.tp_splash_mode);
+    C2D_TextParse(&text[TEXT_THEMEPLAZA_BADGE_MODE], staticBuf, language.draw.tp_badge_mode);
 
     C2D_TextParse(&text[TEXT_SEARCH], staticBuf, language.draw.search);
     C2D_TextParse(&text[TEXT_PAGE], staticBuf, language.draw.page);
@@ -124,6 +125,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, language.draw.download_themes);
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, language.draw.download_splashes);
+    C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BADGES], staticBuf, language.draw.download_badges);
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_PREVIEW], staticBuf, language.draw.download_preview);
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, language.draw.download_bgm);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, language.draw.dump_single);
@@ -340,13 +342,13 @@ bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode
     return false;
 }
 
-void draw_preview(C2D_Image preview, int preview_offset)
+void draw_preview(C2D_Image preview, int preview_offset, float preview_scale)
 {
     start_frame();
     set_screen(top);
-    C2D_DrawImageAt(preview, -preview_offset, 0, 0.5f, NULL, 1.0f, 1.0f);
+    C2D_DrawImageAt(preview, -preview_offset, 0, 0.5f, NULL, preview_scale, preview_scale);
     set_screen(bottom);
-    C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, 1.0f, 1.0f);
+    C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, preview_scale, preview_scale);
 }
 
 static void draw_install_handler(InstallType type)
@@ -520,9 +522,10 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
     draw_base_interface();
     EntryMode current_mode = list->mode;
 
-    C2D_Text * mode_string[MODE_AMOUNT] = {
+    C2D_Text * mode_string[REMOTE_MODE_AMOUNT] = {
         &text[TEXT_THEMEPLAZA_THEME_MODE],
         &text[TEXT_THEMEPLAZA_SPLASH_MODE],
+        &text[TEXT_THEMEPLAZA_BADGE_MODE],
     };
 
     draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
@@ -699,16 +702,17 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
             draw_image(sprites_browse_idx, 320-24, 0);
             draw_image(sprites_dump_idx, 320-48, 0);
             draw_image(sprites_sort_idx, 320-72, 0);
-            draw_image(sprites_back_idx, 320-96, 0);
+            draw_image(sprites_badge_idx, 320-96, 0);
+            draw_image(sprites_back_idx, 320-120, 0);
         }
     }
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
-        draw_image(sprites_arrow_up_idx, 136, 220);
+        draw_image(sprites_arrow_up_idx, 141, 220);
     if(list->scroll + list->entries_loaded < list->entries_count)
-        draw_image(sprites_arrow_down_idx, 152, 220);
+        draw_image(sprites_arrow_down_idx, 157, 220);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {

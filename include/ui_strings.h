@@ -31,9 +31,6 @@
 #include "draw.h"
 #include "common.h"
 
-#define SPLASHES_STRINGS 2
-#define THEMES_STRINGS 6
-
 typedef struct {
     const char *quit;
     const char *thread_error;
@@ -56,6 +53,7 @@ typedef struct {
     const char *sel;
     const char *tp_theme_mode;
     const char *tp_splash_mode;
+    const char *tp_badge_mode;
     const char *search;
     const char *page;
     const char *err_quit;
@@ -75,6 +73,7 @@ typedef struct {
     const char *delete_sd;
     const char *download_themes;
     const char *download_splashes;
+    const char *download_badges;
     const char *download_preview;
     const char *download_bgm;
     const char *dump_single;
@@ -176,7 +175,7 @@ typedef struct {
     Loading_Strings_s loading;
     Main_Strings_s main;
     Remote_Strings_s remote;
-    Instructions_s remote_instructions[MODE_AMOUNT];
+    Instructions_s remote_instructions[REMOTE_MODE_AMOUNT];
     Instructions_s remote_extra_instructions;
     Splashes_Strings_s splashes;
     Themes_Strings_s themes;

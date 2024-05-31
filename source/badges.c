@@ -249,7 +249,7 @@ Result install_badges(void)
     Handle folder = 0;
     Result res = 0;
 
-	res = actInit();
+    res = actInit();
     if (R_FAILED(res))
     {
         DEBUG("actInit() failed!\n");
@@ -270,9 +270,6 @@ Result install_badges(void)
         DEBUG("ACTU_GetAccountDataBlock failed! %08lx\n", res);
         return res;
     }
-
-    u64 badgeDataSize = 0xF4DF80;
-    u64 badgeMngSize = 0xD4A8;
 
     badgeMngBuffer = NULL;
     badgeDataBuffer = NULL;
@@ -296,8 +293,8 @@ Result install_badges(void)
     alpha_buf_64x64 = malloc(12*6*64*64/2); //Same thing, but 2 pixels of alpha data per byte
     rgb_buf_32x32 = malloc(12*6*32*32*2); //Same thing, but 32x32
     alpha_buf_32x32 = malloc(12*6*32*32/2);
-    badgeDataBuffer = calloc(1, badgeDataSize);
-    badgeMngBuffer = calloc(1, badgeMngSize);
+    badgeDataBuffer = calloc(1, BADGE_DATA_SIZE);
+    badgeMngBuffer = calloc(1, BADGE_MNG_SIZE);
     int badge_count = 0;
     int set_count = 0;
     int default_set = 0;
@@ -366,7 +363,7 @@ Result install_badges(void)
         memcpy(badgeDataBuffer + 0x250F80 + default_index * 0x2000, rgb_buf_64x64, 64 * 64 * 2);
     }
 
-    res = buf_to_file(badgeDataSize, fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, badgeDataBuffer);
+    res = buf_to_file(BADGE_DATA_SIZE, fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, badgeDataBuffer);
     if (res)
     {
         DEBUG("Error writing badge data! %lx\n", res);
@@ -405,15 +402,17 @@ Result install_badges(void)
         FSFILE_Close(handle);
     }
 
-    res = buf_to_file(badgeMngSize, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, badgeMngBuffer);
+    res = buf_to_file(BADGE_MNG_SIZE, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, badgeMngBuffer);
     if (res)
     {
         DEBUG("Error writing badge manage data! %lx\n", res);
         throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
         goto end; 
     }
+
     
     end:
+    actExit();
     if (rgb_buf_64x64) free(rgb_buf_64x64);
     if (alpha_buf_64x64) free(alpha_buf_64x64);
     if (rgb_buf_32x32) free(rgb_buf_32x32);

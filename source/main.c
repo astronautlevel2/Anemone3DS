@@ -454,7 +454,7 @@ int main(void)
 
         if(preview_mode)
         {
-            draw_preview(preview, preview_offset);
+            draw_preview(preview, preview_offset, 1.0f);
         }
         else {
             if(!iconLoadingThread_arg.run_thread)
@@ -574,7 +574,7 @@ int main(void)
                     if(preview_mode)
                     {
                         end_frame();
-                        draw_preview(preview, preview_offset);
+                        draw_preview(preview, preview_offset, 1.0f);
                         end_frame();
                         if(current_mode == MODE_THEMES && dspfirm)
                         {
@@ -606,11 +606,12 @@ int main(void)
             }
         }
 
+        int selected_entry = current_list->selected_entry;
+        Entry_s * current_entry = &current_list->entries[selected_entry];
+
         if(preview_mode || current_list->entries == NULL)
             goto touch;
 
-        int selected_entry = current_list->selected_entry;
-        Entry_s * current_entry = &current_list->entries[selected_entry];
 
         if(install_mode)
         {
@@ -787,6 +788,9 @@ int main(void)
                             }
                         } else if (BETWEEN(320-96, x, 320-72))
                         {
+                            goto badge_install;
+                        } else if (BETWEEN(320-120, x, 320-96))
+                        {
                             extra_mode = false;
                             extra_index = 1;
                             draw_mode = DRAW_MODE_LIST;
@@ -804,7 +808,7 @@ int main(void)
                 else if(kDown & KEY_DLEFT)
                 {
                     browse_themeplaza:
-                    if(themeplaza_browser(current_mode))
+                    if(themeplaza_browser((RemoteMode) current_mode))
                     {
                         current_mode = MODE_THEMES;
                         load_lists(lists);
@@ -831,6 +835,10 @@ int main(void)
                 }
                 else if (kDown & KEY_DRIGHT)
                 {
+                    badge_install:
+                    extra_mode = false;
+                    extra_index = 1;
+                    draw_mode = DRAW_MODE_LIST;
                     draw_install(INSTALL_BADGES);
                     install_badges();
                 }

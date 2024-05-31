@@ -52,6 +52,7 @@ typedef enum InstallType_e {
 
     INSTALL_LOADING_REMOTE_THEMES,
     INSTALL_LOADING_REMOTE_SPLASHES,
+    INSTALL_LOADING_REMOTE_BADGES,
     INSTALL_LOADING_REMOTE_PREVIEW,
     INSTALL_LOADING_REMOTE_BGM,
 
@@ -82,6 +83,7 @@ typedef enum {
 
     TEXT_INSTALL_LOADING_REMOTE_THEMES,
     TEXT_INSTALL_LOADING_REMOTE_SPLASHES,
+    TEXT_INSTALL_LOADING_REMOTE_BADGES,
     TEXT_INSTALL_LOADING_REMOTE_PREVIEW,
     TEXT_INSTALL_LOADING_REMOTE_BGM,
 
@@ -111,6 +113,7 @@ typedef enum {
 
     TEXT_THEMEPLAZA_THEME_MODE,
     TEXT_THEMEPLAZA_SPLASH_MODE,
+    TEXT_THEMEPLAZA_BADGE_MODE,
 
     TEXT_SEARCH,
     TEXT_PAGE,
@@ -167,7 +170,7 @@ void set_screen(C3D_RenderTarget * screen);
 void throw_error(const char * error, ErrorLevel level);
 bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);
 
-void draw_preview(C2D_Image preview, int preview_offset);
+void draw_preview(C2D_Image preview, int preview_offset, float preview_scale);
 
 void draw_install(InstallType type);
 void draw_loading_bar(u32 current, u32 max, InstallType type);

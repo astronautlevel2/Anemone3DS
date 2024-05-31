@@ -187,6 +187,7 @@ const Language_s language_english = {
         .sel = "Sel.:",
         .tp_theme_mode = "ThemePlaza Theme mode",
         .tp_splash_mode = "ThemePlaza Splash mode",
+        .tp_badge_mode = "ThemePlaza Badge mode",
         .search = "Search...",
         .page = "Page:",
         .err_quit = "Press \uE000 to quit.",
@@ -206,6 +207,7 @@ const Language_s language_english = {
         .delete_sd = "Deleting from SD...",
         .download_themes = "Downloading theme list, please wait...",
         .download_splashes = "Downloading splash list, please wait...",
+        .download_badges = "Downloading badge list, please wait...",
         .download_preview = "Downloading preview, please wait...",
         .download_bgm = "Downloading BGM, please wait...",
         .dump_single = "Dumping theme, please wait...",
@@ -320,6 +322,27 @@ const Language_s language_english = {
                     NULL
                 }
             }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Download badges",
+                    "\uE001 Go back"
+                },
+                {
+                    "\uE002 More options",
+                    "\uE003 Preview badges"
+                },
+                {
+                    "\uE004 Previous page",
+                    "\uE005 Next page"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
         }
     },
     .remote_extra_instructions =
@@ -360,7 +383,7 @@ const Language_s language_english = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry restarting Anemone3DS, or using\nthe CIA version instead."
+        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
     }
 };
 
@@ -524,6 +547,7 @@ const Language_s language_french = {
         .sel = "Sél.:",
         .tp_theme_mode = "Thèmes de ThemePlaza",
         .tp_splash_mode = "Splashs de ThemePlaza",
+        .tp_badge_mode = "ThemePlaza Badge mode",
         .search = "Rechercher...",
         .page = "Page:",
         .err_quit = "Appuyez sur \uE000 pour quitter.",
@@ -543,6 +567,7 @@ const Language_s language_french = {
         .delete_sd = "Effacement...",
         .download_themes = "Téléchargement de la liste des thèmes,\nveuillez patienter...",
         .download_splashes = "Téléchargement de la liste des splashs,\nveuillez patienter...",
+        .download_badges = "Downloading badge list, please wait...",
         .download_preview = "Téléchargement de l'aperçu,\nveuillez patienter...",
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
@@ -657,6 +682,27 @@ const Language_s language_french = {
                     NULL
                 }
             }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Download badges",
+                    "\uE001 Go back"
+                },
+                {
+                    "\uE002 More options",
+                    "\uE003 Preview badges"
+                },
+                {
+                    "\uE004 Previous page",
+                    "\uE005 Next page"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
         }
     },
     .remote_extra_instructions =
@@ -697,7 +743,7 @@ const Language_s language_french = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry restarting Anemone3DS, or using\nthe CIA version instead."
+        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
     }
 };
 
@@ -861,6 +907,7 @@ const Language_s language_portuguese = {
         .sel = "Sel.:",
         .tp_theme_mode = "Modo de tema ThemePlaza",
         .tp_splash_mode = "Modo de splash ThemePlaza",
+        .tp_badge_mode = "ThemePlaza Badge mode",
         .search = "Pesquisar...",
         .page = "Página:",
         .err_quit = "Aperte \uE000 para sair.",
@@ -880,6 +927,7 @@ const Language_s language_portuguese = {
         .delete_sd = "Deletando do SD...",
         .download_themes = "Baixando a lista de temas, aguarde...",
         .download_splashes = "Baixando a lista de splashes, aguarde...",
+        .download_badges = "Downloading badge list, please wait...",
         .download_preview = "Baixando prévia, aguarde...",
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
@@ -994,6 +1042,27 @@ const Language_s language_portuguese = {
                     NULL
                 }
             }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Download badges",
+                    "\uE001 Go back"
+                },
+                {
+                    "\uE002 More options",
+                    "\uE003 Preview badges"
+                },
+                {
+                    "\uE004 Previous page",
+                    "\uE005 Next page"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
         }
     },
     .remote_extra_instructions =
@@ -1034,7 +1103,7 @@ const Language_s language_portuguese = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry restarting Anemone3DS, or using\nthe CIA version instead."
+        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
     }
 };
 

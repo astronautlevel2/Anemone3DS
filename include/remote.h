@@ -39,6 +39,12 @@
 #define THEMEPLAZA_JSON_PAGE_COUNT   "pages"
 #define THEMEPLAZA_JSON_PAGE_IDS     "items"
 
+#define THEMEPLAZA_QUERY_ENTRY_INFO THEMEPLAZA_BASE_API_URL  "/query?item_id=%" JSON_INTEGER_FORMAT
+#define THEMEPLAZA_JSON_TITLE   "title"
+#define THEMEPLAZA_JSON_AUTHOR  "author"
+#define THEMEPLAZA_JSON_DESC    "description"
+#define THEMEPLAZA_JSON_SUCCESS "success"
+
 #define THEMEPLAZA_JSON_ERROR_MESSAGE             "message"
 #define THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND   "No items found"
 
@@ -62,7 +68,7 @@ typedef struct {
     char *mime_type;
 } curl_header;
 
-bool themeplaza_browser(EntryMode mode);
+bool themeplaza_browser(RemoteMode mode);
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
 
 #endif

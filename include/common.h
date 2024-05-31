@@ -71,6 +71,14 @@ typedef enum {
     DRAW_MODE_AMOUNT,
 } DrawMode;
 
+typedef enum {
+    REMOTE_MODE_THEMES = 0,
+    REMOTE_MODE_SPLASHES,
+    REMOTE_MODE_BADGES,
+
+    REMOTE_MODE_AMOUNT,
+} RemoteMode;
+
 extern const char * main_paths[MODE_AMOUNT];
 extern const int entries_per_screen_v[MODE_AMOUNT];
 extern const int entries_per_screen_h[MODE_AMOUNT];

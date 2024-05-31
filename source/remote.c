@@ -50,6 +50,41 @@ static void free_icons(Entry_List_s * list)
     }
 }
 
+static void load_remote_metadata(Entry_s * entry)
+{
+    char *page_json = NULL;
+    char *api_url = NULL;
+    asprintf(&api_url, THEMEPLAZA_QUERY_ENTRY_INFO, entry->tp_download_id);
+    u32 json_len;
+    Result res = http_get(api_url, NULL, &page_json, &json_len, INSTALL_NONE, "application/json");
+    free(api_url);
+    if (R_FAILED(res))
+    {
+        free(page_json);
+        return;
+    }
+
+    if (json_len)
+    {
+        json_error_t error;
+        json_t *root = json_loadb(page_json, json_len, 0, &error);
+        if (root)
+        {
+            const char *key;
+            json_t *value;
+            json_object_foreach(root, key, value)
+            {
+                if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_TITLE))
+                    utf8_to_utf16(entry->name, (u8 *) json_string_value(value), min(json_string_length(value), 0x41));
+                else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_AUTHOR))
+                    utf8_to_utf16(entry->author, (u8 *) json_string_value(value), min(json_string_length(value), 0x41));
+                else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_DESC))
+                    utf8_to_utf16(entry->desc, (u8 *) json_string_value(value), min(json_string_length(value), 0x81));
+            }
+        }
+    }
+}
+
 static void load_remote_smdh(Entry_s * entry, C3D_Tex * into_tex, const Entry_Icon_s * icon_info, bool ignore_cache)
 {
     bool not_cached = true;
@@ -102,7 +137,7 @@ static void load_remote_smdh(Entry_s * entry, C3D_Tex * into_tex, const Entry_Ic
     }
 }
 
-static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type)
+static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type, RemoteMode mode)
 {
     free(list->entries);
     list->entries_count = json_array_size(ids_array);
@@ -122,11 +157,17 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
         utf8_to_utf16(current_entry->path, (u8 *)entry_path, 0x106);
         free(entry_path);
 
-        load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
+        if (mode != REMOTE_MODE_BADGES)
+            load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
+        else
+        {
+            list->entries[i].placeholder_color = C2D_Color32(rand() * 255, rand() * 255, rand() * 255, 255);
+            load_remote_metadata(current_entry);
+        }
     }
 }
 
-static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mode, bool ignore_cache)
+static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mode, bool ignore_cache)
 {
     if (page > list->tp_page_count)
         page = 1;
@@ -136,10 +177,12 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
     list->selected_entry = 0;
 
     InstallType loading_screen = INSTALL_NONE;
-    if (mode == MODE_THEMES)
+    if (mode == REMOTE_MODE_THEMES)
         loading_screen = INSTALL_LOADING_REMOTE_THEMES;
-    else if (mode == MODE_SPLASHES)
+    else if (mode == REMOTE_MODE_SPLASHES)
         loading_screen = INSTALL_LOADING_REMOTE_SPLASHES;
+    else if (mode == REMOTE_MODE_BADGES)
+        loading_screen = INSTALL_LOADING_REMOTE_BADGES;
     draw_install(loading_screen);
 
     char * page_json = NULL;
@@ -170,7 +213,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
                 if (json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
                     list->tp_page_count = json_integer_value(value);
                 else if (json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
-                    load_remote_entries(list, value, ignore_cache, loading_screen);
+                    load_remote_entries(list, value, ignore_cache, loading_screen, mode);
                 else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE)
                     && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
                     throw_error(language.remote.no_results, ERROR_LEVEL_WARNING);
@@ -189,7 +232,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, EntryMode mod
 
 static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset)
+static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset, u32 height)
 {
     bool not_cached = true;
 
@@ -224,7 +267,6 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     char * preview_buf = malloc(preview_size);
     u32 preview_buf_size = preview_size;
     memcpy(preview_buf, preview_png, preview_size);
-    u32 height = 480;
 
     if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size, &height)))
     {
@@ -288,7 +330,7 @@ static void load_remote_bgm(const Entry_s * entry)
     free(bgm_ogg);
 }
 
-static void download_remote_entry(Entry_s * entry, EntryMode mode)
+static void download_remote_entry(Entry_s * entry, RemoteMode mode)
 {
     char * download_url = NULL;
     asprintf(&download_url, THEMEPLAZA_DOWNLOAD_FORMAT, entry->tp_download_id);
@@ -411,7 +453,7 @@ static void change_selected(Entry_List_s * list, int change_value)
     list->selected_entry = newval;
 }
 
-bool themeplaza_browser(EntryMode mode)
+bool themeplaza_browser(RemoteMode mode)
 {
     bool downloaded = false;
 
@@ -489,7 +531,9 @@ bool themeplaza_browser(EntryMode mode)
 
         if (preview_mode)
         {
-            draw_preview(preview, preview_offset);
+            if (mode == REMOTE_MODE_BADGES) draw_preview(preview, -40, 0.625f);
+            else draw_preview(preview, preview_offset, 1.0f);
+            
         }
         else
         {
@@ -531,7 +575,7 @@ bool themeplaza_browser(EntryMode mode)
                 extra_mode = false;
             change_mode:
                 mode++;
-                mode %= MODE_AMOUNT;
+                mode %= REMOTE_MODE_AMOUNT;
 
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
@@ -564,8 +608,9 @@ bool themeplaza_browser(EntryMode mode)
         toggle_preview:
             if (!preview_mode)
             {
-                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset);
-                if (mode == MODE_THEMES && dspfirm)
+                u32 height = mode == REMOTE_MODE_BADGES ? 1024 : 480;
+                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset, height);
+                if (mode == REMOTE_MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_s));
@@ -576,7 +621,7 @@ bool themeplaza_browser(EntryMode mode)
             else
             {
                 preview_mode = false;
-                if (mode == MODE_THEMES && audio != NULL)
+                if (mode == REMOTE_MODE_THEMES && audio != NULL)
                 {
                     stop_audio(&audio);
                 }
@@ -588,7 +633,7 @@ bool themeplaza_browser(EntryMode mode)
             if (preview_mode)
             {
                 preview_mode = false;
-                if (mode == MODE_THEMES && audio != NULL)
+                if (mode == REMOTE_MODE_THEMES && audio != NULL)
                 {
                     stop_audio(&audio);
                 }
@@ -654,7 +699,7 @@ bool themeplaza_browser(EntryMode mode)
                 if (preview_mode)
                 {
                     preview_mode = false;
-                    if (mode == MODE_THEMES && audio)
+                    if (mode == REMOTE_MODE_THEMES && audio)
                     {
                         stop_audio(&audio);
                     }

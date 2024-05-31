@@ -30,6 +30,7 @@
 #include "draw.h"
 #include "unicode.h"
 #include "ui_strings.h"
+#include "remote.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -108,6 +109,7 @@ Result open_archives(void)
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Badges"), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
@@ -145,6 +147,20 @@ Result open_archives(void)
     Handle test_handle;
     if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0))) return res;
     FSFILE_Close(test_handle);
+    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), FS_OPEN_READ, 0)))
+    {
+        FILE *fp = fopen("romfs:/tp_set.png", "rb");
+        fseek(fp, 0L, SEEK_END);
+        ssize_t size = ftell(fp);
+        char *icon_buf = malloc(size);
+        fseek(fp, 0L, SEEK_SET);
+        fread(icon_buf, 1, size, fp);
+        fclose(fp);
+        remake_file(fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), ArchiveSD, size);
+        buf_to_file(size, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), ArchiveSD, icon_buf);
+        DEBUG("res: 0x%08lx\n", res);
+        free(icon_buf);
+    }
 
     return 0;
 }
@@ -156,6 +172,7 @@ Result close_archives(void)
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveSD))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveHomeExt))) return res;
     if(R_FAILED(res = FSUSER_CloseArchive(ArchiveThemeExt))) return res;
+    if(R_FAILED(res = FSUSER_CloseArchive(ArchiveBadgeExt))) return res;
 
     return 0;
 }
@@ -433,16 +450,26 @@ static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, con
 }
 
 // assumes the input buffer is a ZIP. if it isn't, why are you calling this?
-void save_zip_to_sd(char * filename, u32 size, char * buf, EntryMode mode)
+void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode)
 {
     static char path_to_file[32761]; // FAT32 paths can be quite long.
     const int max_chars = 250;
     char new_filename[max_chars + 5]; // .zip + \0
 renamed:
-    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+    char * curr_filename;
+    if (mode == REMOTE_MODE_BADGES)
+    {
+        DEBUG("Remote mode badges! Saving to /Badges/ThemePlaza Badges/\n");
+        sprintf(path_to_file, "%s%s", "/Badges/ThemePlaza Badges/", filename);
+        curr_filename = path_to_file + strlen("/Badges/ThemePlaza Badges/");
+    } else
+    {
+        sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+        curr_filename = path_to_file + strlen(main_paths[mode]);
+    }
 
+    DEBUG("Filtering out illegal chars...\n");
     // filter out characters illegal in FAT32 filenames
-    char * curr_filename = path_to_file + strlen(main_paths[mode]);
     char * illegal_char = curr_filename;
     while ((illegal_char = strpbrk(illegal_char, ILLEGAL_CHARS)))
     {
@@ -462,6 +489,7 @@ renamed:
         *illegal_char = '-';
     }
 
+    DEBUG("Checking extension\n");
     // ensure the extension is .zip
     char * extension = strrchr(path_to_file, '.');
     if (extension == NULL || strcmp(extension, ".zip"))
