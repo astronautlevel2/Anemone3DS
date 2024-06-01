@@ -1,7 +1,7 @@
 <div align="center">
 <h1 align="center"> 🌈 Anemone 3DS ESP 💫 </h1>
 </div>
-
+<h1 align="center"> <img src="blob:https://imgur.com/90b4d48a-c42c-439a-a559-4a2c11987532">
 
 ## Sobre ANEMONE ESP
 
