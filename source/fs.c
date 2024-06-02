@@ -78,7 +78,6 @@ Result open_archives(void)
 
     FS_Path home;
     FS_Path theme;
-    FS_Path badge;
 
     CFGU_SecureInfoGetRegion(&regionCode);
     switch(regionCode)
@@ -126,9 +125,24 @@ Result open_archives(void)
     theme.data = themePath;
     if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveThemeExt, ARCHIVE_EXTDATA, theme))) return res;
 
+    Handle test_handle;
+    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0))) return res;
+    FSFILE_Close(test_handle);
+
+    return 0;
+}
+
+Result open_badge_extdata()
+{
+    Handle test_handle;
+    FS_Path badge;
+
+    Result res = 0;
+
     u32 badgePath[3] = {MEDIATYPE_SD, 0x000014d1, 0};
     badge.type = PATH_BINARY;
     badge.size = 0xC;
+
     badge.data = badgePath;
     if(R_FAILED(res = FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge)))
     {
@@ -144,9 +158,6 @@ Result open_archives(void)
         }
     }
 
-    Handle test_handle;
-    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveThemeExt, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), FS_OPEN_READ, 0))) return res;
-    FSFILE_Close(test_handle);
     if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), FS_OPEN_READ, 0)))
     {
         FILE *fp = fopen("romfs:/tp_set.png", "rb");

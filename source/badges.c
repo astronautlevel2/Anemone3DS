@@ -127,8 +127,9 @@ int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *bad
     char utf8_name[512] = {0};
     utf16_to_utf8((u8 *) utf8_name, badge_file.name, 0x8A);
     u64 shortcut = getShortcut(utf8_name);
+    int badges_installed = 0;
 
-    for (int badge = 0; badge < badges_in_image; ++badge)
+    for (int badge = 0; badge < badges_in_image && *badge_count < 1000; ++badge)
     {
         remove_exten(badge_file.name);
         for (int j = 0; j < 16; ++j) // Copy name for all 16 languages
@@ -151,10 +152,11 @@ int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *bad
         memcpy(badgeMngBuffer + 0x3E8 + *badge_count*0x28 + 0x20, &shortcut, 8); // u64 shortcut[2], not sure what second is for
 
         badgeMngBuffer[0x358 + *badge_count/8] |= 0 << (*badge_count % 8); // enabled badges bitfield
+        badges_installed++;
 
         *badge_count += 1;
     }
-    return badges_in_image;
+    return badges_installed;
 }
 
 int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)

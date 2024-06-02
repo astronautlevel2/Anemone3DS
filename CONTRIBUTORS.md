@@ -21,3 +21,4 @@
 # Translation Contributors
 * [@cooolgamer](https://github.com/cooolgamer/) for French
 * Arth ([@iveurne](https://github.com/iveurne)) for Portugese
+* [@Tristanabs](https://github.com/Tristanabs), Felix64, and Angelpro09_xd for Spanish

@@ -387,6 +387,366 @@ const Language_s language_english = {
     }
 };
 
+const Language_s language_spanish = {
+    .normal_instructions =
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Instalar tema(s)",
+                    "\uE001 Cola de temas aleatorios"
+                },
+                {
+                    "\uE002 Más opciones",
+                    "\uE003 Vista previa del tema"
+                },
+                {
+                    "\uE004 Cambiar a fondos",
+                    "\uE005 Escanear código QR"
+                },
+                {
+                    "Salir",
+                    "Eliminar de la SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Instalar fondo",
+                    "\uE001 Eliminar fondo instalado"
+                },
+                {
+                    "\uE002 Más opciones",
+                    "\uE003 Vista previa del fondo"
+                },
+                {
+                    "\uE004 Cambiar a temas",
+                    "\uE005 Escanear código QR"
+                },
+                {
+                    "Salir",
+                    "Eliminar de la SD"
+                }
+            }
+        }
+    },
+
+    .install_instructions =
+    {
+        .info_line = "\uE001 Cancelar instalación del tema",
+        .instructions = {
+            {
+                "\uE079 Instalación normal",
+                "\uE07A Instalación aleatoria"
+            },
+            {
+                "\uE07B Instalación solo BGM",
+                "\uE07C Instalación sin BGM"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Salir",
+                NULL
+            }
+        }
+    },
+
+    .extra_instructions =
+    {
+        {
+            .info_line = "\uE001 Dejar menú de clasificación",
+            .instructions = {
+                {
+                    "\uE079 Ordenar por nombre",
+                    "\uE07A Ordenar por autor"
+                },
+                {
+                    "\uE07B Ordenar por nombre de archivo",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Dejar menú extra",
+            .instructions = {
+                {
+                    "\uE079 Saltar en la lista",
+                    "\uE07A Recargar iconos rotos"
+                },
+                {
+                    "\uE07B Explorar ThemePlaza",
+                    NULL
+                },
+                {
+                    "\uE004 Menú de clasificación",
+                    "\uE005 Menú de volcado"
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Dejar menú de volcado",
+            .instructions = {
+                {
+                    "\uE079 Volcar tema actual",
+                    "\uE07A Volcar todos los temas"
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        }
+    },
+    .camera =
+    {
+        .quit = "Presiona \uE005 para salir",
+        .thread_error = "Error al crear hilo de cámara\nPor favor, informa a los desarrolladores",
+        .zip_not_theme_splash = "El archivo ZIP descargado no es\nni un fondo ni un tema",
+        .file_not_zip = "El archivo descargado no es un ZIP.",
+        .download_failed = "Fallo en la descarga.",
+    },
+    .draw =
+    {
+        .theme_mode = "Modo tema",
+        .splash_mode = "Modo fondo",
+        .no_themes = "No se encontraron temas",
+        .no_splashes = "No se encontraron fondos",
+        .qr_download = "Presiona \uE005 para descargar desde el código QR",
+        .switch_splashes = "O \uE004 para cambiar a fondos",
+        .switch_themes = "O \uE004 para cambiar a temas",
+        .quit = "O        para salir",
+        .start_pos = 162,
+        .by = "Por ",
+        .selected = "Seleccionado:",
+        .sel = "Sel.:",
+        .tp_theme_mode = "Modo tema de ThemePlaza",
+        .tp_splash_mode = "Modo fondo de ThemePlaza",
+        .tp_badge_mode = "ThemePlaza Badge mode",
+        .search = "Buscar...",
+        .page = "Página:",
+        .err_quit = "Presiona \uE000 para salir.",
+        .warn_continue = "Presiona \uE000 para continuar.",
+        .yes_no = "\uE000 Sí   \uE001 No",
+        .load_themes = "Cargando temas, por favor espera...",
+        .load_splash = "Cargando fondos, por favor espera...",
+        .load_icons = "Cargando iconos, por favor espera...",
+        .install_splash = "Instalando fondo...",
+        .delete_splash = "Eliminando fondo instalado...",
+        .install_theme = "Instalando un solo tema...",
+        .install_shuffle = "Instalando temas aleatorios...",
+        .install_bgm = "Instalando tema solo BGM...",
+        .install_no_bgm = "Instalando tema sin BGM...",
+        .downloading = "Descargando...",
+        .checking_dl = "Comprobando archivo descargado...",
+        .delete_sd = "Eliminando de la SD...",
+        .download_themes = "Descargando lista de temas, por favor espera...",
+        .download_splashes = "Descargando lista de fondos, por favor espera...",
+        .download_badges = "Downloading badge list, please wait...",
+        .download_preview = "Descargando vista previa, por favor espera...",
+        .download_bgm = "Descargando BGM, por favor espera...",
+        .dump_single = "Volcando tema, por favor espera...",
+        .dump_all_official = "Volcando temas oficiales, por favor espera...",
+        .shuffle = "Aleatorio: %i/10",
+    },
+    .fs =
+    {
+        .illegal_input = "La entrada no debe contener:\n" ILLEGAL_CHARS,
+        .new_or_overwrite = "Elige un nombre de archivo nuevo o toca Sobrescribir",
+        .cancel = "Cancelar",
+        .overwrite = "Sobrescribir",
+        .rename = "Renombrar",
+        .swkbd_fail = "???\nIntenta con un teclado USB", // Nunca debería ser usado
+        .sd_full = "La tarjeta SD está llena.\nElimina algunos temas para liberar espacio.",
+        .fs_error = "Error:\nConsigue una nueva tarjeta SD.",
+    },
+    .loading =
+    {
+        .no_preview = "No se encontró vista previa.",
+    },
+    .main =
+    {
+        .position_too_big = "La nueva posición debe ser\nmenor o igual al\nnúmero de entradas.",
+        .position_zero = "La nueva posición debe ser\npositiva.",
+        .jump_q = "¿A dónde quieres saltar?\nPuede hacer que los iconos se recarguen.",
+        .cancel = "Cancelar",
+        .jump = "Saltar",
+        .no_theme_extdata = "¡Los datos de tema extensos no existen!\nEstablece un tema predeterminado desde el menú principal.",
+        .loading_qr = "Cargando Escáner QR...",
+        .no_wifi = "Por favor, conéctate a Wi-Fi antes de escanear códigos QR",
+        .qr_homebrew = "El escaneo de QR no funciona desde el\nInicio, usa el navegador de ThemePlaza en su lugar.",
+        .camera_broke = "Tu cámara parece tener un problema,\nno se pueden escanear códigos QR.",
+        .too_many_themes = "Tienes demasiados temas seleccionados.",
+        .not_enough_themes = "No tienes suficientes temas seleccionados.",
+        .uninstall_confirm = "¿Estás seguro de que deseas eliminar\nel fondo instalado?",
+        .delete_confirm = "¿Estás seguro de que deseas eliminar esto?",
+    },
+    .remote =
+    {
+        .no_results = "No hay resultados para esta búsqueda.",
+        .check_wifi = "No se pudo descargar datos de Theme Plaza.\nAsegúrate de que el Wi-Fi esté activado.",
+        .new_page_big = "La nueva página debe ser\nmenor o igual al\nnúmero de páginas.",
+        .new_page_zero = "La nueva posición debe ser\npositiva.",
+        .jump_page = "¿A qué página quieres saltar?",
+        .cancel = "Cancelar",
+        .jump = "Saltar",
+        .tags = "¿Qué etiquetas deseas buscar?",
+        .search = "Buscar",
+        .parental_fail = "¡La validación del Control Parental falló!\nAcceso al navegador restringido.",
+        .zip_not_found = "ZIP no encontrado en esta URL\nSi crees que esto es un error, por favor\ncontacta al administrador del sitio",
+        .generic_httpc_error = "Error en el módulo sysmodule HTTPC - 0x%08lx.\nSi estás viendo esto, por favor contacta a un\ndesarrollador de Anemone en el Discord de Theme Plaza.",
+        .http303_tp = "HTTP 303 Ver Otro (Theme Plaza)\n¿Se ha aprobado este tema?",
+        .http303 = "HTTP 303 Ver Otro\nDescarga el recurso directamente\no contacta al administrador del sitio.",
+        .http404 = "HTTP 404 No Encontrado\n¿Se ha aprobado este tema?",
+        .http_err_url = "HTTP %s\nComprueba que la URL sea correcta.",
+        .http_errcode_generic = "HTTP %s\nContacta al administrador del sitio.",
+        .http401 = "401 No Autorizado",
+        .http403 = "403 Prohibido",
+        .http407 = "407 Autenticación de Proxy Requerida",
+        .http414 = "HTTP 414 URI Demasiado Largo\nEl código QR apunta a una URL muy larga.\nDescarga el archivo directamente.",
+        .http418 = "HTTP 418 Soy una tetera\nContacta al administrador del sitio.",
+        .http426 = "HTTP 426 Se Requiere Actualización\nLa 3DS no puede conectarse a este servidor.\nContacta al administrador del sitio.",
+        .http451 = "HTTP 451 No Disponible por Razones Legales\nAlguna entidad está impidiendo el acceso\nal servidor de alojamiento por razones legales.",
+        .http500 = "HTTP 500 Error Interno del Servidor\nContacta al administrador del sitio.",
+        .http502 = "HTTP 502 Puerta de Enlace Incorrecta\nContacta al administrador del sitio.",
+        .http503 = "HTTP 503 Servicio No Disponible\nContacta al administrador del sitio.",
+        .http504 = "HTTP 504 Tiempo de Espera de la Puerta de Enlace\nContacta al administrador del sitio.",
+        .http_unexpected = "HTTP %u\nSi crees que esto es inesperado, por favor\ncontacta al administrador del sitio.",
+    },
+    .remote_instructions =
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Descargar tema",
+                    "\uE001 Volver"
+                },
+                {
+                    "\uE002 Más opciones",
+                    "\uE003 Vista previa del tema"
+                },
+                {
+                    "\uE004 Página anterior",
+                    "\uE005 Página siguiente"
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Descargar fondo",
+                    "\uE001 Volver"
+                },
+                {
+                    "\uE002 Más opciones",
+                    "\uE003 Vista previa del fondo"
+                },
+                {
+                    "\uE004 Página anterior",
+                    "\uE005 Página siguiente"
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Download badges",
+                    "\uE001 Go back"
+                },
+                {
+                    "\uE002 More options",
+                    "\uE003 Preview badges"
+                },
+                {
+                    "\uE004 Previous page",
+                    "\uE005 Next page"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        }
+    },
+    .remote_extra_instructions =
+    {
+        .info_line = "\uE001 Dejar menú extra",
+        .instructions = {
+            {
+                "\uE079 Saltar a la página",
+                "\uE07A Buscar etiquetas"
+            },
+            {
+                "\uE07B Alternar fondo/tema",
+                "\uE07C Recargar sin caché"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Salir",
+                NULL
+            }
+        }
+    },
+    .splashes =
+    {
+        .no_splash_found = "No se encontró splash.bin o splashbottom.bin.\n¿Es esto un fondo?",
+        .splash_disabled = "ADVERTENCIA: Los fondos están desactivados en la Configuración de Luma",
+    },
+    .themes =
+    {
+        .no_body_found = "No se encontró body_LZ.bin - ¿es esto un tema?",
+        .mono_warn = "Uno o más temas instalados usan audio mono.\nEl audio mono causa varios problemas.\nConsulta la wiki para más información.",
+        .illegal_char = "Se utilizó un carácter ilegal.",
+        .name_folder = "Nombre de la carpeta de salida",
+        .cancel = "Cancelar",
+        .done = "Listo"
+    },
+    .badges =
+    {
+        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
+    }
+};
+
+
 const Language_s language_french = {
     .normal_instructions = 
     {
@@ -1116,7 +1476,8 @@ Language_s init_strings(CFG_Language lang)
             return language_french;
         //case CFG_LANGUAGE_DE:
         //case CFG_LANGUAGE_IT:
-        //case CFG_LANGUAGE_ES:
+        case CFG_LANGUAGE_ES:
+            return language_spanish;
         //case CFG_LANGUAGE_ZH:
         //case CFG_LANGUAGE_KO:
         //case CFG_LANGUAGE_NL:

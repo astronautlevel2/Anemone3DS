@@ -58,6 +58,7 @@ Language_s language = {0};
 
 int __stacksize__ = 64 * 1024;
 Result archive_result;
+Result badge_archive_result;
 u32 old_time_limit;
 
 const char * main_paths[MODE_AMOUNT] = {
@@ -88,6 +89,7 @@ static void init_services(void)
     APT_SetAppCpuTimeLimit(30);
     httpcInit(0);
     archive_result = open_archives();
+    badge_archive_result = open_badge_extdata();
     if(envIsHomebrew())
     {
         s64 out;
