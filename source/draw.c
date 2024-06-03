@@ -47,6 +47,12 @@ static const char * mode_switch_char[MODE_AMOUNT] = {
     "T",
 };
 
+static const char *remote_mode_switch_char[REMOTE_MODE_AMOUNT] = {
+    "T",
+    "S",
+    "B",
+};
+
 void init_screens(void)
 {
     init_colors();
@@ -544,7 +550,7 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
     draw_image(sprites_exit_idx, 320-72, 0);
     draw_image(sprites_preview_idx, 320-48, 0);
 
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], remote_mode_switch_char[current_mode]);
 
     draw_image(sprites_arrow_left_idx, 3, 114);
     draw_image(sprites_arrow_right_idx, 308, 114);

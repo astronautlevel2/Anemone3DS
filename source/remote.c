@@ -50,6 +50,7 @@ static void free_icons(Entry_List_s * list)
     }
 }
 
+/* Unnecessary with ThemePlaza providing smdh files for badges
 static void load_remote_metadata(Entry_s * entry)
 {
     char *page_json = NULL;
@@ -84,7 +85,7 @@ static void load_remote_metadata(Entry_s * entry)
         }
     }
 }
-
+*/ 
 static void load_remote_smdh(Entry_s * entry, C3D_Tex * into_tex, const Entry_Icon_s * icon_info, bool ignore_cache)
 {
     bool not_cached = true;
@@ -157,13 +158,7 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
         utf8_to_utf16(current_entry->path, (u8 *)entry_path, 0x106);
         free(entry_path);
 
-        if (mode != REMOTE_MODE_BADGES)
-            load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
-        else
-        {
-            list->entries[i].placeholder_color = C2D_Color32(rand() * 255, rand() * 255, rand() * 255, 255);
-            load_remote_metadata(current_entry);
-        }
+        load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
     }
 }
 

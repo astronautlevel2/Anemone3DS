@@ -310,6 +310,7 @@ void load_icons_thread(void * void_arg)
 bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset, int height)
 {
     int width = (uint32_t)((size / 4) / height);
+    u32 tex_height = height > 512 ? 1024 : 512;
 
     free_preview(*preview_image);
 
@@ -322,10 +323,10 @@ bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview
     subt3x->left = 0.0f;
     subt3x->top = 1.0f;
     subt3x->right = width/512.0f;
-    subt3x->bottom = 1.0-(height/512.0f);
+    subt3x->bottom = 1.0-(height/tex_height);
     preview_image->subtex = subt3x;
 
-    C3D_TexInit(preview_image->tex, 512, 512, GPU_RGBA8);
+    C3D_TexInit(preview_image->tex, 512, tex_height, GPU_RGBA8);
 
     memset(preview_image->tex->data, 0, preview_image->tex->size);
 
