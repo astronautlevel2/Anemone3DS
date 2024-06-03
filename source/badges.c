@@ -113,28 +113,21 @@ u64 getShortcut(char *filename)
     return shortcut;
 }
 
-int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *badge_count, int set_id)
+int install_badge_generic(char *file_buf, u64 file_size, u16 *name, int *badge_count, int set_id)
 {
-    Result res;
-    char *file_buf = NULL;
-    res = file_to_buf(badge_path, ArchiveSD, &file_buf);
-    if (res != badge_file.fileSize)
-    {
-        return -1;
-    }
-    int badges_in_image = pngToRGB565(file_buf, badge_file.fileSize, rgb_buf_64x64, alpha_buf_64x64, rgb_buf_32x32, alpha_buf_32x32, false);
+    int badges_in_image = pngToRGB565(file_buf, file_size, rgb_buf_64x64, alpha_buf_64x64, rgb_buf_32x32, alpha_buf_32x32, false);
     
     char utf8_name[512] = {0};
-    utf16_to_utf8((u8 *) utf8_name, badge_file.name, 0x8A);
+    utf16_to_utf8((u8 *) utf8_name, name, 0x8A);
     u64 shortcut = getShortcut(utf8_name);
     int badges_installed = 0;
 
     for (int badge = 0; badge < badges_in_image && *badge_count < 1000; ++badge)
     {
-        remove_exten(badge_file.name);
+        remove_exten(name);
         for (int j = 0; j < 16; ++j) // Copy name for all 16 languages
         {
-            memcpy(badgeDataBuffer + 0x35E80 + *badge_count * 16 * 0x8A + j * 0x8A, badge_file.name, 0x8A);
+            memcpy(badgeDataBuffer + 0x35E80 + *badge_count * 16 * 0x8A + j * 0x8A, name, 0x8A);
         }
         memcpy(badgeDataBuffer + 0x318F80 + *badge_count * 0x2800, rgb_buf_64x64 + badge * 64 * 64, 64 * 64 * 2);
         memcpy(badgeDataBuffer + 0x31AF80 + *badge_count * 0x2800, alpha_buf_64x64 + badge * 64 * 64/2, 64 * 64/2);
@@ -156,7 +149,49 @@ int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *bad
 
         *badge_count += 1;
     }
+
     return badges_installed;
+}
+
+int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *badge_count, int set_id)
+{
+    Result res;
+    char *file_buf = NULL;
+    res = file_to_buf(badge_path, ArchiveSD, &file_buf);
+    if (res != badge_file.fileSize)
+    {
+        return -1;
+    }
+
+    return install_badge_generic(file_buf, badge_file.fileSize, badge_file.name, badge_count, set_id);
+}
+
+typedef struct {
+    int *badge_count;
+    int set_id;
+    int installed;
+} zip_userdata;
+
+u32 zip_callback(char *file_buf, u64 file_size, char *name, void *userdata)
+{
+    zip_userdata *data = (zip_userdata *) userdata;
+    u16 *utf16_name = calloc(strlen(name), sizeof(u16));
+    utf8_to_utf16(utf16_name, (u8 *) name, strlen(name));
+    data->installed += install_badge_generic(file_buf, file_size, utf16_name, data->badge_count, data->set_id);
+    free(utf16_name);
+
+    return 0;
+}
+
+int install_badge_zip(u16 *path, FS_DirectoryEntry zip, int *badge_count, int set_id)
+{
+    Result res;
+    zip_userdata data = {0};
+    data.set_id = set_id;
+    data.badge_count = badge_count;
+    for_each_file_zip(path, ArchiveSD, zip_callback, &data);
+
+    return data.installed;
 }
 
 int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
@@ -199,8 +234,12 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
             badges_in_set += install_badge_png(fsMakePath(PATH_UTF16, path), badge_files[i], badge_count, set_id);
         } else if (!strcmp(badge_files[i].shortExt, "ZIP"))
         {
-            badges_in_set += 1;
-            // Zip install
+            memset(path, 0, 512 * sizeof(u16));
+            struacat(path, "/Badges/");
+            strucat(path, set_dir.name);
+            struacat(path, "/");
+            strucat(path, badge_files[i].name);
+            badges_in_set += install_badge_zip(path, badge_files[i], badge_count, set_id);
         }
     }
 
@@ -323,7 +362,11 @@ Result install_badges(void)
                 set_count += 1;
                 default_set = set_count;
             }
-            // Zip install
+            u16 path[0x512] = {0};
+            struacat(path, "/Badges/");
+            strucat(path, badge_files[i].name);
+
+            default_set_count += install_badge_zip(path, badge_files[i], &badge_count, default_set);
         } else if (badge_files[i].attributes & FS_ATTRIBUTE_DIRECTORY)
         {
             set_count += 1;
