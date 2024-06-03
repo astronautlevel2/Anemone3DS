@@ -37,6 +37,7 @@ typedef struct {
     const char *zip_not_theme_splash;
     const char *file_not_zip;
     const char *download_failed;
+    const char *badge_question;
 } Camera_Strings_s;
 
 typedef struct {

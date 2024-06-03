@@ -184,5 +184,6 @@ void draw_home(u64 start_time, u64 cur_time);
 void draw_base_interface(void);
 void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int extra_mode);
 void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode);
+bool draw_confirm_no_interface(const char *conf_msg);
 
 #endif

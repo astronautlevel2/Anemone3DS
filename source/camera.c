@@ -398,7 +398,15 @@ bool init_qr(void)
                 }
                 else
                 {
-                    throw_error(language.camera.zip_not_theme_splash, ERROR_LEVEL_WARNING);
+                    bool badge = draw_confirm_no_interface(language.camera.badge_question);
+                    if (badge)
+                    {
+                        save_zip_to_sd(filename, zip_size, zip_buf, REMOTE_MODE_BADGES);
+                        // don't set success since we don't need to reload lists for badge zips
+                    } else
+                    {
+                        throw_error(language.camera.zip_not_theme_splash, ERROR_LEVEL_WARNING);
+                    }
                 }
             }
             else

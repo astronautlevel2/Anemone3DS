@@ -170,6 +170,7 @@ const Language_s language_english = {
         .zip_not_theme_splash = "Zip downloaded is neither\na splash nor a theme",
         .file_not_zip = "File downloaded isn't a zip.",
         .download_failed = "Download failed.",
+        .badge_question = "Theme or splash not detected.\nIs this a badge?",
     },
     .draw = 
     {
@@ -530,6 +531,7 @@ const Language_s language_spanish = {
         .zip_not_theme_splash = "El archivo ZIP descargado no es\nni un fondo ni un tema",
         .file_not_zip = "El archivo descargado no es un ZIP.",
         .download_failed = "Fallo en la descarga.",
+        .badge_question = "Theme or splash not detected.\nIs this a badge?",
     },
     .draw =
     {
@@ -890,6 +892,7 @@ const Language_s language_french = {
         .zip_not_theme_splash = "Le fichier zip téléchargé n'est\nni un thème, ni un splash",
         .file_not_zip = "Le fichier téléchargé n'est pas un zip.",
         .download_failed = "Le téléchargement a échoué.",
+        .badge_question = "Theme or splash not detected.\nIs this a badge?",
     },
     .draw = 
     {
@@ -1250,6 +1253,7 @@ const Language_s language_portuguese = {
         .zip_not_theme_splash = "O zip baixado não é um splash nem um tema",
         .file_not_zip = "O arquivo baixado não é um zip.",
         .download_failed = "Falha no download.",
+        .badge_question = "Theme or splash not detected.\nIs this a badge?",
     },
     .draw = 
     {

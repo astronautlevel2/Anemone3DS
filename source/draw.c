@@ -348,6 +348,24 @@ bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode
     return false;
 }
 
+bool draw_confirm_no_interface(const char *conf_msg)
+{
+    while(aptMainLoop())
+    {
+        draw_base_interface();
+        draw_text_center(GFX_TOP, 100, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
+        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
+        end_frame();
+
+        hidScanInput();
+        u32 kDown = hidKeysDown();
+        if(kDown & KEY_A) return true;
+        if(kDown & KEY_B) return false;
+    }
+
+    return false;
+}
+
 void draw_preview(C2D_Image preview, int preview_offset, float preview_scale)
 {
     start_frame();
