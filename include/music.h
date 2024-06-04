@@ -34,7 +34,37 @@
 #include <tremor/ivorbisfile.h>
 #include <tremor/ivorbiscodec.h>
 
-#define BUF_TO_READ 48000 // How much data should be buffered at a time
+#define BUFFER_COUNT 2
+#define BUF_TO_READ 48000 // How much data should be buffered at a time for ogg
+
+typedef struct {
+    char *music_buf;
+    ssize_t music_size;
+    ssize_t cursor;
+    u32 last_time;
+    bool is_little_endian;
+    bool is_looping;
+    u32 info_offset;
+    u32 data_offset;
+    u8 channel_count;
+    u32 sample_rate;
+    u32 loop_start;
+    u32 loop_end;
+    u32 num_blocks;
+    u32 block_size;
+    u32 block_samples;
+    u32 last_block_samples;
+    u32 last_block_size;
+    u32 current_block;
+    unsigned short adpcm_coefs[2][16];
+    ndspWaveBuf wave_buf[2][BUFFER_COUNT];
+    ndspAdpcmData adpcm_data[2][2];
+    unsigned short channel[2];
+    unsigned int active_channels;
+    u8 *buffer_data[2][BUFFER_COUNT];
+    volatile bool stop;
+    Thread playing_thread;
+} audio_s;
 
 typedef struct {
     OggVorbis_File vf;
@@ -47,9 +77,12 @@ typedef struct {
     
     volatile bool stop;
     Thread playing_thread;
-} audio_s;
+} audio_ogg_s;
 
 void play_audio(audio_s *);
 void stop_audio(audio_s **);
+
+void play_audio_ogg(audio_ogg_s *);
+void stop_audio_ogg(audio_ogg_s **);
 
 #endif

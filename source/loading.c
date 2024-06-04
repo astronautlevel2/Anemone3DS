@@ -442,6 +442,22 @@ void free_preview(C2D_Image preview)
 // Initialize the audio struct
 Result load_audio(const Entry_s * entry, audio_s * audio) 
 {
+    audio->music_size = load_data("/bgm.bcstm", entry, &audio->music_buf);
+    if (audio->music_size == 0) {
+        free(audio);
+        DEBUG("<load_audio> File not found!\n");
+        return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
+    audio->cursor = 0;
+    audio->last_time = 0;
+    audio->current_block = 0;
+    audio->stop = false;
+    audio->active_channels = 0;
+    return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
+}
+
+Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio) 
+{
     audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
     if (audio->filesize == 0) {
         free(audio);

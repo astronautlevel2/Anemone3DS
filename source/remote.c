@@ -475,7 +475,7 @@ bool themeplaza_browser(RemoteMode mode)
 
     bool preview_mode = false;
     int preview_offset = 0;
-    audio_s * audio = NULL;
+    audio_ogg_s * audio = NULL;
 
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
@@ -608,9 +608,9 @@ bool themeplaza_browser(RemoteMode mode)
                 if (mode == REMOTE_MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
-                    audio = calloc(1, sizeof(audio_s));
-                    if (R_FAILED(load_audio(current_entry, audio))) audio = NULL;
-                    if (audio != NULL) play_audio(audio);
+                    audio = calloc(1, sizeof(audio_ogg_s));
+                    if (R_FAILED(load_audio_ogg(current_entry, audio))) audio = NULL;
+                    if (audio != NULL) play_audio_ogg(audio);
                 }
             }
             else
@@ -618,7 +618,7 @@ bool themeplaza_browser(RemoteMode mode)
                 preview_mode = false;
                 if (mode == REMOTE_MODE_THEMES && audio != NULL)
                 {
-                    stop_audio(&audio);
+                    stop_audio_ogg(&audio);
                 }
             }
             continue;
@@ -630,7 +630,7 @@ bool themeplaza_browser(RemoteMode mode)
                 preview_mode = false;
                 if (mode == REMOTE_MODE_THEMES && audio != NULL)
                 {
-                    stop_audio(&audio);
+                    stop_audio_ogg(&audio);
                 }
             }
             else
@@ -696,7 +696,7 @@ bool themeplaza_browser(RemoteMode mode)
                     preview_mode = false;
                     if (mode == REMOTE_MODE_THEMES && audio)
                     {
-                        stop_audio(&audio);
+                        stop_audio_ogg(&audio);
                     }
                     continue;
                 }
@@ -761,7 +761,7 @@ bool themeplaza_browser(RemoteMode mode)
 
     if (audio)
     {
-        stop_audio(&audio);
+        stop_audio_ogg(&audio);
     }
 
     free_preview(preview);
