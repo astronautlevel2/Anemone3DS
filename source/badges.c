@@ -159,7 +159,7 @@ int install_badge_generic(char *file_buf, u64 file_size, u16 *name, int *badge_c
 
 int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *badge_count, int set_id)
 {
-    Result res;
+    u64 res;
     char *file_buf = NULL;
     res = file_to_buf(badge_path, ArchiveSD, &file_buf);
     if (res != badge_file.fileSize)
@@ -176,7 +176,7 @@ typedef struct {
     int installed;
 } zip_userdata;
 
-u32 zip_callback(char *file_buf, u64 file_size, char *name, void *userdata)
+u32 zip_callback(char *file_buf, u64 file_size, const char *name, void *userdata)
 {
     zip_userdata *data = (zip_userdata *) userdata;
     u16 *utf16_name = calloc(strlen(name), sizeof(u16));
@@ -187,13 +187,12 @@ u32 zip_callback(char *file_buf, u64 file_size, char *name, void *userdata)
     return 0;
 }
 
-int install_badge_zip(u16 *path, FS_DirectoryEntry zip, int *badge_count, int set_id)
+int install_badge_zip(u16 *path, int *badge_count, int set_id)
 {
-    Result res;
     zip_userdata data = {0};
     data.set_id = set_id;
     data.badge_count = badge_count;
-    for_each_file_zip(path, ArchiveSD, zip_callback, &data);
+    for_each_file_zip(path, zip_callback, &data);
 
     return data.installed;
 }
@@ -220,7 +219,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u32 entries_read;
     res = FSDIR_Read(folder, &entries_read, 1024, badge_files);
     int badges_in_set = 0;
-    for (int i = 0; i < entries_read && *badge_count < 1000; ++i)
+    for (u32 i = 0; i < entries_read && *badge_count < 1000; ++i)
     {
         if (!strcmp(badge_files[i].shortExt, "PNG"))
         {
@@ -243,7 +242,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
             strucat(path, set_dir.name);
             struacat(path, "/");
             strucat(path, badge_files[i].name);
-            badges_in_set += install_badge_zip(path, badge_files[i], badge_count, set_id);
+            badges_in_set += install_badge_zip(path, badge_count, set_id);
         }
     }
 
@@ -345,7 +344,7 @@ Result install_badges(void)
     int default_set = 0;
     int default_set_count = 0;
     int default_idx = 0;
-    for (int i = 0; i < entries_read && badge_count < 1000; ++i)
+    for (u32 i = 0; i < entries_read && badge_count < 1000; ++i)
     {
         if (!strcmp(badge_files[i].shortExt, "PNG"))
         {
@@ -370,7 +369,7 @@ Result install_badges(void)
             struacat(path, "/Badges/");
             strucat(path, badge_files[i].name);
 
-            default_set_count += install_badge_zip(path, badge_files[i], &badge_count, default_set);
+            default_set_count += install_badge_zip(path, &badge_count, default_set);
         } else if (badge_files[i].attributes & FS_ATTRIBUTE_DIRECTORY)
         {
             set_count += 1;

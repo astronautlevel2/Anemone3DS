@@ -122,7 +122,7 @@ void stop_audio_ogg(audio_ogg_s ** audio_ptr) {
 int init_audio(audio_s *audio)
 {
     u32 magic = read32(audio->music_buf, &audio->cursor);
-    DEBUG("Loading music, music_size: %lu, magic: 0x%08lx\n", audio->music_size, magic);
+    DEBUG("Loading music, music_size: %d, magic: 0x%08lx\n", audio->music_size, magic);
     audio->is_little_endian = read16(audio->music_buf, &audio->cursor) == 0xFEFF;
     audio->info_offset = 0;
     audio->data_offset = 0;
@@ -143,7 +143,7 @@ int init_audio(audio_s *audio)
         audio->cursor += 2;
         u32 off = read32(audio->music_buf, &audio->cursor);
         audio->cursor += 4;
-        DEBUG("Reading sbc: %04lx, %08lx\n", sec, off);
+        DEBUG("Reading sbc: %04x, %08lx\n", sec, off);
         if (sec == 0x4000) // Info block
             audio->info_offset = off;
         if (sec == 0x4002) // Data block

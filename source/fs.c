@@ -216,13 +216,13 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf)
     return (u32)size;
 }
 
-s16 for_each_file_zip(u16 *zip_path, FS_Archive archive, u32 (*zip_iter_callback)(char *filebuf, u64 file_size, char *name, void *userdata), void *userdata)
+s16 for_each_file_zip(u16 *zip_path, u32 (*zip_iter_callback)(char *filebuf, u64 file_size, const char *name, void *userdata), void *userdata)
 {
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
 
     ssize_t len = strulen(zip_path, 0x106);
-    char * path = calloc(sizeof(char), len * sizeof(u16));
+    char * path = calloc(len, sizeof(u16));
     utf16_to_utf8((u8 *)path, zip_path, len * sizeof(u16));
     DEBUG("Attempting to open zip %s\n", path);
 
@@ -295,7 +295,7 @@ u32 zip_memory_to_buf(const char * file_name, void * zip_memory, size_t zip_size
 u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf)
 {
     ssize_t len = strulen(zip_path, 0x106);
-    char * path = calloc(sizeof(char), len * sizeof(u16));
+    char * path = calloc(len, sizeof(u16));
     utf16_to_utf8((u8 *)path, zip_path, len * sizeof(u16));
 
     struct archive * a = archive_read_new();

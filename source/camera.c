@@ -360,13 +360,13 @@ bool init_qr(void)
 
             if(r == ARCHIVE_OK)
             {
-                EntryMode mode = MODE_AMOUNT;
+                RemoteMode mode = REMOTE_MODE_AMOUNT;
 
                 char * buf = NULL;
                 do {
                     if(zip_memory_to_buf("body_LZ.bin", zip_buf, zip_size, &buf) != 0)
                     {
-                        mode = MODE_THEMES;
+                        mode = REMOTE_MODE_THEMES;
                         break;
                     }
 
@@ -374,7 +374,7 @@ bool init_qr(void)
                     buf = NULL;
                     if(zip_memory_to_buf("splash.bin", zip_buf, zip_size, &buf) != 0)
                     {
-                        mode = MODE_SPLASHES;
+                        mode = REMOTE_MODE_SPLASHES;
                         break;
                     }
 
@@ -382,7 +382,7 @@ bool init_qr(void)
                     buf = NULL;
                     if(zip_memory_to_buf("splashbottom.bin", zip_buf, zip_size, &buf) != 0)
                     {
-                        mode = MODE_SPLASHES;
+                        mode = REMOTE_MODE_SPLASHES;
                         break;
                     }
                 }
@@ -391,7 +391,7 @@ bool init_qr(void)
                 free(buf);
                 buf = NULL;
 
-                if(mode != MODE_AMOUNT)
+                if(mode != REMOTE_MODE_AMOUNT)
                 {
                     save_zip_to_sd(filename, zip_size, zip_buf, mode);
                     success = true;

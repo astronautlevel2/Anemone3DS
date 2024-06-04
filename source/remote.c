@@ -138,7 +138,7 @@ static void load_remote_smdh(Entry_s * entry, C3D_Tex * into_tex, const Entry_Ic
     }
 }
 
-static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type, RemoteMode mode)
+static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ignore_cache, InstallType type)
 {
     free(list->entries);
     list->entries_count = json_array_size(ids_array);
@@ -195,7 +195,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
     if (json_len)
     {
         list->tp_current_page = page;
-        list->mode = mode;
+        list->mode = (EntryMode) mode;
 
         json_error_t error;
         json_t * root = json_loadb(page_json, json_len, 0, &error);
@@ -208,7 +208,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
                 if (json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
                     list->tp_page_count = json_integer_value(value);
                 else if (json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
-                    load_remote_entries(list, value, ignore_cache, loading_screen, mode);
+                    load_remote_entries(list, value, ignore_cache, loading_screen);
                 else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE)
                     && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
                     throw_error(language.remote.no_results, ERROR_LEVEL_WARNING);
@@ -396,7 +396,7 @@ static void jump_menu(Entry_List_s * list)
     {
         json_int_t newpage = (json_int_t)atoi(numbuf);
         if (newpage != list->tp_current_page)
-            load_remote_list(list, newpage, list->mode, false);
+            load_remote_list(list, newpage, (RemoteMode) list->mode, false);
     }
 }
 
@@ -420,7 +420,7 @@ static void search_menu(Entry_List_s * list)
         free(list->tp_search);
         list->tp_search = url_escape(search);
         DEBUG("Search escaped: %s -> %s\n", search, list->tp_search);
-        load_remote_list(list, 1, list->mode, false);
+        load_remote_list(list, 1, (RemoteMode) list->mode, false);
     }
     free(search);
 }
@@ -973,7 +973,7 @@ static size_t handle_data(char *ptr, size_t size, size_t nmemb, void *userdata)
 static size_t curl_parse_header(char *buffer, size_t size, size_t nitems, void *userdata)
 {
     curl_header *header = (curl_header *) userdata;
-    for (int i = 0; i < size * nitems; ++i)
+    for (size_t i = 0; i < size * nitems; ++i)
     {
         if (buffer[i] == '\n' || buffer[i] == '\r')
         {
