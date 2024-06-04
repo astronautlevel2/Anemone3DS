@@ -310,7 +310,7 @@ void load_icons_thread(void * void_arg)
 bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset, int height)
 {
     int width = (uint32_t)((size / 4) / height);
-    u32 tex_height = height > 512 ? 1024 : 512;
+    float tex_height = height > 512.0f ? 1024.0f : 512.0f;
 
     free_preview(*preview_image);
 
