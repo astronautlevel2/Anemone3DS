@@ -28,9 +28,11 @@ Special thanks go to these people who, whilst not directly contributing, helped 
  * [SteveIce10](https://github.com/SteveIce10), whose QR code in FBI was essential.
  * [BernardoGiordano](https://github.com/BernardoGiordano) for making pp2d, and being super responsive to feature requests and just general help.
  * [yellows8](https://github.com/yellows8) for his home menu extdump tool, which was invaluable in debugging.
- * the folks on #dev of Nintendo Homebrew, who helped with unicode shenanigans (especially [Stary2001](https://github.com/Stary2001), [Fenrir](https://github.com/FenrirWolf), and DanielKO).
- * the maintainers for all used libraries, including but not limited to ctrulib, zlib, citro3d, pp2d, and quirc.
- * all the people who helped keep me going and motivated me to work. This includes, but is definitely not limited to:
+ * [MrCheeze](https://github.com/MrCheeze) and [AntiMach](https://github.com/AntiMach) whose GYTB and ABE code served as a reference on badge management
+ * [Tobid7](https://github.com/tobid7) whose BCSTM-Player project served as a reference on the BCSTM format
+ * The folks on #dev of Nintendo Homebrew, who helped with unicode shenanigans (especially [Stary2001](https://github.com/Stary2001), [Fenrir](https://github.com/FenrirWolf), and DanielKO).
+ * The maintainers for all used libraries, including but not limited to ctrulib, libarchive, citro3d, citro2d, and quirc. An especially big thanks to the devkitPro team for maintaining a phenomenal toolchain.
+ * All the people who helped keep me going and motivated me to work. This includes, but is definitely not limited to:
  
    + The members of the [Nintendo Homebrew Discord](https://discord.gg/C29hYvh)
    + The members of the __Secret Shack Service Discord__   

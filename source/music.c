@@ -27,6 +27,9 @@
 #include "music.h"
 #include "loading.h"
 
+// BCSTM Player adapted from BCSTM-Player by tobid7
+// https://github.com/NPI-D7/BCSTM-Player/blob/main/source/bcstm.hpp
+
 u32 read32(char *music_buf, ssize_t *cursor)
 {
     u32 ret;

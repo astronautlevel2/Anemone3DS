@@ -24,6 +24,10 @@
 *         reasonable ways as different from the original version.
 */
 
+// Badge implementation adapted from GYTB by MrCheeze and ABE by AntiMach
+// https://github.com/AntiMach/advanced-badge-editor
+// https://github.com/MrCheeze/GYTB
+
 #include "badges.h"
 #include "draw.h"
 #include "ui_strings.h"
