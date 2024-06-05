@@ -210,6 +210,11 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf)
     if(size != 0)
     {
         *buf = calloc(1, size);
+        if (*buf == NULL)
+        {
+            DEBUG("Error allocating buffer - out of memory??\n");
+            return 0;
+        }
         FSFILE_Read(file, NULL, 0, *buf, size);
     }
     FSFILE_Close(file);
@@ -474,8 +479,13 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
     }
     FSUSER_CreateFile(archive, path, 0, size);
     char * buf = calloc(size, 1);
-    buf_to_file(size, path, archive, buf);
-    free(buf);
+    if (buf == NULL)
+    {
+        DEBUG("out of memory - not overwriting file?\n");
+    } else {
+        buf_to_file(size, path, archive, buf);
+        free(buf);
+    }
 }
 
 static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)

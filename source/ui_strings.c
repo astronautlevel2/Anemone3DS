@@ -355,12 +355,12 @@ const Language_s language_english = {
                 "\uE07A Search tags"
             },
             {
-                "\uE07B Switch modes",
+                NULL,
                 "\uE07C Reload without cache"
             },
             {
-                NULL,
-                NULL
+                "\uE004 Switch to Splashes",
+                "\uE005 Switch to Badges"
             },
             {
                 "Exit",
@@ -715,12 +715,12 @@ const Language_s language_spanish = {
                 "\uE07A Buscar etiquetas"
             },
             {
-                "\uE07B Alternar fondo/tema",
+                NULL,
                 "\uE07C Recargar sin caché"
             },
             {
-                NULL,
-                NULL
+                "\uE004 Switch to Splashes",
+                "\uE005 Switch to Badges"
             },
             {
                 "Salir",
@@ -1077,12 +1077,12 @@ const Language_s language_french = {
                 "\uE07A Tags de recherche"
             },
             {
-                "\uE07B Splash/Thème",
+                NULL,
                 "\uE07C Actualiser sans cache"
             },
             {
-                NULL,
-                NULL
+                "\uE004 Switch to Splashes",
+                "\uE005 Switch to Badges"
             },
             {
                 "Quitter",
@@ -1438,12 +1438,12 @@ const Language_s language_portuguese = {
                 "\uE07A Pesquisar tags"
             },
             {
-                "\uE07B Alternar splash/tema",
+                NULL,
                 "\uE07C Recarregar sem cache"
             },
             {
-                NULL,
-                NULL
+                "\uE004 Switch to Splashes",
+                "\uE005 Switch to Badges"
             },
             {
                 "Sair",

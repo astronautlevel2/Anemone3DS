@@ -565,16 +565,20 @@ bool themeplaza_browser(RemoteMode mode)
             {
                 extra_mode = false;
             }
-            else if (kDown & KEY_DLEFT)
+            else if (kDown & KEY_L)
             {
                 extra_mode = false;
-            change_mode:
-                mode++;
-                mode %= REMOTE_MODE_AMOUNT;
-
+                mode = REMOTE_MODE_SPLASHES;
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
-
+                load_remote_list(current_list, 1, mode, false);
+            }
+            else if (kDown & KEY_R)
+            {
+                extra_mode = false;
+                mode = REMOTE_MODE_BADGES;
+                free(current_list->tp_search);
+                current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);
             }
             else if (kDown & KEY_DUP)
@@ -721,7 +725,13 @@ bool themeplaza_browser(RemoteMode mode)
                     }
                     else if (BETWEEN(320 - 24, x, 320))
                     {
-                        goto change_mode;
+                        mode++;
+                        mode %= REMOTE_MODE_AMOUNT;
+
+                        free(current_list->tp_search);
+                        current_list->tp_search = strdup("");
+
+                        load_remote_list(current_list, 1, mode, false);
                     }
                 }
                 else if (BETWEEN(240 - 24, y, 240) && BETWEEN(176, x, 320))

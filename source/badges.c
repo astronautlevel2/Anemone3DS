@@ -246,6 +246,11 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
         }
     }
 
+    if (!badges_in_set)
+    {
+        goto end;
+    }
+
     int set_index = set_id - 1;
     u32 total_count = 0xFFFF * badges_in_set;
     for (int i = 0; i < 16; ++i)
@@ -283,6 +288,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     free(icon_buf);
     memcpy(badgeDataBuffer + 0x250F80 + set_index * 0x2000, rgb_buf_64x64, 64 * 64 * 2);
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
+    end:
     free(badge_files);
     return badges_in_set;
 }
@@ -292,7 +298,13 @@ Result backup_badges(void)
     char *badgeMng = NULL;
     char *badgeData = NULL;
 
+    DEBUG("writing badge data: making files...\n");
+    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, BADGE_MNG_SIZE);
+    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), ArchiveSD, BADGE_DATA_SIZE);
+
+    DEBUG("loading existing badge mng file...\n");
     u32 mngRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMng);
+    DEBUG("loading existing badge data file\n");
     u32 dataRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, &badgeData);
     if (mngRead != BADGE_MNG_SIZE || dataRead != BADGE_DATA_SIZE)
     {
@@ -301,22 +313,27 @@ Result backup_badges(void)
         if (badgeData) free(badgeData);
         return -1;
     }
-    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, mngRead);
-    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), ArchiveSD, dataRead);
+
+    DEBUG("writing badge data: writing BadgeMngFile...\n");
     Result res = buf_to_file(mngRead, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, badgeMng);
     if (R_FAILED(res))
     {
+        DEBUG("Failed to write badgemngfile: 0x%08lx\n", res);
         free(badgeMng);
         free(badgeData);
         return -1;
     }
+    DEBUG("writing badge data: writing badgedata...\n");
     res = buf_to_file(dataRead, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), ArchiveSD, badgeData);
     if (R_FAILED(res))
     {
+        DEBUG("Failed to write badgedatafile: 0x%08lx\n", res);
         free(badgeMng);
         free(badgeData);
         return -1;
     }
+    free(badgeMng);
+    free(badgeData);
     return 0;
 }
 
@@ -326,6 +343,7 @@ Result install_badges(void)
     Handle folder = 0;
     Result res = 0;
 
+    DEBUG("Backing up badges\n");
     res = backup_badges();
     if (R_FAILED(res))
     {
@@ -333,6 +351,7 @@ Result install_badges(void)
         return res;
     }
 
+    DEBUG("Initializing ACT\n");
     res = actInit();
     if (R_FAILED(res))
     {
@@ -340,6 +359,7 @@ Result install_badges(void)
         return res;
     }
 
+    DEBUG("Initializing ACTU\n");
     res = ACTU_Initialize(0xB0502C8, 0, 0);
     if (R_FAILED(res))
     {
@@ -347,6 +367,7 @@ Result install_badges(void)
         return res;
     }
 
+    DEBUG("Getting NNID\n");
     u32 nnidNum = 0xFFFFFFFF;
     res = ACTU_GetAccountDataBlock(0xFE, 4, 12, &nnidNum);
     if (R_FAILED(res))
@@ -362,6 +383,7 @@ Result install_badges(void)
     alpha_buf_64x64 = NULL;
     alpha_buf_32x32 = NULL;
 
+    DEBUG("Opening badge directory\n");
     FS_DirectoryEntry *badge_files = calloc(1024, sizeof(FS_DirectoryEntry));
     res = FSUSER_OpenDirectory(&folder, ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/"));
     if (R_FAILED(res))
@@ -379,6 +401,44 @@ Result install_badges(void)
     alpha_buf_32x32 = malloc(12*6*32*32/2);
     badgeDataBuffer = calloc(1, BADGE_DATA_SIZE);
     badgeMngBuffer = calloc(1, BADGE_MNG_SIZE);
+
+    if (!rgb_buf_64x64)
+    {
+        DEBUG("rgb_buf_64x64 alloc failed\n");
+        res = -1;
+        goto end;
+    }
+
+    if (!alpha_buf_64x64)
+    {
+        DEBUG("alpha_buf_64x64 alloc failed\n");
+        goto end;
+    }
+
+    if (!rgb_buf_32x32)
+    {
+        DEBUG("rgb_buf_32x32 alloc failed\n");
+        goto end;
+    }
+
+    if (!alpha_buf_32x32)
+    {
+        DEBUG("alpha_buf_32x32 alloc failed\n");
+        goto end;
+    }
+
+    if (!badgeDataBuffer)
+    {
+        DEBUG("badgeDataBuffer alloc failed\n");
+        goto end;
+    }
+
+    if (!badgeMngBuffer)
+    {
+        DEBUG("badgeMngBuffer alloc failed\n");
+        goto end;
+    }
+
     int badge_count = 0;
     int set_count = 0;
     int default_set = 0;
@@ -388,6 +448,7 @@ Result install_badges(void)
     {
         if (!strcmp(badge_files[i].shortExt, "PNG"))
         {
+            DEBUG("PNG discovered\n");
             if (default_set == 0)
             {
                 set_count += 1;
@@ -400,6 +461,7 @@ Result install_badges(void)
             default_set_count += install_badge_png(fsMakePath(PATH_UTF16, path), badge_files[i], &badge_count, default_set);
         } else if (!strcmp(badge_files[i].shortExt, "ZIP"))
         {
+            DEBUG("ZIP discovered\n");
             if (default_set == 0)
             {
                 set_count += 1;
@@ -412,11 +474,15 @@ Result install_badges(void)
             default_set_count += install_badge_zip(path, &badge_count, default_set);
         } else if (badge_files[i].attributes & FS_ATTRIBUTE_DIRECTORY)
         {
+            DEBUG("dir discovered\n");
             set_count += 1;
-            install_badge_dir(badge_files[i], &badge_count, set_count);
+            u32 count = install_badge_dir(badge_files[i], &badge_count, set_count);
+            if (count == 0)
+                set_count -= 1;
         }
     }
 
+    DEBUG("Badges installed - doing metadata\n");
     if (default_set != 0)
     {
         int default_index = default_set - 1;
