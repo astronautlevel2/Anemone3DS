@@ -280,7 +280,8 @@ void fill_buffers(audio_s *audio)
 
         if (!audio->is_looping && audio->current_block == audio->loop_end)
         {
-            // stop playing
+            audio->stop = true;
+            return;
         }
 
         for (u8 channelIndex = 0; channelIndex < audio->channel_count; ++channelIndex)

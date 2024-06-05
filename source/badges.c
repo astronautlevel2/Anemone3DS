@@ -287,11 +287,51 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     return badges_in_set;
 }
 
+Result backup_badges(void)
+{
+    char *badgeMng = NULL;
+    char *badgeData = NULL;
+
+    u32 mngRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMng);
+    u32 dataRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, &badgeData);
+    if (mngRead != BADGE_MNG_SIZE || dataRead != BADGE_DATA_SIZE)
+    {
+        throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
+        if (badgeMng) free(badgeMng);
+        if (badgeData) free(badgeData);
+        return -1;
+    }
+    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, mngRead);
+    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), ArchiveSD, dataRead);
+    Result res = buf_to_file(mngRead, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, badgeMng);
+    if (R_FAILED(res))
+    {
+        free(badgeMng);
+        free(badgeData);
+        return -1;
+    }
+    res = buf_to_file(dataRead, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), ArchiveSD, badgeData);
+    if (R_FAILED(res))
+    {
+        free(badgeMng);
+        free(badgeData);
+        return -1;
+    }
+    return 0;
+}
+
 Result install_badges(void)
 {
     Handle handle = 0;
     Handle folder = 0;
     Result res = 0;
+
+    res = backup_badges();
+    if (R_FAILED(res))
+    {
+        DEBUG("Backup badges failed\n");
+        return res;
+    }
 
     res = actInit();
     if (R_FAILED(res))
