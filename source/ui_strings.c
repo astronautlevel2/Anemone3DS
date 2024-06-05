@@ -355,7 +355,7 @@ const Language_s language_english = {
                 "\uE07A Search tags"
             },
             {
-                "\uE07B Toggle splash/theme",
+                "\uE07B Switch modes",
                 "\uE07C Reload without cache"
             },
             {
