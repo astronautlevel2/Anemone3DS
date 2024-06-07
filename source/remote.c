@@ -534,7 +534,7 @@ bool themeplaza_browser(RemoteMode mode)
         {
             Instructions_s instructions = language.remote_instructions[mode];
             if (extra_mode)
-                instructions = language.remote_extra_instructions;
+                instructions = language.remote_extra_instructions[mode];
             draw_grid_interface(current_list, instructions, extra_mode);
         }
 
@@ -568,7 +568,8 @@ bool themeplaza_browser(RemoteMode mode)
             else if (kDown & KEY_L)
             {
                 extra_mode = false;
-                mode = REMOTE_MODE_SPLASHES;
+                mode = mode -1;
+                if (mode > REMOTE_MODE_AMOUNT) mode = REMOTE_MODE_AMOUNT -1;
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);
@@ -576,7 +577,8 @@ bool themeplaza_browser(RemoteMode mode)
             else if (kDown & KEY_R)
             {
                 extra_mode = false;
-                mode = REMOTE_MODE_BADGES;
+                mode = mode + 1;
+                mode = mode % REMOTE_MODE_AMOUNT;
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);

@@ -348,23 +348,67 @@ const Language_s language_english = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "\uE001 Leave extra menu",
-        .instructions = {
-            {
-                "\uE079 Jump to page",
-                "\uE07A Search tags"
-            },
-            {
-                NULL,
-                "\uE07C Reload without cache"
-            },
-            {
-                "\uE004 Switch to Splashes",
-                "\uE005 Switch to Badges"
-            },
-            {
-                "Exit",
-                NULL
+        {
+            .info_line = "\uE001 Leave extra menu",
+            .instructions = {
+                {
+                    "\uE079 Jump to page",
+                    "\uE07A Search tags"
+                },
+                {
+                    NULL,
+                    "\uE07C Reload without cache"
+                },
+                {
+                    "\uE004 Switch to Badges",
+                    "\uE005 Switch to Splashes"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Leave extra menu",
+            .instructions = {
+                {
+                    "\uE079 Jump to page",
+                    "\uE07A Search tags"
+                },
+                {
+                    NULL,
+                    "\uE07C Reload without cache"
+                },
+                {
+                    "\uE004 Switch to Themes",
+                    "\uE005 Switch to Badges"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Leave extra menu",
+            .instructions = {
+                {
+                    "\uE079 Jump to page",
+                    "\uE07A Search tags"
+                },
+                {
+                    NULL,
+                    "\uE07C Reload without cache"
+                },
+                {
+                    "\uE004 Switch to Splashes",
+                    "\uE005 Switch to Themes"
+                },
+                {
+                    "Exit",
+                    NULL
+                }
             }
         }
     },
@@ -490,7 +534,7 @@ const Language_s language_spanish = {
                 },
                 {
                     "\uE07B Explorar ThemePlaza",
-                    NULL
+                    "\uE07C Install Badges"
                 },
                 {
                     "\uE004 Menú de clasificación",
@@ -708,25 +752,69 @@ const Language_s language_spanish = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "\uE001 Dejar menú extra",
-        .instructions = {
-            {
-                "\uE079 Saltar a la página",
-                "\uE07A Buscar etiquetas"
-            },
-            {
-                NULL,
-                "\uE07C Recargar sin caché"
-            },
-            {
-                "\uE004 Switch to Splashes",
-                "\uE005 Switch to Badges"
-            },
-            {
-                "Salir",
-                NULL
+        {
+            .info_line = "\uE001 Dejar menú extra",
+            .instructions = {
+                {
+                    "\uE079 Saltar a la página",
+                    "\uE07A Buscar etiquetas"
+                },
+                {
+                    NULL,
+                    "\uE07C Recargar sin caché"
+                },
+                {
+                    "\uE004 Switch to Badges",
+                    "\uE005 Switch to Splashes"
+                },
+                {
+                    "Salir",
+                    NULL
+                }
             }
-        }
+        },
+        {
+            .info_line = "\uE001 Dejar menú extra",
+            .instructions = {
+                {
+                    "\uE079 Saltar a la página",
+                    "\uE07A Buscar etiquetas"
+                },
+                {
+                    NULL,
+                    "\uE07C Recargar sin caché"
+                },
+                {
+                    "\uE004 Switch to Themes",
+                    "\uE005 Switch to Badges"
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Dejar menú extra",
+            .instructions = {
+                {
+                    "\uE079 Saltar a la página",
+                    "\uE07A Buscar etiquetas"
+                },
+                {
+                    NULL,
+                    "\uE07C Recargar sin caché"
+                },
+                {
+                    "\uE004 Switch to Splashes",
+                    "\uE005 Switch to Themes"
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
     },
     .splashes =
     {
@@ -851,7 +939,7 @@ const Language_s language_french = {
                 },
                 {
                     "\uE07B Aller sur ThemePlaza",
-                    NULL
+                    "\uE07C Installer des Badges"
                 },
                 {
                     "\uE004 Trier...",
@@ -892,7 +980,7 @@ const Language_s language_french = {
         .zip_not_theme_splash = "Le fichier zip téléchargé n'est\nni un thème, ni un splash",
         .file_not_zip = "Le fichier téléchargé n'est pas un zip.",
         .download_failed = "Le téléchargement a échoué.",
-        .badge_question = "Theme or splash not detected.\nIs this a badge?",
+        .badge_question = "Un thème ou un splash n'a pas été detecté.\nEsc-ce un badge?",
     },
     .draw = 
     {
@@ -908,9 +996,9 @@ const Language_s language_french = {
         .by = "Par ",
         .selected = "Sélectionné:",
         .sel = "Sél.:",
-        .tp_theme_mode = "Thèmes de ThemePlaza",
-        .tp_splash_mode = "Splashs de ThemePlaza",
-        .tp_badge_mode = "ThemePlaza Badge mode",
+        .tp_theme_mode = "Thèmes sur ThemePlaza",
+        .tp_splash_mode = "Splashs sur ThemePlaza",
+        .tp_badge_mode = "Badges sur ThemePlaza",
         .search = "Rechercher...",
         .page = "Page:",
         .err_quit = "Appuyez sur \uE000 pour quitter.",
@@ -930,12 +1018,12 @@ const Language_s language_french = {
         .delete_sd = "Effacement...",
         .download_themes = "Téléchargement de la liste des thèmes,\nveuillez patienter...",
         .download_splashes = "Téléchargement de la liste des splashs,\nveuillez patienter...",
-        .download_badges = "Downloading badge list, please wait...",
+        .download_badges = "Téléchargement de la liste des badges,\nveuillez patienter...",
         .download_preview = "Téléchargement de l'aperçu,\nveuillez patienter...",
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
-        .install_badges = "Installing badges, please wait...",
+        .install_badges = "Installation des badges,\nveuillez patienter...",
         .shuffle = "Aléatoire: %i/10",
     },
     .fs =
@@ -1050,19 +1138,19 @@ const Language_s language_french = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Download badges",
-                    "\uE001 Go back"
+                    "\uE000 Télécharger",
+                    "\uE001 Retour"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview badges"
+                    "\uE002 Plus d'options",
+                    "\uE003 Aperçu"
                 },
                 {
-                    "\uE004 Previous page",
-                    "\uE005 Next page"
+                    "\uE004 Page précédente",
+                    "\uE005 Page suivante"
                 },
                 {
-                    "Exit",
+                    "Quitter",
                     NULL
                 }
             }
@@ -1070,24 +1158,68 @@ const Language_s language_french = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "\uE001 Retour",
-        .instructions = {
-            {
-                "\uE079 Aller à la page",
-                "\uE07A Tags de recherche"
+        {
+            .info_line = "\uE001 Retour",
+            .instructions = {
+                {
+                    "\uE079 Aller à la page",
+                    "\uE07A Tags de recherche"
+                },
+                {
+                    NULL,
+                    "\uE07C Actualiser sans cache"
+                },
+                {
+                    "\uE004 Naviguer les Badges",
+                    "\uE005 Naviguer les Splashs"
+                },
+                {
+                    "Quitter",
+                    NULL
+                }
             },
-            {
-                NULL,
-                "\uE07C Actualiser sans cache"
+        },
+                {
+            .info_line = "\uE001 Retour",
+            .instructions = {
+                {
+                    "\uE079 Aller à la page",
+                    "\uE07A Tags de recherche"
+                },
+                {
+                    NULL,
+                    "\uE07C Actualiser sans cache"
+                },
+                {
+                    "\uE004 Naviguer les Thèmes",
+                    "\uE005 Naviguer les Badges"
+                },
+                {
+                    "Quitter",
+                    NULL
+                }
             },
-            {
-                "\uE004 Switch to Splashes",
-                "\uE005 Switch to Badges"
+        },
+                {
+            .info_line = "\uE001 Retour",
+            .instructions = {
+                {
+                    "\uE079 Aller à la page",
+                    "\uE07A Tags de recherche"
+                },
+                {
+                    NULL,
+                    "\uE07C Actualiser sans cache"
+                },
+                {
+                    "\uE004 Naviguer les Splashs",
+                    "\uE005 Naviguer les Thèmes"
+                },
+                {
+                    "Quitter",
+                    NULL
+                }
             },
-            {
-                "Quitter",
-                NULL
-            }
         }
     },
     .splashes =
@@ -1106,7 +1238,7 @@ const Language_s language_french = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
+        .extdata_locked = "L'archive des badges est vérouillée.\nEssayez de redémarrer Anemone3DS,\nou utilisez la version CIA."
     }
 };
 
@@ -1212,7 +1344,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE07B Navegar no ThemePlaza",
-                    NULL
+                    "\uE07C Install Badges"
                 },
                 {
                     "\uE004 Classificar por:",
@@ -1431,25 +1563,69 @@ const Language_s language_portuguese = {
     },
     .remote_extra_instructions =
     {
-        .info_line = "\uE001 Voltar",
-        .instructions = {
-            {
-                "\uE079 Ir para a página",
-                "\uE07A Pesquisar tags"
-            },
-            {
-                NULL,
-                "\uE07C Recarregar sem cache"
-            },
-            {
-                "\uE004 Switch to Splashes",
-                "\uE005 Switch to Badges"
-            },
-            {
-                "Sair",
-                NULL
+        {
+            .info_line = "\uE001 Voltar",
+            .instructions = {
+                {
+                    "\uE079 Ir para a página",
+                    "\uE07A Pesquisar tags"
+                },
+                {
+                    NULL,
+                    "\uE07C Recarregar sem cache"
+                },
+                {
+                    "\uE004 Switch to Badges",
+                    "\uE005 Switch to Splashes"
+                },
+                {
+                    "Sair",
+                    NULL
+                }
             }
-        }
+        },
+        {
+            .info_line = "\uE001 Voltar",
+            .instructions = {
+                {
+                    "\uE079 Ir para a página",
+                    "\uE07A Pesquisar tags"
+                },
+                {
+                    NULL,
+                    "\uE07C Recarregar sem cache"
+                },
+                {
+                    "\uE004 Switch to Themes",
+                    "\uE005 Switch to Badges"
+                },
+                {
+                    "Sair",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Voltar",
+            .instructions = {
+                {
+                    "\uE079 Ir para a página",
+                    "\uE07A Pesquisar tags"
+                },
+                {
+                    NULL,
+                    "\uE07C Recarregar sem cache"
+                },
+                {
+                    "\uE004 Switch to Splashes",
+                    "\uE005 Switch to Themes"
+                },
+                {
+                    "Sair",
+                    NULL
+                }
+            }
+        },
     },
     .splashes =
     {

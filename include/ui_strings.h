@@ -177,7 +177,7 @@ typedef struct {
     Main_Strings_s main;
     Remote_Strings_s remote;
     Instructions_s remote_instructions[REMOTE_MODE_AMOUNT];
-    Instructions_s remote_extra_instructions;
+    Instructions_s remote_extra_instructions[3];
     Splashes_Strings_s splashes;
     Themes_Strings_s themes;
     Badge_Strings_s badges;
