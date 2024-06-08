@@ -37,6 +37,9 @@
 #include "conversion.h"
 #include "ui_strings.h"
 
+char *last_search = NULL;
+json_int_t last_page = 1;
+
 // forward declaration of special case used only here
 // TODO: replace this travesty with a proper handler
 static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error);
@@ -205,13 +208,20 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
             json_t * value;
             json_object_foreach(root, key, value)
             {
-                if (json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
+                if(json_is_true(value) && !strcmp(key, THEMEPLAZA_JSON_SUCCESS))
+                    last_page = page;
+                else if (json_is_integer(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_COUNT))
                     list->tp_page_count = json_integer_value(value);
                 else if (json_is_array(value) && !strcmp(key, THEMEPLAZA_JSON_PAGE_IDS))
                     load_remote_entries(list, value, ignore_cache, loading_screen);
                 else if (json_is_string(value) && !strcmp(key, THEMEPLAZA_JSON_ERROR_MESSAGE)
                     && !strcmp(json_string_value(value), THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND))
+                {
                     throw_error(language.remote.no_results, ERROR_LEVEL_WARNING);
+                    if (list->tp_search) free(list->tp_search);
+                    asprintf(&list->tp_search, "%s", last_search);
+                    list->tp_current_page = last_page;
+                }
             }
         }
         else
@@ -417,6 +427,8 @@ static void search_menu(Entry_List_s * list)
     SwkbdButton button = swkbdInputText(&swkbd, search, max_chars);
     if (button == SWKBD_BUTTON_CONFIRM)
     {
+        free(last_search);
+        asprintf(&last_search, "%s", list->tp_search);
         free(list->tp_search);
         list->tp_search = url_escape(search);
         DEBUG("Search escaped: %s -> %s\n", search, list->tp_search);
@@ -480,6 +492,8 @@ bool themeplaza_browser(RemoteMode mode)
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
     current_list->tp_search = strdup("");
+    last_search = strdup("");
+    last_page = 1;
 
     list.entries_per_screen_v = entries_per_screen_v[mode];
     list.entries_per_screen_h = entries_per_screen_h[mode];
@@ -781,6 +795,7 @@ bool themeplaza_browser(RemoteMode mode)
     free_icons(current_list);
     free(current_list->entries);
     free(current_list->tp_search);
+    free(last_search);
 
     return downloaded;
 }
