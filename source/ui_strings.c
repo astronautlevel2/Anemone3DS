@@ -1306,7 +1306,7 @@ const Language_s language_portuguese = {
                 NULL
             },
             {
-                "Exit",
+                "Sair",
                 NULL
             }
         }
@@ -1330,7 +1330,7 @@ const Language_s language_portuguese = {
                     NULL
                 },
                 {
-                    "Exit",
+                    "Sair",
                     NULL
                 }
             }
@@ -1343,8 +1343,8 @@ const Language_s language_portuguese = {
                     "\uE07A Att. icones quebrados"
                 },
                 {
-                    "\uE07B Navegar no ThemePlaza",
-                    "\uE07C Install Badges"
+                    "\uE07B Modo ThemePlaza",
+                    "\uE07C Instalar Insígnias"
                 },
                 {
                     "\uE004 Classificar por:",
@@ -1385,7 +1385,7 @@ const Language_s language_portuguese = {
         .zip_not_theme_splash = "O zip baixado não é um splash nem um tema",
         .file_not_zip = "O arquivo baixado não é um zip.",
         .download_failed = "Falha no download.",
-        .badge_question = "Theme or splash not detected.\nIs this a badge?",
+        .badge_question = "Tema ou splash não detectado.\nIsso é uma insígnia?",
     },
     .draw = 
     {
@@ -1403,7 +1403,7 @@ const Language_s language_portuguese = {
         .sel = "Sel.:",
         .tp_theme_mode = "Modo de tema ThemePlaza",
         .tp_splash_mode = "Modo de splash ThemePlaza",
-        .tp_badge_mode = "ThemePlaza Badge mode",
+        .tp_badge_mode = "Modo de insígnia ThemePlaza",
         .search = "Pesquisar...",
         .page = "Página:",
         .err_quit = "Aperte \uE000 para sair.",
@@ -1423,18 +1423,18 @@ const Language_s language_portuguese = {
         .delete_sd = "Deletando do SD...",
         .download_themes = "Baixando a lista de temas, aguarde...",
         .download_splashes = "Baixando a lista de splashes, aguarde...",
-        .download_badges = "Downloading badge list, please wait...",
+        .download_badges = "Baixando a lista de insígnias, aguarde...",
         .download_preview = "Baixando prévia, aguarde...",
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
         .dump_all_official = "Exportando temas oficiais, aguarde...",
-        .install_badges = "Installing badges, please wait...",
+        .install_badges = "Instalando insígnias, aguarde...",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
     {
         .illegal_input = "A entrada não deve conter:\n" ILLEGAL_CHARS,
-        .new_or_overwrite = "Escolha um novo nome ao arquivo ou aperte Sobrescrever",
+        .new_or_overwrite = "Escolha um novo nome ao arquivo ou Sobrescreva",
         .cancel = "Cancelar",
         .overwrite = "Sobrescrever",
         .rename = "Renomear",
@@ -1450,12 +1450,12 @@ const Language_s language_portuguese = {
     {
         .position_too_big = "A nova posição deve ser\nmenor ou igual ao\nnúmero de entradas!",
         .position_zero = "A nova posição precisa\nser positiva!",
-        .jump_q = "Para qual página você deseja ir?\nPode causar o recarregamento de ícones.",
+        .jump_q = "Para qual página deseja ir?\nPode causar recarregamento de ícones.",
         .cancel = "Cancelar",
         .jump = "Ir para",
         .no_theme_extdata = "O extdata do tema não existe!\nDefina um tema padrão no menu HOME.",
         .loading_qr = "Carregando o leitor QR...",
-        .no_wifi = "Por favor conecte-se ao Wi-Fi antes de escanear códigos QR",
+        .no_wifi = "Conecte-se ao Wi-Fi antes de escanear códigos QR",
         .qr_homebrew = "O leitor QR não funciona no Homebrew\nLauncher, use o navegador ThemePlaza em vez disso.",
         .camera_broke = "Sua câmera parece ter um problema,\nincapaz de escanear códigos QR.",
         .too_many_themes = "Você tem muitos temas selecionados.",
@@ -1472,7 +1472,7 @@ const Language_s language_portuguese = {
         .jump_page = "Para qual página deseja ir?",
         .cancel = "Cancelar",
         .jump = "Ir para",
-        .tags = "Quais tags você deseja pesquisar?",
+        .tags = "Quais tags deseja pesquisar?",
         .search = "Pesquisar",
         .parental_fail = "A validação dos controles parentais falhou!\nNavegador restrito.",
         .zip_not_found = "ZIP não encontrado neste URL\nSe achar que isso é um erro, por favor\ncontate o administrador do site",
@@ -1543,19 +1543,19 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Download badges",
-                    "\uE001 Go back"
+                    "\uE000 Baixar insígnias",
+                    "\uE001 Voltar"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview badges"
+                    "\uE002 Mais opções",
+                    "\uE003 Prévia da insígnia"
                 },
                 {
-                    "\uE004 Previous page",
-                    "\uE005 Next page"
+                    "\uE004 Página anterior",
+                    "\uE005 Próxima página"
                 },
                 {
-                    "Exit",
+                    "Sair",
                     NULL
                 }
             }
@@ -1567,7 +1567,7 @@ const Language_s language_portuguese = {
             .info_line = "\uE001 Voltar",
             .instructions = {
                 {
-                    "\uE079 Ir para a página",
+                    "\uE079 Ir à página",
                     "\uE07A Pesquisar tags"
                 },
                 {
@@ -1575,8 +1575,8 @@ const Language_s language_portuguese = {
                     "\uE07C Recarregar sem cache"
                 },
                 {
-                    "\uE004 Switch to Badges",
-                    "\uE005 Switch to Splashes"
+                    "\uE004 Mudar p. Insígnias",
+                    "\uE005 Mudar p. Splashes"
                 },
                 {
                     "Sair",
@@ -1588,7 +1588,7 @@ const Language_s language_portuguese = {
             .info_line = "\uE001 Voltar",
             .instructions = {
                 {
-                    "\uE079 Ir para a página",
+                    "\uE079 Ir à página",
                     "\uE07A Pesquisar tags"
                 },
                 {
@@ -1596,8 +1596,8 @@ const Language_s language_portuguese = {
                     "\uE07C Recarregar sem cache"
                 },
                 {
-                    "\uE004 Switch to Themes",
-                    "\uE005 Switch to Badges"
+                    "\uE004 Mudar p. Temas",
+                    "\uE005 Mudar p. insígnias"
                 },
                 {
                     "Sair",
@@ -1609,7 +1609,7 @@ const Language_s language_portuguese = {
             .info_line = "\uE001 Voltar",
             .instructions = {
                 {
-                    "\uE079 Ir para a página",
+                    "\uE079 Ir à página",
                     "\uE07A Pesquisar tags"
                 },
                 {
@@ -1617,8 +1617,8 @@ const Language_s language_portuguese = {
                     "\uE07C Recarregar sem cache"
                 },
                 {
-                    "\uE004 Switch to Splashes",
-                    "\uE005 Switch to Themes"
+                    "\uE004 Mudar p. Splashes",
+                    "\uE005 Mudar p. Temas"
                 },
                 {
                     "Sair",
@@ -1635,7 +1635,7 @@ const Language_s language_portuguese = {
     .themes =
     {
         .no_body_found = "Não foi encontrado body_LZ.bin - isso é um tema?",
-        .mono_warn = "Um ou mais temas instalados usam áudio mono. O áudio mono causa vários problemas. Consulte a wiki para obter mais informações.",
+        .mono_warn = "Um ou mais temas instalados usam áudio mono. O áudio mono causa vários problemas. Consulte a wiki para mais informações.",
         .illegal_char = "Caractere ilegal usado.",
         .name_folder = "Nome da pasta de saída",
         .cancel = "Cancelar",
@@ -1643,7 +1643,7 @@ const Language_s language_portuguese = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
+        .extdata_locked = "Ext Data Bloqueado\nTente apertar o botão HOME e retornar\nao Anemone3DS, ou use a versão CIA."
     }
 };
 
