@@ -444,6 +444,7 @@ Result install_badges(void)
     int default_set = 0;
     int default_set_count = 0;
     int default_idx = 0;
+    draw_loading_bar(0, entries_read + 4, INSTALL_BADGES);
     for (u32 i = 0; i < entries_read && badge_count < 1000; ++i)
     {
         if (!strcmp(badge_files[i].shortExt, "PNG"))
