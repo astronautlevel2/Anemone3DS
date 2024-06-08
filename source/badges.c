@@ -480,6 +480,7 @@ Result install_badges(void)
             if (count == 0)
                 set_count -= 1;
         }
+        draw_loading_bar(i, entries_read + 4, INSTALL_BADGES);
     }
 
     DEBUG("Badges installed - doing metadata\n");
