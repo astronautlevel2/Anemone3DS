@@ -151,7 +151,11 @@ Result open_badge_extdata()
             createExtSaveData(0x000014d1);
             FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge);
             remake_file(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, BADGE_MNG_SIZE);
-            remake_file(fsMakePath(PATH_ASCII, "/BadgeData.dat"), ArchiveBadgeExt, BADGE_DATA_SIZE);
+            FSUSER_CreateFile(ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), 0, BADGE_DATA_SIZE);
+            FSUSER_OpenFile(&test_handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_WRITE, 0);
+            zero_handle_memeasy(test_handle);
+            FSFILE_Flush(test_handle);
+            FSFILE_Close(test_handle);
         } else
         {
             return res;
@@ -486,6 +490,23 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
         buf_to_file(size, path, archive, buf);
         free(buf);
     }
+}
+
+Result zero_handle_memeasy(Handle handle)
+{
+    u64 size = 0;
+    u64 cur = 0;
+    FSFILE_GetSize(handle, &size);
+    char *zero_buf = calloc(1, 0x10000);
+    while (size > 0x10000)
+    {
+        FSFILE_Write(handle, NULL, cur, &zero_buf, 0x1000, 0);
+        cur += 0x10000;
+        size -= 0x10000;
+    }
+    FSFILE_Write(handle, NULL, cur, &zero_buf, size, 0);
+    free(zero_buf);
+    return 0;
 }
 
 static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
