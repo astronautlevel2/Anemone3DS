@@ -38,7 +38,9 @@ char *badgeMngBuffer;
 u16 *rgb_buf_64x64;
 u16 *rgb_buf_32x32;
 u8 *alpha_buf_64x64;
-u8 *alpha_buf_32x32; 
+u8 *alpha_buf_32x32;
+u64 progress_finish;
+u64 progress_status;
 
 Result actInit(void)
 {
@@ -180,11 +182,13 @@ typedef struct {
 
 u32 zip_callback(char *file_buf, u64 file_size, const char *name, void *userdata)
 {
+    progress_finish += 1;
     zip_userdata *data = (zip_userdata *) userdata;
     u16 *utf16_name = calloc(strlen(name), sizeof(u16));
     utf8_to_utf16(utf16_name, (u8 *) name, strlen(name));
     data->installed += install_badge_generic(file_buf, file_size, utf16_name, data->badge_count, data->set_id);
     free(utf16_name);
+    progress_status += 1;
 
     return 0;
 }
@@ -221,6 +225,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u32 entries_read;
     res = FSDIR_Read(folder, &entries_read, 1024, badge_files);
     int badges_in_set = 0;
+    progress_finish += entries_read;
     for (u32 i = 0; i < entries_read && *badge_count < 1000; ++i)
     {
         if (!strcmp(badge_files[i].shortExt, "PNG"))
@@ -246,6 +251,8 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
             strucat(path, badge_files[i].name);
             badges_in_set += install_badge_zip(path, badge_count, set_id);
         }
+        progress_status += 1;
+        draw_loading_bar(progress_status, progress_finish, INSTALL_BADGES);
     }
 
     if (!badges_in_set)
@@ -467,7 +474,9 @@ Result install_badges(void)
     int default_set_count = 0;
     int default_idx = 0;
 
-    draw_loading_bar(6, entries_read + 12, INSTALL_BADGES);
+    progress_finish = entries_read + 12;
+    progress_status = 12;
+    draw_loading_bar(progress_status, progress_finish, INSTALL_BADGES);
     for (u32 i = 0; i < entries_read && badge_count < 1000; ++i)
     {
         if (!strcmp(badge_files[i].shortExt, "PNG"))
@@ -501,7 +510,8 @@ Result install_badges(void)
             if (count == 0)
                 set_count -= 1;
         }
-        draw_loading_bar(i + 7, entries_read + 12, INSTALL_BADGES);
+        progress_status += 1;
+        draw_loading_bar(progress_status, progress_finish, INSTALL_BADGES);
     }
 
     DEBUG("Badges installed - doing metadata\n");
@@ -540,7 +550,6 @@ Result install_badges(void)
     }
 
     FSFILE_Flush(badgeDataHandle);
-    draw_loading_bar(entries_read + 9, entries_read + 12, INSTALL_BADGES);
 
     u32 total_badges = 0xFFFF * badge_count; // Quantity * unique badges?
 
