@@ -695,7 +695,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
     {
         char * shuffle_count_string = NULL;
         asprintf(&shuffle_count_string, language.draw.shuffle, list->shuffle_count);
-        draw_text(7, 3, 0.6, 0.6, 0.6f, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? colors[COLOR_WHITE] : colors[COLOR_RED], shuffle_count_string);
+        draw_text(30, 3, 0.6, 0.6, 0.6f, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? colors[COLOR_WHITE] : colors[COLOR_RED], shuffle_count_string);
         free(shuffle_count_string);
     }
 
@@ -706,10 +706,10 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         draw_image(sprites_exit_idx, 320-72, 0);
         draw_image(sprites_preview_idx, 320-48, 0);
         draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
-        draw_image(sprites_menu_idx, 320-144, 0);
+        draw_image(sprites_menu_idx, 2, 0);
         if (current_mode == MODE_THEMES)
         {
-            draw_image(sprites_shuffle_idx, 320-168, 0);
+            draw_image(sprites_shuffle_idx, 320-144, 0);
         }
     }
     else
@@ -720,14 +720,14 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
             draw_image(sprites_shuffle_idx, 320-48, 0);
             draw_image(sprites_shuffle_no_bgm_idx, 320-72, 0);
             draw_image(sprites_bgm_only_idx, 320-96, 0);
-            draw_image(sprites_back_idx, 320-120, 0);
+            draw_image(sprites_back_idx, 2, 0);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
             draw_image(sprites_browse_idx, 320-24, 0);
             draw_image(sprites_dump_idx, 320-48, 0);
             draw_image(sprites_sort_idx, 320-72, 0);
             draw_image(sprites_badge_idx, 320-96, 0);
-            draw_image(sprites_back_idx, 320-120, 0);
+            draw_image(sprites_back_idx, 2, 0);
         }
     }
 

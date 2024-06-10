@@ -640,7 +640,7 @@ int main(void)
                         } else if (BETWEEN(320-96, x, 320-72))
                         {
                             goto install_theme_bgm_only;
-                        } else if (BETWEEN(320-120, x, 320-96))
+                        } else if (BETWEEN(2, x, 26))
                         {
                             goto install_leave;
                         }
@@ -791,7 +791,7 @@ int main(void)
                         } else if (BETWEEN(320-96, x, 320-72))
                         {
                             goto badge_install;
-                        } else if (BETWEEN(320-120, x, 320-96))
+                        } else if (BETWEEN(2, x, 26))
                         {
                             extra_mode = false;
                             extra_index = 1;
@@ -1036,14 +1036,14 @@ int main(void)
             {
                 if(y < 24)
                 {
-                    if(BETWEEN(320-168, x, 320-144))
+                    if(BETWEEN(320-144, x, 320-120))
                     {
                         if (current_mode == MODE_THEMES)
                         {
                             toggle_shuffle(current_list);
                         }
                     }
-                    else if(BETWEEN(320-144, x, 320-120))
+                    else if(BETWEEN(2, x, 26))
                     {
                         extra_mode = true;
                         draw_mode = DRAW_MODE_EXTRA;
