@@ -30,7 +30,7 @@
 // BCSTM Player adapted from BCSTM-Player by tobid7
 // https://github.com/NPI-D7/BCSTM-Player/blob/main/source/bcstm.hpp
 
-u32 read32(char *music_buf, ssize_t *cursor)
+u32 read32(char *music_buf, size_t *cursor)
 {
     u32 ret;
     memcpy(&ret, music_buf + *cursor, 4);
@@ -38,7 +38,7 @@ u32 read32(char *music_buf, ssize_t *cursor)
     return ret;
 }
 
-u16 read16(char *music_buf, ssize_t *cursor)
+u16 read16(char *music_buf, size_t *cursor)
 {
     u16 ret;
     memcpy(&ret, music_buf + *cursor, 2);
@@ -46,7 +46,7 @@ u16 read16(char *music_buf, ssize_t *cursor)
     return ret;
 }
 
-u8 read8(char *music_buf, ssize_t *cursor)
+u8 read8(char *music_buf, size_t *cursor)
 {
     u8 ret;
     memcpy(&ret, music_buf + *cursor, 1);
@@ -118,6 +118,11 @@ void stop_audio_ogg(audio_ogg_s ** audio_ptr) {
     free(audio);
     *audio_ptr = NULL;
 }
+
+typedef struct {
+    u16 type;
+    u32 target;
+} bcstm_reference;
 
 int init_audio(audio_s *audio)
 {
@@ -195,10 +200,24 @@ int init_audio(audio_s *audio)
     audio->loop_end = (_loop_end % audio->block_samples ? audio->num_blocks : _loop_end / audio->block_samples);
 
     while (read32(audio->music_buf, &audio->cursor) != 0x4102); // find channel info header
-    audio->cursor += read32(audio->music_buf, &audio->cursor) + audio->channel_count * 8 - 12;
+    audio->cursor -= 4;
+    u32 start_table = audio->cursor - 4;
+    bcstm_reference channel_refs[2] = {0};
+    for (u8 i = 0; i < audio->channel_count; ++i)
+    {
+        DEBUG("Processing channel_ref at %08x...\n", audio->cursor);
+        channel_refs[i].type = read16(audio->music_buf, &audio->cursor);
+        audio->cursor += 2;
+        channel_refs[i].target = start_table + read32(audio->music_buf, &audio->cursor);
+        DEBUG("Type: %04x; Target: %08lx\n", channel_refs[i].type, channel_refs[i].target);
+    }
 
     for (u8 i = 0; i < audio->channel_count; ++i)
     {
+        audio->cursor = channel_refs[i].target;
+        if (read16(audio->music_buf, &audio->cursor) != 0x300) continue; // Bad bcstm - channel info != DSP ADPCM info
+        audio->cursor += 2;
+        audio->cursor += read32(audio->music_buf, &audio->cursor) - 8;
         memcpy(audio->adpcm_coefs[i], audio->music_buf + audio->cursor, sizeof(unsigned short) * 16);
         audio->cursor += sizeof(unsigned short) * 16;
         memcpy(&(audio->adpcm_data[i][0]), audio->music_buf + audio->cursor, sizeof(ndspAdpcmData));

@@ -39,8 +39,8 @@
 
 typedef struct {
     char *music_buf;
-    ssize_t music_size;
-    ssize_t cursor;
+    size_t music_size;
+    size_t cursor;
     u32 last_time;
     bool is_little_endian;
     bool is_looping;

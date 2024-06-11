@@ -61,6 +61,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
         char * padded = NULL;
 
         int shuffle_count = 0;
+        draw_loading_bar(shuffle_count, themes->shuffle_count + 1, INSTALL_SHUFFLE);
         Handle body_cache_handle;
 
         if(installmode & THEME_INSTALL_BODY)
@@ -149,6 +150,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
                 }
 
                 shuffle_count++;
+                draw_loading_bar(shuffle_count, themes->shuffle_count + 1, INSTALL_SHUFFLE);
             }
         }
 

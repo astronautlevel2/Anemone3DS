@@ -618,6 +618,7 @@ const Language_s language_spanish = {
         .download_bgm = "Descargando BGM, por favor espera...",
         .dump_single = "Volcando tema, por favor espera...",
         .dump_all_official = "Volcando temas oficiales, por favor espera...",
+        .install_badges = "Instalando insignias, por favor espera...",
         .shuffle = "Aleatorio: %i/10",
     },
     .fs =
