@@ -148,19 +148,26 @@ Result open_badge_extdata()
     {
         if (R_SUMMARY(res) == RS_NOTFOUND) 
         {
+            DEBUG("Extdata not found - creating\n");
             createExtSaveData(0x000014d1);
             FSUSER_OpenArchive(&ArchiveBadgeExt, ARCHIVE_EXTDATA, badge);
-            remake_file(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, BADGE_MNG_SIZE);
-            FSUSER_CreateFile(ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), 0, BADGE_DATA_SIZE);
-            FSUSER_OpenFile(&test_handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_WRITE, 0);
-            zero_handle_memeasy(test_handle);
-            FSFILE_Flush(test_handle);
-            FSFILE_Close(test_handle);
         } else
         {
+            DEBUG("Unknown extdata error\n");
             return res;
         }
     }
+
+    if (R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "BadgeData.dat"), FS_OPEN_READ, 0)))
+    {
+            FSUSER_CreateFile(ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), 0, BADGE_DATA_SIZE);
+            FSUSER_OpenFile(&test_handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_WRITE, 0);
+            FSFILE_Flush(test_handle);
+    }
+    FSFILE_Close(test_handle);
+
+    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "BadgeMngFile.dat"), FS_OPEN_READ, 0)))
+        remake_file(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, BADGE_MNG_SIZE);
 
     if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), FS_OPEN_READ, 0)))
     {
@@ -500,7 +507,7 @@ Result zero_handle_memeasy(Handle handle)
     char *zero_buf = calloc(1, 0x10000);
     while (size > 0x10000)
     {
-        FSFILE_Write(handle, NULL, cur, &zero_buf, 0x1000, 0);
+        FSFILE_Write(handle, NULL, cur, &zero_buf, 0x10000, 0);
         cur += 0x10000;
         size -= 0x10000;
     }

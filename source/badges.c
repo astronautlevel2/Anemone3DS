@@ -150,7 +150,7 @@ int install_badge_generic(char *file_buf, u64 file_size, u16 *name, int *badge_c
         memcpy(badgeMngBuffer + 0x3E8 + *badge_count*0x28 + 0x18, &shortcut, 8);
         memcpy(badgeMngBuffer + 0x3E8 + *badge_count*0x28 + 0x20, &shortcut, 8); // u64 shortcut[2], not sure what second is for
 
-        badgeMngBuffer[0x358 + *badge_count/8] |= 0 << (*badge_count % 8); // enabled badges bitfield
+        badgeMngBuffer[0x358 + *badge_count/8] |= 1 << (*badge_count % 8); // enabled badges bitfield
         badges_installed++;
 
         *badge_count += 1;
@@ -264,7 +264,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u32 total_count = 0xFFFF * badges_in_set;
     for (int i = 0; i < 16; ++i)
     {
-        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, 0x8A, 0);
+        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, strulen(set_dir.name, 0x8A) * 2, 0);
     }
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
 
@@ -317,7 +317,6 @@ Result backup_badges(void)
     }
     FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), 0, BADGE_DATA_SIZE);
     FSUSER_OpenFile(&sdHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), FS_OPEN_WRITE, 0);
-    zero_handle_memeasy(sdHandle);
 
     DEBUG("loading existing badge mng file...\n");
     u32 mngRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMng);
@@ -401,6 +400,7 @@ Result install_badges(void)
         DEBUG("ACTU_GetAccountDataBlock failed! %08lx\n", res);
         return res;
     }
+    DEBUG("NNID found: 0x%08lx\n", nnidNum);
 
     badgeMngBuffer = NULL;
     badgeDataHandle = 0;
@@ -523,9 +523,9 @@ Result install_badges(void)
         {
             u16 name[0x8A/2] = {0};
             utf8_to_utf16(name, (u8 *) "Other Badges", 0x8A);
-            FSFILE_Write(badgeDataHandle, NULL, default_index * 0x8A0 + i * 0x8A, &name, 0x8A, 0);
+            FSFILE_Write(badgeDataHandle, NULL, default_index * 0x8A0 + i * 0x8A, &name, strulen(name, 0x8A) * 2, 0);
         }
-        badgeMngBuffer[0x3D8 + default_index/8] |= 0 << (default_index % 8);
+        badgeMngBuffer[0x3D8 + default_index/8] |= 1 << (default_index % 8);
 
         memset(badgeMngBuffer + 0xA028 + default_index * 0x30, 0xFF, 8);
         badgeMngBuffer[0xA028 + 0xC + default_index * 0x30] = 0x10; // bytes 13 and 14 are 0x2710
