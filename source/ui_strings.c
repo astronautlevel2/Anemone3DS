@@ -1271,7 +1271,7 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Instalar splash",
+                    "\uE000 Instalar Splash",
                     "\uE001 Excluir splash instalado"
                 },
                 {
@@ -1340,7 +1340,7 @@ const Language_s language_portuguese = {
             .info_line = "\uE001 Voltar",
             .instructions = {
                 {
-                    "\uE079 Ir para a página",
+                    "\uE079 Ir à página",
                     "\uE07A Att. icones quebrados"
                 },
                 {
@@ -1441,7 +1441,7 @@ const Language_s language_portuguese = {
         .rename = "Renomear",
         .swkbd_fail = "???\nTry a USB keyboard", // Should never be used
         .sd_full = "O cartão SD está cheio.\nExclua alguns temas para liberar espaço.",
-        .fs_error = "Error:\nAdquira um novo cartão SD.",
+        .fs_error = "Erro:\nAdquira um novo cartão SD.",
     },
     .loading =
     {
@@ -1453,7 +1453,7 @@ const Language_s language_portuguese = {
         .position_zero = "A nova posição precisa\nser positiva!",
         .jump_q = "Para qual página deseja ir?\nPode causar recarregamento de ícones.",
         .cancel = "Cancelar",
-        .jump = "Ir para",
+        .jump = "Ir",
         .no_theme_extdata = "O extdata do tema não existe!\nDefina um tema padrão no menu HOME.",
         .loading_qr = "Carregando o leitor QR...",
         .no_wifi = "Conecte-se ao Wi-Fi antes de escanear códigos QR",
@@ -1472,12 +1472,12 @@ const Language_s language_portuguese = {
         .new_page_zero = "A nova posição precisa\nser positiva!",
         .jump_page = "Para qual página deseja ir?",
         .cancel = "Cancelar",
-        .jump = "Ir para",
+        .jump = "Ir",
         .tags = "Quais tags deseja pesquisar?",
         .search = "Pesquisar",
         .parental_fail = "A validação dos controles parentais falhou!\nNavegador restrito.",
         .zip_not_found = "ZIP não encontrado neste URL\nSe achar que isso é um erro, por favor\ncontate o administrador do site",
-        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nSe estiver vendo isso, por favor contate um\ndesenvolvedor do Anenome no discord do Theme Plaza.",
+        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nSe estiver vendo isso, contate um\ndesenvolvedor do Anenome no discord Theme Plaza.",
         .http303_tp = "HTTP 303 See Other (Theme Plaza)\nEsse tema foi aprovado?",
         .http303 = "HTTP 303 See Other\nBaixe o recurso diretamente\nou contate o administrador do site.",
         .http404 = "HTTP 404 Not Found\nEsse tema foi aprovado?",
@@ -1494,7 +1494,7 @@ const Language_s language_portuguese = {
         .http502 = "HTTP 502 Bad Gateway\nContate o administrador do site.",
         .http503 = "HTTP 503 Service Unavailable\nContate o administrador do site.",
         .http504 = "HTTP 504 Gateway Timeout\nContate o administrador do site.",
-        .http_unexpected = "HTTP %u\nSe achar que isso é inesperado, por favor\ncontate o administrador do site.",
+        .http_unexpected = "HTTP %u\nSe achar que isso é inesperado,\ncontate o administrador do site.",
     },
     .remote_instructions =
     {
@@ -1502,7 +1502,7 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Baixar tema",
+                    "\uE000 Baixar Tema",
                     "\uE001 Voltar"
                 },
                 {
@@ -1523,7 +1523,7 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Baixar splash",
+                    "\uE000 Baixar Splash",
                     "\uE001 Voltar"
                 },
                 {
@@ -1544,7 +1544,7 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Baixar insígnias",
+                    "\uE000 Baixar Insígnias",
                     "\uE001 Voltar"
                 },
                 {
@@ -1631,7 +1631,7 @@ const Language_s language_portuguese = {
     .splashes =
     {
         .no_splash_found = "Não foi encontrado splash.bin ou splashbottom.bin.\nIsso é um splash?",
-        .splash_disabled = "AVISO: Splashes estão desativados na configuração do Luma.",
+        .splash_disabled = "AVISO: Splashes estão desativados na config. Luma.",
     },
     .themes =
     {
