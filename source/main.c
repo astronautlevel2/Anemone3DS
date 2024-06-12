@@ -906,7 +906,15 @@ int main(void)
                     draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
-                else if(kDown &KEY_B)
+                else if(kDown & KEY_DLEFT)
+                {
+                    draw_install(INSTALL_DUMPING_BADGES);
+                    extract_badges();
+                    extra_mode = false;
+                    draw_mode = DRAW_MODE_LIST;
+                    extra_index = 1;
+                }
+                else if(kDown & KEY_B)
                 {
                     extra_index = 1;
                 }

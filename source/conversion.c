@@ -3,6 +3,66 @@
 
 #include <png.h>
 
+// don't be fooled - this function always expects 64x64 input buffers. Width/height only
+// control output resolution
+int rgb565ToPngFile(char *filename, u16 *rgb_buf, u8 *alpha_buf, int width, int height)
+{
+    FILE *fp = fopen(filename, "wb");
+    u8 *image = malloc(64 * 64 * 4);
+    if (!image) return -1;
+
+    int i, x, y, r, g, b, a;
+
+    for (i = 0; i <  64 * 64; ++i)
+    {
+        r = (rgb_buf[i] & 0xF800) >> 11;
+        g = (rgb_buf[i] & 0x07E0) >> 5;
+        b = (rgb_buf[i] & 0x001F);
+        a = (alpha_buf[i/2] >> (4*(i%2))) & 0x0F;
+
+        r = round(r * 255.0 / 31.0);
+        g = round(g * 255.0 / 63.0);
+        b = round(b * 255.0 / 31.0);
+        a = a * 0x11;
+        x = 8*((i/64)%8) + (((i%64)&0x01) >> 0) + (((i%64)&0x04) >> 1) + (((i%64)&0x10) >> 2);
+        y = 8*(i/512) + (((i%64)&0x02) >> 1) + (((i%64)&0x08) >> 2) + (((i%64)&0x20) >> 3);
+        image[y * 64 * 4 + x * 4 + 0] = r;
+        image[y * 64 * 4 + x * 4 + 1] = g;
+        image[y * 64 * 4 + x * 4 + 2] = b;
+        image[y * 64 * 4 + x * 4 + 3] = a;
+    }
+
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_infop info = png_create_info_struct(png);
+    setjmp(png_jmpbuf(png));
+    png_init_io(png, fp);
+    png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_write_info(png, info);
+    png_bytep row = malloc(4 * width * sizeof(png_byte));
+    for (y = 0; y < height; ++y)
+    {
+        for (x = 0; x < width; ++x)
+        {
+            row[x * 4 + 0] = image[(y * 64 + x) * 4 + 0];
+            row[x * 4 + 1] = image[(y * 64 + x) * 4 + 1];
+            row[x * 4 + 2] = image[(y * 64 + x) * 4 + 2];
+            row[x * 4 + 3] = image[(y * 64 + x) * 4 + 3];
+        }
+
+        png_write_row(png, row);
+    }
+
+    png_write_end(png, info);
+    png_free_data(png, info, PNG_FREE_ALL, -1);
+    png_destroy_write_struct(&png, NULL);
+    free(row);
+    free(image);
+    fflush(fp);
+    fclose(fp);
+
+    return 0;
+}
+
 int pngToRGB565(char *png_buf, u64 fileSize, u16 *rgb_buf_64x64, u8 *alpha_buf_64x64, u16 *rgb_buf_32x32, u8 *alpha_buf_32x32, bool set_icon)
 {
     if (png_buf == NULL) return 0;
