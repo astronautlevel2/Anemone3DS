@@ -126,6 +126,13 @@ static void stop_install_check(void)
     }
 }
 
+static inline void wait_scroll(void)
+{
+    released = true;
+    svcReleaseMutex(update_icons_mutex);
+    svcSleepThread(FASTSCROLL_WAIT);
+}
+
 static void exit_thread(void)
 {
     if(iconLoadingThread_arg.run_thread)
@@ -327,11 +334,7 @@ static void jump_menu(Entry_List_s * list)
     if(button == SWKBD_BUTTON_CONFIRM)
     {
         list->selected_entry = atoi(numbuf) - 1;
-        list->scroll = list->selected_entry;
-        if(list->scroll >= list->entries_count - list->entries_loaded)
-            list->scroll = list->entries_count - list->entries_loaded - 1;
-        if (list->scroll < 0)
-            list->scroll = 0;
+        wait_scroll();
     }
 }
 
@@ -369,13 +372,6 @@ static void toggle_shuffle(Entry_List_s * list)
         current_entry->in_shuffle = true;
         list->shuffle_count++;
     }
-}
-
-static inline void wait_scroll(void)
-{
-    released = true;
-    svcReleaseMutex(update_icons_mutex);
-    svcSleepThread(FASTSCROLL_WAIT);
 }
 
 int main(void)

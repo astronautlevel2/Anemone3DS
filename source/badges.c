@@ -264,7 +264,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u32 total_count = 0xFFFF * badges_in_set;
     for (int i = 0; i < 16; ++i)
     {
-        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, strulen(set_dir.name, 0x8A) * 2, 0);
+        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, strulen(set_dir.name, 0x45) * 2, 0);
     }
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
 
@@ -523,7 +523,7 @@ Result install_badges(void)
         {
             u16 name[0x8A/2] = {0};
             utf8_to_utf16(name, (u8 *) "Other Badges", 0x8A);
-            FSFILE_Write(badgeDataHandle, NULL, default_index * 0x8A0 + i * 0x8A, &name, strulen(name, 0x8A) * 2, 0);
+            FSFILE_Write(badgeDataHandle, NULL, default_index * 0x8A0 + i * 0x8A, &name, strulen(name, 0x45) * 2, 0);
         }
         badgeMngBuffer[0x3D8 + default_index/8] |= 1 << (default_index % 8);
 
