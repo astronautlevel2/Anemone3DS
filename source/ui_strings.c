@@ -555,7 +555,7 @@ const Language_s language_spanish = {
                     "\uE07A Volcar todos los temas"
                 },
                 {
-                    "\uE07B Dump Badges",
+                    "\uE07B Volcar Insignias",
                     NULL
                 },
                 {
@@ -619,7 +619,7 @@ const Language_s language_spanish = {
         .download_bgm = "Descargando BGM, por favor espera...",
         .dump_single = "Volcando tema, por favor espera...",
         .dump_all_official = "Volcando temas oficiales, por favor espera...",
-        .dump_badges = "Dumping installed badges, please wait...",
+        .dump_badges = "Volcando insignias instaladas, por favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
         .shuffle = "Aleatorio: %i/10",
     },
