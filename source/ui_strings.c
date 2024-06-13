@@ -1258,7 +1258,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Pré-vizualizar"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Mudar para Splashes",
@@ -1279,7 +1279,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Pré-vizualizar"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Mudar para Temas",
@@ -1511,7 +1511,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Pré-vizualizar"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1532,7 +1532,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Pré-vizualizar"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1553,7 +1553,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Pré-vizualizar"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1602,7 +1602,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar p. Temas",
-                    "\uE005 Mudar p. insígnias"
+                    "\uE005 Mudar p. Insígnias"
                 },
                 {
                     "Sair",
