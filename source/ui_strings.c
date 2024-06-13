@@ -555,7 +555,7 @@ const Language_s language_spanish = {
                     "\uE07A Volcar todos los temas"
                 },
                 {
-                    "\uE07B Dump Badges",
+                    "\uE07B Volcar Insignias",
                     NULL
                 },
                 {
@@ -612,14 +612,14 @@ const Language_s language_spanish = {
         .downloading = "Descargando...",
         .checking_dl = "Comprobando archivo descargado...",
         .delete_sd = "Eliminando de la SD...",
-        .download_themes = "Descargando lista de temas, por favor espera...",
+        .download_themes = "Descargando lista de temas,\npor favor espera...",
         .download_splashes = "Descargando lista de fondos, por favor espera...",
-        .download_badges = "Descargando lista de insignias, por favor espera...",
-        .download_preview = "Descargando vista previa, por favor espera...",
+        .download_badges = "Descargando lista de insignias,\npor favor espera...",
+        .download_preview = "Descargando vista previa,\npor favor espera...",
         .download_bgm = "Descargando BGM, por favor espera...",
         .dump_single = "Volcando tema, por favor espera...",
-        .dump_all_official = "Volcando temas oficiales, por favor espera...",
-        .dump_badges = "Dumping installed badges, please wait...",
+        .dump_all_official = "Volcando temas oficiales,\npor favor espera...",
+        .dump_badges = "Volcando insignias instaladas,\npor favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
         .shuffle = "Aleatorio: %i/10",
     },
