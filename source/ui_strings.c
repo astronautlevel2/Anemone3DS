@@ -1258,10 +1258,10 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do tema"
+                    "\uE003 Pré-visualizar"
                 },
                 {
-                    "\uE004 Mudar para splashes",
+                    "\uE004 Mudar para Splashes",
                     "\uE005 Escanear código QR"
                 },
                 {
@@ -1274,15 +1274,15 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Instalar splash",
+                    "\uE000 Instalar Splash",
                     "\uE001 Excluir splash instalado"
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do splash"
+                    "\uE003 Pré-visualizar"
                 },
                 {
-                    "\uE004 Mudar para temas",
+                    "\uE004 Mudar para Temas",
                     "\uE005 Escanear código QR"
                 },
                 {
@@ -1343,7 +1343,7 @@ const Language_s language_portuguese = {
             .info_line = "\uE001 Voltar",
             .instructions = {
                 {
-                    "\uE079 Ir para a página",
+                    "\uE079 Ir à página",
                     "\uE07A Att. icones quebrados"
                 },
                 {
@@ -1393,8 +1393,8 @@ const Language_s language_portuguese = {
     },
     .draw = 
     {
-        .theme_mode = "Modo de tema",
-        .splash_mode = "Modo de splash",
+        .theme_mode = "Modo Tema",
+        .splash_mode = "Modo Splash",
         .no_themes = "Nenhum tema encontrado",
         .no_splashes = "Nenhum splash encontrado",
         .qr_download = "Aperte \uE005 para baixar do QR",
@@ -1405,9 +1405,9 @@ const Language_s language_portuguese = {
         .by = "Por ",
         .selected = "Selecionado:",
         .sel = "Sel.:",
-        .tp_theme_mode = "Modo de tema ThemePlaza",
-        .tp_splash_mode = "Modo de splash ThemePlaza",
-        .tp_badge_mode = "Modo de insígnia ThemePlaza",
+        .tp_theme_mode = "Modo de Tema ThemePlaza",
+        .tp_splash_mode = "Modo de Splash ThemePlaza",
+        .tp_badge_mode = "Modo de Insígnia ThemePlaza",
         .search = "Pesquisar...",
         .page = "Página:",
         .err_quit = "Aperte \uE000 para sair.",
@@ -1432,7 +1432,7 @@ const Language_s language_portuguese = {
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
         .dump_all_official = "Exportando temas oficiais, aguarde...",
-        .dump_badges = "Dumping installed badges, please wait...",
+        .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
         .shuffle = "Shuffle: %i/10",
     },
@@ -1445,7 +1445,7 @@ const Language_s language_portuguese = {
         .rename = "Renomear",
         .swkbd_fail = "???\nTry a USB keyboard", // Should never be used
         .sd_full = "O cartão SD está cheio.\nExclua alguns temas para liberar espaço.",
-        .fs_error = "Error:\nAdquira um novo cartão SD.",
+        .fs_error = "Erro:\nAdquira um novo cartão SD.",
     },
     .loading =
     {
@@ -1457,7 +1457,7 @@ const Language_s language_portuguese = {
         .position_zero = "A nova posição precisa\nser positiva!",
         .jump_q = "Para qual página deseja ir?\nPode causar recarregamento de ícones.",
         .cancel = "Cancelar",
-        .jump = "Ir para",
+        .jump = "Ir",
         .no_theme_extdata = "O extdata do tema não existe!\nDefina um tema padrão no menu HOME.",
         .loading_qr = "Carregando o leitor QR...",
         .no_wifi = "Conecte-se ao Wi-Fi antes de escanear códigos QR",
@@ -1476,12 +1476,12 @@ const Language_s language_portuguese = {
         .new_page_zero = "A nova posição precisa\nser positiva!",
         .jump_page = "Para qual página deseja ir?",
         .cancel = "Cancelar",
-        .jump = "Ir para",
+        .jump = "Ir",
         .tags = "Quais tags deseja pesquisar?",
         .search = "Pesquisar",
         .parental_fail = "A validação dos controles parentais falhou!\nNavegador restrito.",
-        .zip_not_found = "ZIP não encontrado neste URL\nSe achar que isso é um erro, por favor\ncontate o administrador do site",
-        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nSe estiver vendo isso, por favor contate um\ndesenvolvedor do Anenome no discord do Theme Plaza.",
+        .zip_not_found = "ZIP não encontrado neste URL\nSe achar que isso é um erro,\ncontate o administrador do site",
+        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nSe estiver vendo isso, contate um\ndesenvolvedor do Anenome no discord Theme Plaza.",
         .http303_tp = "HTTP 303 See Other (Theme Plaza)\nEsse tema foi aprovado?",
         .http303 = "HTTP 303 See Other\nBaixe o recurso diretamente\nou contate o administrador do site.",
         .http404 = "HTTP 404 Not Found\nEsse tema foi aprovado?",
@@ -1498,7 +1498,7 @@ const Language_s language_portuguese = {
         .http502 = "HTTP 502 Bad Gateway\nContate o administrador do site.",
         .http503 = "HTTP 503 Service Unavailable\nContate o administrador do site.",
         .http504 = "HTTP 504 Gateway Timeout\nContate o administrador do site.",
-        .http_unexpected = "HTTP %u\nSe achar que isso é inesperado, por favor\ncontate o administrador do site.",
+        .http_unexpected = "HTTP %u\nSe achar que isso é inesperado,\ncontate o administrador do site.",
     },
     .remote_instructions =
     {
@@ -1506,12 +1506,12 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Baixar tema",
+                    "\uE000 Baixar Tema",
                     "\uE001 Voltar"
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do tema"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1527,12 +1527,12 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Baixar splash",
+                    "\uE000 Baixar Splash",
                     "\uE001 Voltar"
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do splash"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1548,12 +1548,12 @@ const Language_s language_portuguese = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Baixar insígnias",
+                    "\uE000 Baixar Insígnias",
                     "\uE001 Voltar"
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia da insígnia"
+                    "\uE003 Pré-visualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1602,7 +1602,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar p. Temas",
-                    "\uE005 Mudar p. insígnias"
+                    "\uE005 Mudar p. Insígnias"
                 },
                 {
                     "Sair",
@@ -1635,7 +1635,7 @@ const Language_s language_portuguese = {
     .splashes =
     {
         .no_splash_found = "Não foi encontrado splash.bin ou splashbottom.bin.\nIsso é um splash?",
-        .splash_disabled = "AVISO: Splashes estão desativados na configuração do Luma.",
+        .splash_disabled = "AVISO: Splashes estão desativados na config. Luma.",
     },
     .themes =
     {
