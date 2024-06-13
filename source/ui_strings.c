@@ -1258,10 +1258,10 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do tema"
+                    "\uE003 Pré-vizualizar"
                 },
                 {
-                    "\uE004 Mudar para splashes",
+                    "\uE004 Mudar para Splashes",
                     "\uE005 Escanear código QR"
                 },
                 {
@@ -1279,10 +1279,10 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do splash"
+                    "\uE003 Pré-vizualizar"
                 },
                 {
-                    "\uE004 Mudar para temas",
+                    "\uE004 Mudar para Temas",
                     "\uE005 Escanear código QR"
                 },
                 {
@@ -1393,8 +1393,8 @@ const Language_s language_portuguese = {
     },
     .draw = 
     {
-        .theme_mode = "Modo de tema",
-        .splash_mode = "Modo de splash",
+        .theme_mode = "Modo Tema",
+        .splash_mode = "Modo Splash",
         .no_themes = "Nenhum tema encontrado",
         .no_splashes = "Nenhum splash encontrado",
         .qr_download = "Aperte \uE005 para baixar do QR",
@@ -1405,9 +1405,9 @@ const Language_s language_portuguese = {
         .by = "Por ",
         .selected = "Selecionado:",
         .sel = "Sel.:",
-        .tp_theme_mode = "Modo de tema ThemePlaza",
-        .tp_splash_mode = "Modo de splash ThemePlaza",
-        .tp_badge_mode = "Modo de insígnia ThemePlaza",
+        .tp_theme_mode = "Modo de Tema ThemePlaza",
+        .tp_splash_mode = "Modo de Splash ThemePlaza",
+        .tp_badge_mode = "Modo de Insígnia ThemePlaza",
         .search = "Pesquisar...",
         .page = "Página:",
         .err_quit = "Aperte \uE000 para sair.",
@@ -1432,7 +1432,7 @@ const Language_s language_portuguese = {
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
         .dump_all_official = "Exportando temas oficiais, aguarde...",
-        .dump_badges = "Dumping installed badges, please wait...",
+        .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
         .shuffle = "Shuffle: %i/10",
     },
@@ -1480,7 +1480,7 @@ const Language_s language_portuguese = {
         .tags = "Quais tags deseja pesquisar?",
         .search = "Pesquisar",
         .parental_fail = "A validação dos controles parentais falhou!\nNavegador restrito.",
-        .zip_not_found = "ZIP não encontrado neste URL\nSe achar que isso é um erro, por favor\ncontate o administrador do site",
+        .zip_not_found = "ZIP não encontrado neste URL\nSe achar que isso é um erro,\ncontate o administrador do site",
         .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nSe estiver vendo isso, contate um\ndesenvolvedor do Anenome no discord Theme Plaza.",
         .http303_tp = "HTTP 303 See Other (Theme Plaza)\nEsse tema foi aprovado?",
         .http303 = "HTTP 303 See Other\nBaixe o recurso diretamente\nou contate o administrador do site.",
@@ -1511,7 +1511,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do tema"
+                    "\uE003 Pré-vizualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1532,7 +1532,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia do splash"
+                    "\uE003 Pré-vizualizar"
                 },
                 {
                     "\uE004 Página anterior",
@@ -1553,7 +1553,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE002 Mais opções",
-                    "\uE003 Prévia da insígnia"
+                    "\uE003 Pré-vizualizar"
                 },
                 {
                     "\uE004 Página anterior",
