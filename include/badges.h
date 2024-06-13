@@ -37,6 +37,6 @@
 #define BADGE_MNG_SIZE 0xD4A8
 
 Result install_badges(void);
-Result dump_badge_extdata(void);
+Result extract_badges(void);
 
 #endif

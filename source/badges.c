@@ -150,7 +150,7 @@ int install_badge_generic(char *file_buf, u64 file_size, u16 *name, int *badge_c
         memcpy(badgeMngBuffer + 0x3E8 + *badge_count*0x28 + 0x18, &shortcut, 8);
         memcpy(badgeMngBuffer + 0x3E8 + *badge_count*0x28 + 0x20, &shortcut, 8); // u64 shortcut[2], not sure what second is for
 
-        badgeMngBuffer[0x358 + *badge_count/8] |= 0 << (*badge_count % 8); // enabled badges bitfield
+        badgeMngBuffer[0x358 + *badge_count/8] |= 1 << (*badge_count % 8); // enabled badges bitfield
         badges_installed++;
 
         *badge_count += 1;
@@ -264,7 +264,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u32 total_count = 0xFFFF * badges_in_set;
     for (int i = 0; i < 16; ++i)
     {
-        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, 0x8A, 0);
+        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, strulen(set_dir.name, 0x45) * 2 + 2, 0);
     }
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
 
@@ -317,7 +317,6 @@ Result backup_badges(void)
     }
     FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), 0, BADGE_DATA_SIZE);
     FSUSER_OpenFile(&sdHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), FS_OPEN_WRITE, 0);
-    zero_handle_memeasy(sdHandle);
 
     DEBUG("loading existing badge mng file...\n");
     u32 mngRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMng);
@@ -362,20 +361,169 @@ Result backup_badges(void)
     return 0;
 }
 
+typedef struct set_node_s {
+    u32 set_id;
+    u32 set_index;
+    struct set_node_s *next;
+} SetNode;
+
+u32 get_set_index(SetNode *head, u32 set_id)
+{
+    SetNode *cursor = head;
+    while (cursor != NULL)
+    {
+        if (cursor->set_id == set_id)
+            return cursor->set_index;
+        cursor = cursor->next;
+    }
+    return 0xFFFFFFFF;
+}
+
+void free_list(SetNode *head)
+{
+    SetNode *cursor = head;
+    while (cursor)
+    {
+        SetNode *next = cursor->next;
+        free(cursor);
+        cursor = next;
+    }
+}
+
+SetNode * extract_sets(char *badgeMngBuffer, Handle backupDataHandle)
+{
+    u32 setCount = *((u32 *) (badgeMngBuffer + 0x4));
+    if (setCount == 0) return NULL;
+
+    SetNode *head = calloc(1, sizeof(SetNode));
+    SetNode *cursor = head;
+
+    u16 *icon_rgb_buf = malloc(64 * 64 * 2);
+    u8 *icon_alpha_buf = malloc(64 * 64 * 0.5);
+
+    for (u32 i = 0; i < setCount; ++i)
+    {
+        memcpy(&(cursor->set_id), &badgeMngBuffer[0xA028 + 0x30 * i + 0x10], 4);
+        memcpy(&(cursor->set_index), &badgeMngBuffer[0xA028 + 0x30 * i + 0x14], 4);
+
+        if (cursor->set_id != 0xEFBE) // 0xEFBE is GYTB Set ID; GYTB doesn't properly create sets, so skip
+        {
+            u16 utf16SetName[0x46] = {0};
+            FSFILE_Read(backupDataHandle, NULL, cursor->set_index * 16 * 0x8A, utf16SetName, 0x8A);
+            u16 set_path[256] = {0};
+            struacat(set_path, "/3ds/" APP_TITLE "/BadgeBackups/");
+            strucat(set_path, utf16SetName);
+            FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, set_path), FS_ATTRIBUTE_DIRECTORY);
+            memset(icon_alpha_buf, 255, 64 * 64 * 0.5);
+            FSFILE_Read(backupDataHandle, NULL, 0x250F80 + cursor->set_index * 0x2000, icon_rgb_buf, 0x2000);
+            char filename[256] = {0};
+            utf16_to_utf8((u8 *) filename, set_path, 256);
+            strcat(filename, "/_seticon.png");
+            rgb565ToPngFile(filename, icon_rgb_buf, icon_alpha_buf, 48, 48);
+        }
+
+        cursor->next = calloc(1, sizeof(SetNode));
+        cursor = cursor->next;
+    }
+
+    free(icon_rgb_buf);
+    free(icon_alpha_buf);
+
+    return head;
+}
+
+Result extract_badges(void)
+{
+    DEBUG("Dumping installed badges...\n");
+    char *badgeMngBuffer = malloc(BADGE_MNG_SIZE);
+    u32 size = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMngBuffer);
+    DEBUG("%lu bytes read\n", size);
+
+    Result res = 0;
+    SetNode *head;
+    Handle backupDataHandle;
+    u16 *badge_rgb_buf = malloc(64 * 64 * 2);
+    u8 *badge_alpha_buf = malloc(64 * 64 * 0.5);
+    u32 badge_count = 0;
+    memcpy(&badge_count, badgeMngBuffer + 0x8, 4);
+    DEBUG("%lu badges found\n", badge_count);
+    if (badge_count > 0)
+    {
+        res = FSUSER_OpenFile(&backupDataHandle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_READ, 0);
+        if (R_FAILED(res))
+        {
+            throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
+            DEBUG("backupDataHandle open failed\n");
+            return -1;
+        }
+        head = extract_sets(badgeMngBuffer, backupDataHandle);
+    } else {
+        return 0;
+    }
+    for (u32 i = 0; i < badge_count; ++i)
+    {
+        u32 badgeId;
+        memcpy(&badgeId, badgeMngBuffer + 0x3E8 + i * 0x28 + 0x4, 4);
+        u32 badgeSetId;
+        memcpy(&badgeSetId, badgeMngBuffer + 0x3E8 + i * 0x28 + 0x8, 4);
+        u16 badgeSubId;
+        memcpy(&badgeSubId, badgeMngBuffer + 0x3E8 + i * 0x28 + 0xE, 2);
+        u32 shortcut;
+        memcpy(&shortcut, badgeMngBuffer + 0x3E8 + i * 0x28 + 0x18, 4);
+
+        char filename[512] = {0};
+
+        u16 utf16Name[0x46] = {0};
+        FSFILE_Read(backupDataHandle, NULL, 0x35E80 + i * 16 * 0x8A, utf16Name, 0x8A);
+        char utf8Name[256] = {0};
+        res = utf16_to_utf8((u8 *) utf8Name, utf16Name, 256);
+
+        char dir[256] = "/3ds/" APP_TITLE "/BadgeBackups/";
+        if (badgeSetId != 0xEFBE) // 0xEFBE is GYTB Set ID; GYTB doesn't properly create sets, so skip
+        {
+            u32 set_index = get_set_index(head, badgeSetId);
+            if (set_index == 0xFFFFFFFF) {
+                sprintf(dir, "/3ds" APP_TITLE "/BadgeBackups/Unknown Set");
+            } else
+            {
+                u16 utf16SetName[0x46] = {0};
+                FSFILE_Read(backupDataHandle, NULL, set_index * 16 * 0x8A, utf16SetName, 0x8A);
+                char utf8SetName[128] = {0};
+                res = utf16_to_utf8((u8 *) utf8SetName, utf16SetName, 128);
+                DEBUG("UTF-8 Set Name: %s; ID: %lx\n", utf8SetName, badgeSetId);
+                sprintf(dir, "/3ds/" APP_TITLE "/BadgeBackups/%s", utf8SetName);
+            }
+        }
+
+        if (shortcut == 0xFFFFFFFF)
+        {
+            sprintf(filename, "%s/%s.%lx.%x.png", dir, utf8Name, badgeId, badgeSubId);
+        } else
+        {
+            sprintf(filename, "%s/%s.%08lx.%lx.%x.png", dir, utf8Name, shortcut, badgeId, badgeSubId);
+        }
+        DEBUG("Dump filename: %s\n", filename);
+
+        FSFILE_Read(backupDataHandle, NULL, 0x318F80 + i * 0x2800, badge_rgb_buf, 0x2000);
+        FSFILE_Read(backupDataHandle, NULL, 0x318F80 + i * 0x2800 + 0x2000, badge_alpha_buf, 0x800);
+        rgb565ToPngFile(filename, badge_rgb_buf, badge_alpha_buf, 64, 64);
+        draw_loading_bar(i + 1, badge_count, INSTALL_DUMPING_BADGES);
+    }
+
+    free(badgeMngBuffer);
+    free(badge_rgb_buf);
+    free(badge_alpha_buf);
+    free_list(head);
+
+    return res;
+}
+
 Result install_badges(void)
 {
     Handle handle = 0;
     Handle folder = 0;
     Result res = 0;
     draw_loading_bar(0, 1, INSTALL_BADGES);
-
-    DEBUG("Backing up badges\n");
-    res = backup_badges();
-    if (R_FAILED(res))
-    {
-        DEBUG("Backup badges failed\n");
-        return res;
-    }
 
     DEBUG("Initializing ACT\n");
     res = actInit();
@@ -401,6 +549,7 @@ Result install_badges(void)
         DEBUG("ACTU_GetAccountDataBlock failed! %08lx\n", res);
         return res;
     }
+    DEBUG("NNID found: 0x%08lx\n", nnidNum);
 
     badgeMngBuffer = NULL;
     badgeDataHandle = 0;
@@ -523,9 +672,9 @@ Result install_badges(void)
         {
             u16 name[0x8A/2] = {0};
             utf8_to_utf16(name, (u8 *) "Other Badges", 0x8A);
-            FSFILE_Write(badgeDataHandle, NULL, default_index * 0x8A0 + i * 0x8A, &name, 0x8A, 0);
+            FSFILE_Write(badgeDataHandle, NULL, default_index * 0x8A0 + i * 0x8A, &name, strulen(name, 0x45) * 2, 0);
         }
-        badgeMngBuffer[0x3D8 + default_index/8] |= 0 << (default_index % 8);
+        badgeMngBuffer[0x3D8 + default_index/8] |= 1 << (default_index % 8);
 
         memset(badgeMngBuffer + 0xA028 + default_index * 0x30, 0xFF, 8);
         badgeMngBuffer[0xA028 + 0xC + default_index * 0x30] = 0x10; // bytes 13 and 14 are 0x2710

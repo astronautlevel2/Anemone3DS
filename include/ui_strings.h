@@ -79,6 +79,7 @@ typedef struct {
     const char *download_bgm;
     const char *dump_single;
     const char *dump_all_official;
+    const char *dump_badges;
     const char *install_badges;
     float start_pos;
     const char *shuffle;

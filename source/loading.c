@@ -148,47 +148,48 @@ void handle_scrolling(Entry_List_s * list)
     //----------------------------------------------------------------
     if(list->entries_count > list->entries_loaded)
     {
-        for(int i = 0; i < list->entries_count; i++)
+        int change = 0;
+
+        if(list->entries_count > list->entries_loaded * 2 && list->previous_scroll < list->entries_loaded && list->selected_entry >= list->entries_count - list->entries_loaded)
         {
-            int change = 0;
-
-            if(list->entries_count > list->entries_loaded * 2 && list->previous_scroll < list->entries_loaded && list->selected_entry >= list->entries_count - list->entries_loaded)
-            {
-                list->scroll = list->entries_count - list->entries_loaded;
-            }
-            else if(list->entries_count > list->entries_loaded * 2 && list->selected_entry < list->entries_loaded && list->previous_selected >= list->entries_count - list->entries_loaded)
-            {
-                list->scroll = 0;
-            }
-            else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+list->entries_loaded)
-            {
-                change = 1;
-            }
-            else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
-            {
-                change = -1;
-            }
-            else if(list->selected_entry == list->previous_selected+list->entries_loaded || list->selected_entry >= list->scroll + list->entries_loaded)
-            {
-                change = list->entries_loaded;
-            }
-            else if(list->selected_entry == list->previous_selected-list->entries_loaded || list->selected_entry < list->scroll)
-            {
-                change = -list->entries_loaded;
-            }
-
-            list->scroll += change;
-
-            if(list->scroll < 0)
-                list->scroll = 0;
-            else if(list->scroll > list->entries_count - list->entries_loaded)
-                list->scroll = list->entries_count - list->entries_loaded;
-
-            if(!change)
-                list->previous_selected = list->selected_entry;
-            else
-                list->previous_selected += change;
+            list->scroll = list->entries_count - list->entries_loaded;
         }
+        else if(list->entries_count > list->entries_loaded * 2 && list->selected_entry < list->entries_loaded && list->previous_selected >= list->entries_count - list->entries_loaded)
+        {
+            list->scroll = 0;
+        }
+        else if(list->selected_entry == list->previous_selected+1 && list->selected_entry == list->scroll+list->entries_loaded)
+        {
+            change = 1;
+        }
+        else if(list->selected_entry == list->previous_selected-1 && list->selected_entry == list->scroll-1)
+        {
+            change = -1;
+        }
+        else if(list->selected_entry == list->previous_selected+list->entries_loaded)
+        {
+            change = list->entries_loaded;
+        }
+        else if(list->selected_entry == list->previous_selected-list->entries_loaded)
+        {
+            change = -list->entries_loaded;
+        }
+        else if(list->selected_entry >= list->scroll + list->entries_loaded || list->selected_entry < list->scroll)
+        {
+            change = list->selected_entry - list->scroll;
+        }
+
+        list->scroll += change;
+
+        if(list->scroll < 0)
+            list->scroll = 0;
+        else if(list->scroll > list->entries_count - list->entries_loaded)
+            list->scroll = list->entries_count - list->entries_loaded;
+
+        if(!change)
+            list->previous_selected = list->selected_entry;
+        else
+            list->previous_selected += change;
     }
     //----------------------------------------------------------------
 }

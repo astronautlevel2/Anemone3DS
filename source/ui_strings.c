@@ -149,7 +149,7 @@ const Language_s language_english = {
                     "\uE07A Dump All Themes"
                 },
                 {
-                    NULL,
+                    "\uE07B Dump Badges",
                     NULL
                 },
                 {
@@ -213,6 +213,7 @@ const Language_s language_english = {
         .download_bgm = "Downloading BGM, please wait...",
         .dump_single = "Dumping theme, please wait...",
         .dump_all_official = "Dumping official themes, please wait...",
+        .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installing badges, please wait...",
         .shuffle = "Shuffle: %i/10",
     },
@@ -554,7 +555,7 @@ const Language_s language_spanish = {
                     "\uE07A Volcar todos los temas"
                 },
                 {
-                    NULL,
+                    "\uE07B Dump Badges",
                     NULL
                 },
                 {
@@ -618,6 +619,7 @@ const Language_s language_spanish = {
         .download_bgm = "Descargando BGM, por favor espera...",
         .dump_single = "Volcando tema, por favor espera...",
         .dump_all_official = "Volcando temas oficiales, por favor espera...",
+        .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Instalando insignias, por favor espera...",
         .shuffle = "Aleatorio: %i/10",
     },
@@ -960,7 +962,7 @@ const Language_s language_french = {
                     "\uE07A Dump tous les thèmes"
                 },
                 {
-                    NULL,
+                    "\uE07B Dump Badges",
                     NULL
                 },
                 {
@@ -1024,6 +1026,7 @@ const Language_s language_french = {
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
+        .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
         .shuffle = "Aléatoire: %i/10",
     },
@@ -1365,7 +1368,7 @@ const Language_s language_portuguese = {
                     "\uE07A Exportar Todos Temas"
                 },
                 {
-                    NULL,
+                    "\uE07B Exportar Insígnias",
                     NULL
                 },
                 {
@@ -1429,6 +1432,7 @@ const Language_s language_portuguese = {
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
         .dump_all_official = "Exportando temas oficiais, aguarde...",
+        .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Instalando insígnias, aguarde...",
         .shuffle = "Shuffle: %i/10",
     },
