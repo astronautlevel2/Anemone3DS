@@ -302,65 +302,6 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     return badges_in_set;
 }
 
-Result backup_badges(void)
-{
-    char *badgeMng = NULL;
-
-    DEBUG("writing badge data: making files...\n");
-    remake_file(fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, BADGE_MNG_SIZE);
-    Handle dataHandle = 0;
-    Handle sdHandle = 0;
-    if (R_SUCCEEDED(FSUSER_OpenFile(&sdHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), FS_OPEN_READ, 0)))
-    {
-        FSFILE_Close(sdHandle);
-        FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"));
-    }
-    FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), 0, BADGE_DATA_SIZE);
-    FSUSER_OpenFile(&sdHandle, ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeData.dat"), FS_OPEN_WRITE, 0);
-
-    DEBUG("loading existing badge mng file...\n");
-    u32 mngRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMng);
-    DEBUG("loading existing badge data file\n");
-    Result res = FSUSER_OpenFile(&dataHandle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_READ, 0);
-    if (mngRead != BADGE_MNG_SIZE || R_FAILED(res))
-    {
-        throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
-        if (badgeMng) free(badgeMng);
-        if (dataHandle) FSFILE_Close(dataHandle);
-        FSFILE_Close(sdHandle);
-        return -1;
-    }
-
-    DEBUG("writing badge data: writing BadgeMngFile...\n");
-    res = buf_to_file(mngRead, fsMakePath(PATH_ASCII, "/3ds/Anemone3DS/BadgeMngFile.dat"), ArchiveSD, badgeMng);
-    if (R_FAILED(res))
-    {
-        DEBUG("Failed to write badgemngfile: 0x%08lx\n", res);
-        free(badgeMng);
-        FSFILE_Close(dataHandle);
-        FSFILE_Close(sdHandle);
-        return -1;
-    }
-    DEBUG("writing badge data: writing badgedata...\n");
-    char *buf = malloc(0x10000);
-    u64 size = BADGE_DATA_SIZE;
-    u64 cur = 0;
-    while (size > 0)
-    {
-        u32 read = 0;
-        res = FSFILE_Read(dataHandle, &read, cur, buf, min(0x10000, size));
-        res = FSFILE_Write(sdHandle, NULL, cur, buf, read, FS_WRITE_FLUSH);
-        size -= read;
-        cur += read;
-    }
-
-    free(badgeMng);
-    free(buf);
-    FSFILE_Close(dataHandle);
-    FSFILE_Close(sdHandle);
-    return 0;
-}
-
 typedef struct set_node_s {
     u32 set_id;
     u32 set_index;
@@ -435,7 +376,7 @@ SetNode * extract_sets(char *badgeMngBuffer, Handle backupDataHandle)
 Result extract_badges(void)
 {
     DEBUG("Dumping installed badges...\n");
-    char *badgeMngBuffer = malloc(BADGE_MNG_SIZE);
+    char *badgeMngBuffer = NULL;
     u32 size = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMngBuffer);
     DEBUG("%lu bytes read\n", size);
 
@@ -452,12 +393,18 @@ Result extract_badges(void)
         res = FSUSER_OpenFile(&backupDataHandle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_READ, 0);
         if (R_FAILED(res))
         {
+            free(badgeMngBuffer);
+            free(badge_rgb_buf);
+            free(badge_alpha_buf);
             throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
             DEBUG("backupDataHandle open failed\n");
             return -1;
         }
         head = extract_sets(badgeMngBuffer, backupDataHandle);
     } else {
+        free(badgeMngBuffer);
+        free(badge_rgb_buf);
+        free(badge_alpha_buf);
         return 0;
     }
     for (u32 i = 0; i < badge_count; ++i)

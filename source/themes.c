@@ -216,7 +216,7 @@ static Result install_theme_internal(const Entry_List_s * themes, int installmod
 
                 char * body_buf = NULL;
                 u32 uncompressed_size = decompress_lz_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, &body_buf);
-                if (body_buf[5] != 1)
+                if (body_buf != NULL && body_buf[5] != 1)
                 {
                     installmode |= THEME_INSTALL_BODY;
                     body_buf[5] = 1;
