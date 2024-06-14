@@ -913,7 +913,7 @@ const Language_s language_french = {
     .extra_instructions = 
     {
         {
-            .info_line = "\uE001 Retour",
+            .info_line = "Trier... | \uE001 Retour",
             .instructions = {
                 {
                     "\uE079 par nom",
@@ -946,7 +946,7 @@ const Language_s language_french = {
                 },
                 {
                     "\uE004 Trier...",
-                    "\uE005 Dump thèmes officiels"
+                    "\uE005 Dump..."
                 },
                 {
                     "Quitter",
@@ -955,14 +955,14 @@ const Language_s language_french = {
             }
         },
         {
-            .info_line = "\uE001 Retour",
+            .info_line = "Dump... | \uE001 Retour",
             .instructions = {
                 {
-                    "\uE079 Dump thème installé",
-                    "\uE07A Dump tous les thèmes"
+                    "\uE079 thème installé",
+                    "\uE07A thèmes officiels"
                 },
                 {
-                    "\uE07B Dump Badges",
+                    "\uE07B tous les badges",
                     NULL
                 },
                 {
@@ -1026,13 +1026,13 @@ const Language_s language_french = {
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
-        .dump_badges = "Dumping installed badges, please wait...",
+        .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
         .shuffle = "Aléatoire: %i/10",
     },
     .fs =
     {
-        .illegal_input = "Input must not contain:\n" ILLEGAL_CHARS,
+        .illegal_input = "Le texte ne doit pas contenir:\n" ILLEGAL_CHARS,
         .new_or_overwrite = "Choisissez un nouveau nom ou sélectionnez Écraser",
         .cancel = "Annuler",
         .overwrite = "Écraser",
