@@ -504,7 +504,8 @@ void remake_file(FS_Path path, FS_Archive archive, u32 size)
         FSFILE_Close(handle);
         FSUSER_DeleteFile(archive, path);
     }
-    FSUSER_CreateFile(archive, path, 0, size);
+    Result res = FSUSER_CreateFile(archive, path, 0, size);
+    DEBUG("Remake file res: 0x%08lx\n", res);
     char * buf = calloc(size, 1);
     if (buf == NULL)
     {

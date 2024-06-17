@@ -115,7 +115,7 @@ u64 getShortcut(char *filename)
     if (sscanf(p1, "%08x", &lowpath) != 1) return shortcut;
 
     shortcut = 0x0004001000000000 + lowpath;
-    DEBUG("Shortcut %08llx found for %s\n", shortcut, filename);
+    DEBUG("Shortcut %16llx found for %s\n", shortcut, filename);
     return shortcut;
 }
 
@@ -480,12 +480,89 @@ Result extract_badges(void)
     return res;
 }
 
+Result backup_badges_fast(void)
+{
+    char *badgeMng = NULL;
+
+    DEBUG("writing badge data: making files...\n");
+    char mng_path[128] = "/3ds/" APP_TITLE "/BadgeMngFile.dat";
+    char data_path[128] = "/3ds/" APP_TITLE "/BadgeData.dat";
+    DEBUG("mng_path: %s, data_path: %s\n", mng_path, data_path);
+
+    Handle dataHandle = 0;
+    Handle sdHandle = 0;
+
+    DEBUG("loading existing badge mng file...\n");
+    u32 mngRead = file_to_buf(fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, &badgeMng);
+    DEBUG("loading existing badge data file\n");
+    Result res = FSUSER_OpenFile(&dataHandle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeData.dat"), FS_OPEN_READ, 0);
+    if (mngRead != BADGE_MNG_SIZE || R_FAILED(res))
+    {
+        char err_string[128] = {0};
+        sprintf(err_string, language.badges.extdata_locked, res);
+        throw_error(err_string, ERROR_LEVEL_WARNING);
+        if (badgeMng) free(badgeMng);
+        if (dataHandle) FSFILE_Close(dataHandle);
+        FSFILE_Close(sdHandle);
+        return -1;
+    }
+    remake_file(fsMakePath(PATH_ASCII, mng_path), ArchiveSD, BADGE_MNG_SIZE);
+
+    FSUSER_CreateFile(ArchiveSD, fsMakePath(PATH_ASCII, data_path), 0, BADGE_DATA_SIZE);
+    FSUSER_OpenFile(&sdHandle, ArchiveSD, fsMakePath(PATH_ASCII, data_path), FS_OPEN_WRITE, 0);
+
+    DEBUG("writing badge data: writing BadgeMngFile...\n");
+    res = buf_to_file(mngRead, fsMakePath(PATH_ASCII, mng_path), ArchiveSD, badgeMng);
+    if (R_FAILED(res))
+    {
+        DEBUG("Failed to write badgemngfile: 0x%08lx\n", res);
+        free(badgeMng);
+        FSFILE_Close(dataHandle);
+        FSFILE_Close(sdHandle);
+        return -1;
+    }
+    DEBUG("writing badge data: writing badgedata...\n");
+    char *buf = malloc(0x10000);
+    u64 size = BADGE_DATA_SIZE;
+    u64 cur = 0;
+    while (size > 0)
+    {
+        u32 read = 0;
+        res = FSFILE_Read(dataHandle, &read, cur, buf, min(0x10000, size));
+        res = FSFILE_Write(sdHandle, NULL, cur, buf, read, FS_WRITE_FLUSH);
+        size -= read;
+        cur += read;
+    }
+
+    free(badgeMng);
+    free(buf);
+    FSFILE_Close(dataHandle);
+    FSFILE_Close(sdHandle);
+    return 0;
+}
+
 Result install_badges(void)
 {
     Handle handle = 0;
     Handle folder = 0;
     Result res = 0;
     draw_loading_bar(0, 1, INSTALL_BADGES);
+    {
+        char testpath[128] = "/3ds/" APP_TITLE "/BadgeData.dat";
+        if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, testpath), FS_OPEN_READ, 0)))
+        {
+            if (R_SUMMARY(res) == RS_NOTFOUND)
+            {
+                res = backup_badges_fast();
+                if (R_FAILED(res)) return res;
+            } else
+            {
+                DEBUG("????: 0x%08lx\n", res);
+            }
+        }
+    }
+
+    if (handle) FSFILE_Close(handle);
 
     DEBUG("Initializing ACT\n");
     res = actInit();
