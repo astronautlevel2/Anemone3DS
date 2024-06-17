@@ -1,6 +1,6 @@
 /*
 *   This file is part of Anemone3DS
-*   Copyright (C) 2016-2020 Contributors in CONTRIBUTORS.md
+*   Copyright (C) 2016-2024 Contributors in CONTRIBUTORS.md
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -24,17 +24,22 @@
 *         reasonable ways as different from the original version.
 */
 
-#include "colors.h"
+#ifndef CONFIG_H
+#define CONFIG_H
 
-Color colors[COLOR_AMOUNT] = {0};
+#include "common.h"
+#include "fs.h"
+#include <jansson.h>
 
-void init_colors(void)
-{
-    colors[COLOR_BACKGROUND] = config.background_color;
-    colors[COLOR_ACCENT] = config.accent_color;
-    colors[COLOR_WHITE] = C2D_Color32(255, 255, 255, 255);
-    colors[COLOR_CURSOR] = C2D_Color32(200, 200, 200, 255);
-    colors[COLOR_BLACK] = C2D_Color32(0, 0, 0, 255);
-    colors[COLOR_RED] = config.red_color;
-    colors[COLOR_YELLOW] = config.yellow_color;
-}
+typedef struct {
+	u32 background_color;
+    u32 accent_color;
+    u32 red_color;
+    u32 yellow_color;
+} Config_s;
+
+extern Config_s config;
+
+void load_config(void);
+
+#endif

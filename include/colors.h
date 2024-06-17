@@ -28,6 +28,7 @@
 #define COLORS_H
 
 #include "common.h"
+#include "config.h"
 
 typedef u32 Color;
 
