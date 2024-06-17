@@ -115,7 +115,7 @@ u64 getShortcut(char *filename)
     if (sscanf(p1, "%08x", &lowpath) != 1) return shortcut;
 
     shortcut = 0x0004001000000000 + lowpath;
-    DEBUG("Shortcut %08lx found for %s\n", shortcut, filename);
+    DEBUG("Shortcut %08llx found for %s\n", shortcut, filename);
     return shortcut;
 }
 
