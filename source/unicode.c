@@ -26,7 +26,7 @@
 
 #include "unicode.h"
 
-ssize_t strulen(const u16 * input, ssize_t max_len)
+size_t strulen(const u16 * input, ssize_t max_len)
 {
     for (int i = 0; i < max_len; i++) if (input[i] == 0) return i;
     return max_len;
@@ -55,13 +55,13 @@ void printu(u16 * input)
     free(buf);
 }
 
-u16 * strucat(u16 * destination, const u16 * source)
+size_t strucat(u16 * destination, const u16 * source)
 {
-    ssize_t dest_len = strulen(destination, 0x106);
+    size_t dest_len = strulen(destination, 0x106);
 
-    ssize_t source_len = strulen(source, 0x106);
+    size_t source_len = strulen(source, 0x106);
 
     memcpy(&destination[dest_len], source, source_len * sizeof(u16));
     destination[min(dest_len + source_len, 0x106 - 1)] = 0;
-    return destination;
+    return source_len;
 }

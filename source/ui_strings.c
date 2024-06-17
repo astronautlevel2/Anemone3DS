@@ -429,7 +429,7 @@ const Language_s language_english = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead."
+        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button and then returning\nto Anemone3DS, or using the CIA version instead.\nDebug: 0x%08lx"
     }
 };
 
@@ -835,7 +835,7 @@ const Language_s language_spanish = {
     },
     .badges =
     {
-        .extdata_locked = "Datos Adicionales Bloqueados\nIntenta presionando el botón Home y vuelve a\nAnemone3DS, o usa la version CIA en su lugar."
+        .extdata_locked = "Datos Adicionales Bloqueados\nIntenta presionando el botón Home y vuelve a\nAnemone3DS, o usa la version CIA en su lugar.\nDebug: 0x%08lx"
     }
 };
 
@@ -1242,7 +1242,7 @@ const Language_s language_french = {
     },
     .badges = 
     {
-        .extdata_locked = "L'archive des badges est vérouillée.\nEssayez de redémarrer Anemone3DS,\nou utilisez la version CIA."
+        .extdata_locked = "L'archive des badges est vérouillée.\nEssayez de redémarrer Anemone3DS,\nou utilisez la version CIA.\nDebug: 0x%08lx"
     }
 };
 
@@ -1648,7 +1648,7 @@ const Language_s language_portuguese = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Bloqueado\nTente apertar o botão HOME e retornar\nao Anemone3DS, ou use a versão CIA."
+        .extdata_locked = "Ext Data Bloqueado\nTente apertar o botão HOME e retornar\nao Anemone3DS, ou use a versão CIA.\nDebug: 0x%08lx"
     }
 };
 
@@ -2057,7 +2057,7 @@ const Language_s language_korean = {
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button\nand then returning to Anemone3DS,\nor using the CIA version instead."
+        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button\nand then returning to Anemone3DS,\nor using the CIA version instead.\nDebug: 0x%08lx"
     }
 };
 

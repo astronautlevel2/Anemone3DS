@@ -115,7 +115,7 @@ u64 getShortcut(char *filename)
     if (sscanf(p1, "%08x", &lowpath) != 1) return shortcut;
 
     shortcut = 0x0004001000000000 + lowpath;
-    DEBUG("Shortcut %llu found for %s\n", shortcut, filename);
+    DEBUG("Shortcut %08lx found for %s\n", shortcut, filename);
     return shortcut;
 }
 
@@ -237,7 +237,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
             strucat(path, badge_files[i].name);
             if (!memcmp(set_icon, badge_files[i].name, 16))
             {
-                DEBUG("Found set icon\n");
+                DEBUG("Found set icon for folder set %d\n", set_id);
                 icon_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &icon_buf);
                 continue;
             }
@@ -299,6 +299,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
     end:
     free(badge_files);
+    FSDIR_Close(folder);
     return badges_in_set;
 }
 
@@ -349,17 +350,23 @@ SetNode * extract_sets(char *badgeMngBuffer, Handle backupDataHandle)
 
         if (cursor->set_id != 0xEFBE) // 0xEFBE is GYTB Set ID; GYTB doesn't properly create sets, so skip
         {
+            DEBUG("Processing icon for set %lu at index %lu\n", cursor->set_id, cursor->set_index);
             u16 utf16SetName[0x46] = {0};
             FSFILE_Read(backupDataHandle, NULL, cursor->set_index * 16 * 0x8A, utf16SetName, 0x8A);
             u16 set_path[256] = {0};
             struacat(set_path, "/3ds/" APP_TITLE "/BadgeBackups/");
-            strucat(set_path, utf16SetName);
+            size_t set_name_len = strucat(set_path, utf16SetName);
+            if (!set_name_len)
+            {
+                struacat(set_path, "Unknown Set");
+            }
             FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, set_path), FS_ATTRIBUTE_DIRECTORY);
             memset(icon_alpha_buf, 255, 64 * 64 * 0.5);
             FSFILE_Read(backupDataHandle, NULL, 0x250F80 + cursor->set_index * 0x2000, icon_rgb_buf, 0x2000);
             char filename[256] = {0};
             utf16_to_utf8((u8 *) filename, set_path, 256);
             strcat(filename, "/_seticon.png");
+            DEBUG("%s\n", filename);
             rgb565ToPngFile(filename, icon_rgb_buf, icon_alpha_buf, 48, 48);
         }
 
@@ -396,7 +403,9 @@ Result extract_badges(void)
             free(badgeMngBuffer);
             free(badge_rgb_buf);
             free(badge_alpha_buf);
-            throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
+            char err_string[128] = {0};
+            sprintf(err_string, language.badges.extdata_locked, res);
+            throw_error(err_string, ERROR_LEVEL_WARNING);
             DEBUG("backupDataHandle open failed\n");
             return -1;
         }
@@ -437,6 +446,8 @@ Result extract_badges(void)
                 FSFILE_Read(backupDataHandle, NULL, set_index * 16 * 0x8A, utf16SetName, 0x8A);
                 char utf8SetName[128] = {0};
                 res = utf16_to_utf8((u8 *) utf8SetName, utf16SetName, 128);
+                if (!res)
+                    strncpy(utf8SetName, "Unknown Set", 128);
                 DEBUG("UTF-8 Set Name: %s; ID: %lx\n", utf8SetName, badgeSetId);
                 sprintf(dir, "/3ds/" APP_TITLE "/BadgeBackups/%s", utf8SetName);
             }
@@ -461,6 +472,7 @@ Result extract_badges(void)
     free(badge_rgb_buf);
     free(badge_alpha_buf);
     free_list(head);
+    FSFILE_Close(backupDataHandle);
 
     return res;
 }
@@ -551,7 +563,9 @@ Result install_badges(void)
     if (R_FAILED(res))
     {
         badgeDataHandle = 0;
-        throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
+        char err_string[128] = {0};
+        sprintf(err_string, language.badges.extdata_locked, res);
+        throw_error(err_string, ERROR_LEVEL_WARNING);
         DEBUG("badgeDataHandle open failed\n");
         goto end;
     }
@@ -682,7 +696,9 @@ Result install_badges(void)
     if (res)
     {
         DEBUG("Error writing badge manage data! %lx\n", res);
-        throw_error(language.badges.extdata_locked, ERROR_LEVEL_WARNING);
+        char err_string[128] = {0};
+        sprintf(err_string, language.badges.extdata_locked, res);
+        throw_error(err_string, ERROR_LEVEL_WARNING);
         goto end; 
     }
 

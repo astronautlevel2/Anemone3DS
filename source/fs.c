@@ -113,7 +113,6 @@ Result open_archives(void)
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/" APP_TITLE "/BadgeBackups"), FS_ATTRIBUTE_DIRECTORY);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/" APP_TITLE "/BadgeBackups/Unknown Set"), FS_ATTRIBUTE_DIRECTORY);
 
     u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
     home.type = PATH_BINARY;
@@ -229,7 +228,7 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf)
     Result res = 0;
     if (R_FAILED(res = FSUSER_OpenFile(&file, archive, path, FS_OPEN_READ, 0)))
     {
-        DEBUG("file_to_buf failed - 0x%08ld\n", res);
+        DEBUG("file_to_buf failed - 0x%08lx\n", res);
         return 0;
     }
 
