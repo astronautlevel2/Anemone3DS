@@ -353,6 +353,7 @@ SetNode * extract_sets(char *badgeMngBuffer, Handle backupDataHandle)
             DEBUG("Processing icon for set %lu at index %lu\n", cursor->set_id, cursor->set_index);
             u16 utf16SetName[0x46] = {0};
             FSFILE_Read(backupDataHandle, NULL, cursor->set_index * 16 * 0x8A, utf16SetName, 0x8A);
+            replace_chars(utf16SetName, ILLEGAL_CHARS, u'-');
             u16 set_path[256] = {0};
             struacat(set_path, "/3ds/" APP_TITLE "/BadgeBackups/");
             size_t set_name_len = strucat(set_path, utf16SetName);
@@ -431,6 +432,7 @@ Result extract_badges(void)
 
         u16 utf16Name[0x46] = {0};
         FSFILE_Read(backupDataHandle, NULL, 0x35E80 + i * 16 * 0x8A, utf16Name, 0x8A);
+        replace_chars(utf16Name, ILLEGAL_CHARS, u'-');
         char utf8Name[256] = {0};
         res = utf16_to_utf8((u8 *) utf8Name, utf16Name, 256);
 
@@ -444,6 +446,7 @@ Result extract_badges(void)
             {
                 u16 utf16SetName[0x46] = {0};
                 FSFILE_Read(backupDataHandle, NULL, set_index * 16 * 0x8A, utf16SetName, 0x8A);
+                replace_chars(utf16SetName, ILLEGAL_CHARS, u'-');
                 char utf8SetName[128] = {0};
                 res = utf16_to_utf8((u8 *) utf8SetName, utf16SetName, 128);
                 if (!res)

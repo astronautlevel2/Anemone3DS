@@ -26,6 +26,17 @@
 
 #include "unicode.h"
 
+void replace_chars(u16 *input, char *remove, u16 with)
+{
+    for (u16 *cursor = input; *cursor != '\0'; cursor++)
+    {
+        if (strchr(remove, (char) (*cursor & 0xFF)))
+        {
+            *cursor = with;
+        }
+    }
+}
+
 size_t strulen(const u16 * input, ssize_t max_len)
 {
     for (int i = 0; i < max_len; i++) if (input[i] == 0) return i;
