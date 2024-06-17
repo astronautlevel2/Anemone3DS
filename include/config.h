@@ -32,7 +32,7 @@
 #include <jansson.h>
 
 typedef struct {
-	u32 background_color;
+    u32 background_color;
     u32 accent_color;
     u32 red_color;
     u32 yellow_color;
