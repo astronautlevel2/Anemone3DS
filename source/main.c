@@ -88,6 +88,7 @@ static void init_services(void)
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
     httpcInit(0);
+    init_sd();
     archive_result = open_archives();
     badge_archive_result = open_badge_extdata();
     if(envIsHomebrew())
