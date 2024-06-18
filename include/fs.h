@@ -31,7 +31,7 @@
 #include "badges.h"
 #include "config.h"
 
-#define ILLEGAL_CHARS "><\"?;:/\\+,.|[=]*"
+#define ILLEGAL_CHARS "><\"?;:/\\+,.|[=]*\n\r"
 
 extern FS_Archive ArchiveSD;
 extern FS_Archive ArchiveHomeExt;
