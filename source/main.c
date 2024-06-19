@@ -61,10 +61,12 @@ Result archive_result;
 Result badge_archive_result;
 u32 old_time_limit;
 
-const char * main_paths[MODE_AMOUNT] = {
+const char * main_paths[REMOTE_MODE_AMOUNT] = {
     "/Themes/",
     "/Splashes/",
+    "/Badges/"
 };
+
 const int entries_per_screen_v[MODE_AMOUNT] = {
     4,
     4,

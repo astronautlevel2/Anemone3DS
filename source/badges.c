@@ -215,7 +215,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u16 path[512] = {0};
     u16 set_icon[17] = {0};
     utf8_to_utf16(set_icon, (u8 *) "_seticon.png", 16);
-    struacat(path, "/Badges/");
+    struacat(path, main_paths[REMOTE_MODE_BADGES]);
     strucat(path, set_dir.name);
     res = FSUSER_OpenDirectory(&folder, ArchiveSD, fsMakePath(PATH_UTF16, path));
     if (R_FAILED(res))
@@ -231,7 +231,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
         if (!strcmp(badge_files[i].shortExt, "PNG"))
         {
             memset(path, 0, 512 * sizeof(u16));
-            struacat(path, "/Badges/");
+            struacat(path, main_paths[REMOTE_MODE_BADGES]);
             strucat(path, set_dir.name);
             struacat(path, "/");
             strucat(path, badge_files[i].name);
@@ -245,7 +245,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
         } else if (!strcmp(badge_files[i].shortExt, "ZIP"))
         {
             memset(path, 0, 512 * sizeof(u16));
-            struacat(path, "/Badges/");
+            struacat(path, main_paths[REMOTE_MODE_BADGES]);
             strucat(path, set_dir.name);
             struacat(path, "/");
             strucat(path, badge_files[i].name);
@@ -599,7 +599,7 @@ Result install_badges(void)
 
     DEBUG("Opening badge directory\n");
     FS_DirectoryEntry *badge_files = calloc(1024, sizeof(FS_DirectoryEntry));
-    res = FSUSER_OpenDirectory(&folder, ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/"));
+    res = FSUSER_OpenDirectory(&folder, ArchiveSD, fsMakePath(PATH_ASCII, main_paths[REMOTE_MODE_BADGES]));
     if (R_FAILED(res))
     {
         DEBUG("Failed to open folder: %lx\n", res);
@@ -678,7 +678,7 @@ Result install_badges(void)
                 default_idx = badge_count;
             }
             u16 path[0x512] = {0};
-            struacat(path, "/Badges/");
+            struacat(path, main_paths[REMOTE_MODE_BADGES]);
             strucat(path, badge_files[i].name);
             default_set_count += install_badge_png(fsMakePath(PATH_UTF16, path), badge_files[i], &badge_count, default_set);
         } else if (!strcmp(badge_files[i].shortExt, "ZIP"))
@@ -689,7 +689,7 @@ Result install_badges(void)
                 default_set = set_count;
             }
             u16 path[0x512] = {0};
-            struacat(path, "/Badges/");
+            struacat(path, main_paths[REMOTE_MODE_BADGES]);
             strucat(path, badge_files[i].name);
 
             default_set_count += install_badge_zip(path, &badge_count, default_set);

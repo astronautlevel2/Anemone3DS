@@ -378,7 +378,7 @@ Result dump_current_theme(void)
     }
 
     u16 path[0x107] = { 0 };
-    struacat(path, "/themes/");
+    struacat(path, main_paths[REMOTE_MODE_THEMES]);
     struacat(path, output_dir);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, path), FS_ATTRIBUTE_DIRECTORY);
 
@@ -614,7 +614,7 @@ Result dump_all_themes(void)
                     }
 
                     char path[0x107] = { 0 };
-                    sprintf(path, "/Themes/Dump-%02lx-%ld-%s", dlc_index, extra_index, themename);
+                    sprintf(path, "%sDump-%02lx-%ld-%s", main_paths[REMOTE_MODE_THEMES], dlc_index, extra_index, themename);
                     DEBUG("theme folder to create: %s\n", path);
                     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, path), FS_ATTRIBUTE_DIRECTORY);
 

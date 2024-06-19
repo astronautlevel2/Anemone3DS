@@ -79,7 +79,7 @@ typedef enum {
     REMOTE_MODE_AMOUNT,
 } RemoteMode;
 
-extern const char * main_paths[MODE_AMOUNT];
+extern const char * main_paths[REMOTE_MODE_AMOUNT];
 extern const int entries_per_screen_v[MODE_AMOUNT];
 extern const int entries_per_screen_h[MODE_AMOUNT];
 extern const int entry_size[MODE_AMOUNT];

@@ -117,10 +117,9 @@ Result open_archives(void)
             archive2 = 0x00;
     }
 
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Themes"), FS_ATTRIBUTE_DIRECTORY);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Splashes"), FS_ATTRIBUTE_DIRECTORY);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Badges"), FS_ATTRIBUTE_DIRECTORY);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges"), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, main_paths[REMOTE_MODE_THEMES]), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, main_paths[REMOTE_MODE_SPLASHES]), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, main_paths[REMOTE_MODE_BADGES]), FS_ATTRIBUTE_DIRECTORY);
 
     u32 homeMenuPath[3] = {MEDIATYPE_SD, archive2, 0};
     home.type = PATH_BINARY;
@@ -189,7 +188,12 @@ Result open_badge_extdata()
     }
     FSFILE_Close(test_handle);
 
-    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), FS_OPEN_READ, 0)))
+    char tp_path[0x106] = {0};
+    sprintf(tp_path, "%sThemePlaza Badges", main_paths[REMOTE_MODE_BADGES]);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, tp_path), FS_ATTRIBUTE_DIRECTORY);
+    strcat(tp_path, "/_seticon.png");
+
+    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, tp_path), FS_OPEN_READ, 0)))
     {
         FILE *fp = fopen("romfs:/tp_set.png", "rb");
         fseek(fp, 0L, SEEK_END);
@@ -198,8 +202,8 @@ Result open_badge_extdata()
         fseek(fp, 0L, SEEK_SET);
         fread(icon_buf, 1, size, fp);
         fclose(fp);
-        remake_file(fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), ArchiveSD, size);
-        buf_to_file(size, fsMakePath(PATH_ASCII, "/Badges/ThemePlaza Badges/_seticon.png"), ArchiveSD, icon_buf);
+        remake_file(fsMakePath(PATH_ASCII, tp_path), ArchiveSD, size);
+        buf_to_file(size, fsMakePath(PATH_ASCII, tp_path), ArchiveSD, icon_buf);
         DEBUG("res: 0x%08lx\n", res);
         free(icon_buf);
     }
@@ -271,6 +275,9 @@ s16 for_each_file_zip(u16 *zip_path, u32 (*zip_iter_callback)(char *filebuf, u64
     if(r != ARCHIVE_OK)
     {
         DEBUG("Invalid zip being opened\n");
+        char path[0x128] = {0};
+        utf16_to_utf8((u8 *) path, zip_path, 0x128);
+        DEBUG("%s\n", path);
         return -1;
     }
 
@@ -346,6 +353,9 @@ u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf)
     if(r != ARCHIVE_OK)
     {
         DEBUG("Invalid zip being opened\n");
+        char path[0x128] = {0};
+        utf16_to_utf8((u8 *) path, zip_path, 0x128);
+        DEBUG("%s\n", path);
         return 0;
     }
 
@@ -566,9 +576,9 @@ renamed:
     char * curr_filename;
     if (mode == REMOTE_MODE_BADGES)
     {
-        DEBUG("Remote mode badges! Saving to /Badges/ThemePlaza Badges/\n");
-        sprintf(path_to_file, "%s%s", "/Badges/ThemePlaza Badges/", filename);
-        curr_filename = path_to_file + strlen("/Badges/ThemePlaza Badges/");
+        sprintf(path_to_file, "%sThemePlaza Badges/%s", main_paths[REMOTE_MODE_BADGES], filename);
+        DEBUG("Remote mode badges! Saving to %s/\n", path_to_file);
+        curr_filename = path_to_file + strlen(main_paths[REMOTE_MODE_BADGES]) + strlen("ThemePlaza Badges/");
     } else
     {
         sprintf(path_to_file, "%s%s", main_paths[mode], filename);
