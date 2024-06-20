@@ -335,7 +335,14 @@ void free_list(SetNode *head)
 SetNode * extract_sets(char *badgeMngBuffer, Handle backupDataHandle)
 {
     u32 setCount = *((u32 *) (badgeMngBuffer + 0x4));
-    if (setCount == 0) return NULL;
+
+    if (!setCount) // GYTB? make unknown set
+    {
+        u16 set_path[256] = {0};
+        struacat(set_path, "/3ds/" APP_TITLE "/BadgeBackups/Unknown Set");
+        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, set_path), FS_ATTRIBUTE_DIRECTORY);
+        return NULL;
+    }
 
     SetNode *head = calloc(1, sizeof(SetNode));
     SetNode *cursor = head;
@@ -441,7 +448,7 @@ Result extract_badges(void)
         {
             u32 set_index = get_set_index(head, badgeSetId);
             if (set_index == 0xFFFFFFFF) {
-                sprintf(dir, "/3ds" APP_TITLE "/BadgeBackups/Unknown Set");
+                sprintf(dir, "/3ds/" APP_TITLE "/BadgeBackups/Unknown Set");
             } else
             {
                 u16 utf16SetName[0x46] = {0};
@@ -454,6 +461,9 @@ Result extract_badges(void)
                 DEBUG("UTF-8 Set Name: %s; ID: %lx\n", utf8SetName, badgeSetId);
                 sprintf(dir, "/3ds/" APP_TITLE "/BadgeBackups/%s", utf8SetName);
             }
+        } else
+        {
+            sprintf(dir, "/3ds/" APP_TITLE "/BadgeBackups/Unknown Set");
         }
 
         if (shortcut == 0xFFFFFFFF)
