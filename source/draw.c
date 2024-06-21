@@ -173,6 +173,11 @@ void end_frame(void)
     C3D_FrameEnd(0);
 }
 
+static void draw_image_tint(int image_id, float x, float y, C2D_ImageTint tint)
+{
+    C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, image_id), x, y, 0.6f, &tint, 1.0f, 1.0f);
+}
+
 static void draw_image(int image_id, float x, float y)
 {
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, image_id), x, y, 0.6f, NULL, 1.0f, 1.0f);
@@ -271,10 +276,10 @@ void draw_base_interface(void)
     C2D_TextParse(&minutes, dynamicBuf, string_minutes);
     C2D_TextOptimize(&minutes);
 
-    C2D_DrawText(&hours, C2D_WithColor, 7, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
+    C2D_DrawText(&hours, C2D_WithColor, 7, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT]);
     if(tm.tm_sec % 2 == 1)
-        C2D_DrawText(&separator, C2D_WithColor, 28, 1, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
-    C2D_DrawText(&minutes, C2D_WithColor, 34, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
+        C2D_DrawText(&separator, C2D_WithColor, 28, 1, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT]);
+    C2D_DrawText(&minutes, C2D_WithColor, 34, 2, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT]);
 
     #ifndef CITRA_MODE
     u8 battery_charging = 0;
@@ -291,7 +296,7 @@ void draw_base_interface(void)
 
     C2D_DrawRectSolid(0, 0, 0.5f, 320, 24, colors[COLOR_ACCENT]);
     C2D_DrawRectSolid(0, 216, 0.5f, 320, 24, colors[COLOR_ACCENT]);
-    C2D_DrawText(&text[TEXT_VERSION], C2D_WithColor, 7, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE]);
+    C2D_DrawText(&text[TEXT_VERSION], C2D_WithColor, 7, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT]);
 
     set_screen(top);
 }
@@ -299,13 +304,13 @@ void draw_base_interface(void)
 void throw_error(const char * error, ErrorLevel level)
 {
     Text bottom_text = TEXT_AMOUNT;
-    Color text_color = COLOR_WHITE;
+    Color text_color = COLOR_WHITE_BACKGROUND;
 
     switch(level)
     {
         case ERROR_LEVEL_ERROR:
             bottom_text = TEXT_ERROR_QUIT;
-            text_color = COLOR_RED;
+            text_color = COLOR_RED_BACKGROUND;
             break;
         case ERROR_LEVEL_WARNING:
             bottom_text = TEXT_ERROR_CONTINUE;
@@ -322,7 +327,7 @@ void throw_error(const char * error, ErrorLevel level)
 
         draw_base_interface();
         draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[text_color], error);
-        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[bottom_text]);
+        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_BACKGROUND], &text[bottom_text]);
         end_frame();
 
         if(kDown & KEY_A) break;
@@ -337,7 +342,7 @@ bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode
         draw_interface(list, instructions, draw_mode);
         set_screen(top);
         draw_text_center(GFX_TOP, BUTTONS_Y_LINE_1, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
-        draw_c2d_text_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
+        draw_c2d_text_center(GFX_TOP, BUTTONS_Y_LINE_3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_BACKGROUND], &text[TEXT_CONFIRM_YES_NO]);
         end_frame();
 
         hidScanInput();
@@ -355,7 +360,7 @@ bool draw_confirm_no_interface(const char *conf_msg)
     {
         draw_base_interface();
         draw_text_center(GFX_TOP, 100, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], conf_msg);
-        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_CONFIRM_YES_NO]);
+        draw_c2d_text_center(GFX_TOP, 170, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_BACKGROUND], &text[TEXT_CONFIRM_YES_NO]);
         end_frame();
 
         hidScanInput();
@@ -381,7 +386,7 @@ static void draw_install_handler(InstallType type)
     if(type != INSTALL_NONE)
     {
         C2D_Text * install_text = &text[type];
-        draw_c2d_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE], install_text);
+        draw_c2d_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE_BACKGROUND], install_text);
     }
 }
 
@@ -408,7 +413,7 @@ void draw_loading_bar(u32 current, u32 max, InstallType type)
 static void draw_instructions(Instructions_s instructions)
 {
     if(instructions.info_line != NULL)
-        draw_text_center(GFX_TOP, BUTTONS_Y_INFO, 0.5, 0.55, 0.55, colors[COLOR_WHITE], instructions.info_line);
+        draw_text_center(GFX_TOP, BUTTONS_Y_INFO, 0.5, 0.55, 0.55, colors[COLOR_WHITE_BACKGROUND], instructions.info_line);
 
     const int y_lines[BUTTONS_INFO_LINES-1] = {
         BUTTONS_Y_LINE_1,
@@ -419,20 +424,20 @@ static void draw_instructions(Instructions_s instructions)
     for(int i = 0; i < BUTTONS_INFO_LINES-1; i++)
     {
         if(instructions.instructions[i][0] != NULL)
-            draw_text_wrap_scaled(BUTTONS_X_LEFT, y_lines[i], 0.5, colors[COLOR_WHITE], instructions.instructions[i][0], 0.6, 0, BUTTONS_X_RIGHT-2);
+            draw_text_wrap_scaled(BUTTONS_X_LEFT, y_lines[i], 0.5, colors[COLOR_WHITE_BACKGROUND], instructions.instructions[i][0], 0.6, 0, BUTTONS_X_RIGHT-2);
         if(instructions.instructions[i][1] != NULL)
-            draw_text_wrap_scaled(BUTTONS_X_RIGHT, y_lines[i], 0.5, colors[COLOR_WHITE], instructions.instructions[i][1], 0.6, 0, BUTTONS_X_MAX-2);
+            draw_text_wrap_scaled(BUTTONS_X_RIGHT, y_lines[i], 0.5, colors[COLOR_WHITE_BACKGROUND], instructions.instructions[i][1], 0.6, 0, BUTTONS_X_MAX-2);
     }
 
     C2D_ImageTint white_tint;
-    C2D_PlainImageTint(&white_tint, colors[COLOR_WHITE], 1.0f);
+    C2D_PlainImageTint(&white_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
 
     const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
     if(start_line != NULL)
     {
         C2D_SpriteSetPos(&sprite_start, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
         C2D_DrawSpriteTinted(&sprite_start, &white_tint);
-        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
+        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
     }
 
     const char * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
@@ -440,7 +445,7 @@ static void draw_instructions(Instructions_s instructions)
     {
         C2D_SpriteSetPos(&sprite_select, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
         C2D_DrawSpriteTinted(&sprite_select, &white_tint);
-        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE], select_line, 0.6, 0, BUTTONS_X_MAX-2);
+        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], select_line, 0.6, 0, BUTTONS_X_MAX-2);
     }
 }
 
@@ -528,18 +533,18 @@ static void draw_entry_info(Entry_s * entry)
 {
     char author[0x41] = {0};
     utf16_to_utf8((u8 *)author, entry->author, 0x40);
-    draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], &text[TEXT_BY_AUTHOR]);
+    draw_c2d_text(20, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE_BACKGROUND], &text[TEXT_BY_AUTHOR]);
     float width = 0;
     C2D_TextGetDimensions(&text[TEXT_BY_AUTHOR], 0.5, 0.5, &width, NULL);
-    draw_text(20+width, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE], author);
+    draw_text(20+width, 35, 0.5, 0.5, 0.5, colors[COLOR_WHITE_BACKGROUND], author);
 
     char title[0x41] = {0};
     utf16_to_utf8((u8 *)title, entry->name, 0x40);
-    draw_text(20, 50, 0.5, 0.7, 0.7, colors[COLOR_WHITE], title);
+    draw_text(20, 50, 0.5, 0.7, 0.7, colors[COLOR_WHITE_BACKGROUND], title);
 
     char description[0x81] = {0};
     utf16_to_utf8((u8 *)description, entry->desc, 0x80);
-    draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE], description, 363);
+    draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE_BACKGROUND], description, 363);
 }
 
 void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int extra_mode)
@@ -553,7 +558,7 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
         &text[TEXT_THEMEPLAZA_BADGE_MODE],
     };
 
-    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
+    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE_ACCENT], mode_string[current_mode]);
 
     draw_instructions(instructions);
 
@@ -563,16 +568,22 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
 
     set_screen(bottom);
 
-    draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], &text[TEXT_SEARCH]);
+    draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
 
-    draw_image(sprites_back_idx, 320-96, 0);
-    draw_image(sprites_exit_idx, 320-72, 0);
-    draw_image(sprites_preview_idx, 320-48, 0);
+    C2D_ImageTint accent_tint;
+    C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
 
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], remote_mode_switch_char[current_mode]);
+    draw_image_tint(sprites_back_idx, 320-96, 0, accent_tint);
+    draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
+    draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
 
-    draw_image(sprites_arrow_left_idx, 3, 114);
-    draw_image(sprites_arrow_right_idx, 308, 114);
+    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
+
+    C2D_ImageTint background_tint;
+    C2D_PlainImageTint(&background_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
+
+    draw_image_tint(sprites_arrow_left_idx, 3, 114, background_tint);
+    draw_image_tint(sprites_arrow_right_idx, 308, 114, background_tint);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
@@ -625,15 +636,15 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
     float width = 0;
     get_text_dimensions(entries_count_str, 0.6, 0.6, &width, NULL);
     x -= width;
-    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], entries_count_str);
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%"  JSON_INTEGER_FORMAT, list->tp_current_page);
     get_text_dimensions(selected_entry_str, 0.6, 0.6, &width, NULL);
     x -= width;
-    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], selected_entry_str);
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], selected_entry_str);
 
-    draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_PAGE]);
+    draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], &text[TEXT_PAGE]);
 }
 
 void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode)
@@ -646,7 +657,10 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         &text[TEXT_SPLASH_MODE],
     };
 
-    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE], mode_string[current_mode]);
+    C2D_ImageTint accent_tint;
+    C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
+
+    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE_ACCENT], mode_string[current_mode]);
 
     if(list->entries == NULL || list->entries_count == 0)
     {
@@ -675,11 +689,11 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image(sprites_qr_idx, 320-96, 0);
-        draw_image(sprites_browse_idx, 320-72, 0);
-        draw_image(sprites_exit_idx, 320-48, 0);
+        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
+        draw_image_tint(sprites_browse_idx, 320-72, 0, accent_tint);
+        draw_image_tint(sprites_exit_idx, 320-48, 0, accent_tint);
 
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
+        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
 
         return;
     }
@@ -696,48 +710,48 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
     {
         char * shuffle_count_string = NULL;
         asprintf(&shuffle_count_string, language.draw.shuffle, list->shuffle_count);
-        draw_text(30, 3, 0.6, 0.6, 0.6f, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? colors[COLOR_WHITE] : colors[COLOR_RED], shuffle_count_string);
+        draw_text(30, 3, 0.6, 0.6, 0.6f, list->shuffle_count <= 10 && list->shuffle_count >= 2 ? colors[COLOR_WHITE_ACCENT] : colors[COLOR_RED_ACCENT], shuffle_count_string);
         free(shuffle_count_string);
     }
 
     if (draw_mode == DRAW_MODE_LIST)
     {
-        draw_image(sprites_install_idx, 320-120, 0);
-        draw_image(sprites_qr_idx, 320-96, 0);
-        draw_image(sprites_exit_idx, 320-72, 0);
-        draw_image(sprites_preview_idx, 320-48, 0);
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE], mode_switch_char[!current_mode]);
-        draw_image(sprites_menu_idx, 2, 0);
+        draw_image_tint(sprites_install_idx, 320-120, 0, accent_tint);
+        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
+        draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
+        draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
+        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
+        draw_image_tint(sprites_menu_idx, 2, 0, accent_tint);
         if (current_mode == MODE_THEMES)
         {
-            draw_image(sprites_shuffle_idx, 320-144, 0);
+            draw_image_tint(sprites_shuffle_idx, 320-144, 0, accent_tint);
         }
     }
     else
     {
         if (draw_mode == DRAW_MODE_INSTALL)
         {
-            draw_image(sprites_install_idx, 320-24, 0);
-            draw_image(sprites_shuffle_idx, 320-48, 0);
-            draw_image(sprites_shuffle_no_bgm_idx, 320-72, 0);
-            draw_image(sprites_bgm_only_idx, 320-96, 0);
-            draw_image(sprites_back_idx, 2, 0);
+            draw_image_tint(sprites_install_idx, 320-24, 0, accent_tint);
+            draw_image_tint(sprites_shuffle_idx, 320-48, 0, accent_tint);
+            draw_image_tint(sprites_shuffle_no_bgm_idx, 320-72, 0, accent_tint);
+            draw_image_tint(sprites_bgm_only_idx, 320-96, 0, accent_tint);
+            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
-            draw_image(sprites_browse_idx, 320-24, 0);
-            draw_image(sprites_dump_idx, 320-48, 0);
-            draw_image(sprites_sort_idx, 320-72, 0);
-            draw_image(sprites_badge_idx, 320-96, 0);
-            draw_image(sprites_back_idx, 2, 0);
+            draw_image_tint(sprites_browse_idx, 320-24, 0, accent_tint);
+            draw_image_tint(sprites_dump_idx, 320-48, 0, accent_tint);
+            draw_image_tint(sprites_sort_idx, 320-72, 0, accent_tint);
+            draw_image_tint(sprites_badge_idx, 320-96, 0, accent_tint);
+            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
         }
     }
 
     // Show arrows if there are themes out of bounds
     //----------------------------------------------------------------
     if(list->scroll > 0)
-        draw_image(sprites_arrow_up_idx, 141, 220);
+        draw_image_tint(sprites_arrow_up_idx, 141, 220, accent_tint);
     if(list->scroll + list->entries_loaded < list->entries_count)
-        draw_image(sprites_arrow_down_idx, 157, 220);
+        draw_image_tint(sprites_arrow_down_idx, 157, 220, accent_tint);
 
     for(int i = list->scroll; i < (list->entries_loaded + list->scroll); i++)
     {
@@ -754,7 +768,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         vertical_offset *= list->entry_size;
         vertical_offset += 24;
 
-        u32 font_color = colors[COLOR_WHITE];
+        u32 font_color = colors[COLOR_WHITE_BACKGROUND];
 
         if(i == selected_entry)
         {
@@ -808,18 +822,18 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
     float width = 0;
     get_text_dimensions(entries_count_str, 0.6, 0.6, &width, NULL);
     x -= width;
-    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], entries_count_str);
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], entries_count_str);
 
     char selected_entry_str[0x20] = {0};
     sprintf(selected_entry_str, "%i", selected_entry + 1);
     get_text_dimensions(selected_entry_str, 0.6, 0.6, &width, NULL);
     x -= width;
-    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], selected_entry_str);
+    draw_text(x, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], selected_entry_str);
 
     if(list->entries_count < 10000)
-        draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED]);
+        draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], &text[TEXT_SELECTED]);
     else
-        draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE], &text[TEXT_SELECTED_SHORT]);
+        draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], &text[TEXT_SELECTED_SHORT]);
     if(draw_mode != DRAW_MODE_LIST)
     {
         C2D_DrawRectSolid(0, 24, 1.0f, 320, 240-48, C2D_Color32(0, 0, 0, 128));

@@ -537,7 +537,7 @@ int main(void)
             {
                 enable_qr:
                 draw_base_interface();
-                draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE], language.main.loading_qr);
+                draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_BACKGROUND], language.main.loading_qr);
                 end_frame();
                 if(R_SUCCEEDED(camInit()))
                 {

@@ -32,9 +32,14 @@
 #include <jansson.h>
 
 typedef struct {
-    u32 background_color;
     u32 accent_color;
-    u32 red_color;
+    u32 background_color;
+    u32 white_color_background;
+    u32 white_color_accent;
+    u32 cursor_color;
+    u32 black_color;
+    u32 red_color_background;
+    u32 red_color_accent;
     u32 yellow_color;
 } Config_s;
 

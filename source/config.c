@@ -71,7 +71,7 @@ void load_config(void)
                         config.background_color = C2D_Color32(r, g, b, a);
                     }
                 }
-                else if (json_is_array(value) && !strcmp(key, "Red Color") && json_array_size(value) == 4)
+                else if (json_is_array(value) && !strcmp(key, "White Color Background") && json_array_size(value) == 4)
                 {
                     if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
                         && json_is_integer(json_array_get(value, 2)) && json_is_integer(json_array_get(value, 3)))
@@ -81,7 +81,72 @@ void load_config(void)
                         u8 b = min(255, json_integer_value(json_array_get(value, 2)));
                         u8 a = min(255, json_integer_value(json_array_get(value, 3)));
 
-                        config.red_color = C2D_Color32(r, g, b, a);
+                        config.white_color_background = C2D_Color32(r, g, b, a);
+                    }
+                }
+                else if (json_is_array(value) && !strcmp(key, "White Color Accent") && json_array_size(value) == 4)
+                {
+                    if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
+                        && json_is_integer(json_array_get(value, 2)) && json_is_integer(json_array_get(value, 3)))
+                    {
+                        u8 r = min(255, json_integer_value(json_array_get(value, 0)));
+                        u8 g = min(255, json_integer_value(json_array_get(value, 1)));
+                        u8 b = min(255, json_integer_value(json_array_get(value, 2)));
+                        u8 a = min(255, json_integer_value(json_array_get(value, 3)));
+
+                        config.white_color_accent = C2D_Color32(r, g, b, a);
+                    }
+                }
+                else if (json_is_array(value) && !strcmp(key, "Cursor Color") && json_array_size(value) == 4)
+                {
+                    if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
+                        && json_is_integer(json_array_get(value, 2)) && json_is_integer(json_array_get(value, 3)))
+                    {
+                        u8 r = min(255, json_integer_value(json_array_get(value, 0)));
+                        u8 g = min(255, json_integer_value(json_array_get(value, 1)));
+                        u8 b = min(255, json_integer_value(json_array_get(value, 2)));
+                        u8 a = min(255, json_integer_value(json_array_get(value, 3)));
+
+                        config.cursor_color = C2D_Color32(r, g, b, a);
+                    }
+                }
+                else if (json_is_array(value) && !strcmp(key, "Black Color") && json_array_size(value) == 4)
+                {
+                    if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
+                        && json_is_integer(json_array_get(value, 2)) && json_is_integer(json_array_get(value, 3)))
+                    {
+                        u8 r = min(255, json_integer_value(json_array_get(value, 0)));
+                        u8 g = min(255, json_integer_value(json_array_get(value, 1)));
+                        u8 b = min(255, json_integer_value(json_array_get(value, 2)));
+                        u8 a = min(255, json_integer_value(json_array_get(value, 3)));
+
+                        config.black_color = C2D_Color32(r, g, b, a);
+                    }
+                }
+                else if (json_is_array(value) && !strcmp(key, "Red Color Background") && json_array_size(value) == 4)
+                {
+                    if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
+                        && json_is_integer(json_array_get(value, 2)) && json_is_integer(json_array_get(value, 3)))
+                    {
+                        u8 r = min(255, json_integer_value(json_array_get(value, 0)));
+                        u8 g = min(255, json_integer_value(json_array_get(value, 1)));
+                        u8 b = min(255, json_integer_value(json_array_get(value, 2)));
+                        u8 a = min(255, json_integer_value(json_array_get(value, 3)));
+
+                        config.red_color_background = C2D_Color32(r, g, b, a);
+                    }
+                }
+                else if (json_is_array(value) && !strcmp(key, "Red Color Accent") && json_array_size(value) == 4)
+                {
+                    if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
+                        && json_is_integer(json_array_get(value, 2)) && json_is_integer(json_array_get(value, 3)))
+                    {
+                        u8 r = min(255, json_integer_value(json_array_get(value, 0)));
+                        u8 g = min(255, json_integer_value(json_array_get(value, 1)));
+                        u8 b = min(255, json_integer_value(json_array_get(value, 2)));
+                        u8 a = min(255, json_integer_value(json_array_get(value, 3)));
+
+                        config.red_color_accent = C2D_Color32(r, g, b, a);
                     }
                 }
                 else if (json_is_array(value) && !strcmp(key, "Yellow Color") && json_array_size(value) == 4)
@@ -157,9 +222,24 @@ void load_config(void)
     if (config.background_color == 0)
         config.background_color = C2D_Color32(35, 28, 32, 255); //silver-y black
 
-    if (config.red_color == 0)
-        config.red_color = C2D_Color32(229, 66, 66, 255);
+    if (config.white_color_background == 0)
+        config.white_color_background = C2D_Color32(255, 255, 255, 255);
+
+    if (config.white_color_accent == 0)
+        config.white_color_accent = C2D_Color32(255, 255, 255, 255);
+
+    if (config.cursor_color == 0)
+        config.cursor_color = C2D_Color32(200, 200, 200, 255);
+
+    if (config.black_color == 0)
+        config.black_color = C2D_Color32(0, 0, 0, 255);
+
+    if (config.red_color_background == 0)
+        config.red_color_background = C2D_Color32(229, 66, 66, 255);
     
+    if (config.red_color_accent == 0)
+        config.red_color_accent = C2D_Color32(229, 66, 66, 255);
+
     if (config.yellow_color == 0)
         config.yellow_color = C2D_Color32(239, 220, 11, 255);
 

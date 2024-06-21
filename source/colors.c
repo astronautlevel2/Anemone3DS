@@ -32,9 +32,11 @@ void init_colors(void)
 {
     colors[COLOR_BACKGROUND] = config.background_color;
     colors[COLOR_ACCENT] = config.accent_color;
-    colors[COLOR_WHITE] = C2D_Color32(255, 255, 255, 255);
-    colors[COLOR_CURSOR] = C2D_Color32(200, 200, 200, 255);
-    colors[COLOR_BLACK] = C2D_Color32(0, 0, 0, 255);
-    colors[COLOR_RED] = config.red_color;
+    colors[COLOR_WHITE_BACKGROUND] = config.white_color_background;
+    colors[COLOR_WHITE_ACCENT] = config.white_color_accent;
+    colors[COLOR_CURSOR] = config.cursor_color;
+    colors[COLOR_BLACK] = config.black_color;
+    colors[COLOR_RED_BACKGROUND] = config.red_color_background;
+    colors[COLOR_RED_ACCENT] = config.red_color_accent;
     colors[COLOR_YELLOW] = config.yellow_color;
 }
