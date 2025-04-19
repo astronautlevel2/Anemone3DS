@@ -381,7 +381,7 @@ int main(void)
 {
     srand(time(NULL));
     init_services();
-    CFG_Language lang;
+    u8 lang;
     CFGU_GetSystemLanguage(&lang);
     language = init_strings(lang);
     init_screens();
