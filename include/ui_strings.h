@@ -132,6 +132,7 @@ typedef struct {
     const char *generic_httpc_error;
     const char *http_timeout;
     const char *http_no_network;
+    const char *http_ssl_error;
     const char *http303_tp;
     const char *http303;
     const char *http404;

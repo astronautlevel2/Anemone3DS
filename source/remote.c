@@ -1182,26 +1182,33 @@ redirect: // goto here if we need to redirect
         DEBUG("httpc error %lx\n", _header.result_code);
         switch (_header.result_code)
         {
-        case 0xd8a0a028:
-            // SSL failure - try curl?
+        case 0xd8a0a028: // bad zip file
+        case 0xd8a0a03c: // SSL failure
+            // try curl?
             res = curl_http_get(url, filename, buf, size, acceptable_mime_types);
             if (R_SUCCEEDED(res))
             {
                 return res;
-            } else if (res == -2)
+            }
+
+            if(_header.result_code == 0xd8a0a028)
             {
                 snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-                goto error;
             }
+            else
+            {
+                snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_ssl_error, _header.result_code);
+            }
+            quit = false;
             break;
         case 0xd8a0a049:
             // Timeout (bad wifi/proxy)
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_timeout, _header.result_code);
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_timeout);
             quit = false;
             break;
         case 0xd8a0a046:
             // poor reception/no wifi/custom dns set
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_no_network, _header.result_code);
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_no_network);
             quit = false;
             break;
         default:
