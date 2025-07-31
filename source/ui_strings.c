@@ -1661,20 +1661,20 @@ const Language_s language_korean = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Install Theme(s)",
-                    "\uE001 Queue shuffle"
+                    "\uE000 테마 설치",
+                    "\uE001 베스트 셔플"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview theme"
+                    "\uE002 더 보기",
+                    "\uE003 테마 미리보기"
                 },
                 {
-                    "\uE004 Go to splashes",
-                    "\uE005 Scan QR code"
+                    "\uE004 스플래시로 가기",
+                    "\uE005 QR코드 스캔"
                 },
                 {
-                    "Exit",
-                    "Delete from SD"
+                    "나가기",
+                    "SD 카드에서 제거"
                 }
             }
         },
@@ -1682,20 +1682,20 @@ const Language_s language_korean = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Install splash",
-                    "\uE001 Delete cur. splash"
+                    "\uE000 스플래시 설치",
+                    "\uE001 현재 스플래시 삭제"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview splash"
+                    "\uE002 더 보기",
+                    "\uE003 스플래시 미리보기"
                 },
                 {
-                    "\uE004 Go to themes",
-                    "\uE005 Scan QR code"
+                    "\uE004 테마로 가기",
+                    "\uE005 QR 코드 스캔"
                 },
                 {
-                    "Exit",
-                    "Delete from SD"
+                    "나가기",
+                    "SD 카드에서 제거"
                 }
             }
         }
@@ -1703,22 +1703,22 @@ const Language_s language_korean = {
 
     .install_instructions =
     {
-        .info_line = "\uE001 Cancel theme install",
+        .info_line = "\uE001 테마 적용 취소하기",
         .instructions = {
             {
-                "\uE079 Normal install",
-                "\uE07A Shuffle install"
+                "\uE079 기본 적용",
+                "\uE07A 셔플 적용"
             },
             {
-                "\uE07B BGM-only install",
-                "\uE07C No-BGM install"
+                "\uE07B 배경음만 적용",
+                "\uE07C 배경음 없이 적용"
             },
             {
                 NULL,
                 NULL
             },
             {
-                "Exit",
+                "나가기",
                 NULL
             }
         }
@@ -1727,14 +1727,14 @@ const Language_s language_korean = {
     .extra_instructions = 
     {
         {
-            .info_line = "\uE001 Leave sorting menu",
+            .info_line = "\uE001 정렬 메뉴 나가기",
             .instructions = {
                 {
-                    "\uE079 Sort by name",
-                    "\uE07A Sort by author"
+                    "\uE079 이름으로 정렬",
+                    "\uE07A 작성자로 정렬"
                 },
                 {
-                    "\uE07B Sort by filename",
+                    "\uE07B 파일 이름으로 정렬",
                     NULL
                 },
                 {
@@ -1742,41 +1742,41 @@ const Language_s language_korean = {
                     NULL
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
         },
         {
-            .info_line = "\uE001 Leave extra menu",
+            .info_line = "\uE001 추가 메뉴 나가기",
             .instructions = {
                 {
-                    "\uE079 Jump in the list",
-                    "\uE07A Reload icons"
+                    "\uE079 목록으로 이동",
+                    "\uE07A 아이콘 다시 로드"
                 },
                 {
-                    "\uE07B Browse TP",
-                    "\uE07C Install Badges"
+                    "\uE07B 테마플라자 둘러보기",
+                    "\uE07C 배지 설치"
                 },
                 {
-                    "\uE004 Sorting menu",
-                    "\uE005 Dump..."
+                    "\uE004 메뉴 정렬",
+                    "\uE005 덤프..."
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
         },
         {
-            .info_line = "Dump... | \uE001 Leave dump menu",
+            .info_line = "덤프... | \uE001 덤프 메뉴 나가기",
             .instructions = {
                 {
-                    "\uE079 Installed Theme",
-                    "\uE07A All Themes"
+                    "\uE079 적용된 테마",
+                    "\uE07A 모든 테마"
                 },
                 {
-                    "\uE07B Badges",
+                    "\uE07B 배지",
                     NULL
                 },
                 {
@@ -1784,7 +1784,7 @@ const Language_s language_korean = {
                     NULL
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
@@ -1792,122 +1792,122 @@ const Language_s language_korean = {
     },
     .camera = 
     {
-        .quit = "Press \uE005 To Quit",
-        .thread_error = "Capture cam thread creation failed\nPlease report this to the developers",
-        .zip_not_theme_splash = "Zip downloaded is neither\na splash nor a theme",
-        .file_not_zip = "File downloaded isn't a zip.",
-        .download_failed = "Download failed.",
-        .badge_question = "Theme or splash not detected.\nIs this a badge?",
+        .quit = "\uE005를 눌러 취소하세요",
+        .thread_error = "카메라 캡쳐 스레드 생성 실패\n개발자들에게 이 문제를 알려주세요",
+        .zip_not_theme_splash = "다운로드한 Zip 파일이\n테마나 스플래시가 아닙니다",
+        .file_not_zip = "다운로드한 파일이 zip 형식이 아닙니다.",
+        .download_failed = "다운로드에 실패했습니다.",
+        .badge_question = "테마나 스플래시가 감지되지 않았습니다.\n혹시 배지인가요?",
     },
     .draw = 
     {
-        .theme_mode = "Theme mode",
-        .splash_mode = "Splash mode",
-        .no_themes = "No theme found",
-        .no_splashes = "No splash found",
-        .qr_download = "Press \uE005 to dl from QR",
-        .switch_splashes = "Or \uE004 to go to splashes",
-        .switch_themes = "Or \uE004 to go to themes",
-        .quit = "Or        to quit",
+        .theme_mode = "테마 모드",
+        .splash_mode = "스플래시 모드",
+        .no_themes = "테마를 찾을 수 없음",
+        .no_splashes = "스플래시를 찾을 수 없음",
+        .qr_download = "\uE005를 눌러 QR코드로 다운로드",
+        .switch_splashes = "또는\uE004 를 눌러 스플래시 목록으로",
+        .switch_themes = "또는 \uE004를 눌러 테마 목록으로",
+        .quit = "또는        를 눌러 나가기",
         .start_pos = 162, // Adjust x pos of start glyph to line up with quit string
         .by = "By ",
-        .selected = "Selected:",
-        .sel = "Sel.:",
-        .tp_theme_mode = "ThemePlaza Theme mode",
-        .tp_splash_mode = "ThemePlaza Splash mode",
-        .tp_badge_mode = "ThemePlaza Badge mode",
-        .search = "Search...",
-        .page = "Page:",
-        .err_quit = "Press \uE000 to quit.",
-        .warn_continue = "Press \uE000 to continue.",
-        .yes_no = "\uE000 Yes   \uE001 No",
-        .load_themes = "Loading themes, please wait...",
-        .load_splash = "Loading splashes, please wait...",
-        .load_icons = "Loading icons, please wait...",
-        .install_splash = "Installing a splash...",
-        .delete_splash = "Deleting installed splash...",
-        .install_theme = "Installing a single theme...",
-        .install_shuffle = "Installing shuffle themes...",
-        .install_bgm = "Installing BGM-only theme...",
-        .install_no_bgm = "Installing theme w/o BGM...",
-        .downloading = "Downloading...",
-        .checking_dl = "Checking downloaded file...",
-        .delete_sd = "Deleting from SD...",
-        .download_themes = "Downloading theme list,\nplease wait...",
-        .download_splashes = "Downloading splash list,\nplease wait...",
-        .download_badges = "Downloading badge list,\nplease wait...",
-        .download_preview = "Downloading preview,\nplease wait...",
-        .download_bgm = "Downloading BGM, please wait...",
-        .dump_single = "Dumping theme, please wait...",
-        .dump_all_official = "Dumping official themes,\nplease wait...",
-        .dump_badges = "Dumping installed badges,\nplease wait...",
-        .install_badges = "Installing badges, please wait...",
-        .shuffle = "Shuffle: %i/10",
+        .selected = "선택됨:",
+        .sel = "선택:",
+        .tp_theme_mode = "ThemePlaza 테마 모드",
+        .tp_splash_mode = "ThemePlaza 스플래시 모드",
+        .tp_badge_mode = "ThemePlaza 배지 모드",
+        .search = "검색...",
+        .page = "페이지:",
+        .err_quit = "\uE000를 눌러 나가기",
+        .warn_continue = "\uE000를 눌러 계속",
+        .yes_no = "\uE000 예   \uE001 아니오",
+        .load_themes = "테마 불러오는 중,\n잠시만 기다려주세요...",
+        .load_splash = "스플래시 불러오는 중,\n잠시만 기다려주세요...",
+        .load_icons = "아이콘 불러오는 중,\n잠시만 기다려주세요...",
+        .install_splash = "스플래시 적용 중...",
+        .delete_splash = "적용한 스플래시 제거 중...",
+        .install_theme = "단일 테마 적용 중...",
+        .install_shuffle = "셔플 테마 적용 중...",
+        .install_bgm = "배경음  테마 적용 중...",
+        .install_no_bgm = "배경음 제외한 테마 적용 중...",
+        .downloading = "다운로드 중...",
+        .checking_dl = "다운로드한 파일 확인 중...",
+        .delete_sd = "SD 카드에서 삭제 중...",
+        .download_themes = "테마 목록 다운로드 중,\n잠시만 기다려주세요...",
+        .download_splashes = "스플래시 목록 다운로드 중,\n잠시만 기다려주세요...",
+        .download_badges = "배지 목록 다운로드 중,\n잠시만 기다려주세요...",
+        .download_preview = "미리보기 다운로드 중,\n잠시만 기다려주세요...",
+        .download_bgm = "BGM 다운로드 중,\n잠시만 기다려주세요...",
+        .dump_single = "테마 덤프 중,\n잠시만 기다려주세요...",
+        .dump_all_official = "공식 테마 덤프 중,\n잠시만 기다려주세요...",
+        .dump_badges = "설치된 배지 덤프 중,\n잠시만 기다려주세요...",
+        .install_badges = "배지 설치 중,\n잠시만 기다려주세요...",
+        .shuffle = "셔플: %i/10",
     },
     .fs =
     {
-        .illegal_input = "Input must not contain:\n" ILLEGAL_CHARS,
-        .new_or_overwrite = "Choose a new filename or tap Overwrite",
-        .cancel = "Cancel",
-        .overwrite = "Overwrite",
-        .rename = "Rename",
-        .swkbd_fail = "???\nTry a USB keyboard", // Should never be used
-        .sd_full = "SD card is full.\nDelete some themes to make space.",
-        .fs_error = "Error:\nGet a new SD card.",
+        .illegal_input = "입력시 아래 문구를 포함하지 않아야 합니다:\n" ILLEGAL_CHARS,
+        .new_or_overwrite = "새 파일 이름을 쓰거나 덮어쓰기를 선택하세요",
+        .cancel = "취소",
+        .overwrite = "덮어쓰기",
+        .rename = "이름 변경",
+        .swkbd_fail = "???\nUSB 키보드를 시도해보세요", // Should never be used
+        .sd_full = "SD 카드가 가득 찼습니다.\n일부 테마를 지워 공간을 확보하세요.",
+        .fs_error = "오류:\n새 SD 카드를 구하세요.",
     },
     .loading =
     {
-        .no_preview = "No preview found.",
+        .no_preview = "미리보기 찾을 수 없음.",
     },
     .main =
     {
-        .position_too_big = "The new position has to be\nsmaller or equal to the\nnumber of entries!",
-        .position_zero = "The new position has to\nbe positive!",
-        .jump_q = "Where do you want to jump to?\nMay cause icons to reload.",
-        .cancel = "Cancel",
-        .jump = "Jump",
+        .position_too_big = "새 위치는 항목 수보다 크거나 같아야 합니다!",
+        .position_zero = "새 위치는 자연수여야 합니다!",
+        .jump_q = "어디로 이동하고 싶으신가요? 아이콘이 리로드될 수 있습니다.",
+        .cancel = "취소",
+        .jump = "이동",
         // Note to translator: This is a special case, please translate this string instead of the original one.
-        .no_theme_extdata = "Theme extdata does not exist!\nPlease install the Korean patch\nthen set a default theme\nfrom the homemenu settings.",
-        .loading_qr = "Loading QR Scanner...",
-        .no_wifi = "Please connect to Wi-Fi\nbefore scanning QR codes",
-        .qr_homebrew = "QR scanning doesnt work from the Homebrew\nLauncher, use the ThemePlaza browser instead.",
-        .camera_broke = "Your camera seems to have a problem,\nunable to scan QR codes.",
-        .too_many_themes = "You have too many themes selected.",
-        .not_enough_themes = "You don't have enough themes selected.",
-        .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
-        .delete_confirm = "Are you sure you would like\nto delete this?",
+        .no_theme_extdata = "테마 추가 데이터가 존재하지 않습니다!\n한국판 전용 테마 패치를 설치해 주시고\n홈 메뉴 설정에서 기본 테마를 설정해주세요.",
+        .loading_qr = "QR 코드 스캐너 로딩 중...",
+        .no_wifi = "QR 코드 스캔 전에\nWi-Fi에 연결해 주세요",
+        .qr_homebrew = "QR 코드 스캔은 홈브류 런처에서 작동하지 않습니다,\nThemePlaza 탐색기를 대신 사용해주세요.",
+        .camera_broke = "카메라에 문제가 있는 것 같습니다,\nQR 코드를 스캔할 수 없습니다.",
+        .too_many_themes = "선택된 테마가 너무 많습니다.",
+        .not_enough_themes = "테마를 충분히 선택하지 않았습니다.",
+        .uninstall_confirm = "설치된 스플래시를 정말로 제거할까요?",
+        .delete_confirm = "이것을 정말 삭제할까요?",
     },
     .remote =
     {
-        .no_results = "No results for this search.",
-        .check_wifi = "Couldn't download Theme Plaza data.\nMake sure WiFi is on.",
-        .new_page_big = "The new page has to be\nsmaller or equal to the\nnumber of pages!",
-        .new_page_zero = "The new position has to\nbe positive!",
-        .jump_page = "Which page do you want to jump to?",
-        .cancel = "Cancel",
-        .jump = "Jump",
-        .tags = "Which tags do you want to search for?",
-        .search = "Search",
-        .parental_fail = "Parental Control validation failed!\nBrowser Access restricted.",
-        .zip_not_found = "ZIP not found at this URL\nIf you believe this is an error, please\ncontact the site administrator",
-        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nIf you are seeing this, please contact an\nAnemone developer on the Theme Plaza Discord.",
-        .http303_tp = "HTTP 303 See Other (Theme Plaza)\nHas this theme been approved?",
-        .http303 = "HTTP 303 See Other\nDownload the resource directly\nor contact the site administrator.",
-        .http404 = "HTTP 404 Not Found\nHas this theme been approved?",
-        .http_err_url = "HTTP %s\nCheck that the URL is correct.",
-        .http_errcode_generic = "HTTP %s\nContact the site administrator.",
+        .no_results = "검색 결과 없음.",
+        .check_wifi = "ThemePlaza 데이터를 받을 수 없습니다.\nWiFi가 켜져 있는지 확인하세요.",
+        .new_page_big = "새 페이지 수는 총 페이지 수 이하여야 합니다!",
+        .new_page_zero = "새로운 페이지는 양수여야 합니다!",
+        .jump_page = "어느 페이지로 이동할까요?",
+        .cancel = "취소",
+        .jump = "이동",
+        .tags = "어떤 태그를 검색할까요?",
+        .search = "검색",
+        .parental_fail = "청소년 보호 기능 검증 실패!\n탐색기 이용이 제한됩니다.",
+        .zip_not_found = "URL에서 ZIP 파일을 찾을 수 없음\n이것이 오류인 것 같다면, \n사이트 관리자에게 연락하세요",
+        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\n이 에러가 표시될 경우, ThemePlaza 디스코드의\nAnemone 개발자에게 연락하세요.",
+        .http303_tp = "HTTP 303 See Other (Theme Plaza)\n테마가 승인되었나요?",
+        .http303 = "HTTP 303 See Other\n자료를 직접 받거나\n 사이트 관리자에게 연락하세요.",
+        .http404 = "HTTP 404 Not Found\n이 테마가 승인되었습니까?",
+        .http_err_url = "HTTP %s\nURL이 올바른지 확인하세요.",
+        .http_errcode_generic = "HTTP %s\n사이트 관리자에게 연락하세요.",
         .http401 = "401 Unauthorized",
         .http403 = "403 Forbidden",
         .http407 = "407 Proxy Authentication Required",
-        .http414 = "HTTP 414 URI Too Long\nThe QR code points to a really long URL.\nDownload the file directly.",
-        .http418 = "HTTP 418 I'm a teapot\nContact the site administrator.",
-        .http426 = "HTTP 426 Upgrade Required\nThe 3DS cannot connect to this server.\nContact the site administrator.",
-        .http451 = "HTTP 451 Unavailable for Legal Reasons\nSome entity is preventing access\nto the host server for legal reasons.",
-        .http500 = "HTTP 500 Internal Server Error\nContact the site administrator.",
-        .http502 = "HTTP 502 Bad Gateway\nContact the site administrator.",
-        .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
-        .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
-        .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .http414 = "HTTP 414 URI Too Long\nQR 코드의 URL이 너무 깁니다.\n파일을 직접 받으세요.",
+        .http418 = "HTTP 418 I'm a teapot\n사이트 관리자에게 연락하세요.",
+        .http426 = "HTTP 426 Upgrade Required\n3DS가 해당 서버에 연결할 수 없습니다.\n사이트 관리자에게 연락하세요.",
+        .http451 = "HTTP 451 Unavailable for Legal Reasons\n법적인 이유로 특정 엔티티가\n호스트 서버로의 연결을 막고 있습니다.",
+        .http500 = "HTTP 500 Internal Server Error\n사이트 관리자에게 연락하세요.",
+        .http502 = "HTTP 502 Bad Gateway\n사이트 관리자에게 연락하세요.",
+        .http503 = "HTTP 503 Service Unavailable\n사이트 관리자에게 연락하세요.",
+        .http504 = "HTTP 504 Gateway Timeout\n사이트 관리자에게 연락하세요.",
+        .http_unexpected = "HTTP %u\n이것이 예상치 못한 일이라 생각하면,\n사이트 관리자에게 연락하세요.",
     },
     .remote_instructions =
     {
@@ -1915,19 +1915,19 @@ const Language_s language_korean = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Download theme",
-                    "\uE001 Go back"
+                    "\uE000 테마 다운로드",
+                    "\uE001 뒤로"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview theme"
+                    "\uE002 더 보기",
+                    "\uE003 테마 미리보기"
                 },
                 {
-                    "\uE004 Previous page",
-                    "\uE005 Next page"
+                    "\uE004 이전 페이지",
+                    "\uE005 다음 페이지"
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
@@ -1936,19 +1936,19 @@ const Language_s language_korean = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Download splash",
-                    "\uE001 Go back"
+                    "\uE000 스플래시 다운로드",
+                    "\uE001 뒤로"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview splash"
+                    "\uE002 더 보기",
+                    "\uE003 스플래시 미리보기"
                 },
                 {
-                    "\uE004 Previous page",
-                    "\uE005 Next page"
+                    "\uE004 이전 페이지",
+                    "\uE005 다음 페이지"
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
@@ -1957,19 +1957,19 @@ const Language_s language_korean = {
             .info_line = NULL,
             .instructions = {
                 {
-                    "\uE000 Download badges",
-                    "\uE001 Go back"
+                    "\uE000 배지 다운로드",
+                    "\uE001 뒤로"
                 },
                 {
-                    "\uE002 More options",
-                    "\uE003 Preview badges"
+                    "\uE002 더 보기",
+                    "\uE003 배지 미리보기"
                 },
                 {
-                    "\uE004 Previous page",
-                    "\uE005 Next page"
+                    "\uE004 이전 페이지",
+                    "\uE005 다음 페이지"
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
@@ -1978,64 +1978,64 @@ const Language_s language_korean = {
     .remote_extra_instructions =
     {
         {
-            .info_line = "\uE001 Leave extra menu",
+            .info_line = "\uE001 추가 메뉴 나가기",
             .instructions = {
                 {
-                    "\uE079 Jump to page",
-                    "\uE07A Search tags"
+                    "\uE079 페이지로 이동",
+                    "\uE07A 태그 검색"
                 },
                 {
                     NULL,
-                    "\uE07C Reload w/o cache"
+                    "\uE07C w/o 캐시 다시 로드"
                 },
                 {
-                    "\uE004 Go to Badges",
-                    "\uE005 Go to Splashes"
+                    "\uE004 배지로 가기",
+                    "\uE005 스플래시로 가기"
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
         },
         {
-            .info_line = "\uE001 Leave extra menu",
+            .info_line = "\uE001 추가 메뉴 나가기",
             .instructions = {
                 {
-                    "\uE079 Jump to page",
-                    "\uE07A Search tags"
+                    "\uE079 페이지로 이동",
+                    "\uE07A 태그 검색"
                 },
                 {
                     NULL,
-                    "\uE07C Reload w/o cache"
+                    "\uE07C w/o 캐시 다시 로드"
                 },
                 {
-                    "\uE004 Go to Themes",
-                    "\uE005 Go to Badges"
+                    "\uE004 테마로 가기",
+                    "\uE005 배지로 가기"
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
         },
         {
-            .info_line = "\uE001 Leave extra menu",
+            .info_line = "\uE001 추가 메뉴 나가기",
             .instructions = {
                 {
-                    "\uE079 Jump to page",
-                    "\uE07A Search tags"
+                    "\uE079 페이지로 이동",
+                    "\uE07A 태그 검색"
                 },
                 {
                     NULL,
-                    "\uE07C Reload w/o cache"
+                    "\uE07C w/o 캐시 다시 로드"
                 },
                 {
-                    "\uE004 Go to Splashes",
-                    "\uE005 Go to Themes"
+                    "\uE004 스플래시로 가기",
+                    "\uE005 테마로 가기"
                 },
                 {
-                    "Exit",
+                    "나가기",
                     NULL
                 }
             }
@@ -2043,21 +2043,21 @@ const Language_s language_korean = {
     },
     .splashes =
     {
-        .no_splash_found = "No splash.bin or splashbottom.bin found.\nIs this a splash?",
-        .splash_disabled = "WARNING: Splashes are disabled in Luma Config",
+        .no_splash_found = "splash.bin 또는 splashbottom.bin 찾을 수 없음\n스플래시가 맞나요?",
+        .splash_disabled = "경고: 루마 설정에서 스플래시가 비활성화되어 있습니다",
     },
     .themes =
     {
-        .no_body_found = "No body_LZ.bin found - is this a theme?",
-        .mono_warn = "One or more installed themes\nuse mono audio.\nMono audio causes a number of issues.\nCheck the wiki for more information.",
-        .illegal_char = "Illegal character used.",
-        .name_folder = "Name of output folder",
-        .cancel = "Cancel",
-        .done = "Done"
+        .no_body_found = "body_LZ.bin 찾을 수 없음 - 테마가 맞나요?",
+        .mono_warn = "하나 이상의 설치된 테마가\n모노 오디오를 사용합니다.\n모노 오디오는 여러 문제를 유발합니다.\n위키에서 더 많은 정보를 확인하세요.",
+        .illegal_char = "사용 불가 문자 사용됨.",
+        .name_folder = "출력 폴더의 이름을 정하세요",
+        .cancel = "취소",
+        .done = "결정"
     },
     .badges = 
     {
-        .extdata_locked = "Ext Data Locked\nTry pressing the Home Button\nand then returning to Anemone3DS,\nor using the CIA version instead.\nDebug: 0x%08lx"
+        .extdata_locked = "추가 데이터 잠김\nHOME 버튼을 누르고\nAnemone3DS를 다시 실행해 보세요,\n또는 CIA 버전을 대신 사용해보세요.\nDebug: 0x%08lx"
     }
 };
 
