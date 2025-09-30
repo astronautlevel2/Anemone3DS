@@ -193,4 +193,8 @@ typedef enum {
 Language_s init_strings(CFG_Language lang);
 extern Language_s language;
 
+// fetches the system language through CFGU_GetSystemLanguage
+// and returns the appropriate CFG_Language enum value
+CFG_Language get_system_language(void);
+
 #endif

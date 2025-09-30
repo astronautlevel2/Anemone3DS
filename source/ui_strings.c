@@ -2086,3 +2086,12 @@ Language_s init_strings(CFG_Language lang)
             return language_english;
     }
 }
+
+CFG_Language get_system_language(void)
+{
+    u8 lang = CFG_LANGUAGE_EN;
+    // can never fail, cfguInit is one of the very first thing that happens on start
+    // and if it does anyway, default to english
+    CFGU_GetSystemLanguage(&lang);
+    return (CFG_Language)lang;
+}

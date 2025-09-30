@@ -32,7 +32,6 @@
 #include "draw.h"
 #include "ui_strings.h"
 
-static Handle actHandle;
 Handle badgeDataHandle;
 char *badgeMngBuffer;
 u16 *rgb_buf_64x64;
@@ -41,51 +40,6 @@ u8 *alpha_buf_64x64;
 u8 *alpha_buf_32x32;
 u64 progress_finish;
 u64 progress_status;
-
-Result actInit(void)
-{
-    return srvGetServiceHandle(&actHandle, "act:u");
-}
-
-Result actExit(void)
-{
-    return svcCloseHandle(actHandle);
-}
-
-Result ACTU_Initialize(u32 sdkVersion, u32 memSize, Handle handle)
-{
-    Result ret = 0;
-    u32 *cmdbuf = getThreadCommandBuffer();
-
-    cmdbuf[0] = 0x00010084;
-    cmdbuf[1] = sdkVersion;
-    cmdbuf[2] = memSize;
-    cmdbuf[3] = 0x20;
-    cmdbuf[4] = 0x0;
-    cmdbuf[5] = 0x0;
-    cmdbuf[6] = handle;
-
-    if ((ret = svcSendSyncRequest(actHandle)) != 0) return ret;
-
-    return (Result) cmdbuf[1];
-}
-
-Result ACTU_GetAccountDataBlock(u32 slot, u32 size, u32 blockId, u32 *output)
-{
-    Result ret = 0;
-    u32 *cmdbuf = getThreadCommandBuffer();
-    cmdbuf[0] = 0x000600C2;
-    cmdbuf[1] = slot;
-    cmdbuf[2] = size;
-    cmdbuf[3] = blockId;
-    cmdbuf[4] = (size << 4) | 12;
-    cmdbuf[5] = (u32) output;
-
-    if ((ret = svcSendSyncRequest(actHandle)) != 0) return ret;
-
-    return (Result) cmdbuf[1];
-}
-
 
 void remove_exten(u16 *filename)
 {
@@ -575,27 +529,27 @@ Result install_badges(void)
     if (handle) FSFILE_Close(handle);
 
     DEBUG("Initializing ACT\n");
-    res = actInit();
+    res = actInit(true);
     if (R_FAILED(res))
     {
         DEBUG("actInit() failed!\n");
         return res;
     }
 
-    DEBUG("Initializing ACTU\n");
-    res = ACTU_Initialize(0xB0502C8, 0, 0);
+    DEBUG("Initializing ACT\n");
+    res = ACT_Initialize(0xB0502C8, 0, 0);
     if (R_FAILED(res))
     {
-        DEBUG("ACTU_Initialize failed! %08lx\n", res);
+        DEBUG("ACT_Initialize failed! %08lx\n", res);
         return res;
     }
 
     DEBUG("Getting NNID\n");
     u32 nnidNum = 0xFFFFFFFF;
-    res = ACTU_GetAccountDataBlock(0xFE, 4, 12, &nnidNum);
+    res = ACT_GetAccountInfo(&nnidNum, sizeof(nnidNum), ACT_DEFAULT_ACCOUNT, INFO_TYPE_PRINCIPAL_ID);
     if (R_FAILED(res))
     {
-        DEBUG("ACTU_GetAccountDataBlock failed! %08lx\n", res);
+        DEBUG("ACT_GetAccountInfo failed! %08lx\n", res);
         return res;
     }
     DEBUG("NNID found: 0x%08lx\n", nnidNum);
