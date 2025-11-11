@@ -1214,6 +1214,7 @@ redirect: // goto here if we need to redirect
         default:
             snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.generic_httpc_error, _header.result_code);
             quit = true;
+            break;
         }
         throw_error(err_buf, ERROR_LEVEL_ERROR);
         httpcCloseContext(&context);
