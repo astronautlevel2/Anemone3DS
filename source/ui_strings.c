@@ -893,7 +893,7 @@ const Language_s language_french = {
         .instructions = {
             {
                 "\uE079 Thème sélectionné",
-                "\uE07A Thèmes aléatoire"
+                "\uE07A Thèmes aléatoires"
             },
             {
                 "\uE07B Musique du thème",
@@ -978,12 +978,12 @@ const Language_s language_french = {
     },
     .camera = 
     {
-        .quit = "Appuyez sur \uE005 Pour quitter",
+        .quit = "Appuyez sur \uE005 pour quitter",
         .thread_error = "Capture cam thread creation failed\nVeuillez signaler ceci aux développeurs",
         .zip_not_theme_splash = "Le fichier zip téléchargé n'est\nni un thème, ni un splash",
         .file_not_zip = "Le fichier téléchargé n'est pas un zip.",
         .download_failed = "Le téléchargement a échoué.",
-        .badge_question = "Un thème ou un splash n'a pas été detecté.\nEsc-ce un badge?",
+        .badge_question = "Un thème ou un splash n'a pas été detecté.\nEst-ce un badge\u202F?",
     },
     .draw = 
     {
@@ -997,23 +997,23 @@ const Language_s language_french = {
         .quit = "Ou        pour quitter",
         .start_pos = 142, // Adjust x pos of start glyph to line up with quit string
         .by = "Par ",
-        .selected = "Sélectionné:",
-        .sel = "Sél.:",
+        .selected = "Sélectionné\u00A0:",
+        .sel = "Sél.\u00A0:",
         .tp_theme_mode = "Thèmes sur ThemePlaza",
         .tp_splash_mode = "Splashs sur ThemePlaza",
         .tp_badge_mode = "Badges sur ThemePlaza",
         .search = "Rechercher...",
-        .page = "Page:",
+        .page = "Page\u00A0:",
         .err_quit = "Appuyez sur \uE000 pour quitter.",
         .warn_continue = "Appuyez sur \uE000 pour continuer.",
         .yes_no = "\uE000 Oui   \uE001 Non",
         .load_themes = "Chargement des thèmes,\nveuillez patienter...",
         .load_splash = "Chargement des splashs,\nveuillez patienter...",
         .load_icons = "Chargement des icônes,\nveuillez patienter...",
-        .install_splash = "Installation su splash...",
+        .install_splash = "Installation du splash...",
         .delete_splash = "Effacement du splash installé...",
         .install_theme = "Installation du thème...",
-        .install_shuffle = "Installation de thèmes aléatoire...",
+        .install_shuffle = "Installation de thèmes aléatoires...",
         .install_bgm = "Installation de la musique du thème...",
         .install_no_bgm = "Installation du thème sans la musique...",
         .downloading = "Téléchargement...",
@@ -1028,18 +1028,18 @@ const Language_s language_french = {
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
         .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
-        .shuffle = "Aléatoire: %i/10",
+        .shuffle = "Aléatoire\u00A0: %i/10",
     },
     .fs =
     {
-        .illegal_input = "Le texte ne doit pas contenir:\n" ILLEGAL_CHARS,
+        .illegal_input = "Le texte ne doit pas contenir\u00A0:\n" ILLEGAL_CHARS,
         .new_or_overwrite = "Choisissez un nouveau nom ou sélectionnez Écraser",
         .cancel = "Annuler",
         .overwrite = "Écraser",
         .rename = "Renommer",
         .swkbd_fail = "???\nTry a USB keyboard", // Should never be used
-        .sd_full = "La carte SD est pleine.\nEffaçez du contenu pour faire de la place",
-        .fs_error = "Erreur:\nPrenez une nouvelle carte SD.",
+        .sd_full = "La carte SD est pleine.\nEffaçez du contenu pour faire de la place.",
+        .fs_error = "Erreur\u00A0:\nPrenez une nouvelle carte SD.",
     },
     .loading =
     {
@@ -1047,38 +1047,38 @@ const Language_s language_french = {
     },
     .main =
     {
-        .position_too_big = "La nouvelle position doit\nêtre + petite ou égale au\nnombre d'entrées!",
-        .position_zero = "La nouvelle position\ndoit être positive!",
-        .jump_q = "Où voulez vous aller?\nCela actualisera les icônes.",
+        .position_too_big = "La nouvelle position doit\nêtre + petite ou égale au\nnombre d'entrées\u202F!",
+        .position_zero = "La nouvelle position\ndoit être positive\u202F!",
+        .jump_q = "Où voulez-vous aller\u202F?\nCela actualisera les icônes.",
         .cancel = "Annuler",
         .jump = "OK",
-        .no_theme_extdata = "Les données additionnelles des thèmes\nn'existe pas! Changez de thème\ndepuis le menu home puis réessayez.",
+        .no_theme_extdata = "Les données additionnelles des thèmes\nn'existe pas\u202F! Changez de thème\ndepuis le menu HOME puis réessayez.",
         .loading_qr = "Chargement du scanneur de QR code...",
         .no_wifi = "Connectez vous à Internet\navant de scanner des QR codes.",
         .qr_homebrew = "La fonctionnalité de scanner des QR codes ne\nfonctionne pas depuis l'Homebrew Launcher,\nutilisez ThemePlaza à la place.",
         .camera_broke = "La caméra semble avoir un problème,\nimpossible de scanner de QR codes.",
         .too_many_themes = "Il y a trop de thèmes sélectionnés.",
         .not_enough_themes = "Il n'y a pas assez de thèmes sélectionnés.",
-        .uninstall_confirm = "Voulez-vous supprimer le splash\nactuellement installé?",
-        .delete_confirm = "Voulez-vous supprimer ceci?",
+        .uninstall_confirm = "Voulez-vous supprimer le splash\nactuellement installé\u202F?",
+        .delete_confirm = "Voulez-vous supprimer ceci\u202F?",
     },
     .remote =
     {
         .no_results = "Aucun résultat trouvé.",
         .check_wifi = "Impossible de télécharger les données\nde ThemePlaza. Vérifiez que vous soyez\nconnecté à Internet.",
-        .new_page_big = "La nouvelle page doit\nêtre + petite ou égale au\nnombre de pages!",
-        .new_page_zero = "La nouvelle position\ndoit être positive!",
+        .new_page_big = "La nouvelle page doit\nêtre + petite ou égale au\nnombre de pages\u202F!",
+        .new_page_zero = "La nouvelle position\ndoit être positive\u202F!",
         .jump_page = "Entrez la page sur laquelle aller",
         .cancel = "Annuler",
         .jump = "OK",
-        .tags = "Quels tags voulez-vous rechercher?",
+        .tags = "Quels tags voulez-vous rechercher\u202F?",
         .search = "Rechercher",
         .parental_fail = "Échec de la verification du contrôle parental.\nL'accès au site est restreint.",
         .zip_not_found = "Le ZIP n'a pas été trouvé sur cette URL.\nSi vous pensez que c'est une erreur,\ncontactez l'administrateur du site.",
         .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nSi vous voyez ceci, merci de contacter\nun développeur d'Anemone sur le serveur\nDiscord de ThemePlaza.",
-        .http303_tp = "HTTP 303 See Other (Theme Plaza)\nLe thème est-il approuvé?",
+        .http303_tp = "HTTP 303 See Other (Theme Plaza)\nLe thème est-il approuvé\u202F?",
         .http303 = "HTTP 303 See Other\nTéléchargez la ressource directement\nou contactez l'administrateur du site.",
-        .http404 = "HTTP 404 Not Found\nLe thème est-il approuvé?",
+        .http404 = "HTTP 404 Not Found\nLe thème est-il approuvé\u202F?",
         .http_err_url = "HTTP %s\nVérifiez que l'URL est correcte.",
         .http_errcode_generic = "HTTP %s\nContactez l'administrateur du site.",
         .http401 = "401 Unauthorized'",
@@ -1228,13 +1228,13 @@ const Language_s language_french = {
     },
     .splashes =
     {
-        .no_splash_found = "Aucun splash.bin ou splashbottom.bin trouvé.\nEst-ce un splash?",
-        .splash_disabled = "ATTENTION: Les Splashs sont désactivés\ndans la configuration de Luma",
+        .no_splash_found = "Aucun splash.bin ou splashbottom.bin trouvé.\nEst-ce un splash\u202F?",
+        .splash_disabled = "ATTENTION\u00A0: Les Splashs sont désactivés\ndans la configuration de Luma",
     },
     .themes =
     {
-        .no_body_found = "Aucun body_LZ.bin trouvé.\nEst-ce un theme?",
-        .mono_warn = "Un ou plusieurs thèmes installé\nutilise de l'audio mono.\nCeci peut causer des problèmes.\nRegardez le wiki pour plus d'information.",
+        .no_body_found = "Aucun body_LZ.bin trouvé.\nEst-ce un thème\u202F?",
+        .mono_warn = "Un ou plusieurs thème(s) installé(es)\nutilise(nt) de l'audio mono.\nCeci peut causer des problèmes.\nRegardez le wiki pour plus d'information.",
         .illegal_char = "Caractère interdit utilisé.",
         .name_folder = "Nom du dossier de destination",
         .cancel = "Annuler",
