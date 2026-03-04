@@ -2076,6 +2076,412 @@ const Language_s language_korean = {
     }
 };
 
+const Language_s language_german = {
+    .normal_instructions = 
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Design(s) installieren",
+                    "\uE001 In die Zufallsliste"
+                },
+                {
+                    "\uE002 Weiteres...",
+                    "\uE003 Designvorschau"
+                },
+                {
+                    "\uE004 Zu den Startbildern",
+                    "\uE005 QR-Code scannen"
+                },
+                {
+                    "Beenden",
+                    "Von SD-Karte löschen"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Startbild installieren",
+                    "\uE001 Inst. Startbild löschen"
+                },
+                {
+                    "\uE002 Weiteres...",
+                    "\uE003 Startbildschirmvorschau"
+                },
+                {
+                    "\uE004 Zu den Designs",
+                    "\uE005 QR-Code scannen"
+                },
+                {
+                    "Beenden",
+                    "Von SD-Karte löschen"
+                }
+            }
+        }
+    },
+
+    .install_instructions =
+    {
+        .info_line = "\uE001 Designinstallation abbrechen",
+        .instructions = {
+            {
+                "\uE079 Normal installieren",
+                "\uE07A Zufallsliste installieren"
+            },
+            {
+                "\uE07B Nur Musik installieren",
+                "\uE07C Ohne Musik installieren"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Beenden",
+                NULL
+            }
+        }
+    },
+
+    .extra_instructions = 
+    {
+        {
+            .info_line = "\uE001 ...zurück zu Weiteres",
+            .instructions = {
+                {
+                    "\uE079 Nach Name sortieren",
+                    "\uE07A Nach Autor sortieren"
+                },
+                {
+                    "\uE07B Nach Dateiname sortie",
+                    " ren"
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 ...zurück zum Hauptmenü",
+            .instructions = {
+                {
+                    "\uE079 Zu Eintrag springen",
+                    "\uE07A Def. Symbole neu laden"
+                },
+                {
+                    "\uE07B ThemePlaza browsen",
+                    "\uE07C Marken installieren"
+                },
+                {
+                    "\uE004 Sortieren...",
+                    "\uE005 Dumpen..."
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 ...zurück zu Weiteres",
+            .instructions = {
+                {
+                    "\uE079 Inst. Design dumpen",
+                    "\uE07A Alle Designs dumpen"
+                },
+                {
+                    "\uE07B Marken dumpen",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        }
+    },
+    .camera = 
+    {
+        .quit = "Drücke \uE005 um zu beenden",
+        .thread_error = "Capture cam thread creation failed\nBitte melde das den Entwicklern",
+        .zip_not_theme_splash = "Heruntergeladedne ZIP ist weder\nStartbildschirm noch Design",
+        .file_not_zip = "Heruntergeladene Datei ist keine ZIP.",
+        .download_failed = "Download fehlgeschlagen.",
+        .badge_question = "Design oder Startbildschirm nicht erkannt.\nIst das eine Marke?",
+    },
+    .draw = 
+    {
+        .theme_mode = "Design-Modus",
+        .splash_mode = "Startbildschirm-Modus",
+        .no_themes = "Kein Design gefunden",
+        .no_splashes = "Keinen Startbildschirm gefunden",
+        .qr_download = "Drücke \uE005 um per QR herunterzuladen",
+        .switch_splashes = "Oder \uE004 um zu den Startbildschirmen zu wechseln",
+        .switch_themes = "Oder \uE004 um zu den Designs zu wechseln",
+        .quit = "Oder        um zu beenden",
+        .start_pos = 135, // Adjust x pos of start glyph to line up with quit string
+        .by = "Von ",
+        .selected = "Gewählt:",
+        .sel = "Sel.:",
+        .tp_theme_mode = "ThemePlaza Design-Modus",
+        .tp_splash_mode = "ThemePlaza Startbildschirm-Modus",
+        .tp_badge_mode = "ThemePlaza Marken-Modus",
+        .search = "Suchen...",
+        .page = "Seite:",
+        .err_quit = "Drücke \uE000 um zu beenden.",
+        .warn_continue = "Drücke \uE000 um fortzufahren.",
+        .yes_no = "\uE000 Ja   \uE001 Nein",
+        .load_themes = "Lade Designs, bitte warten...",
+        .load_splash = "Lade Startbildschirme, bitte warten...",
+        .load_icons = "Lade Symbole, bitte warten...",
+        .install_splash = "Installiere Startbildschirm...",
+        .delete_splash = "Lösche installierten Startbildschirm...",
+        .install_theme = "Installiere ein einzelnes Design...",
+        .install_shuffle = "Installiere Zufallsdesigns...",
+        .install_bgm = "Installiere nur Hintergrundmusik eines Designs...",
+        .install_no_bgm = "Installiere Design ohne Hintergrundmusik...",
+        .downloading = "Lade herunter...",
+        .checking_dl = "Überprüfe heruntergeladene Datei...",
+        .delete_sd = "Lösche von SD-Karte...",
+        .download_themes = "Rufe Designs ab, bitte warten...",
+        .download_splashes = "Rufe Startbildschirme ab, bitte warten...",
+        .download_badges = "Rufe Marken ab, bitte warten...",
+        .download_preview = "Rufe Vorschau ab, bitte warten...",
+        .download_bgm = "Rufe Hintergrundmusik ab, bitte warten...",
+        .dump_single = "Dumpe Design, bitte warten...",
+        .dump_all_official = "Dumpe offizielle Designs, bitte warten...",
+        .dump_badges = "Dumpe installierte Marken, bitte warten...",
+        .install_badges = "Installiere Marken, bitte warten...",
+        .shuffle = "Zufällig: %i/10",
+    },
+    .fs =
+    {
+        .illegal_input = "Eingabe darf nicht enthalten:\n" ILLEGAL_CHARS,
+        .new_or_overwrite = "Gib einen neuen Namen an oder drücke Überschreiben",
+        .cancel = "Abbrechen",
+        .overwrite = "Überschreiben",
+        .rename = "Umbenennen",
+        .swkbd_fail = "???\nNimm eine USB-Tastatur", // Should never be used
+        .sd_full = "SD-Karte voll.\nLösch ein paar Designs um Platz zu machen.",
+        .fs_error = "Fehler:\nHol dir eine neue SD-Karte.",
+    },
+    .loading =
+    {
+        .no_preview = "Keine Vorschau gefunden.",
+    },
+    .main =
+    {
+        .position_too_big = "Die neue Position muss\nkleiner oder gleich der\nAnzahl an Einträgen sein!",
+        .position_zero = "Die neue Position muss\npositiv sein!",
+        .jump_q = "Wo möchtest du hin?\nKann zum Nachladen der Symbole führen.",
+        .cancel = "Abbrechen",
+        .jump = "Springen",
+        .no_theme_extdata = "Design extdata existiert nicht!\nWähle erst ein Design im HOME-Menü aus.",
+        .loading_qr = "Lade QR-Scanner...",
+        .no_wifi = "Bitte verbinde dich mit dem WLAN\nbevor du QR-Codes scannst",
+        .qr_homebrew = "Scannen von QR-Codes funktioniert\nüber den Homebrew Launcher nicht,\nnutze stattdessen den ThemePlaza-Browser.",
+        .camera_broke = "Deine Kamera scheint ein Problem zu haben,\nscannen von QR-Codes nicht möglich.",
+        .too_many_themes = "Du hast zu viele Designs ausgewählt.",
+        .not_enough_themes = "Du hast nicht genug Designs ausgewählt.",
+        .uninstall_confirm = "Möchtest du den installierten Startbildschirm\nwirklich löschen?",
+        .delete_confirm = "Möchtest du das wirklich löschen?",
+    },
+    .remote =
+    {
+        .no_results = "Die Suche war erfolglos.",
+        .check_wifi = "Keine Verbindung zu Theme Plaza.\nStelle sicher, dass WLAN an ist.",
+        .new_page_big = "Die neue Seite muss\nkleiner oder gleich der\nAnzahl an Seiten sein!",
+        .new_page_zero = "Die neue Seite muss\npositiv sein!",
+        .jump_page = "Zu welcher Seite möchtest du?",
+        .cancel = "Abbrechen",
+        .jump = "Springen",
+        .tags = "Nach welchen Tags möchtest du suchen?",
+        .search = "Suchen",
+        .parental_fail = "Überprüfung der Kindersicherung fehlgeschlagen!\nBrowserzugriff eingeschränkt.",
+        .zip_not_found = "ZIP unter dieser URL nicht gefunden\nWenn du glaubst, dass das ein Fehler ist,\nkontaktiere den Administrator der Seite",
+        .generic_httpc_error = "Error in HTTPC sysmodule - 0x%08lx.\nWenn du das siehst, melde es den\nAnemone-Entwicklern auf dem Theme Plaza Discord.",
+        .http303_tp = "HTTP 303 See Other (Theme Plaza)\nHas this theme been approved?",
+        .http303 = "HTTP 303 See Other\nLade die Datei direkt herunter\noder kontaktiere den Administrator der Seite.",
+        .http404 = "HTTP 404 Not Found\nWurde dieses Design bereits genehmigt?",
+        .http_err_url = "HTTP %s\nÜberprüfe, ob die URL stimmt.",
+        .http_errcode_generic = "HTTP %s\nKontaktiere den Administrator der Seite.",
+        .http401 = "401 Unauthorized",
+        .http403 = "403 Forbidden",
+        .http407 = "407 Proxy Authentication Required",
+        .http414 = "HTTP 414 URI Too Long\nDer QR-Code verweist auf eine sehr lange URL.\nLade die Datei direkt herunter.",
+        .http418 = "HTTP 418 I'm a teapot\nKontaktiere den Administrator der Seite.",
+        .http426 = "HTTP 426 Upgrade Required\nDer 3DS kann keine Verbindung\nzu diesem Server herstellen.\nKontaktiere den Administrator der Seite.",
+        .http451 = "HTTP 451 Unavailable for Legal Reasons\nJemand verhindert aus rechtlichen Gründen\nden Zugriff auf den Hostserver.",
+        .http500 = "HTTP 500 Internal Server Error\nContact the site administrator.",
+        .http502 = "HTTP 502 Bad Gateway\nKontaktiere den Administrator der Seite.",
+        .http503 = "HTTP 503 Service Unavailable\nKontaktiere den Administrator der Seite.",
+        .http504 = "HTTP 504 Gateway Timeout\nKontaktiere den Administrator der Seite.",
+        .http_unexpected = "HTTP %u\nWenn das für dich unerwartet ist, kontaktiere\nbitte den Administrator der Seite.",
+    },
+    .remote_instructions =
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Design herunterladen",
+                    "\uE001 Zurückgehen"
+                },
+                {
+                    "\uE002 Weiteres...",
+                    "\uE003 Designvorschau"
+                },
+                {
+                    "\uE004 Vorherige Seite",
+                    "\uE005 Nächste Seite"
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Startbild herunterl.",
+                    "\uE001 Zurückgehen"
+                },
+                {
+                    "\uE002 Weiteres...",
+                    "\uE003 Startbildschirmvorschau"
+                },
+                {
+                    "\uE004 Vorherige Seite",
+                    "\uE005 Nächste Seite"
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Marken herunterladen",
+                    "\uE001 Zurückgehen"
+                },
+                {
+                    "\uE002 Weiteres...",
+                    "\uE003 Markenvorschau"
+                },
+                {
+                    "\uE004 Vorherige Seite",
+                    "\uE005 Nächste Seite"
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        }
+    },
+    .remote_extra_instructions =
+    {
+        {
+            .info_line = "\uE001 ...zurück zum Hauptmenü",
+            .instructions = {
+                {
+                    "\uE079 Zu Seite springen",
+                    "\uE07A Nach Tags suchen"
+                },
+                {
+                    NULL,
+                    "\uE07C Ohne Cache neu laden"
+                },
+                {
+                    "\uE004 Zu den Marken",
+                    "\uE005 Zu den Startbildern"
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 ...zurück zum Hauptmenü",
+            .instructions = {
+                {
+                    "\uE079 Zu Seite springen",
+                    "\uE07A Nach Tags suchen"
+                },
+                {
+                    NULL,
+                    "\uE07C Ohne Cache neu laden"
+                },
+                {
+                    "\uE004 Zu den Designs",
+                    "\uE005 Zu den Marken"
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 ...zurück zum Hauptmenü",
+            .instructions = {
+                {
+                    "\uE079 Zu Seite springen",
+                    "\uE07A Nach Tags suchen"
+                },
+                {
+                    NULL,
+                    "\uE07C Ohne Cache neu laden"
+                },
+                {
+                    "\uE004 Zu den Startbildern",
+                    "\uE005 Zu den Designs"
+                },
+                {
+                    "Beenden",
+                    NULL
+                }
+            }
+        }
+    },
+    .splashes =
+    {
+        .no_splash_found = "Keine splash.bin oder splashbottom.bin gefunden.\nIst das ein Startbildschirm?",
+        .splash_disabled = "WARNUNG:\nStartbildschirme sind in der\nLuma-Konfigurationsdatei deaktiviert",
+    },
+    .themes =
+    {
+        .no_body_found = "Keine body_LZ.bin gefunden - ist das ein Design?",
+        .mono_warn = "Ein oder mehrere installierte\nDesigns nutzen Mono-Audio.\nMono-Audio verursacht eine Reihe von Problemen.\nWeitere Informationen findest du im Wiki.",
+        .illegal_char = "Unzulässiges Zeichen verwendet.",
+        .name_folder = "Name des Ausgabeordners",
+        .cancel = "Abbrechen",
+        .done = "Fertig"
+    },
+    .badges = 
+    {
+        .extdata_locked = "Ext Data Gesperrt\nVersuche, die HOME-Taste zu drücken\nund zu Anemone3DS zurückzukehren,\noder nutze stattdessen die CIA-Version.\nDebug: 0x%08lx"
+    }
+};
+
 Language_s init_strings(CFG_Language lang)
 {
     switch (lang)
@@ -2083,7 +2489,8 @@ Language_s init_strings(CFG_Language lang)
         //case CFG_LANGUAGE_JP:
         case CFG_LANGUAGE_FR:
             return language_french;
-        //case CFG_LANGUAGE_DE:
+        case CFG_LANGUAGE_DE:
+            return language_german;
         //case CFG_LANGUAGE_IT:
         case CFG_LANGUAGE_ES:
             return language_spanish;
