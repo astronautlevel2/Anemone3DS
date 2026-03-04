@@ -2076,6 +2076,418 @@ const Language_s language_korean = {
     }
 };
 
+const Language_s language_italian = {
+    .normal_instructions = 
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Scarica un Tema(dei temi)",
+                    "\uE001 Metti in coda un tema csuale"
+                },
+                {
+                    "\uE002 Piu' opzionii",
+                    "\uE003 Anteprima del tema"
+                },
+                {
+                    "\uE004 Cambia in splashes",
+                    "\uE005 Scansiona un QR Code"
+                },
+                {
+                    "Esci",
+                    "Elimina dalla SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Scarica lo splash",
+                    "\uE001 Elimina lo splash scaricato"
+                },
+                {
+                    "\uE002 Piu' opzioni",
+                    "\uE003 Anteprima dello splash"
+                },
+                {
+                    "\uE004 Cambia in Temi",
+                    "\uE005 Scansiona un QR Code"
+                },
+                {
+                    "Esci",
+                    "Elimina dalla SD"
+                }
+            }
+        }
+    },
+
+    .install_instructions =
+    {
+        .info_line = "\uE001 Cancella l'installazione del tema",
+        .instructions = {
+            {
+                "\uE079 Installazione normale",
+                "\uE07A Installazione casuale"
+            },
+            {
+                "\uE07B Installazione Solo-BGM",
+                "\uE07C Installazione No-BGM"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Esci",
+                NULL
+            }
+        }
+    },
+
+    .extra_instructions = 
+    {
+        {
+            .info_line = "\uE001 Lascia il menu di ordinamento",
+            .instructions = {
+                {
+                    "\uE079 Ordina per nome",
+                    "\uE07A Ordina per autore"
+                },
+                {
+                    "\uE07B Ordina per nome del fiie",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Lascia il menu extra",
+            .instructions = {
+                {
+                    "\uE079 Vai nella lista,"
+                    "\uE07A Ricarica icone rotte"
+                },
+                {
+                    "\uE07B Mostra ThemePlaza",
+                    "\uE07C Scarica Stemmi"
+                },
+                {
+                    "\uE004 Menu ordinamento",
+                    "\uE005 Menu di dump"
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Lascia il menu di dump",
+            .instructions = {
+                {
+                    "\uE079 Fai il dump del tema corrente",
+                    "\uE07A Fai il dump di tutti i temi"
+                },
+                {
+                    "\uE07B Fai il dumpo degli stemmi",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        }
+    },
+    .camera = 
+    {
+        .quit = "Premi \uE005 Per Abbandonare",
+        .thread_error = "Creazione del thread della cam di cattura fallita\nSi prega di segnalare questo agli sviluppatori",
+        .zip_not_theme_splash = "Il file zip scaricato non è né\nuno splash né un tema",
+        .file_not_zip = "Il file scaricato non è uno zip.",
+        .download_failed = "Download fallito.",
+        .badge_question = "Tema o splash non rilevato.\nÈ uno stemma?",
+
+    },
+    .draw = 
+    {
+        .theme_mode = "Modalità tema",
+        .splash_mode = "Modalità splash",
+        .no_themes = "Nessun tema trovato",
+        .no_splashes = "Nessuno splash trovato",
+        .qr_download = "Premi \uE005 per scaricare da QR",
+        .switch_splashes = "Oppure \uE004 per passare agli splash",
+        .switch_themes = "Oppure \uE004 per passare ai temi",
+        .quit = "Oppure        per uscire",
+        .start_pos = 162, // Regola la posizione x del glifo di inizio per allinearlo con la stringa di uscita
+        .by = "Di ",
+        .selected = "Selezionato:",
+        .sel = "Sel.:",
+        .tp_theme_mode = "Modalità tema ThemePlaza",
+        .tp_splash_mode = "Modalità splash ThemePlaza",
+        .tp_badge_mode = "Modalità stemmi ThemePlaza",
+        .search = "Cerca...",
+        .page = "Pagina:",
+        .err_quit = "Premi \uE000 per uscire.",
+        .warn_continue = "Premi \uE000 per continuare.",
+        .yes_no = "\uE000 Sì   \uE001 No",
+        .load_themes = "Caricamento temi, attendere prego...",
+        .load_splash = "Caricamento splash, attendere prego...",
+        .load_icons = "Caricamento icone, attendere prego...",
+        .install_splash = "Installazione di uno splash...",
+        .delete_splash = "Eliminazione dello splash installato...",
+        .install_theme = "Installazione di un singolo tema...",
+        .install_shuffle = "Installazione di temi casuali...",
+        .install_bgm = "Installazione di un tema solo BGM...",
+        .install_no_bgm = "Installazione di un tema senza BGM...",
+        .downloading = "Download in corso...",
+        .checking_dl = "Verifica del file scaricato...",
+        .delete_sd = "Eliminazione dalla SD...",
+        .download_themes = "Download della lista dei temi, attendere prego...",
+        .download_splashes = "Download della lista degli splash, attendere prego...",
+        .download_badges = "Download della lista degli stemmi, attendere prego...",
+        .download_preview = "Download dell'anteprima, attendere prego...",
+        .download_bgm = "Download del BGM, attendere prego...",
+        .dump_single = "Dumping del tema, attendere prego...",
+        .dump_all_official = "Dumping dei temi ufficiali, attendere prego...",
+        .dump_badges = "Dumping degli stemmi installati, attendere prego...",
+        .install_badges = "Installazione degli stemmi, attendere prego...",
+        .shuffle = "Casuale: %i/10",
+
+    },
+    .fs =
+    {
+        .illegal_input = "L'input non deve contenere:\n" ILLEGAL_CHARS,
+        .new_or_overwrite = "Scegli un nuovo nome file o tocca Sovrascrivi",
+        .cancel = "Annulla",
+        .overwrite = "Sovrascrivi",
+        .rename = "Rinomina",
+        .swkbd_fail = "???\nProva una tastiera USB", // Non dovrebbe mai essere usato
+        .sd_full = "La scheda SD è piena.\nElimina alcuni temi per fare spazio.",
+        .fs_error = "Errore:\nOttieni una nuova scheda SD.",
+    },
+    .loading =
+    {
+        .no_preview = "Nessun anteprima trovata.",
+    },
+    .main =
+    {
+        .position_too_big = "La nuova posizione deve essere\nminore o uguale al\nnumero di voci!",
+        .position_zero = "La nuova posizione deve\nessere positiva!",
+        .jump_q = "Dove vuoi spostarti?\nPotrebbe causare il ricaricamento delle icone.",
+        .cancel = "Annulla",
+        .jump = "Salta",
+        .no_theme_extdata = "I dati estesi del tema non esistono!\nImposta un tema predefinito dal menu principale.",
+        .loading_qr = "Caricamento del QR Scanner...",
+        .no_wifi = "Connettiti al Wi-Fi prima di scansionare i codici QR",
+        .qr_homebrew = "La scansione dei QR non funziona dal Homebrew\nLauncher, usa invece il browser ThemePlaza.",
+        .camera_broke = "Sembra che la tua fotocamera abbia un problema,\nimpossibile scansionare i codici QR.",
+        .too_many_themes = "Hai selezionato troppi temi.",
+        .not_enough_themes = "Non hai selezionato abbastanza temi.",
+        .uninstall_confirm = "Sei sicuro di voler eliminare\nlo splash installato?",
+        .delete_confirm = "Sei sicuro di voler eliminare questo?",
+    },
+    .remote =
+    {
+        .no_results = "Nessun risultato per questa ricerca.",
+        .check_wifi = "Impossibile scaricare i dati di Theme Plaza.\nAssicurati che il WiFi sia attivo.",
+        .new_page_big = "La nuova pagina deve essere\nminore o uguale al\nnumero di pagine!",
+        .new_page_zero = "La nuova posizione deve\nessere positiva!",
+        .jump_page = "A quale pagina vuoi saltare?",
+        .cancel = "Annulla",
+        .jump = "Vai a",
+        .tags = "Quali tag vuoi cercare?",
+        .search = "Cerca",
+        .parental_fail = "Validazione del Controllo Genitori fallita!\nAccesso al browser limitato.",
+        .zip_not_found = "ZIP non trovato a questo URL\nSe credi che sia un errore, per favore\ncontatta l'amministratore del sito",
+        .generic_httpc_error = "Errore nel modulo sys HTTPC - 0x%08lx.\nSe vedi questo, per favore contatta un\nsviluppatore Anemone su Theme Plaza Discord.",
+        .http303_tp = "HTTP 303 Vedi Altro (Theme Plaza)\nQuesto tema è stato approvato?",
+        .http303 = "HTTP 303 Vedi Altro\nScarica la risorsa direttamente\no contatta l'amministratore del sito.",
+        .http404 = "HTTP 404 Non Trovato\nQuesto tema è stato approvato?",
+        .http_err_url = "HTTP %s\nControlla che l'URL sia corretto.",
+        .http_errcode_generic = "HTTP %s\nContatta l'amministratore del sito.",
+        .http401 = "401 Non Autorizzato",
+        .http403 = "403 Vietato",
+        .http407 = "407 Autenticazione Proxy Richiesta",
+        .http414 = "HTTP 414 URL Troppo Lungo\nIl codice QR punta a un URL molto lungo.\nScarica il file direttamente.",
+        .http418 = "HTTP 418 Sono una teiera\nContatta l'amministratore del sito.",
+        .http426 = "HTTP 426 Aggiornamento Richiesto\nIl 3DS non può connettersi a questo server.\nContatta l'amministratore del sito.",
+        .http451 = "HTTP 451 Non Disponibile per Motivi Legali\nQualcuno sta impedendo l'accesso\nal server host per motivi legali.",
+        .http500 = "HTTP 500 Errore Interno del Server\nContatta l'amministratore del sito.",
+        .http502 = "HTTP 502 Bad Gateway\nContatta l'amministratore del sito.",
+        .http503 = "HTTP 503 Servizio Non Disponibile\nContatta l'amministratore del sito.",
+        .http504 = "HTTP 504 Timeout del Gateway\nContatta l'amministratore del sito.",
+        .http_unexpected = "HTTP %u\nSe credi che questo sia inaspettato, per favore\ncontatta l'amministratore del sito.",
+
+    },
+    .remote_instructions =
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Scarica Tema",
+                    "\uE001 Torna indietro"
+                },
+                {
+                    "\uE002 Più opzioni",
+                    "\uE003 Anteprima del tema"
+                },
+                {
+                    "\uE004 Pagina precedente",
+                    "\uE005 Pagina successiva"
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Scarica splash",
+                    "\uE001 Torna indietro"
+                },
+                {
+                    "\uE002 Più opzioni",
+                    "\uE003 Anteprima splash"
+                },
+                {
+                    "\uE004 Pagina precedente",
+                    "\uE005 Pagina successiva"
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Scarica stemmi",
+                    "\uE001 Torna indietro"
+                },
+                {
+                    "\uE002 Più opzioni",
+                    "\uE003 Anteprima stemmi"
+                },
+                {
+                    "\uE004 Pagina precedente",
+                    "\uE005 Pagina successiva"
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        }
+    },
+    .remote_extra_instructions =
+    {
+        {
+            .info_line = "\uE001 Lascia il menu extra",
+            .instructions = {
+                {
+                    "\uE079 Vai alla pagina",
+                    "\uE07A Cerca tag"
+                },
+                {
+                    NULL,
+                    "\uE07C Ricarica senza la cache"
+                },
+                {
+                    "\uE004 Cambia a Stemmi",
+                    "\uE005 Cambia a Splashes"
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Lascia il menu extra",
+            .instructions = {
+                {
+                    "\uE079 Vai alla pagina",
+                    "\uE07A Cerca tag"
+                },
+                {
+                    NULL,
+                    "\uE07C Ricarica senza la cache"
+                },
+                {
+                    "\uE004 Cambia a Temi",
+                    "\uE005 Cambia a Stemmi"
+                },
+                {
+                    "Escii",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Lascia il menu extra",
+            .instructions = {
+                {
+                    "\uE079 Vai alla pagina",
+                    "\uE07A Cerca tag"
+                },
+                {
+                    NULL,
+                    "\uE07C Ricarica senza la cache"
+                },
+                {
+                    "\uE004 Cambia a Splashes",
+                    "\uE005 Cambia a Temi"
+                },
+                {
+                    "Esci",
+                    NULL
+                }
+            }
+        }
+    },
+    .splashes =
+    {
+        .no_splash_found = "Nessun splash.bin o splashbottom.bin trovato.\nÈ uno splash?",
+        .splash_disabled = "ATTENZIONE: Gli splash sono disabilitati nella Configurazione di Luma",
+
+    },
+    .themes =
+    {
+        .no_body_found = "Nessun body_LZ.bin trovato - è un tema?",
+        .mono_warn = "Uno o più temi installati usano audio mono.\nL'audio mono causa diversi problemi.\nControlla il wiki per maggiori informazioni.",
+        .illegal_char = "Carattere illegale usato.",
+        .name_folder = "Nome della cartella di output",
+        .cancel = "Annulla",
+        .done = "Fatto"
+
+    },
+    .badges = 
+    {
+        .extdata_locked = "Ext Data Bloccati\nProva a premere il pulsante Home e poi a tornare\nsu Anemone3DS, oppure usa la versione CIA.\nDebug: 0x%08lx"
+
+    }
+};
+
 Language_s init_strings(CFG_Language lang)
 {
     switch (lang)
@@ -2084,7 +2496,8 @@ Language_s init_strings(CFG_Language lang)
         case CFG_LANGUAGE_FR:
             return language_french;
         //case CFG_LANGUAGE_DE:
-        //case CFG_LANGUAGE_IT:
+        case CFG_LANGUAGE_IT:
+            return language_italian;
         case CFG_LANGUAGE_ES:
             return language_spanish;
         //case CFG_LANGUAGE_ZH:
