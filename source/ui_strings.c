@@ -2076,6 +2076,415 @@ const Language_s language_korean = {
     }
 };
 
+const Language_s language_SChinese = {
+    .normal_instructions = 
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 安装主题",
+                    "\uE001 安装随机主题"
+                },
+                {
+                    "\uE002 更多选项",
+                    "\uE003 预览主题"
+                },
+                {
+                    "\uE004 选择开机图画",
+                    "\uE005 扫描QR码"
+                },
+                {
+                    "退出",
+                    "从SD卡删除"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 安装开机图画",
+                    "\uE001 删除已安装的开机图画"
+                },
+                {
+                    "\uE002 更多选项",
+                    "\uE003 预览开机图像"
+                },
+                {
+                    "\uE004 选择主题",
+                    "\uE005 扫描QR码"
+                },
+                {
+                    "退出",
+                    "从SD卡删除"
+                }
+            }
+        }
+    },
+
+    .install_instructions =
+    {
+        .info_line = "\uE001 取消安装",
+        .instructions = {
+            {
+                "\uE079 安装主题",
+                "\uE07A 安装随机主题"
+            },
+            {
+                "\uE07B 仅安装主题BGM",
+                "\uE07C 仅安装主题背景"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "退出",
+                NULL
+            }
+        }
+    },
+
+    .extra_instructions = 
+    {
+        {
+            .info_line = "\uE001 退出排序菜单",
+            .instructions = {
+                {
+                    "\uE079 按名字排序",
+                    "\uE07A 按作者排序"
+                },
+                {
+                    "\uE07B 按文件名排序",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 退出更多选项",
+            .instructions = {
+                {
+                    "\uE079 跳转列表",
+                    "\uE07A 重新加载损坏图标"
+                },
+                {
+                    "\uE07B 浏览ThemePlaza",
+                    "\uE07C 安装徽章"
+                },
+                {
+                    "\uE004 排序菜单",
+                    "\uE005 导出菜单"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 退出导出菜单",
+            .instructions = {
+                {
+                    "\uE079 导出当前主题",
+                    "\uE07A 导出所有主题"
+                },
+                {
+                    "\uE07B 导出徽章",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        }
+    },
+    .camera = 
+    {
+        .quit = "按 \uE005 退出",
+        .thread_error = "创建调用相机线程失败\n请把此问题报告给开发者",
+        .zip_not_theme_splash = "下载的zip既不是主题也不是开机图画",
+        .file_not_zip = "下载的文件不是zip",
+        .download_failed = "下载失败",
+        .badge_question = "未检查到主题或开机图画\n这是否是徽章？",
+    },
+    .draw = 
+    {
+        .theme_mode = "主题",
+        .splash_mode = "开机图画",
+        .no_themes = "未发现主题",
+        .no_splashes = "未发现开机图画",
+        .qr_download = "按 \uE005 从QR码下载",
+        .switch_splashes = "按 \uE004 选择开机图画",
+        .switch_themes = "按 \uE004 查看主题",
+        .quit = "或         退出",
+        .start_pos = 164, // Adjust x pos of start glyph to line up with quit string
+        .by = "作者： ",
+        .selected = "已选:",
+        .sel = "已选:",
+        .tp_theme_mode = "ThemePlaza主题",
+        .tp_splash_mode = "ThemePlaza开机图画",
+        .tp_badge_mode = "ThemePlaza徽章",
+        .search = "搜索...",
+        .page = "页面:",
+        .err_quit = "按 \uE000 退出",
+        .warn_continue = "按 \uE000 继续",
+        .yes_no = "\uE000 确认   \uE001 取消",
+        .load_themes = "正在加载主题, 请稍等...",
+        .load_splash = "正在加载开机图画, 请稍等...",
+        .load_icons = "正在加载图标, 请稍等...",
+        .install_splash = "正在安装开机图画...",
+        .delete_splash = "正在删除安装的开机图画...",
+        .install_theme = "正在安装主题...",
+        .install_shuffle = "正在安装随机主题...",
+        .install_bgm = "正在安装仅主题BGM...",
+        .install_no_bgm = "正在安装仅主题背景...",
+        .downloading = "下载中...",
+        .checking_dl = "正在检查下载的文件...",
+        .delete_sd = "正在从SD卡删除...",
+        .download_themes = "正在下载主题列表, 请稍等...",
+        .download_splashes = "正在下载开机图画列表, 请稍等...",
+        .download_badges = "正在下载徽章列表, 请稍等...",
+        .download_preview = "正在下载预览图, 请稍等...",
+        .download_bgm = "正在下载BGM, 请稍等...",
+        .dump_single = "正在导出主题, 请稍等...",
+        .dump_all_official = "正在导出官方主题, 请稍等...",
+        .dump_badges = "正在导出已安装的徽章, 请稍等...",
+        .install_badges = "正在安装徽章, 请稍等...",
+        .shuffle = "已选: %i/10",
+    },
+    .fs =
+    {
+        .illegal_input = "输入的文字不得含有:\n" ILLEGAL_CHARS,
+        .new_or_overwrite = "重命名文件名或覆盖文件",
+        .cancel = "取消",
+        .overwrite = "覆盖",
+        .rename = "重命名",
+        .swkbd_fail = "???\n请尝试USB键盘", // Should never be used
+        .sd_full = "储存空间已满\n请删除一些不需要的文件以空出储存",
+        .fs_error = "Error:\n请更换储存卡",
+    },
+    .loading =
+    {
+        .no_preview = "没有发现预览图",
+    },
+    .main =
+    {
+        .position_too_big = "跳转项必须小于或等于跳转项!",
+        .position_zero = "跳转项必须可用!",
+        .jump_q = "请输入跳转项\n图标可能会重新加载",
+        .cancel = "取消",
+        .jump = "跳转",
+        .no_theme_extdata = "主题的追加数据不存在!\n请从Home菜单设置一个主题",
+        .loading_qr = "正在加载QR码相机...",
+        .no_wifi = "请在扫描QR码前连接WiFi",
+        .qr_homebrew = "无法在从HomebrewLauncher启动的Anemone中扫描QR码, \n请使用ThemePlaza代替",
+        .camera_broke = "你的相机可能有问题,\n无法扫描QR码",
+        .too_many_themes = "你选择了太多主题",
+        .not_enough_themes = "你没有足够的主题可以选择",
+        .uninstall_confirm = "真的要删除已安装的开机图画吗?",
+        .delete_confirm = "真的要删除这个?",
+    },
+    .remote =
+    {
+        .no_results = "没有搜索到相关内容",
+        .check_wifi = "无法下载ThemePlaza数据\n请确保WiFi已开启",
+        .new_page_big = "新页面必须小于或等于页面数!",
+        .new_page_zero = "新页面必须可用!",
+        .jump_page = "请输入跳转页面?",
+        .cancel = "取消",
+        .jump = "跳转",
+        .tags = "请输入想要搜索的关键词",
+        .search = "搜索",
+        .parental_fail = "家长控制验证失败!\n浏览器将会受限",
+        .zip_not_found = "在此链接未发现ZIP\n如果你认为这是错误, \n请联系网站管理员",
+        .generic_httpc_error = "错误HTTPC sysmodule - 0x%08lx.\n如果你看见了这个, \n请在ThemePlaza Discord联系Anemone开发者",
+        .http_timeout = "HTTP超时\n请检查你的Wi-Fi然后移除设置的所有代理服务器选项并重试",
+        .http_no_network = "无法连接到网络\n请检查你的网络设置并重试",
+        .http_ssl_error = "SSL证书错误 - 0x%08lx.\n请检查主机的日期和时间是否正确\n以及Anemone是否已经更新到最新版本",
+        .http303_tp = "HTTP 303 See Other (Theme Plaza)\n此主题是否已获得批准?",
+        .http303 = "HTTP 303 See Other\n请直接下载文件或联系网站管理员",
+        .http404 = "HTTP 404 Not Found\n此主题是否已获得批准?",
+        .http_err_url = "HTTP %s\n检查此链接是否有误",
+        .http_errcode_generic = "HTTP %s\n请联系网站管理员",
+        .http401 = "401 Unauthorized",
+        .http403 = "403 Forbidden",
+        .http407 = "407 Proxy Authentication Required",
+        .http414 = "HTTP 414 URL Too Long\nQR码指向一个非常长的链接\n请直接下载文件",
+        .http418 = "HTTP 418 I'm a teapot\n请联系网站管理员",
+        .http426 = "HTTP 426 Upgrade Required\n3DS无法连接到此服务器\n请联系网站管理员",
+        .http451 = "HTTP 451 Unavailable for Legal Reasons\n出于某些法律原因阻止访问主机服务器",
+        .http500 = "HTTP 500 Internal Server Error\n请联系网站管理员",
+        .http502 = "HTTP 502 Bad Gateway\n请联系网站管理员",
+        .http503 = "HTTP 503 Service Unavailable\n请联系网站管理员",
+        .http504 = "HTTP 504 Gateway Timeout\n请联系网站管理员",
+        .http_unexpected = "HTTP %u\n如果你认为这是错误, 请联系网站管理员",
+    },
+    .remote_instructions =
+    {
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 下载主题",
+                    "\uE001 返回"
+                },
+                {
+                    "\uE002 更多选项",
+                    "\uE003 预览主题"
+                },
+                {
+                    "\uE004 上一页",
+                    "\uE005 下一页"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 下载开机图画",
+                    "\uE001 返回"
+                },
+                {
+                    "\uE002 更多选项",
+                    "\uE003 预览开机图画"
+                },
+                {
+                    "\uE004 上一页",
+                    "\uE005 下一页"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 下载徽章",
+                    "\uE001 返回"
+                },
+                {
+                    "\uE002 更多选项",
+                    "\uE003 预览徽章"
+                },
+                {
+                    "\uE004 上一页",
+                    "\uE005 下一页"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        }
+    },
+    .remote_extra_instructions =
+    {
+        {
+            .info_line = "\uE001 退出更多选项",
+            .instructions = {
+                {
+                    "\uE079 跳转页面",
+                    "\uE07A 搜索关键词"
+                },
+                {
+                    NULL,
+                    "\uE07C 不使用缓存重载"
+                },
+                {
+                    "\uE004 选择徽章",
+                    "\uE005 选择开机画面"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 退出更多选项",
+            .instructions = {
+                {
+                    "\uE079 跳转页面",
+                    "\uE07A 搜索关键词"
+                },
+                {
+                    NULL,
+                    "\uE07C 不使用缓存重载"
+                },
+                {
+                    "\uE004 选择主题",
+                    "\uE005 选择徽章"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 退出更多选项",
+            .instructions = {
+                {
+                    "\uE079 跳转页面",
+                    "\uE07A 搜索关键词"
+                },
+                {
+                    NULL,
+                    "\uE07C 不使用缓存重载"
+                },
+                {
+                    "\uE004 选择开机图画",
+                    "\uE005 选择主题"
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        }
+    },
+    .splashes =
+    {
+        .no_splash_found = "没有发现splash.bin或splashbottom.bin\n这是否是开机图画?",
+        .splash_disabled = "WARNING: 未在Luma3DS配置界面启用此功能",
+    },
+    .themes =
+    {
+        .no_body_found = "没有发现body_LZ.bin\n这是否是主题?",
+        .mono_warn = "已安装的一个或多个主题使用单声道音频\n单声道音频会导致许多问题\n查找Wiki以获取更多信息",
+        .illegal_char = "使用了非法字符",
+        .name_folder = "输出文件夹名",
+        .cancel = "取消",
+        .done = "完成"
+    },
+    .badges = 
+    {
+        .extdata_locked = "追加数据被锁\n请尝试按下Home键, 然后返回 Anemone3DS, \n或使用cia版本代替\nDebug: 0x%08lx"
+    }
+};
+
 Language_s init_strings(CFG_Language lang)
 {
     switch (lang)
@@ -2088,6 +2497,8 @@ Language_s init_strings(CFG_Language lang)
         case CFG_LANGUAGE_ES:
             return language_spanish;
         //case CFG_LANGUAGE_ZH:
+        case CFG_LANGUAGE_ZH:
+            return language_SChinese;
         case CFG_LANGUAGE_KO:
             return language_korean;
         //case CFG_LANGUAGE_NL:
