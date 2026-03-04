@@ -75,6 +75,12 @@ ifeq ($(strip $(NOGIT)),)
     VERSION_MINOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f2 -d.)
     VERSION_BUILD     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f3 -d.)
 
+	ifeq ($(strip $(VERSION_MAJOR)),)
+		VERSION_MAJOR := 0
+	endif
+	ifeq ($(strip $(VERSION_MINOR)),)
+		VERSION_MINOR := 0
+	endif
     ifeq ($(strip $(VERSION_BUILD)),)
         VERSION_BUILD := 0
     endif
