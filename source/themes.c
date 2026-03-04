@@ -584,7 +584,7 @@ Result dump_all_themes(void)
             {
                 if(i == 0) continue;
                 AM_ContentInfo * content = &contentInfos[i];
-                if((content->flags & (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED)) == (AM_CONTENT_DOWNLOADED | AM_CONTENT_OWNED))
+                if((content->flags & (AM_CONTENT_INSTALLED | AM_CONTENT_OWNED)) == (AM_CONTENT_INSTALLED | AM_CONTENT_OWNED))
                 {
                     long off = 0x8 + 0xC8 * i;
                     fseek(fh, off, SEEK_SET);
