@@ -335,7 +335,7 @@ bool init_qr(void)
         char * filename = NULL;
         u32 zip_size;
 
-        Result res = http_get((char*)scan_data->payload, &filename, &zip_buf, &zip_size, INSTALL_DOWNLOAD, "application/zip; application/x-zip-compressed");
+        Result res = http_get((char*)scan_data->payload, &filename, &zip_buf, &zip_size, INSTALL_DOWNLOAD, "application/zip, application/x-zip-compressed");
         if (R_FAILED(res))
         {
             free(filename);
