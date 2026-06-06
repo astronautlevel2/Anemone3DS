@@ -100,6 +100,7 @@ static void capture_cam_thread(void * arg)
     CAMU_SetFrameRate(SELECT_OUT1, FRAME_RATE_30);
     CAMU_SetNoiseFilter(SELECT_OUT1, true);
     CAMU_SetAutoExposure(SELECT_OUT1, true);
+    CAMU_SetSharpness(SELECT_OUT1, 1);
     CAMU_SetAutoWhiteBalance(SELECT_OUT1, true);
     CAMU_Activate(SELECT_OUT1);
     CAMU_GetBufferErrorInterruptEvent(&cam_events[2], PORT_CAM1);
