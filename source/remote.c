@@ -1009,12 +1009,12 @@ static size_t curl_parse_header(char *buffer, size_t size, size_t nitems, void *
         }
     }
 
-    if (!strncmp(buffer, "Content-Type: ", 14))
+    if (!strncasecmp(buffer, "Content-Type: ", 14))
     {
         header->mime_type = malloc(strlen(buffer) - 13);
         strncpy(header->mime_type, buffer + 14, strlen(buffer) - 14);
         header->mime_type[strlen(buffer) - 14] = '\0';
-    } else if (!strncmp(buffer, "Content-Disposition: ", 21))
+    } else if (!strncasecmp(buffer, "Content-Disposition: ", 21))
     {
         header->filename = malloc(strlen(buffer) - 20);
         memcpy(header->filename, buffer + 21, strlen(buffer) - 21);
@@ -1098,29 +1098,32 @@ static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf
     } 
 
     DEBUG("Content-Disposition: %s\n", header.filename);
-    if (header.filename)
+    if(out_filename)
     {
-        char *filename = strstr(header.filename, "filename=");
-        if (filename)
+        if (header.filename)
         {
-            filename = strpbrk(filename, "=") + 1;
-            char *end = strpbrk(filename, ";");
-            if (end)
-                *end = '\0';
-
-            if (filename[0] == '"')
+            char *filename = strstr(header.filename, "filename=");
+            if (filename)
             {
-                filename[strlen(filename) - 1] = '\0';
-                filename++;
-            }
+                filename = strpbrk(filename, "=") + 1;
+                char *end = strpbrk(filename, ";");
+                if (end)
+                    *end = '\0';
 
-            *out_filename = malloc(0x100);
-            strcpy(*out_filename, filename);
+                if (filename[0] == '"')
+                {
+                    filename[strlen(filename) - 1] = '\0';
+                    filename++;
+                }
+
+                *out_filename = malloc(0x100);
+                strcpy(*out_filename, filename);
+            } else {
+                *out_filename = NULL;
+            }
         } else {
             *out_filename = NULL;
         }
-    } else {
-        *out_filename = NULL;
     }
 
     *buf = data.result_buf;
