@@ -1098,7 +1098,7 @@ static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf
     } 
 
     DEBUG("Content-Disposition: %s\n", header.filename);
-    if(out_filename)
+    if (out_filename)
     {
         if (header.filename)
         {
