@@ -76,6 +76,8 @@ Result init_sd(void)
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache/themeplaza"), FS_ATTRIBUTE_DIRECTORY);
+    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache/themezer"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/" APP_TITLE "/BadgeBackups"), FS_ATTRIBUTE_DIRECTORY);
 
     return 0;
@@ -567,18 +569,35 @@ static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, con
 }
 
 // assumes the input buffer is a ZIP. if it isn't, why are you calling this?
-void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode)
+void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode, RemoteProvider provider)
 {
     static char path_to_file[32761]; // FAT32 paths can be quite long.
     const int max_chars = 250;
     char new_filename[max_chars + 5]; // .zip + \0
+    char badge_directory[max_chars + 1];
 renamed:
     char * curr_filename;
-    if (mode == REMOTE_MODE_BADGES)
+    if (mode == REMOTE_MODE_BADGES && provider == REMOTE_PROVIDER_THEMEPLAZA)
     {
         sprintf(path_to_file, "%sThemePlaza Badges/%s", main_paths[REMOTE_MODE_BADGES], filename);
         DEBUG("Remote mode badges! Saving to %s/\n", path_to_file);
         curr_filename = path_to_file + strlen(main_paths[REMOTE_MODE_BADGES]) + strlen("ThemePlaza Badges/");
+    }
+    else if (mode == REMOTE_MODE_BADGES)
+    {
+        strncpy(badge_directory, filename, sizeof(badge_directory) - 1);
+        badge_directory[sizeof(badge_directory) - 1] = '\0';
+
+        char * directory_extension = strrchr(badge_directory, '.');
+        if (directory_extension != NULL && !strcmp(directory_extension, ".zip"))
+            *directory_extension = '\0';
+
+        char * illegal_directory_char = badge_directory;
+        while ((illegal_directory_char = strpbrk(illegal_directory_char, ILLEGAL_CHARS)))
+            *illegal_directory_char = '-';
+
+        sprintf(path_to_file, "%s%s/%s", main_paths[REMOTE_MODE_BADGES], badge_directory, filename);
+        curr_filename = path_to_file + strlen(main_paths[REMOTE_MODE_BADGES]) + strlen(badge_directory) + 1;
     } else
     {
         sprintf(path_to_file, "%s%s", main_paths[mode], filename);
@@ -613,6 +632,16 @@ renamed:
         strcat(path_to_file, ".zip");
 
     DEBUG("path: %s\n", path_to_file);
+    if (mode == REMOTE_MODE_BADGES && is_remote_provider_v2(provider))
+    {
+        char badge_directory_path[32761];
+        snprintf(badge_directory_path, sizeof(badge_directory_path), "%s%s", main_paths[REMOTE_MODE_BADGES], badge_directory);
+
+        u16 utf16dirpath[0x106] = {0};
+        utf8_to_utf16(utf16dirpath, (u8 *)badge_directory_path, 0x106);
+        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, utf16dirpath), FS_ATTRIBUTE_DIRECTORY);
+    }
+
     u16 utf16path[0x106] = {0};
     utf8_to_utf16(utf16path, (u8 *) path_to_file, 0x106);
     FS_Path path = fsMakePath(PATH_UTF16, utf16path);

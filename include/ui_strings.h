@@ -65,6 +65,7 @@ typedef struct {
     const char *load_icons;
     const char *install_splash;
     const char *delete_splash;
+    const char *delete_theme;
     const char *install_theme;
     const char *install_shuffle;
     const char *install_bgm;
@@ -81,6 +82,8 @@ typedef struct {
     const char *dump_all_official;
     const char *dump_badges;
     const char *install_badges;
+    const char *connecting_internet;
+    const char *cancel_loading;
     float start_pos;
     const char *shuffle;
 } Draw_Strings_s;
@@ -114,6 +117,7 @@ typedef struct {
     const char *too_many_themes;
     const char *not_enough_themes;
     const char *uninstall_confirm;
+    const char *uninstall_theme_confirm;
     const char *delete_confirm;
 } Main_Strings_s;
 
@@ -173,6 +177,7 @@ typedef struct {
 typedef struct {
     Instructions_s normal_instructions[MODE_AMOUNT];
     Instructions_s install_instructions;
+    Instructions_s splash_install_instructions;
     Instructions_s extra_instructions[3];
     Camera_Strings_s camera;
     Draw_Strings_s draw;

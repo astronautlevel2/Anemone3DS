@@ -50,6 +50,13 @@ typedef struct {
     u16 name[0x41];
     u16 desc[0x81];
     u16 author[0x41];
+
+    char *remote_id;
+    char *remote_download_url;
+    char *remote_preview_url;
+    char *remote_icon_url;
+    char *remote_audio_url;
+    char *remote_filename;
 } Entry_s;
 
 typedef struct {
@@ -85,6 +92,7 @@ typedef struct {
     json_int_t tp_page_count;
     char * tp_search;
     const char * loading_path;
+    RemoteProvider remote_provider;
 } Entry_List_s;
 
 void sort_by_name(Entry_List_s * list);

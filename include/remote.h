@@ -55,7 +55,22 @@
 #define THEMEPLAZA_ICON_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/preview/icon"
 #define THEMEPLAZA_SMDH_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/smdh"
 
-#define CACHE_PATH_FORMAT            "/3ds/"  APP_TITLE  "/cache/%"  JSON_INTEGER_FORMAT
+#define THEMEPLAZA_CACHE_PATH_FORMAT "/3ds/"  APP_TITLE  "/cache/themeplaza/%"  JSON_INTEGER_FORMAT
+
+#define THEMEZER_BASE_URL "http://legacy.themezer.net/3ds/anemone"
+#define THEMEZER_PAGE_FORMAT THEMEZER_BASE_URL "/%s?page=%" JSON_INTEGER_FORMAT "&q=%s"
+#define THEMEZER_JSON_PAGE_COUNT "pages"
+#define THEMEZER_JSON_PAGE_ITEMS "items"
+#define THEMEZER_JSON_ID "id"
+#define THEMEZER_JSON_NAME "name"
+#define THEMEZER_JSON_AUTHOR "author"
+#define THEMEZER_JSON_DESCRIPTION "description"
+#define THEMEZER_JSON_ICON_URL "iconUrl"
+#define THEMEZER_JSON_PREVIEW_URL "previewUrl"
+#define THEMEZER_JSON_DOWNLOAD_URL "downloadUrl"
+#define THEMEZER_JSON_AUDIO_URL "audioUrl"
+#define THEMEZER_JSON_FILENAME "filename"
+#define THEMEZER_CACHE_PATH_FORMAT "/3ds/" APP_TITLE "/cache/themezer/%s"
 
 typedef struct {
     char *result_buf;
@@ -68,7 +83,10 @@ typedef struct {
     char *mime_type;
 } curl_header;
 
-bool themeplaza_browser(RemoteMode mode);
+const char * get_remote_provider_name(RemoteProvider provider);
+bool select_remote_provider(RemoteProvider * provider);
+bool is_remote_provider_v2(RemoteProvider provider);
+bool browse_remote_provider(RemoteProvider provider, RemoteMode mode);
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
 
 #endif

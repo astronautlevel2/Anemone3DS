@@ -62,3 +62,10 @@ romfs/
 
 # Sublime stuff
 .clang_complete
+
+# IDE files
+.idea/
+.vscode/
+
+# macOS files
+.DS_Store

@@ -70,7 +70,7 @@ u32 compress_lz_file_fast(FS_Path path, FS_Archive archive, char * in_buf, u32 s
 Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char * buf);
 Result zero_handle_memeasy(Handle handle);
 void remake_file(FS_Path path, FS_Archive archive, u32 size);
-void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode);
+void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode, RemoteProvider provider);
 s16 for_each_file_zip(u16 *zip_path, u32 (*zip_iter_callback)(char *filebuf, u64 file_size, const char *name, void *userdata), void *userdata);
 
 #endif

@@ -457,10 +457,12 @@ Result load_audio(const Entry_s * entry, audio_s * audio)
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
 }
 
-Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio) 
+Result load_audio_ogg_buffer(char * filebuf, u32 filesize, audio_ogg_s * audio)
 {
-    audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
-    if (audio->filesize == 0) {
+    audio->filebuf = filebuf;
+    audio->filesize = filesize;
+    if (audio->filesize == 0 || audio->filebuf == NULL) {
+        free(audio->filebuf);
         free(audio);
         DEBUG("<load_audio> File not found!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
@@ -510,4 +512,11 @@ Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio)
         DEBUG("<load_audio> fmemopen failed!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
+}
+
+Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio) 
+{
+    char * filebuf = NULL;
+    u32 filesize = load_data("/bgm.ogg", entry, &filebuf);
+    return load_audio_ogg_buffer(filebuf, filesize, audio);
 }
