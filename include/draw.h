@@ -40,6 +40,7 @@ typedef enum InstallType_e {
 
     INSTALL_SPLASH,
     INSTALL_SPLASH_DELETE,
+    INSTALL_THEME_UNINSTALL,
 
     INSTALL_SINGLE,
     INSTALL_SHUFFLE,
@@ -72,6 +73,7 @@ typedef enum {
 
     TEXT_INSTALL_SPLASH,
     TEXT_INSTALL_SPLASH_DELETE,
+    TEXT_INSTALL_THEME_UNINSTALL,
 
     TEXT_INSTALL_SINGLE,
     TEXT_INSTALL_SHUFFLE,
@@ -133,6 +135,40 @@ typedef enum {
     ERROR_LEVEL_WARNING,
 } ErrorLevel;
 
+enum {
+    TOOLBAR_BUTTON_WIDTH = 24,
+    TOOLBAR_BUTTON_HEIGHT = 24,
+
+    TOOLBAR_TOP_Y = 0,
+    TOOLBAR_BOTTOM_Y = 216,
+
+    TOOLBAR_REMOTE_BACK_X = 2,
+    TOOLBAR_REMOTE_EXIT_X = 26,
+    TOOLBAR_REMOTE_SEARCH_X = 52,
+    TOOLBAR_REMOTE_FILTER_X = 320 - 48,
+    TOOLBAR_REMOTE_MODE_X = 320 - 24,
+
+    TOOLBAR_REMOTE_SEARCH_WIDTH = 140,
+    TOOLBAR_REMOTE_SEARCH_HEIGHT = 20,
+
+    TOOLBAR_MAIN_PREVIEW_X = 2,
+    TOOLBAR_MAIN_INSTALL_X = 26,
+    TOOLBAR_MAIN_SECONDARY_X = 50,
+    TOOLBAR_MAIN_RELOAD_X = 74,
+
+    TOOLBAR_LIST_TOP_MENU_X = 2,
+
+    TOOLBAR_LIST_TOP_UNINSTALL_X = 320 - 96,
+    TOOLBAR_LIST_TOP_QR_X = 320 - 72,
+    TOOLBAR_LIST_TOP_BROWSE_X = 320 - 48,
+    TOOLBAR_LIST_TOP_MODE_X = 320 - 24,
+
+    TOOLBAR_EXTRA_RELOAD_X = 320 - 96,
+    TOOLBAR_EXTRA_BADGE_X = 320 - 72,
+    TOOLBAR_EXTRA_FILTER_X = 320 - 48,
+    TOOLBAR_EXTRA_DUMP_X = 320 - 24,
+};
+
 #define BUTTONS_START_Y 130
 #define BUTTONS_STEP 22
 #define BUTTONS_INFO_LINES 4
@@ -156,6 +192,30 @@ typedef struct {
     const char * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
 
+static inline bool toolbar_hit(int x, int y, int button_x, int button_y)
+{
+    return BETWEEN(button_x, x, button_x + TOOLBAR_BUTTON_WIDTH) && BETWEEN(button_y, y, button_y + TOOLBAR_BUTTON_HEIGHT);
+}
+
+static inline bool list_has_installed_entries(const Entry_List_s * list)
+{
+    if(list == NULL || list->entries == NULL)
+        return false;
+
+    for(int i = 0; i < list->entries_count; i++)
+    {
+        if(list->entries[i].installed)
+            return true;
+    }
+
+    return false;
+}
+
+static inline bool toolbar_hit_rect(int x, int y, int rect_x, int rect_y, int rect_width, int rect_height)
+{
+    return BETWEEN(rect_x, x, rect_x + rect_width) && BETWEEN(rect_y, y, rect_y + rect_height);
+}
+
 extern C3D_RenderTarget * top;
 extern C3D_RenderTarget * bottom;
 extern C2D_TextBuf staticBuf, dynamicBuf;
@@ -168,6 +228,11 @@ void exit_screens(void);
 void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
+void draw_image_tint(int image_id, float x, float y, C2D_ImageTint tint);
+void draw_image(int image_id, float x, float y);
+void get_text_dimensions(const char * text, float scaleX, float scaleY, float * width, float * height);
+void set_loading_cancel_requested(bool requested);
+bool loading_cancel_requested(void);
 
 void throw_error(const char * error, ErrorLevel level);
 bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);

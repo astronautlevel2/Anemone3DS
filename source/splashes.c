@@ -35,25 +35,36 @@ void splash_delete(void)
     remove("/luma/splashbottom.bin");
 }
 
-void splash_install(const Entry_s * splash)
+void splash_install(const Entry_s * splash, SplashInstallType install_type)
 {
     char *screen_buf = NULL;
+    bool installed_any = false;
 
-    u32 size = load_data("/splash.bin", splash, &screen_buf);
-    if(size != 0)
+    u32 size = 0;
+    if(install_type != SPLASH_INSTALL_BOTTOM)
     {
-        remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
-        buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
+        size = load_data("/splash.bin", splash, &screen_buf);
+        if(size != 0)
+        {
+            installed_any = true;
+            remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
+            buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
+        }
     }
 
-    u32 bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
-    if(bottom_size != 0)
+    u32 bottom_size = 0;
+    if(install_type != SPLASH_INSTALL_TOP)
     {
-        remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
-        buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
+        bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
+        if(bottom_size != 0)
+        {
+            installed_any = true;
+            remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
+            buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
+        }
     }
 
-    if(size == 0 && bottom_size == 0)
+    if(!installed_any)
     {
         throw_error(language.splashes.no_splash_found, ERROR_LEVEL_WARNING);
     }

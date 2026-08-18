@@ -27,6 +27,7 @@
 #include "draw.h"
 #include "unicode.h"
 #include "colors.h"
+#include "remote.h"
 #include "ui_strings.h"
 
 #include "sprites.h"
@@ -40,6 +41,18 @@ static C2D_TextBuf widthBuf;
 
 static C2D_SpriteSheet spritesheet;
 static C2D_Sprite sprite_shuffle, sprite_shuffle_no_bgm, sprite_installed, sprite_start, sprite_select;
+static bool cancel_requested = false;
+static bool loading_bar_started = false;
+
+static bool is_network_loading_type(InstallType type)
+{
+    return type == INSTALL_LOADING_REMOTE_THEMES
+        || type == INSTALL_LOADING_REMOTE_SPLASHES
+        || type == INSTALL_LOADING_REMOTE_BADGES
+        || type == INSTALL_LOADING_REMOTE_PREVIEW
+        || type == INSTALL_LOADING_REMOTE_BGM
+        || type == INSTALL_DOWNLOAD;
+}
 
 C2D_Text text[TEXT_AMOUNT];
 static const char * mode_switch_char[MODE_AMOUNT] = {
@@ -51,6 +64,12 @@ static const char *remote_mode_switch_char[REMOTE_MODE_AMOUNT] = {
     "T",
     "S",
     "B",
+};
+
+static const char *remote_mode_name[REMOTE_MODE_AMOUNT] = {
+    "Theme mode",
+    "Splash mode",
+    "Badge mode",
 };
 
 void init_screens(void)
@@ -119,6 +138,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, language.draw.install_splash);
     C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, language.draw.delete_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_THEME_UNINSTALL], staticBuf, language.draw.delete_theme);
 
     C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, language.draw.install_theme);
     C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, language.draw.install_shuffle);
@@ -173,12 +193,22 @@ void end_frame(void)
     C3D_FrameEnd(0);
 }
 
-static void draw_image_tint(int image_id, float x, float y, C2D_ImageTint tint)
+void set_loading_cancel_requested(bool requested)
+{
+    cancel_requested = requested;
+}
+
+bool loading_cancel_requested(void)
+{
+    return cancel_requested;
+}
+
+void draw_image_tint(int image_id, float x, float y, C2D_ImageTint tint)
 {
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, image_id), x, y, 0.6f, &tint, 1.0f, 1.0f);
 }
 
-static void draw_image(int image_id, float x, float y)
+void draw_image(int image_id, float x, float y)
 {
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, image_id), x, y, 0.6f, NULL, 1.0f, 1.0f);
 }
@@ -192,7 +222,7 @@ void draw_home(u64 start_time, u64 cur_time)
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_no_home_idx), (320-64)/2, (240-64)/2, 1.0f, &tint, 1.0f, 1.0f);
 }
 
-static void get_text_dimensions(const char * text, float scaleX, float scaleY, float * width, float * height)
+void get_text_dimensions(const char * text, float scaleX, float scaleY, float * width, float * height)
 {
     C2D_Text c2d_text;
     C2D_TextParse(&c2d_text, widthBuf, text);
@@ -387,11 +417,22 @@ static void draw_install_handler(InstallType type)
     {
         C2D_Text * install_text = &text[type];
         draw_c2d_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE_BACKGROUND], install_text);
+
+        if(type == INSTALL_DOWNLOAD || type == INSTALL_LOADING_REMOTE_THEMES || type == INSTALL_LOADING_REMOTE_SPLASHES || type == INSTALL_LOADING_REMOTE_BADGES || type == INSTALL_LOADING_REMOTE_PREVIEW || type == INSTALL_LOADING_REMOTE_BGM)
+            draw_text_center(GFX_TOP, 168.0f, 0.5f, 0.55f, 0.55f, colors[COLOR_WHITE_BACKGROUND], language.draw.cancel_loading);
+
+        if(!loading_bar_started && is_network_loading_type(type))
+        {
+            set_screen(bottom);
+            draw_text_center(GFX_BOTTOM, 110.0f, 0.5f, 0.7f, 0.7f, colors[COLOR_WHITE_BACKGROUND], language.draw.connecting_internet);
+        }
     }
 }
 
 void draw_install(InstallType type)
 {
+    set_loading_cancel_requested(false);
+    loading_bar_started = false;
     draw_base_interface();
     draw_install_handler(type);
     end_frame();
@@ -399,6 +440,14 @@ void draw_install(InstallType type)
 
 void draw_loading_bar(u32 current, u32 max, InstallType type)
 {
+    if(is_network_loading_type(type))
+    {
+        hidScanInput();
+        if(hidKeysDown() & KEY_B)
+            set_loading_cancel_requested(true);
+    }
+
+    loading_bar_started = true;
     draw_base_interface();
     draw_install_handler(type);
     set_screen(bottom);
@@ -432,20 +481,20 @@ static void draw_instructions(Instructions_s instructions)
     C2D_ImageTint white_tint;
     C2D_PlainImageTint(&white_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
 
-    const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
-    if(start_line != NULL)
-    {
-        C2D_SpriteSetPos(&sprite_start, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
-        C2D_DrawSpriteTinted(&sprite_start, &white_tint);
-        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
-    }
-
-    const char * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
+    const char * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
     if(select_line != NULL)
     {
-        C2D_SpriteSetPos(&sprite_select, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_SpriteSetPos(&sprite_select, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
         C2D_DrawSpriteTinted(&sprite_select, &white_tint);
-        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], select_line, 0.6, 0, BUTTONS_X_MAX-2);
+        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], select_line, 0.6, 0, BUTTONS_X_RIGHT-2);
+    }
+
+    const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
+    if(start_line != NULL)
+    {
+        C2D_SpriteSetPos(&sprite_start, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_DrawSpriteTinted(&sprite_start, &white_tint);
+        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], start_line, 0.6, 0, BUTTONS_X_MAX-2);
     }
 }
 
@@ -568,16 +617,16 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
 
     set_screen(bottom);
 
-    draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
-
     C2D_ImageTint accent_tint;
     C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
 
-    draw_image_tint(sprites_back_idx, 320-96, 0, accent_tint);
-    draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
-    draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
+    draw_image_tint(sprites_back_idx, TOOLBAR_REMOTE_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_c2d_text(TOOLBAR_REMOTE_SEARCH_X, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
+    draw_image_tint(sprites_filter_idx, TOOLBAR_REMOTE_FILTER_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_text(TOOLBAR_REMOTE_MODE_X + 2.5, -3, 0.6f, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
 
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
+    draw_image_tint(sprites_preview_idx, TOOLBAR_MAIN_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
+    draw_image_tint(sprites_download_idx, TOOLBAR_MAIN_INSTALL_X, TOOLBAR_BOTTOM_Y, accent_tint);
 
     C2D_ImageTint background_tint;
     C2D_PlainImageTint(&background_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
@@ -716,33 +765,45 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     if (draw_mode == DRAW_MODE_LIST)
     {
-        draw_image_tint(sprites_install_idx, 320-120, 0, accent_tint);
-        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
-        draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
-        draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
-        draw_image_tint(sprites_menu_idx, 2, 0, accent_tint);
+        draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_TOP_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        if(list_has_installed_entries(list))
+            draw_image_tint(sprites_uninstall_idx, TOOLBAR_LIST_TOP_UNINSTALL_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_qr_idx, TOOLBAR_LIST_TOP_QR_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_TOP_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_text(TOOLBAR_LIST_TOP_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
+
+        draw_image_tint(sprites_preview_idx, TOOLBAR_MAIN_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
+        draw_image_tint(sprites_install_idx, TOOLBAR_MAIN_INSTALL_X, TOOLBAR_BOTTOM_Y, accent_tint);
         if (current_mode == MODE_THEMES)
-        {
-            draw_image_tint(sprites_shuffle_idx, 320-144, 0, accent_tint);
-        }
+            draw_image_tint(sprites_shuffle_idx, TOOLBAR_MAIN_SECONDARY_X, TOOLBAR_BOTTOM_Y, accent_tint);
     }
     else
     {
         if (draw_mode == DRAW_MODE_INSTALL)
         {
-            draw_image_tint(sprites_install_idx, 320-24, 0, accent_tint);
-            draw_image_tint(sprites_shuffle_idx, 320-48, 0, accent_tint);
-            draw_image_tint(sprites_shuffle_no_bgm_idx, 320-72, 0, accent_tint);
-            draw_image_tint(sprites_bgm_only_idx, 320-96, 0, accent_tint);
-            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
+            if(current_mode == MODE_SPLASHES)
+            {
+                draw_image_tint(sprites_arrow_up_idx, 320-72, 0, accent_tint);
+                draw_image_tint(sprites_arrow_down_idx, 320-48, 0, accent_tint);
+                draw_image_tint(sprites_install_idx, 320-24, 0, accent_tint);
+            }
+            else
+            {
+                draw_image_tint(sprites_install_idx, 320-24, 0, accent_tint);
+                draw_image_tint(sprites_shuffle_idx, 320-48, 0, accent_tint);
+                draw_image_tint(sprites_shuffle_no_bgm_idx, 320-72, 0, accent_tint);
+                draw_image_tint(sprites_bgm_only_idx, 320-96, 0, accent_tint);
+            }
+            if(current_mode != MODE_SPLASHES)
+                draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
-            draw_image_tint(sprites_browse_idx, 320-24, 0, accent_tint);
-            draw_image_tint(sprites_dump_idx, 320-48, 0, accent_tint);
-            draw_image_tint(sprites_sort_idx, 320-72, 0, accent_tint);
-            draw_image_tint(sprites_badge_idx, 320-96, 0, accent_tint);
             draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
+            draw_image_tint(sprites_filter_idx, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_reload_idx, TOOLBAR_EXTRA_BADGE_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_dump_idx, TOOLBAR_EXTRA_FILTER_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_badge_idx, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_exit_idx, TOOLBAR_MAIN_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
         }
     }
 

@@ -57,13 +57,13 @@ u8 read8(char *music_buf, size_t *cursor)
 Result update_audio_ogg(audio_ogg_s * audio) 
 {
     u32 size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
-    DEBUG("<update_audio> Audio Size: %ld\n", size);
+    // DEBUG("<update_audio> Audio Size: %ld\n", size);
     if (audio->wave_buf[audio->buf_pos].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
     { 
-        DEBUG("<update_audio> Attempting ov_read\n");
+        // DEBUG("<update_audio> Attempting ov_read\n");
         int bitstream;
         u32 read = ov_read(&audio->vf, (char *)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
-        DEBUG("<update_audio> ov_read successful\n");
+        // DEBUG("<update_audio> ov_read successful\n");
 
         if (read <= 0) // EoF or error
         { 
@@ -285,7 +285,7 @@ int start_play(audio_s *audio) {
 
 void fill_buffers(audio_s *audio)
 {
-    DEBUG("Filling buffers...\n");
+    // DEBUG("Filling buffers...\n");
     for (u8 bufIndex = 0; bufIndex < BUFFER_COUNT; ++bufIndex)
     {
         if (audio->wave_buf[0][bufIndex].status != NDSP_WBUF_DONE) continue;
