@@ -32,6 +32,8 @@
 #include "fs.h"
 #include "loading.h"
 #include "remote.h"
+#include "splashes.h"
+#include "themes.h"
 #include "ui_strings.h"
 
 #include <archive.h>
@@ -100,6 +102,7 @@ static void capture_cam_thread(void * arg)
     CAMU_SetFrameRate(SELECT_OUT1, FRAME_RATE_30);
     CAMU_SetNoiseFilter(SELECT_OUT1, true);
     CAMU_SetAutoExposure(SELECT_OUT1, true);
+    CAMU_SetSharpness(SELECT_OUT1, 1);
     CAMU_SetAutoWhiteBalance(SELECT_OUT1, true);
     CAMU_Activate(SELECT_OUT1);
     CAMU_GetBufferErrorInterruptEvent(&cam_events[2], PORT_CAM1);
@@ -257,6 +260,14 @@ static bool update_qr(qr_data * data, struct quirc_data * scan_data)
     return false;
 }
 
+static RemoteProvider qr_url_provider(const char * url)
+{
+    if (url != NULL && strstr(url, THEMEPLAZA_BASE_URL) != NULL)
+        return REMOTE_PROVIDER_THEMEPLAZA;
+
+    return REMOTE_PROVIDER_THEMEZER;
+}
+
 static void start_qr(qr_data * data)
 {
     svcCreateEvent(&data->event_stop, RESET_STICKY);
@@ -393,7 +404,27 @@ bool init_qr(void)
 
                 if(mode != REMOTE_MODE_AMOUNT)
                 {
-                    save_zip_to_sd(filename, zip_size, zip_buf, mode);
+                    RemoteProvider provider = qr_url_provider((const char *)scan_data->payload);
+                    u16 saved_path[0x106] = {0};
+                    save_zip_to_sd(filename, zip_size, zip_buf, mode, provider, saved_path);
+                    if (saved_path[0] != 0 && draw_confirm_no_interface("Do you want to install it now?"))
+                    {
+                        Entry_s installed_entry = {0};
+                        memcpy(installed_entry.path, saved_path, sizeof(installed_entry.path));
+                        installed_entry.is_zip = true;
+
+                        if (mode == REMOTE_MODE_THEMES)
+                        {
+                            aptSetHomeAllowed(false);
+                            draw_install(INSTALL_SINGLE);
+                            theme_install(&installed_entry);
+                        }
+                        else
+                        {
+                            draw_install(INSTALL_SPLASH);
+                            splash_install(&installed_entry, SPLASH_INSTALL_NORMAL);
+                        }
+                    }
                     success = true;
                 }
                 else
@@ -401,7 +432,8 @@ bool init_qr(void)
                     bool badge = draw_confirm_no_interface(language.camera.badge_question);
                     if (badge)
                     {
-                        save_zip_to_sd(filename, zip_size, zip_buf, REMOTE_MODE_BADGES);
+                        RemoteProvider provider = qr_url_provider((const char *)scan_data->payload);
+                        save_zip_to_sd(filename, zip_size, zip_buf, REMOTE_MODE_BADGES, provider, NULL);
                         // don't set success since we don't need to reload lists for badge zips
                     } else
                     {

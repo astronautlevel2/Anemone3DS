@@ -32,6 +32,13 @@
 
 void delete_entry(Entry_s * entry, bool is_file)
 {
+    free(entry->remote_id);
+    free(entry->remote_download_url);
+    free(entry->remote_preview_url);
+    free(entry->remote_icon_url);
+    free(entry->remote_audio_url);
+    free(entry->remote_filename);
+
     if(is_file)
         FSUSER_DeleteFile(ArchiveSD, fsMakePath(PATH_UTF16, entry->path));
     else

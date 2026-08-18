@@ -327,6 +327,56 @@ Result bgm_install(Entry_s * theme)
     return install_theme_internal(&list, THEME_INSTALL_BGM);
 }
 
+Result theme_uninstall(void)
+{
+    Result res = 0;
+
+    char * thememanage_buf = NULL;
+    u32 theme_manage_size = file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
+    if(theme_manage_size)
+    {
+        ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
+        memset(theme_manage, 0, theme_manage_size);
+        theme_manage->unk4 = 1;
+        theme_manage->dlc_theme_content_index = 0xFF;
+        theme_manage->use_theme_cache = 0x0200;
+        res = buf_to_file(theme_manage_size, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, thememanage_buf);
+        free(thememanage_buf);
+        if(R_FAILED(res)) return res;
+    }
+
+    char * savedata_buf = NULL;
+    u32 savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    if(savedata_size)
+    {
+        SaveData_dat_s * savedata = (SaveData_dat_s *)savedata_buf;
+        memset(&savedata->theme_entry, 0, sizeof(ThemeEntry_s));
+        savedata->shuffle = 0;
+        memset(savedata->shuffle_themes, 0, sizeof(savedata->shuffle_themes));
+        res = buf_to_file(savedata_size, fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
+        free(savedata_buf);
+        if(R_FAILED(res)) return res;
+    }
+
+    char * blank_body = calloc(BODY_CACHE_SIZE, sizeof(char));
+    if(blank_body != NULL)
+    {
+        remake_file(fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, BODY_CACHE_SIZE);
+        buf_to_file(BODY_CACHE_SIZE, fsMakePath(PATH_ASCII, "/BodyCache.bin"), ArchiveThemeExt, blank_body);
+        free(blank_body);
+    }
+
+    char * blank_bgm = calloc(BGM_MAX_SIZE, sizeof(char));
+    if(blank_bgm != NULL)
+    {
+        remake_file(fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, BGM_MAX_SIZE);
+        buf_to_file(BGM_MAX_SIZE, fsMakePath(PATH_ASCII, "/BgmCache.bin"), ArchiveThemeExt, blank_bgm);
+        free(blank_bgm);
+    }
+
+    return 0;
+}
+
 Result no_bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};

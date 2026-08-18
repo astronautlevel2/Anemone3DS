@@ -59,6 +59,7 @@ static inline int max(const int a, const int b)
 typedef enum {
     MODE_THEMES = 0,
     MODE_SPLASHES,
+    MODE_BADGES,
 
     MODE_AMOUNT,
 } EntryMode;
@@ -78,6 +79,13 @@ typedef enum {
 
     REMOTE_MODE_AMOUNT,
 } RemoteMode;
+
+typedef enum {
+    REMOTE_PROVIDER_THEMEPLAZA = 0,
+    REMOTE_PROVIDER_THEMEZER,
+
+    REMOTE_PROVIDER_AMOUNT,
+} RemoteProvider;
 
 extern const char * main_paths[REMOTE_MODE_AMOUNT];
 extern const int entries_per_screen_v[MODE_AMOUNT];

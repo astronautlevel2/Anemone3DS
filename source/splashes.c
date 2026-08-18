@@ -35,25 +35,36 @@ void splash_delete(void)
     remove("/luma/splashbottom.bin");
 }
 
-void splash_install(const Entry_s * splash)
+void splash_install(const Entry_s * splash, SplashInstallType install_type)
 {
     char *screen_buf = NULL;
+    bool installed_any = false;
 
-    u32 size = load_data("/splash.bin", splash, &screen_buf);
-    if(size != 0)
+    u32 size = 0;
+    if(install_type != SPLASH_INSTALL_BOTTOM)
     {
-        remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
-        buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
+        size = load_data("/splash.bin", splash, &screen_buf);
+        if(size != 0)
+        {
+            installed_any = true;
+            remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
+            buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
+        }
     }
 
-    u32 bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
-    if(bottom_size != 0)
+    u32 bottom_size = 0;
+    if(install_type != SPLASH_INSTALL_TOP)
     {
-        remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
-        buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
+        bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
+        if(bottom_size != 0)
+        {
+            installed_any = true;
+            remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
+            buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
+        }
     }
 
-    if(size == 0 && bottom_size == 0)
+    if(!installed_any)
     {
         throw_error(language.splashes.no_splash_found, ERROR_LEVEL_WARNING);
     }
@@ -72,13 +83,9 @@ void splash_install(const Entry_s * splash)
     }
 }
 
-void splash_check_installed(void * void_arg)
+#ifndef CITRA_MODE
+static void refresh_splash_installed_state(Entry_List_s * list, volatile bool * run_thread)
 {
-    Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
-    Entry_List_s * list = (Entry_List_s *)arg->thread_arg;
-    if(list == NULL || list->entries == NULL) return;
-
-    #ifndef CITRA_MODE
     char * top_buf = NULL;
     u32 top_size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, &top_buf);
     char * bottom_buf = NULL;
@@ -93,15 +100,23 @@ void splash_check_installed(void * void_arg)
 
     #define HASH_SIZE_BYTES 256/8
     u8 top_hash[HASH_SIZE_BYTES] = {0};
-    FSUSER_UpdateSha256Context(top_buf, top_size, top_hash);
+    if (top_size)
+        FSUSER_UpdateSha256Context(top_buf, top_size, top_hash);
     free(top_buf);
     top_buf = NULL;
     u8 bottom_hash[HASH_SIZE_BYTES] = {0};
-    FSUSER_UpdateSha256Context(bottom_buf, bottom_size, bottom_hash);
+    if (bottom_size)
+        FSUSER_UpdateSha256Context(bottom_buf, bottom_size, bottom_hash);
     free(bottom_buf);
     bottom_buf = NULL;
 
-    for(int i = 0; i < list->entries_count && arg->run_thread; i++)
+    for(int i = 0; i < list->entries_count; ++i)
+        list->entries[i].installed = false;
+
+    int top_match = -1;
+    int bottom_match = -1;
+
+    for(int i = 0; i < list->entries_count && (run_thread == NULL || *run_thread); i++)
     {
         Entry_s * splash = &list->entries[i];
         top_size = load_data("/splash.bin", splash, &top_buf);
@@ -112,20 +127,67 @@ void splash_check_installed(void * void_arg)
             continue;
         }
 
-        u8 splash_top_hash[HASH_SIZE_BYTES] = {0};
-        FSUSER_UpdateSha256Context(top_buf, top_size, splash_top_hash);
+        bool matches_top = false;
+        bool matches_bottom = false;
+
+        if (top_size && top_buf)
+        {
+            u8 splash_top_hash[HASH_SIZE_BYTES] = {0};
+            FSUSER_UpdateSha256Context(top_buf, top_size, splash_top_hash);
+            matches_top = memcmp(splash_top_hash, top_hash, HASH_SIZE_BYTES) == 0;
+        }
+
+        if (bottom_size && bottom_buf)
+        {
+            u8 splash_bottom_hash[HASH_SIZE_BYTES] = {0};
+            FSUSER_UpdateSha256Context(bottom_buf, bottom_size, splash_bottom_hash);
+            matches_bottom = memcmp(splash_bottom_hash, bottom_hash, HASH_SIZE_BYTES) == 0;
+        }
+
         free(top_buf);
         top_buf = NULL;
-        u8 splash_bottom_hash[HASH_SIZE_BYTES] = {0};
-        FSUSER_UpdateSha256Context(bottom_buf, bottom_size, splash_bottom_hash);
         free(bottom_buf);
         bottom_buf = NULL;
 
-        if(!memcmp(splash_bottom_hash, bottom_hash, HASH_SIZE_BYTES) && !memcmp(splash_top_hash, top_hash, HASH_SIZE_BYTES))
+        if(matches_top && matches_bottom)
         {
             splash->installed = true;
             break;
         }
+
+        if(matches_top)
+            top_match = i;
+        if(matches_bottom)
+            bottom_match = i;
     }
-    #endif
+
+    if (top_match >= 0)
+        list->entries[top_match].installed = true;
+    if (bottom_match >= 0)
+        list->entries[bottom_match].installed = true;
+    #undef HASH_SIZE_BYTES
+}
+#endif
+
+void splash_refresh_installed_state(Entry_List_s * list)
+{
+    if (list == NULL || list->entries == NULL)
+        return;
+
+#ifndef CITRA_MODE
+    refresh_splash_installed_state(list, NULL);
+#else
+    (void)list;
+#endif
+}
+
+void splash_check_installed(void * void_arg)
+{
+    Thread_Arg_s * arg = (Thread_Arg_s *)void_arg;
+    Entry_List_s * list = (Entry_List_s *)arg->thread_arg;
+    if(list == NULL || list->entries == NULL) return;
+
+#ifndef CITRA_MODE
+    refresh_splash_installed_state(list, &arg->run_thread);
+#endif
 }

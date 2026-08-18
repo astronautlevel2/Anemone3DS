@@ -70,7 +70,10 @@ PRODUCT_CODE        :=	CTR-P-ANEM
 ICON_FLAGS          :=	nosavebackups,visible
 
 ifeq ($(strip $(NOGIT)),)
-    VERSION           :=  $(shell git describe --tags --match v[0-9]* --abbrev=7 | sed 's/-[0-9]*-g/-/')
+    VERSION           :=  $(shell git describe --tags --match v[0-9]* --abbrev=7 2>/dev/null | sed 's/-[0-9]*-g/-/')
+	ifeq ($(strip $(VERSION)),)
+		VERSION := 0.0.0
+	endif
     VERSION_MAJOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f1 -d.)
     VERSION_MINOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f2 -d.)
     VERSION_BUILD     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f3 -d.)
