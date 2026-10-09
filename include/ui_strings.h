@@ -43,11 +43,13 @@ typedef struct {
 typedef struct {
     const char *theme_mode;
     const char *splash_mode;
+    const char *badge_mode;
     const char *no_themes;
     const char *no_splashes;
     const char *qr_download;
     const char *switch_splashes;
     const char *switch_themes;
+    const char *switch_badges;
     const char *quit;
     const char *by;
     const char *selected;
@@ -81,6 +83,7 @@ typedef struct {
     const char *dump_all_official;
     const char *dump_badges;
     const char *install_badges;
+    const char *install_badges_button;
     float start_pos;
     const char *shuffle;
 } Draw_Strings_s;
