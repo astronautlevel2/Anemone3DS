@@ -219,6 +219,14 @@ static int progress_callback(void * clientp, curl_off_t dltotal, curl_off_t dlno
     (void)ulnow;
 
     http_progress * progress = (http_progress *)clientp;
+
+    // http_get only runs on the main thread, so polling the buttons here is safe
+    hidScanInput();
+    if (hidKeysHeld() & KEY_B)
+        set_loading_cancel_requested(true);
+    if (loading_cancel_requested())
+        return 1;
+
     if (progress->install_type == INSTALL_NONE || dltotal <= 0)
         return 0;
 
@@ -409,11 +417,15 @@ static bool check_status(long status, const char * url, bool not_found_is_error)
 static Result http_request(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
 {
     const Result shown_error = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
+    const Result canceled = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_CANCEL_REQUESTED);
 
     *buf = NULL;
     *size = 0;
     if (filename != NULL)
         *filename = NULL;
+
+    if (loading_cancel_requested())
+        return canceled;
 
     u32 wifi_status = 0;
     if (R_SUCCEEDED(ACU_GetWifiStatus(&wifi_status)) && wifi_status == 0)
@@ -495,7 +507,12 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     curl_slist_free_all(headers);
 
     Result ret = shown_error;
-    if (code != CURLE_OK)
+    if (code == CURLE_ABORTED_BY_CALLBACK)
+    {
+        DEBUG("HTTP GET canceled\n");
+        ret = canceled; // the user asked for it, no error message
+    }
+    else if (code != CURLE_OK)
     {
         DEBUG("curl error %d: %s\n", code, curl_easy_strerror(code));
         show_curl_error(code);
