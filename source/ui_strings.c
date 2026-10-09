@@ -63,12 +63,33 @@ const Language_s language_english = {
                     "\uE003 Preview splash"
                 },
                 {
-                    "\uE004 Switch to themes",
+                    "\uE004 Switch to badges",
                     "\uE005 Scan QR code"
                 },
                 {
                     "Exit",
                     "Delete from SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Install badges",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "\uE004 Switch to themes",
+                    "\uE005 Scan QR code"
+                },
+                {
+                    "Exit",
+                    NULL
                 }
             }
         }
@@ -176,11 +197,13 @@ const Language_s language_english = {
     {
         .theme_mode = "Theme mode",
         .splash_mode = "Splash mode",
+        .badge_mode = "Badge mode",
         .no_themes = "No theme found",
         .no_splashes = "No splash found",
         .qr_download = "Press \uE005 to download from QR",
         .switch_splashes = "Or \uE004 to switch to splashes",
         .switch_themes = "Or \uE004 to switch to themes",
+        .switch_badges = "Or \uE004 to switch to badges",
         .quit = "Or        to quit",
         .start_pos = 162, // Adjust x pos of start glyph to line up with quit string
         .by = "By ",
@@ -215,6 +238,7 @@ const Language_s language_english = {
         .dump_all_official = "Dumping official themes, please wait...",
         .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installing badges, please wait...",
+        .install_badges_button = "Install badges",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -472,12 +496,33 @@ const Language_s language_spanish = {
                     "\uE003 Vista previa del fondo"
                 },
                 {
-                    "\uE004 Cambiar a temas",
+                    "\uE004 Cambiar a insignias",
                     "\uE005 Escanear código QR"
                 },
                 {
                     "Salir",
                     "Eliminar de la SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Instalar insignias",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "\uE004 Cambiar a temas",
+                    "\uE005 Escanear código QR"
+                },
+                {
+                    "Salir",
+                    NULL
                 }
             }
         }
@@ -585,11 +630,13 @@ const Language_s language_spanish = {
     {
         .theme_mode = "Modo tema",
         .splash_mode = "Modo fondo",
+        .badge_mode = "Modo insignias",
         .no_themes = "No se encontraron temas",
         .no_splashes = "No se encontraron fondos",
         .qr_download = "Presiona \uE005 para descargar desde el código QR",
         .switch_splashes = "O \uE004 para cambiar a fondos",
         .switch_themes = "O \uE004 para cambiar a temas",
+        .switch_badges = "O \uE004 para cambiar a insignias",
         .quit = "O        para salir",
         .start_pos = 162,
         .by = "Por ",
@@ -624,6 +671,7 @@ const Language_s language_spanish = {
         .dump_all_official = "Volcando temas oficiales,\npor favor espera...",
         .dump_badges = "Volcando insignias instaladas,\npor favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
+        .install_badges_button = "Instalar insignias",
         .shuffle = "Aleatorio: %i/10",
     },
     .fs =
@@ -882,12 +930,33 @@ const Language_s language_french = {
                     "\uE003 Aperçu"
                 },
                 {
-                    "\uE004 Menu des thèmes",
+                    "\uE004 Menu des badges",
                     "\uE005 Scanner un QR code"
                 },
                 {
                     "Quitter",
                     "Supprimer"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Installer les badges",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "\uE004 Menu des thèmes",
+                    "\uE005 Scanner un QR code"
+                },
+                {
+                    "Quitter",
+                    NULL
                 }
             }
         }
@@ -995,11 +1064,13 @@ const Language_s language_french = {
     {
         .theme_mode = "Thèmes",
         .splash_mode = "Splashs",
+        .badge_mode = "Badges",
         .no_themes = "Aucun thème trouvé",
         .no_splashes = "Aucun splash trouvé",
         .qr_download = "Appuyez sur \uE005 pour téléch. depuis un QR",
         .switch_splashes = "Ou \uE004 pour aller sur les splashs",
         .switch_themes = "Ou \uE004 pour aller sur les thèmes",
+        .switch_badges = "Ou \uE004 pour aller sur les badges",
         .quit = "Ou        pour quitter",
         .start_pos = 142, // Adjust x pos of start glyph to line up with quit string
         .by = "Par ",
@@ -1034,6 +1105,7 @@ const Language_s language_french = {
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
         .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
+        .install_badges_button = "Installer les badges",
         .shuffle = "Aléatoire: %i/10",
     },
     .fs =
@@ -1291,12 +1363,33 @@ const Language_s language_portuguese = {
                     "\uE003 Pré-visualizar"
                 },
                 {
-                    "\uE004 Mudar para Temas",
+                    "\uE004 Mudar para Insígnias",
                     "\uE005 Escanear código QR"
                 },
                 {
                     "Sair",
                     "Excluir do SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Instalar Insígnias",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "\uE004 Mudar para Temas",
+                    "\uE005 Escanear código QR"
+                },
+                {
+                    "Sair",
+                    NULL
                 }
             }
         }
@@ -1404,11 +1497,13 @@ const Language_s language_portuguese = {
     {
         .theme_mode = "Modo Tema",
         .splash_mode = "Modo Splash",
+        .badge_mode = "Modo Insígnia",
         .no_themes = "Nenhum tema encontrado",
         .no_splashes = "Nenhum splash encontrado",
         .qr_download = "Aperte \uE005 para baixar do QR",
         .switch_splashes = "Ou \uE004 para mudar para splashes",
         .switch_themes = "Ou \uE004 para mudar para temas",
+        .switch_badges = "Ou \uE004 para mudar para insígnias",
         .quit = "Ou        para sair",
         .start_pos = 165, // Adjust x pos of start glyph to line up with quit string
         .by = "Por ",
@@ -1443,6 +1538,7 @@ const Language_s language_portuguese = {
         .dump_all_official = "Exportando temas oficiais, aguarde...",
         .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
+        .install_badges_button = "Instalar Insígnias",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -1702,12 +1798,33 @@ const Language_s language_korean = {
                     "\uE003 Preview splash"
                 },
                 {
-                    "\uE004 Go to themes",
+                    "\uE004 Go to badges",
                     "\uE005 Scan QR code"
                 },
                 {
                     "Exit",
                     "Delete from SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Install badges",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "\uE004 Go to themes",
+                    "\uE005 Scan QR code"
+                },
+                {
+                    "Exit",
+                    NULL
                 }
             }
         }
@@ -1815,11 +1932,13 @@ const Language_s language_korean = {
     {
         .theme_mode = "Theme mode",
         .splash_mode = "Splash mode",
+        .badge_mode = "Badge mode",
         .no_themes = "No theme found",
         .no_splashes = "No splash found",
         .qr_download = "Press \uE005 to dl from QR",
         .switch_splashes = "Or \uE004 to go to splashes",
         .switch_themes = "Or \uE004 to go to themes",
+        .switch_badges = "Or \uE004 to go to badges",
         .quit = "Or        to quit",
         .start_pos = 162, // Adjust x pos of start glyph to line up with quit string
         .by = "By ",
@@ -1854,6 +1973,7 @@ const Language_s language_korean = {
         .dump_all_official = "Dumping official themes,\nplease wait...",
         .dump_badges = "Dumping installed badges,\nplease wait...",
         .install_badges = "Installing badges, please wait...",
+        .install_badges_button = "Install badges",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -2112,12 +2232,33 @@ const Language_s language_SChinese = {
                     "\uE003 预览开机图像"
                 },
                 {
-                    "\uE004 选择主题",
+                    "\uE004 选择徽章",
                     "\uE005 扫描QR码"
                 },
                 {
                     "退出",
                     "从SD卡删除"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 安装徽章",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "\uE004 选择主题",
+                    "\uE005 扫描QR码"
+                },
+                {
+                    "退出",
+                    NULL
                 }
             }
         }
@@ -2225,11 +2366,13 @@ const Language_s language_SChinese = {
     {
         .theme_mode = "主题",
         .splash_mode = "开机图画",
+        .badge_mode = "徽章",
         .no_themes = "未发现主题",
         .no_splashes = "未发现开机图画",
         .qr_download = "按 \uE005 从QR码下载",
         .switch_splashes = "按 \uE004 选择开机图画",
         .switch_themes = "按 \uE004 查看主题",
+        .switch_badges = "按 \uE004 查看徽章",
         .quit = "或         退出",
         .start_pos = 164, // Adjust x pos of start glyph to line up with quit string
         .by = "作者： ",
@@ -2264,6 +2407,7 @@ const Language_s language_SChinese = {
         .dump_all_official = "正在导出官方主题, 请稍等...",
         .dump_badges = "正在导出已安装的徽章, 请稍等...",
         .install_badges = "正在安装徽章, 请稍等...",
+        .install_badges_button = "安装徽章",
         .shuffle = "已选: %i/10",
     },
     .fs =

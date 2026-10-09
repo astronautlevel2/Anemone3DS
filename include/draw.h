@@ -98,6 +98,7 @@ typedef enum {
 
     TEXT_THEME_MODE,
     TEXT_SPLASH_MODE,
+    TEXT_BADGE_MODE,
 
     TEXT_NO_THEME_FOUND,
     TEXT_NO_SPLASH_FOUND,
@@ -106,6 +107,7 @@ typedef enum {
 
     TEXT_SWITCH_TO_SPLASHES,
     TEXT_SWITCH_TO_THEMES,
+    TEXT_SWITCH_TO_BADGES,
 
     TEXT_OR_START_TO_QUIT,
 
@@ -124,6 +126,7 @@ typedef enum {
     TEXT_ERROR_CONTINUE,
 
     TEXT_CONFIRM_YES_NO,
+    TEXT_INSTALL_BADGES_BUTTON,
 
     TEXT_AMOUNT
 } Text;
@@ -172,7 +175,7 @@ enum {
     TOOLBAR_LIST_INSTALL_X = 26,
     TOOLBAR_LIST_SHUFFLE_X = 50,
 
-    // empty list: top bar
+    // empty list and badge mode: top bar
     TOOLBAR_EMPTY_QR_X = 320 - 96,
     TOOLBAR_EMPTY_BROWSE_X = 320 - 72,
     TOOLBAR_EMPTY_EXIT_X = 320 - 48,
@@ -204,6 +207,14 @@ enum {
     // remote browser: bottom bar
     TOOLBAR_REMOTE_PREVIEW_X = 2,
     TOOLBAR_REMOTE_DOWNLOAD_X = 26,
+};
+
+// badge mode: install button in the middle of the bottom screen
+enum {
+    BADGE_INSTALL_BUTTON_X = 60,
+    BADGE_INSTALL_BUTTON_Y = 96,
+    BADGE_INSTALL_BUTTON_WIDTH = 200,
+    BADGE_INSTALL_BUTTON_HEIGHT = 48,
 };
 
 static inline bool toolbar_hit_rect(u16 x, u16 y, int rect_x, int rect_y, int width, int height)

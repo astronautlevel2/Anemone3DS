@@ -70,12 +70,15 @@ const char * main_paths[REMOTE_MODE_AMOUNT] = {
 const int entries_per_screen_v[MODE_AMOUNT] = {
     4,
     4,
+    4,
 };
 const int entries_per_screen_h[MODE_AMOUNT] = { //for themeplaza browser
     6,
     6,
+    6,
 };
 const int entry_size[MODE_AMOUNT] = {
+    48,
     48,
     48,
 };
@@ -156,7 +159,8 @@ void free_lists(void)
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * const current_list = &lists[i];
-        C3D_TexDelete(&current_list->icons_texture);
+        if(current_list->icons_texture.data != NULL)
+            C3D_TexDelete(&current_list->icons_texture);
         free(current_list->icons_info);
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
@@ -214,6 +218,13 @@ static void load_lists(Entry_List_s * lists)
     free_lists();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
+        // badges are installed straight from the badges folder, there is no list to load
+        if(i == MODE_BADGES)
+        {
+            lists[i].mode = i;
+            continue;
+        }
+
         InstallType loading_screen = INSTALL_NONE;
         if(i == MODE_THEMES)
             loading_screen = INSTALL_LOADING_THEMES;
@@ -489,7 +500,48 @@ int main(void)
 
         if(kDown & KEY_START) quit = true;
 
-        if(current_list->entries_count == 0)
+        if(current_mode == MODE_BADGES)
+        {
+            bool install = kDown & KEY_A;
+            if (kDown & KEY_R)
+            {
+                goto enable_qr;
+            } else if (kDown & KEY_L)
+            {
+                goto switch_mode;
+            } else if (kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
+                {
+                    goto switch_mode;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
+                {
+                    quit = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
+                {
+                    goto browse_themeplaza;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y))
+                {
+                    goto enable_qr;
+                } else if(toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
+                {
+                    install = true;
+                }
+            }
+
+            if(install)
+            {
+                draw_install(INSTALL_BADGES);
+                install_badges();
+            }
+            continue;
+        }
+        else if(current_list->entries_count == 0)
         {
             if (kDown & KEY_R)
             {
