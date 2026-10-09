@@ -69,6 +69,7 @@ typedef struct {
 } curl_header;
 
 bool themeplaza_browser(RemoteMode mode);
+void offer_install_downloaded(const u16 * saved_path, RemoteMode mode);
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
 
 #endif

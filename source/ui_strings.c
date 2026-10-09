@@ -332,6 +332,7 @@ const Language_s language_english = {
         .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
         .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
         .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .install_now = "Do you want to install it now?",
     },
     .remote_instructions =
     {
@@ -791,6 +792,7 @@ const Language_s language_spanish = {
         .http503 = "HTTP 503 Servicio No Disponible\nContacta al administrador del sitio.",
         .http504 = "HTTP 504 Tiempo de Espera de la Puerta de Enlace\nContacta al administrador del sitio.",
         .http_unexpected = "HTTP %u\nSi crees que esto es inesperado, por favor\ncontacta al administrador del sitio.",
+        .install_now = "¿Quieres instalarlo ahora?",
     },
     .remote_instructions =
     {
@@ -1251,6 +1253,7 @@ const Language_s language_french = {
         .http503 = "HTTP 503 Service Unavailable\nContactez l'administrateur du site.",
         .http504 = "HTTP 504 Gateway Timeout\nContactez l'administrateur du site.",
         .http_unexpected = "HTTP %u\nSi vous pensez que ceci est inattendu,\ncontactez l'administrateur du site.",
+        .install_now = "Voulez-vous l'installer maintenant ?",
     },
     .remote_instructions =
     {
@@ -1710,6 +1713,7 @@ const Language_s language_portuguese = {
         .http503 = "HTTP 503 Service Unavailable\nContate o administrador do site.",
         .http504 = "HTTP 504 Gateway Timeout\nContate o administrador do site.",
         .http_unexpected = "HTTP %u\nSe achar que isso é inesperado,\ncontate o administrador do site.",
+        .install_now = "Deseja instalar agora?",
     },
     .remote_instructions =
     {
@@ -2172,6 +2176,7 @@ const Language_s language_korean = {
         .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
         .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
         .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .install_now = "Do you want to install it now?",
     },
     .remote_instructions =
     {
@@ -2631,6 +2636,7 @@ const Language_s language_SChinese = {
         .http503 = "HTTP 503 Service Unavailable\n请联系网站管理员",
         .http504 = "HTTP 504 Gateway Timeout\n请联系网站管理员",
         .http_unexpected = "HTTP %u\n如果你认为这是错误, 请联系网站管理员",
+        .install_now = "要现在安装吗?",
     },
     .remote_instructions =
     {

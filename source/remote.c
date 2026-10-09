@@ -36,6 +36,8 @@
 #include "urls.h"
 #include "conversion.h"
 #include "ui_strings.h"
+#include "themes.h"
+#include "splashes.h"
 
 char *last_search = NULL;
 json_int_t last_page = 1;
@@ -352,9 +354,39 @@ static void download_remote_entry(Entry_s * entry, RemoteMode mode)
     }
     free(download_url);
 
-    save_zip_to_sd(filename, zip_size, zip_buf, mode);
+    u16 saved_path[0x106] = {0};
+    save_zip_to_sd(filename, zip_size, zip_buf, mode, saved_path);
     free(filename);
     free(zip_buf);
+
+    offer_install_downloaded(saved_path, mode);
+}
+
+// ask to install a theme or splash right after it was downloaded to saved_path
+void offer_install_downloaded(const u16 * saved_path, RemoteMode mode)
+{
+    if (saved_path[0] == 0 || (mode != REMOTE_MODE_THEMES && mode != REMOTE_MODE_SPLASHES))
+        return;
+
+    if (!draw_confirm_no_interface(language.remote.install_now))
+        return;
+
+    Entry_s entry = {0};
+    memcpy(entry.path, saved_path, sizeof(entry.path));
+    entry.is_zip = true;
+
+    if (mode == REMOTE_MODE_THEMES)
+    {
+        aptSetHomeAllowed(false);
+        draw_install(INSTALL_SINGLE);
+        if (R_SUCCEEDED(theme_install(&entry)))
+            installed_themes = true;
+    }
+    else
+    {
+        draw_install(INSTALL_SPLASH);
+        splash_install(&entry, SPLASH_INSTALL_NORMAL);
+    }
 }
 
 static SwkbdCallbackResult

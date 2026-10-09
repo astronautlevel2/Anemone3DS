@@ -155,6 +155,7 @@ typedef struct {
     const char *http503;
     const char *http504;
     const char *http_unexpected;
+    const char *install_now;
 } Remote_Strings_s;
 
 typedef struct {
