@@ -567,7 +567,6 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (kDown & KEY_START)
         {
-        exit:
             quit = true;
             downloaded = false;
             break;
@@ -723,23 +722,19 @@ bool themeplaza_browser(RemoteMode mode)
 
                 if (y < 24)
                 {
-                    if (BETWEEN(0, x, 80))
-                    {
-                        search_menu(current_list);
-                    }
-                    else if (BETWEEN(320 - 96, x, 320 - 72))
+                    if (toolbar_hit(x, y, TOOLBAR_REMOTE_BACK_X, TOOLBAR_TOP_Y))
                     {
                         break;
                     }
-                    else if (BETWEEN(320 - 72, x, 320 - 48))
+                    else if (toolbar_hit_rect(x, y, TOOLBAR_REMOTE_SEARCH_X, TOOLBAR_TOP_Y, TOOLBAR_REMOTE_SEARCH_WIDTH, TOOLBAR_BUTTON_SIZE))
                     {
-                        goto exit;
+                        search_menu(current_list);
                     }
-                    else if (BETWEEN(320 - 48, x, 320 - 24))
+                    else if (toolbar_hit(x, y, TOOLBAR_REMOTE_FILTER_X, TOOLBAR_TOP_Y))
                     {
-                        goto toggle_preview;
+                        extra_mode = true;
                     }
-                    else if (BETWEEN(320 - 24, x, 320))
+                    else if (toolbar_hit(x, y, TOOLBAR_REMOTE_MODE_X, TOOLBAR_TOP_Y))
                     {
                         mode++;
                         mode %= REMOTE_MODE_AMOUNT;
@@ -749,6 +744,15 @@ bool themeplaza_browser(RemoteMode mode)
 
                         load_remote_list(current_list, 1, mode, false);
                     }
+                }
+                else if (toolbar_hit(x, y, TOOLBAR_REMOTE_PREVIEW_X, TOOLBAR_BOTTOM_Y))
+                {
+                    goto toggle_preview;
+                }
+                else if (toolbar_hit(x, y, TOOLBAR_REMOTE_DOWNLOAD_X, TOOLBAR_BOTTOM_Y))
+                {
+                    download_remote_entry(current_entry, mode);
+                    downloaded = true;
                 }
                 else if (BETWEEN(240 - 24, y, 240) && BETWEEN(176, x, 320))
                 {
