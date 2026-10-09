@@ -222,6 +222,7 @@ const Language_s language_english = {
         .load_icons = "Loading icons, please wait...",
         .install_splash = "Installing a splash...",
         .delete_splash = "Deleting installed splash...",
+        .delete_theme = "Uninstalling installed theme...",
         .install_theme = "Installing a single theme...",
         .install_shuffle = "Installing shuffle themes...",
         .install_bgm = "Installing BGM-only theme...",
@@ -271,6 +272,7 @@ const Language_s language_english = {
         .too_many_themes = "You have too many themes selected.",
         .not_enough_themes = "You don't have enough themes selected.",
         .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
+        .uninstall_theme_confirm = "Are you sure you would like to uninstall\nthe installed theme?",
         .delete_confirm = "Are you sure you would like to delete this?",
     },
     .remote =
@@ -452,7 +454,8 @@ const Language_s language_english = {
         .illegal_char = "Illegal character used.",
         .name_folder = "Name of output folder",
         .cancel = "Cancel",
-        .done = "Done"
+        .done = "Done",
+        .uninstall_failed = "Uninstalling the theme failed."
     },
     .badges = 
     {
@@ -655,6 +658,7 @@ const Language_s language_spanish = {
         .load_icons = "Cargando iconos, por favor espera...",
         .install_splash = "Instalando fondo...",
         .delete_splash = "Eliminando fondo instalado...",
+        .delete_theme = "Desinstalando tema instalado...",
         .install_theme = "Instalando un solo tema...",
         .install_shuffle = "Instalando temas aleatorios...",
         .install_bgm = "Instalando tema solo BGM...",
@@ -704,6 +708,7 @@ const Language_s language_spanish = {
         .too_many_themes = "Tienes demasiados temas seleccionados.",
         .not_enough_themes = "No tienes suficientes temas seleccionados.",
         .uninstall_confirm = "¿Estás seguro de que deseas eliminar\nel fondo instalado?",
+        .uninstall_theme_confirm = "¿Estás seguro de que deseas desinstalar\nel tema instalado?",
         .delete_confirm = "¿Estás seguro de que deseas eliminar esto?",
     },
     .remote =
@@ -885,7 +890,8 @@ const Language_s language_spanish = {
         .illegal_char = "Se utilizó un carácter ilegal.",
         .name_folder = "Nombre de la carpeta de salida",
         .cancel = "Cancelar",
-        .done = "Listo"
+        .done = "Listo",
+        .uninstall_failed = "No se pudo desinstalar el tema."
     },
     .badges =
     {
@@ -1089,6 +1095,7 @@ const Language_s language_french = {
         .load_icons = "Chargement des icônes,\nveuillez patienter...",
         .install_splash = "Installation su splash...",
         .delete_splash = "Effacement du splash installé...",
+        .delete_theme = "Désinstallation du thème installé...",
         .install_theme = "Installation du thème...",
         .install_shuffle = "Installation de thèmes aléatoire...",
         .install_bgm = "Installation de la musique du thème...",
@@ -1138,6 +1145,7 @@ const Language_s language_french = {
         .too_many_themes = "Il y a trop de thèmes sélectionnés.",
         .not_enough_themes = "Il n'y a pas assez de thèmes sélectionnés.",
         .uninstall_confirm = "Voulez-vous supprimer le splash\nactuellement installé?",
+        .uninstall_theme_confirm = "Voulez-vous désinstaller le thème\nactuellement installé?",
         .delete_confirm = "Voulez-vous supprimer ceci?",
     },
     .remote =
@@ -1319,7 +1327,8 @@ const Language_s language_french = {
         .illegal_char = "Caractère interdit utilisé.",
         .name_folder = "Nom du dossier de destination",
         .cancel = "Annuler",
-        .done = "OK"
+        .done = "OK",
+        .uninstall_failed = "Impossible de désinstaller le thème."
     },
     .badges = 
     {
@@ -1522,6 +1531,7 @@ const Language_s language_portuguese = {
         .load_icons = "Carregando ícones, aguarde...",
         .install_splash = "Instalando um splash...",
         .delete_splash = "Excluindo splash instalado...",
+        .delete_theme = "Desinstalando tema instalado...",
         .install_theme = "Instalando um único tema...",
         .install_shuffle = "Instalando temas shuffle...",
         .install_bgm = "Instalando somente o BGM...",
@@ -1571,6 +1581,7 @@ const Language_s language_portuguese = {
         .too_many_themes = "Você tem muitos temas selecionados.",
         .not_enough_themes = "Você não tem temas suficientes selecionados.",
         .uninstall_confirm = "Tem certeza de que deseja excluir\no splash instalado?",
+        .uninstall_theme_confirm = "Tem certeza de que deseja desinstalar\no tema instalado?",
         .delete_confirm = "Tem certeza de que deseja excluir isso?",
     },
     .remote =
@@ -1752,7 +1763,8 @@ const Language_s language_portuguese = {
         .illegal_char = "Caractere ilegal usado.",
         .name_folder = "Nome da pasta de saída",
         .cancel = "Cancelar",
-        .done = "Pronto"
+        .done = "Pronto",
+        .uninstall_failed = "Não foi possível desinstalar o tema."
     },
     .badges = 
     {
@@ -1957,6 +1969,7 @@ const Language_s language_korean = {
         .load_icons = "Loading icons, please wait...",
         .install_splash = "Installing a splash...",
         .delete_splash = "Deleting installed splash...",
+        .delete_theme = "Uninstalling installed theme...",
         .install_theme = "Installing a single theme...",
         .install_shuffle = "Installing shuffle themes...",
         .install_bgm = "Installing BGM-only theme...",
@@ -2007,6 +2020,7 @@ const Language_s language_korean = {
         .too_many_themes = "You have too many themes selected.",
         .not_enough_themes = "You don't have enough themes selected.",
         .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
+        .uninstall_theme_confirm = "Are you sure you would like to uninstall\nthe installed theme?",
         .delete_confirm = "Are you sure you would like\nto delete this?",
     },
     .remote =
@@ -2188,7 +2202,8 @@ const Language_s language_korean = {
         .illegal_char = "Illegal character used.",
         .name_folder = "Name of output folder",
         .cancel = "Cancel",
-        .done = "Done"
+        .done = "Done",
+        .uninstall_failed = "Uninstalling the theme failed."
     },
     .badges = 
     {
@@ -2391,6 +2406,7 @@ const Language_s language_SChinese = {
         .load_icons = "正在加载图标, 请稍等...",
         .install_splash = "正在安装开机图画...",
         .delete_splash = "正在删除安装的开机图画...",
+        .delete_theme = "正在卸载已安装的主题...",
         .install_theme = "正在安装主题...",
         .install_shuffle = "正在安装随机主题...",
         .install_bgm = "正在安装仅主题BGM...",
@@ -2440,6 +2456,7 @@ const Language_s language_SChinese = {
         .too_many_themes = "你选择了太多主题",
         .not_enough_themes = "你没有足够的主题可以选择",
         .uninstall_confirm = "真的要删除已安装的开机图画吗?",
+        .uninstall_theme_confirm = "真的要卸载已安装的主题吗?",
         .delete_confirm = "真的要删除这个?",
     },
     .remote =
@@ -2621,7 +2638,8 @@ const Language_s language_SChinese = {
         .illegal_char = "使用了非法字符",
         .name_folder = "输出文件夹名",
         .cancel = "取消",
-        .done = "完成"
+        .done = "完成",
+        .uninstall_failed = "卸载主题失败。"
     },
     .badges = 
     {
