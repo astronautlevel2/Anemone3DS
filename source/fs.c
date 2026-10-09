@@ -595,7 +595,10 @@ renamed:
         {
             // skip initial . (this is allowed)
             if (illegal_char == curr_filename)
+            {
+                illegal_char++;
                 continue;
+            }
             // skip extension delimiter
             if (strpbrk(illegal_char + 1, ".") == NULL)
             {
