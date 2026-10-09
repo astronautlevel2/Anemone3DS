@@ -296,7 +296,6 @@ void draw_base_interface(void)
 
     C2D_DrawRectSolid(0, 0, 0.5f, 320, 24, colors[COLOR_ACCENT]);
     C2D_DrawRectSolid(0, 216, 0.5f, 320, 24, colors[COLOR_ACCENT]);
-    C2D_DrawText(&text[TEXT_VERSION], C2D_WithColor, 7, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT]);
 
     set_screen(top);
 }
@@ -568,16 +567,16 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
 
     set_screen(bottom);
 
-    draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
-
     C2D_ImageTint accent_tint;
     C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
 
-    draw_image_tint(sprites_back_idx, 320-96, 0, accent_tint);
-    draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
-    draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
+    draw_image_tint(sprites_back_idx, TOOLBAR_REMOTE_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_c2d_text(TOOLBAR_REMOTE_SEARCH_X + 4, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
+    draw_image_tint(sprites_sort_idx, TOOLBAR_REMOTE_FILTER_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_text(TOOLBAR_REMOTE_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
 
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
+    draw_image_tint(sprites_preview_idx, TOOLBAR_REMOTE_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
+    draw_image_tint(sprites_download_idx, TOOLBAR_REMOTE_DOWNLOAD_X, TOOLBAR_BOTTOM_Y, accent_tint);
 
     C2D_ImageTint background_tint;
     C2D_PlainImageTint(&background_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
@@ -689,11 +688,11 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
-        draw_image_tint(sprites_browse_idx, 320-72, 0, accent_tint);
-        draw_image_tint(sprites_exit_idx, 320-48, 0, accent_tint);
+        draw_image_tint(sprites_qr_idx, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
 
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
+        draw_text(TOOLBAR_EMPTY_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
 
         return;
     }
@@ -716,33 +715,37 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     if (draw_mode == DRAW_MODE_LIST)
     {
-        draw_image_tint(sprites_install_idx, 320-120, 0, accent_tint);
-        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
-        draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
-        draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
-        draw_image_tint(sprites_menu_idx, 2, 0, accent_tint);
+        draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_qr_idx, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
+
+        draw_image_tint(sprites_preview_idx, TOOLBAR_LIST_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
+        draw_image_tint(sprites_install_idx, TOOLBAR_LIST_INSTALL_X, TOOLBAR_BOTTOM_Y, accent_tint);
         if (current_mode == MODE_THEMES)
         {
-            draw_image_tint(sprites_shuffle_idx, 320-144, 0, accent_tint);
+            draw_image_tint(sprites_shuffle_idx, TOOLBAR_LIST_SHUFFLE_X, TOOLBAR_BOTTOM_Y, accent_tint);
         }
     }
     else
     {
         if (draw_mode == DRAW_MODE_INSTALL)
         {
-            draw_image_tint(sprites_install_idx, 320-24, 0, accent_tint);
-            draw_image_tint(sprites_shuffle_idx, 320-48, 0, accent_tint);
-            draw_image_tint(sprites_shuffle_no_bgm_idx, 320-72, 0, accent_tint);
-            draw_image_tint(sprites_bgm_only_idx, 320-96, 0, accent_tint);
-            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
+            draw_image_tint(sprites_install_idx, TOOLBAR_INSTALL_NORMAL_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_shuffle_idx, TOOLBAR_INSTALL_SHUFFLE_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_shuffle_no_bgm_idx, TOOLBAR_INSTALL_NO_BGM_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_bgm_only_idx, TOOLBAR_INSTALL_BGM_ONLY_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_back_idx, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y, accent_tint);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
-            draw_image_tint(sprites_browse_idx, 320-24, 0, accent_tint);
-            draw_image_tint(sprites_dump_idx, 320-48, 0, accent_tint);
-            draw_image_tint(sprites_sort_idx, 320-72, 0, accent_tint);
-            draw_image_tint(sprites_badge_idx, 320-96, 0, accent_tint);
-            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
+            draw_image_tint(sprites_back_idx, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_badge_idx, TOOLBAR_EXTRA_BADGES_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_sort_idx, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_reload_idx, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_dump_idx, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y, accent_tint);
+
+            draw_image_tint(sprites_exit_idx, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y, accent_tint);
+            draw_c2d_text(TOOLBAR_EXTRA_VERSION_X, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_VERSION]);
         }
     }
 

@@ -506,21 +506,23 @@ int main(void)
                 u16 y = touch.py;
                 if (y < 24)
                 {
-                    if(BETWEEN(320-24, x, 320))
+                    if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
                     {
                         goto switch_mode;
-                    } else if(BETWEEN(320-48, x, 320-24))
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
                     {
                         quit = true;
                         continue;
-                    } else if(BETWEEN(320-72, x, 320-48))
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
                     {
                         goto browse_themeplaza;
-                    } else if(BETWEEN(320-96, x, 320-72))
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y))
                     {
                         goto enable_qr;
                     }
                 }
+                // the list's own buttons aren't shown here, don't let the tap reach them
+                continue;
             }
         }
         else if(!install_mode && !extra_mode)
@@ -626,19 +628,19 @@ int main(void)
                 {
                     if (y < 24)
                     {
-                        if (BETWEEN(320-24, x, 320))
+                        if (toolbar_hit(x, y, TOOLBAR_INSTALL_NORMAL_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_single;
-                        } else if (BETWEEN(320-48, x, 320-24))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_SHUFFLE_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_shuffle;
-                        } else if (BETWEEN(320-72, x, 320-48))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_NO_BGM_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_no_bgm;
-                        } else if (BETWEEN(320-96, x, 320-72))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_BGM_ONLY_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_bgm_only;
-                        } else if (BETWEEN(2, x, 26))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y))
                         {
                             goto install_leave;
                         }
@@ -764,13 +766,16 @@ int main(void)
                 {
                     if (y < 24)
                     {
-                        if (BETWEEN(320-24, x, 320))
-                        {
-                            goto browse_themeplaza;
-                        } else if (BETWEEN(320-48, x, 320-24))
+                        if (toolbar_hit(x, y, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y))
                         {
                             goto dump_single;
-                        } else if (BETWEEN(320-72, x, 320-48))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y))
+                        {
+                            load_icons_first(current_list, false);
+                            extra_mode = false;
+                            draw_mode = DRAW_MODE_LIST;
+                            extra_index = 1;
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y))
                         {
                             switch (current_list->current_sort)
                             {
@@ -786,15 +791,19 @@ int main(void)
                                 default:
                                     break;
                             }
-                        } else if (BETWEEN(320-96, x, 320-72))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_BADGES_X, TOOLBAR_TOP_Y))
                         {
                             goto badge_install;
-                        } else if (BETWEEN(2, x, 26))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y))
                         {
                             extra_mode = false;
                             extra_index = 1;
                             draw_mode = DRAW_MODE_LIST;
                         }
+                    }
+                    else if (toolbar_hit(x, y, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y))
+                    {
+                        quit = true;
                     }
                 }
             }
@@ -1042,19 +1051,38 @@ int main(void)
             {
                 if(y < 24)
                 {
-                    if(BETWEEN(320-144, x, 320-120))
+                    if(toolbar_hit(x, y, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y))
+                    {
+                        extra_mode = true;
+                        draw_mode = DRAW_MODE_EXTRA;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y))
+                    {
+                        goto enable_qr;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
+                    {
+                        goto browse_themeplaza;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_MODE_X, TOOLBAR_TOP_Y))
+                    {
+                        goto switch_mode;
+                    }
+                }
+                else if(y >= TOOLBAR_BOTTOM_Y)
+                {
+                    if(toolbar_hit(x, y, TOOLBAR_LIST_PREVIEW_X, TOOLBAR_BOTTOM_Y))
+                    {
+                        goto toggle_preview;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_SHUFFLE_X, TOOLBAR_BOTTOM_Y))
                     {
                         if (current_mode == MODE_THEMES)
                         {
                             toggle_shuffle(current_list);
                         }
                     }
-                    else if(BETWEEN(2, x, 26))
-                    {
-                        extra_mode = true;
-                        draw_mode = DRAW_MODE_EXTRA;
-                    }
-                    else if(BETWEEN(320-120, x, 320-96))
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_INSTALL_X, TOOLBAR_BOTTOM_Y))
                     {
                         if (current_mode == MODE_THEMES)
                         {
@@ -1074,26 +1102,7 @@ int main(void)
                             }
                         }
                     }
-                    else if(BETWEEN(320-96, x, 320-72))
-                    {
-                        goto enable_qr;
-                    }
-                    else if(BETWEEN(320-72, x, 320-48))
-                    {
-                        quit = true;
-                    }
-                    else if(BETWEEN(320-48, x, 320-24))
-                    {
-                        goto toggle_preview;
-                    }
-                    else if(BETWEEN(320-24, x, 320))
-                    {
-                        goto switch_mode;
-                    }
-                }
-                else if(y >= 216)
-                {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    else if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
                         change_selected(current_list, -current_list->entries_per_screen_v);
                     }
