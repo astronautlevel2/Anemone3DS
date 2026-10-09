@@ -426,7 +426,7 @@ static void download_remote_entry(Entry_s * entry, RemoteMode mode, RemoteProvid
     if (filename == NULL && entry->remote_filename != NULL)
         filename = strdup(entry->remote_filename);
 
-    save_zip_to_sd(filename, zip_size, zip_buf, mode);
+    save_zip_to_sd(filename, zip_size, zip_buf, mode, provider);
     free(filename);
     free(zip_buf);
 }

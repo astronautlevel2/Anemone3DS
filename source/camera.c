@@ -302,6 +302,21 @@ static void exit_qr(qr_data * data)
     data->event_stop = 0;
 }
 
+// QR codes from Theme Plaza keep its badge folder layout, anything else is treated like Themezer
+static RemoteProvider qr_url_provider(const char * url)
+{
+    const char * host = strstr(url, "://");
+    host = host != NULL ? host + 3 : url;
+    if (!strncasecmp(host, "www.", 4))
+        host += 4;
+
+    const size_t length = strlen("themeplaza.art");
+    if (!strncasecmp(host, "themeplaza.art", length) && strchr("/:?", host[length]) != NULL)
+        return REMOTE_PROVIDER_THEMEPLAZA;
+
+    return REMOTE_PROVIDER_THEMEZER;
+}
+
 bool init_qr(void)
 {
     qr_data data;
@@ -394,7 +409,7 @@ bool init_qr(void)
 
                 if(mode != REMOTE_MODE_AMOUNT)
                 {
-                    save_zip_to_sd(filename, zip_size, zip_buf, mode);
+                    save_zip_to_sd(filename, zip_size, zip_buf, mode, qr_url_provider((const char *)scan_data->payload));
                     success = true;
                 }
                 else
@@ -402,7 +417,7 @@ bool init_qr(void)
                     bool badge = draw_confirm_no_interface(language.camera.badge_question);
                     if (badge)
                     {
-                        save_zip_to_sd(filename, zip_size, zip_buf, REMOTE_MODE_BADGES);
+                        save_zip_to_sd(filename, zip_size, zip_buf, REMOTE_MODE_BADGES, qr_url_provider((const char *)scan_data->payload));
                         // don't set success since we don't need to reload lists for badge zips
                     } else
                     {
