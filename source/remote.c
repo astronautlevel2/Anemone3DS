@@ -1166,8 +1166,7 @@ static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf
                     filename++;
                 }
 
-                *out_filename = malloc(0x100);
-                strcpy(*out_filename, filename);
+                *out_filename = strdup(filename);
             } else {
                 *out_filename = NULL;
             }
