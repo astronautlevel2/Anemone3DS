@@ -55,6 +55,9 @@ typedef struct {
     const char *tp_theme_mode;
     const char *tp_splash_mode;
     const char *tp_badge_mode;
+    const char *tz_theme_mode;
+    const char *tz_splash_mode;
+    const char *tz_badge_mode;
     const char *search;
     const char *page;
     const char *err_quit;
@@ -81,6 +84,7 @@ typedef struct {
     const char *dump_all_official;
     const char *dump_badges;
     const char *install_badges;
+    const char *cancel_loading;
     float start_pos;
     const char *shuffle;
 } Draw_Strings_s;
@@ -129,7 +133,7 @@ typedef struct {
     const char *search;
     const char *parental_fail;
     const char *zip_not_found;
-    const char *generic_httpc_error;
+    const char *network_error;
     const char *http_timeout;
     const char *http_no_network;
     const char *http_ssl_error;
@@ -150,6 +154,8 @@ typedef struct {
     const char *http503;
     const char *http504;
     const char *http_unexpected;
+    const char *select_source;
+    const char *select_source_hint;
 } Remote_Strings_s;
 
 typedef struct {

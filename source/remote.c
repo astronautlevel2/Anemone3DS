@@ -25,7 +25,6 @@
 */
 
 #include <ctype.h>
-#include <curl/curl.h>
 #include <malloc.h>
 
 #include "remote.h"
@@ -36,13 +35,10 @@
 #include "urls.h"
 #include "conversion.h"
 #include "ui_strings.h"
+#include "themezer.h"
 
 char *last_search = NULL;
 json_int_t last_page = 1;
-
-// forward declaration of special case used only here
-// TODO: replace this travesty with a proper handler
-static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error);
 
 static void free_icons(Entry_List_s * list)
 {
@@ -162,11 +158,45 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
         free(entry_path);
 
         load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
+
+        // canceled: only keep the entries that were fully loaded
+        if (loading_cancel_requested())
+        {
+            list->entries_count = i;
+            list->entries_loaded = i;
+            if (i == 0)
+            {
+                free(list->entries);
+                list->entries = NULL;
+            }
+            break;
+        }
+    }
+}
+
+static void load_themezer_page(Entry_List_s * list, json_t * root, json_int_t page, RemoteMode mode)
+{
+    if (themezer_load_page(list, root))
+    {
+        list->tp_current_page = page;
+        list->mode = (EntryMode) mode;
+        last_page = page;
+    }
+    else
+    {
+        // the current page stays as it was, only the search has to be put back
+        throw_error(language.remote.no_results, ERROR_LEVEL_WARNING);
+        free(list->tp_search);
+        asprintf(&list->tp_search, "%s", last_search);
     }
 }
 
 static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mode, bool ignore_cache)
 {
+    const bool themezer = list->remote_provider == REMOTE_PROVIDER_THEMEZER;
+    if (themezer)
+        themezer_stop_icons();
+
     if (page > list->tp_page_count)
         page = 1;
     if (page <= 0)
@@ -185,17 +215,33 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
 
     char * page_json = NULL;
     char * api_url = NULL;
-    asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode + 1, list->tp_search);
+    if (themezer)
+        api_url = themezer_page_url(mode, page, list->tp_search);
+    else
+        asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode + 1, list->tp_search);
     u32 json_len;
     Result res = http_get(api_url, NULL, &page_json, &json_len, INSTALL_NONE, "application/json");
     free(api_url);
     if (R_FAILED(res))
     {
         free(page_json);
+        if (themezer)
+            themezer_start_icons(list);
         return;
     }
 
-    if (json_len)
+    if (json_len && themezer)
+    {
+        json_error_t error;
+        json_t * root = json_loadb(page_json, json_len, 0, &error);
+        if (root)
+            load_themezer_page(list, root, page, mode);
+        else
+            DEBUG("json error on line %d: %s\n", error.line, error.text);
+
+        json_decref(root);
+    }
+    else if (json_len)
     {
         list->tp_current_page = page;
         list->mode = (EntryMode) mode;
@@ -233,18 +279,23 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
         throw_error(language.remote.check_wifi, ERROR_LEVEL_WARNING);
 
     free(page_json);
+
+    if (themezer)
+        themezer_start_icons(list);
 }
 
 static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset, u32 height)
+// Theme Plaza entries are cached on the SD card, Themezer ones are always downloaded
+static bool load_remote_preview(const Entry_s * entry, RemoteProvider provider, C2D_Image * preview_image, int * preview_offset, u32 height)
 {
+    const bool use_cache = provider == REMOTE_PROVIDER_THEMEPLAZA;
     bool not_cached = true;
 
     if (!memcmp(&previous_path_preview, entry->path, 0x106 * sizeof(u16))) return true;
 
     char * preview_png = NULL;
-    u32 preview_size = load_data("/preview.png", entry, &preview_png);
+    u32 preview_size = use_cache ? load_data("/preview.png", entry, &preview_png) : 0;
 
     not_cached = !preview_size;
 
@@ -254,7 +305,12 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
         preview_png = NULL;
 
         char * preview_url = NULL;
-        asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry->tp_download_id);
+        if (use_cache)
+            asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry->tp_download_id);
+        else if (entry->remote_preview_url != NULL)
+            preview_url = strdup(entry->remote_preview_url);
+        else
+            return false;
 
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
         Result res = http_get(preview_url, NULL, &preview_png, &preview_size, INSTALL_LOADING_REMOTE_PREVIEW, "image/png");
@@ -282,7 +338,7 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset, height);
     free(preview_buf);
 
-    if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
+    if (ret && not_cached && use_cache) // only save the preview if it loaded correctly - isn't corrupted
     {
         u16 path[0x107] = { 0 };
         strucat(path, entry->path);
@@ -297,6 +353,18 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
 }
 
 static u16 previous_path_bgm[0x106];
+
+// Themezer BGM is downloaded into a buffer every time (no SD cache); *size is 0 if the theme has none
+static Result load_themezer_bgm(const Entry_s * entry, char ** bgm_ogg, u32 * bgm_size)
+{
+    *bgm_ogg = NULL;
+    *bgm_size = 0;
+    if (entry->remote_audio_url == NULL)
+        return MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
+
+    draw_install(INSTALL_LOADING_REMOTE_BGM);
+    return http_get_optional(entry->remote_audio_url, bgm_ogg, bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
+}
 
 static void load_remote_bgm(const Entry_s * entry)
 {
@@ -315,7 +383,7 @@ static void load_remote_bgm(const Entry_s * entry)
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
 
-        Result res = http_get_with_not_found_flag(bgm_url, NULL, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg", false);
+        Result res = http_get_optional(bgm_url, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
         free(bgm_url);
         if (R_FAILED(res))
             return;
@@ -335,10 +403,13 @@ static void load_remote_bgm(const Entry_s * entry)
     free(bgm_ogg);
 }
 
-static void download_remote_entry(Entry_s * entry, RemoteMode mode)
+static void download_remote_entry(Entry_s * entry, RemoteMode mode, RemoteProvider provider)
 {
     char * download_url = NULL;
-    asprintf(&download_url, THEMEPLAZA_DOWNLOAD_FORMAT, entry->tp_download_id);
+    if (provider == REMOTE_PROVIDER_THEMEZER)
+        download_url = strdup(entry->remote_download_url);
+    else
+        asprintf(&download_url, THEMEPLAZA_DOWNLOAD_FORMAT, entry->tp_download_id);
 
     char * zip_buf = NULL;
     char * filename = NULL;
@@ -352,7 +423,10 @@ static void download_remote_entry(Entry_s * entry, RemoteMode mode)
     }
     free(download_url);
 
-    save_zip_to_sd(filename, zip_size, zip_buf, mode);
+    if (filename == NULL && entry->remote_filename != NULL)
+        filename = strdup(entry->remote_filename);
+
+    save_zip_to_sd(filename, zip_size, zip_buf, mode, provider);
     free(filename);
     free(zip_buf);
 }
@@ -460,7 +534,20 @@ static void change_selected(Entry_List_s * list, int change_value)
     list->selected_entry = newval;
 }
 
-bool themeplaza_browser(RemoteMode mode)
+// Themezer icons download in the background; stop that while something else uses the network or the keyboard is open
+static void pause_icons(Entry_List_s * list)
+{
+    if (list->remote_provider == REMOTE_PROVIDER_THEMEZER)
+        themezer_stop_icons();
+}
+
+static void resume_icons(Entry_List_s * list)
+{
+    if (list->remote_provider == REMOTE_PROVIDER_THEMEZER)
+        themezer_start_icons(list);
+}
+
+static bool remote_browser(RemoteMode mode, RemoteProvider provider)
 {
     bool downloaded = false;
 
@@ -485,12 +572,16 @@ bool themeplaza_browser(RemoteMode mode)
         }
     }
 
+    if (provider == REMOTE_PROVIDER_THEMEZER && R_FAILED(themezer_icons_init()))
+        return downloaded;
+
     bool preview_mode = false;
     int preview_offset = 0;
     audio_ogg_s * audio = NULL;
 
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
+    current_list->remote_provider = provider;
     current_list->tp_search = strdup("");
     last_search = strdup("");
     last_page = 1;
@@ -540,7 +631,8 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (preview_mode)
         {
-            if (mode == REMOTE_MODE_BADGES) draw_preview(preview, -40, 0.625f);
+            // Theme Plaza badge previews are 512x1024, everything else uses the 400x480 theme layout
+            if (mode == REMOTE_MODE_BADGES && provider == REMOTE_PROVIDER_THEMEPLAZA) draw_preview(preview, -40, 0.625f);
             else draw_preview(preview, preview_offset, 1.0f);
             
         }
@@ -548,8 +640,18 @@ bool themeplaza_browser(RemoteMode mode)
         {
             Instructions_s instructions = language.remote_instructions[mode];
             if (extra_mode)
+            {
                 instructions = language.remote_extra_instructions[mode];
+                // Themezer entries aren't cached, so there is nothing to reload without cache
+                if (provider == REMOTE_PROVIDER_THEMEZER)
+                    instructions.instructions[1][1] = NULL;
+            }
+
+            if (provider == REMOTE_PROVIDER_THEMEZER)
+                themezer_lock_icons();
             draw_grid_interface(current_list, instructions, extra_mode);
+            if (provider == REMOTE_PROVIDER_THEMEZER)
+                themezer_unlock_icons();
         }
 
         if (home_displayed)
@@ -587,6 +689,7 @@ bool themeplaza_browser(RemoteMode mode)
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);
+                mode = (RemoteMode) current_list->mode; // unchanged if the new mode couldn't be loaded
             }
             else if (kDown & KEY_R)
             {
@@ -596,13 +699,16 @@ bool themeplaza_browser(RemoteMode mode)
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);
+                mode = (RemoteMode) current_list->mode;
             }
             else if (kDown & KEY_DUP)
             {
                 extra_mode = false;
+                pause_icons(current_list);
                 jump_menu(current_list);
+                resume_icons(current_list);
             }
-            else if (kDown & KEY_DRIGHT)
+            else if (kDown & KEY_DRIGHT && provider == REMOTE_PROVIDER_THEMEPLAZA)
             {
                 extra_mode = false;
                 load_remote_list(current_list, current_list->tp_current_page, mode, true);
@@ -610,7 +716,9 @@ bool themeplaza_browser(RemoteMode mode)
             else if (kDown & KEY_DDOWN)
             {
                 extra_mode = false;
+                pause_icons(current_list);
                 search_menu(current_list);
+                resume_icons(current_list);
             }
             continue;
         }
@@ -623,15 +731,30 @@ bool themeplaza_browser(RemoteMode mode)
         toggle_preview:
             if (!preview_mode)
             {
-                u32 height = mode == REMOTE_MODE_BADGES ? 1024 : 480;
-                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset, height);
-                if (mode == REMOTE_MODE_THEMES && dspfirm)
+                pause_icons(current_list);
+                u32 height = mode == REMOTE_MODE_BADGES && provider == REMOTE_PROVIDER_THEMEPLAZA ? 1024 : 480;
+                preview_mode = load_remote_preview(current_entry, provider, &preview, &preview_offset, height);
+                if (mode == REMOTE_MODE_THEMES && dspfirm && provider == REMOTE_PROVIDER_THEMEZER)
+                {
+                    char * bgm_ogg = NULL;
+                    u32 bgm_size = 0;
+                    if (preview_mode && R_SUCCEEDED(load_themezer_bgm(current_entry, &bgm_ogg, &bgm_size)) && bgm_size)
+                    {
+                        audio = calloc(1, sizeof(audio_ogg_s));
+                        if (R_FAILED(load_audio_ogg_buffer(bgm_ogg, bgm_size, audio))) audio = NULL;
+                        if (audio != NULL) play_audio_ogg(audio);
+                    }
+                    else
+                        free(bgm_ogg);
+                }
+                else if (mode == REMOTE_MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_ogg_s));
                     if (R_FAILED(load_audio_ogg(current_entry, audio))) audio = NULL;
                     if (audio != NULL) play_audio_ogg(audio);
                 }
+                resume_icons(current_list);
             }
             else
             {
@@ -662,7 +785,9 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (kDown & KEY_A)
         {
-            download_remote_entry(current_entry, mode);
+            pause_icons(current_list);
+            download_remote_entry(current_entry, mode, provider);
+            resume_icons(current_list);
             downloaded = true;
         }
         else if (kDown & KEY_X)
@@ -725,7 +850,9 @@ bool themeplaza_browser(RemoteMode mode)
                 {
                     if (BETWEEN(0, x, 80))
                     {
+                        pause_icons(current_list);
                         search_menu(current_list);
+                        resume_icons(current_list);
                     }
                     else if (BETWEEN(320 - 96, x, 320 - 72))
                     {
@@ -748,11 +875,14 @@ bool themeplaza_browser(RemoteMode mode)
                         current_list->tp_search = strdup("");
 
                         load_remote_list(current_list, 1, mode, false);
+                        mode = (RemoteMode) current_list->mode;
                     }
                 }
                 else if (BETWEEN(240 - 24, y, 240) && BETWEEN(176, x, 320))
                 {
+                    pause_icons(current_list);
                     jump_menu(current_list);
+                    resume_icons(current_list);
                 }
                 else
                 {
@@ -792,600 +922,64 @@ bool themeplaza_browser(RemoteMode mode)
 
     free_preview(preview);
 
+    if (provider == REMOTE_PROVIDER_THEMEZER)
+        themezer_icons_exit();
+
     free_icons(current_list);
-    free(current_list->entries);
+    free_remote_entries(current_list);
     free(current_list->tp_search);
     free(last_search);
 
     return downloaded;
 }
 
-typedef struct header
+static bool select_remote_provider(RemoteProvider * provider)
 {
-    char ** filename; // pointer to location for filename; if NULL, no filename is parsed
-    u32 file_size; // if == 0, fall back to chunked read
-    Result result_code;
-} header;
-
-typedef enum ParseResult
-{
-    SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
-    REDIRECT, // 301/302/307/308
-    HTTPC_ERROR,
-    SERVER_IS_MISBEHAVING,
-    SEE_OTHER = 303, // Theme Plaza returns these
-    HTTP_UNAUTHORIZED = 401,
-    HTTP_FORBIDDEN = 403,
-    HTTP_NOT_FOUND = 404,
-    HTTP_UNACCEPTABLE = 406, // like 204, usually doesn't happen
-    HTTP_PROXY_UNAUTHORIZED = 407,
-    HTTP_GONE = 410,
-    HTTP_URI_TOO_LONG = 414,
-    HTTP_IM_A_TEAPOT = 418, // Note that a combined coffee/tea pot that is temporarily out of coffee should instead return 503.
-    HTTP_UPGRADE_REQUIRED = 426, // the 3DS doesn't support HTTP/2, so we can't upgrade - inform and return
-    HTTP_LEGAL_REASONS = 451,
-    HTTP_INTERNAL_SERVER_ERROR = 500,
-    HTTP_BAD_GATEWAY = 502,
-    HTTP_SERVICE_UNAVAILABLE = 503,
-    HTTP_GATEWAY_TIMEOUT = 504,
-} ParseResult;
-
-/*static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
-{
-    (void)textlen;
-    (void)user;
-    *ppMessage = "Input must not contain:\n><\"?;:/\\+,.|[=]";
-    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    while (aptMainLoop() && !quit)
     {
-        DEBUG("illegal filename: %s\n", text);
-        return SWKBD_CALLBACK_CONTINUE;
-    }
+        draw_remote_provider_picker(*provider);
 
-    return SWKBD_CALLBACK_OK;
-}*/
+        hidScanInput();
+        u32 kDown = hidKeysDown();
 
-// the good paths for this function return SUCCESS, ABORTED, or REDIRECT;
-// all other paths are failures
-static ParseResult parse_header(struct header * out, httpcContext * context, const char * mime)
-{
-    // status code
-    u32 status_code;
-
-    out->result_code = httpcGetResponseStatusCode(context, &status_code);
-    if (R_FAILED(out->result_code))
-    {
-        DEBUG("httpcGetResponseStatusCode\n");
-        return HTTPC_ERROR;
-    }
-
-    DEBUG("HTTP %lu\n", status_code);
-    switch (status_code)
-    {
-    case 301:
-    case 302:
-    case 307:
-    case 308:
-        return REDIRECT;
-    case 200:
-    case 203:
-        break;
-    default:
-        return (ParseResult)status_code;
-    }
-
-    char content_buf[1024] = {0};
-
-    // Content-Type
-
-    if (mime)
-    {
-        out->result_code = httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
-        if (R_FAILED(out->result_code))
-        {
-            return HTTPC_ERROR;
-        }
-
-        if (!strstr(mime, content_buf))
-        {
-            return SERVER_IS_MISBEHAVING;
-        }
-    }
-
-    // Content-Length
-
-    out->result_code = httpcGetDownloadSizeState(context, NULL, &out->file_size);
-    if (R_FAILED(out->result_code))
-    {
-        DEBUG("httpcGetDownloadSizeState\n");
-        return HTTPC_ERROR; // no need to free, program dies anyway
-    }
-
-    // Content-Disposition
-
-    if (out->filename)
-    {
-        bool present = 1;
-        out->result_code = httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024);
-        if (R_FAILED(out->result_code))
-        {
-            if (out->result_code == (long)0xD8A0A028L)
-                present = 0;
-            else
-            {
-                DEBUG("httpcGetResponseHeader\n");
-                return HTTPC_ERROR;
-            }
-        }
-
-        // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
-
-        if (present)
-        {
-            char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
-            // in the extreme fringe case that filename is missing:
-            if (filename != NULL)
-            {
-                filename = strpbrk(filename, "=") + 1; // <filename>;?
-                char * end = strpbrk(filename, ";");
-                if (end)
-                    *end = '\0'; // <filename>
-
-                // safe to assume the filename is quoted
-                // (if it isn't, then we already have a null-terminated string <filename>)
-                if (filename[0] == '"')
-                {
-                    filename[strlen(filename) - 1] = '\0';
-                    filename++;
-                }
-
-                *out->filename = malloc(strlen(filename) + 1);
-                strcpy(*out->filename, filename);
-            }
-            else
-            {
-                *out->filename = NULL;
-            }
-        }
-        else
-        {
-            *out->filename = NULL;
-        }
-    }
-    return SUCCESS;
-}
-
-
-/*
- * call example: written = http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
- */
-Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
-{
-    return http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
-}
-
-/* 
- * curl functions modified from Universal-Updater download.cpp
- */
-static size_t handle_data(char *ptr, size_t size, size_t nmemb, void *userdata)
-{
-    curl_data *data = (curl_data *) userdata;
-    const size_t bsz = size * nmemb;
-
-    if (data->result_sz == 0 || !(data->result_buf))
-    {
-        data->result_sz = 0x1000;
-        data->result_buf = (char *) malloc(data->result_sz);
-    }
-
-    bool need_realloc = false;
-    while (data->result_written + bsz > data->result_sz)
-    {
-        data->result_sz <<= 1;
-        need_realloc = true;
-    }
-
-    if (need_realloc)
-    {
-        char *new_buf = (char *)realloc(data->result_buf, data->result_sz);
-        if (!new_buf) return 0;
-
-        data->result_buf = new_buf;
-    }
-
-    memcpy(data->result_buf + data->result_written, ptr, bsz);
-    data->result_written += bsz;
-    return bsz;
-}
-
-static size_t curl_parse_header(char *buffer, size_t size, size_t nitems, void *userdata)
-{
-    curl_header *header = (curl_header *) userdata;
-    for (size_t i = 0; i < size * nitems; ++i)
-    {
-        if (buffer[i] == '\n' || buffer[i] == '\r')
-        {
-            buffer[i] = '\0';
-            break;
-        }
-    }
-
-    if (!strncasecmp(buffer, "Content-Type: ", 14))
-    {
-        header->mime_type = malloc(strlen(buffer) - 13);
-        strncpy(header->mime_type, buffer + 14, strlen(buffer) - 14);
-        header->mime_type[strlen(buffer) - 14] = '\0';
-    } else if (!strncasecmp(buffer, "Content-Disposition: ", 21))
-    {
-        header->filename = malloc(strlen(buffer) - 20);
-        memcpy(header->filename, buffer + 21, strlen(buffer) - 21);
-        header->filename[strlen(buffer) - 21] = '\0';
-    } 
-
-    return nitems * size;
-}
-
-static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf, u32 * size, const char * acceptable_mime_types)
-{
-    DEBUG("attempting curl_http_get\n");
-    curl_data data = {0};
-    curl_header header = {0};
-    void *socubuf = memalign(0x1000, 0x100000);
-    if (!socubuf)
-    {
-        return -1;
-    }
-
-    Result ret = socInit((u32 *) socubuf, 0x100000);
-    if (R_FAILED(ret))
-    {
-        free(socubuf);
-        return ret;
-    }
-
-    CURL *handle;
-    handle = curl_easy_init();
-
-    curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, 102400L);
-    curl_easy_setopt(handle, CURLOPT_URL, url);
-    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, USER_AGENT);
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(handle, CURLOPT_MAXREDIRS, 50L);
-    curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handle_data);
-    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(handle, CURLOPT_STDERR, stderr);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, &data);
-    curl_easy_setopt(handle, CURLOPT_HEADERDATA, &header);
-    curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, curl_parse_header);
-
-    struct curl_slist *list = NULL;
-    char mime_string[512] = {0};
-    sprintf(mime_string, "Accept:%s", acceptable_mime_types);
-    list = curl_slist_append(list, mime_string);
-
-    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, list);
-
-    CURLcode cres = curl_easy_perform(handle);
-    curl_easy_cleanup(handle);
-    char *newbuf = (char *) realloc(data.result_buf, data.result_written + 1);
-    data.result_buf = newbuf;
-    data.result_buf[data.result_written] = 0;
-    if (cres != CURLE_OK)
-    {
-        socExit();
-        free(data.result_buf);
-        free(socubuf);
-        if (header.mime_type) free(header.mime_type);
-        if (header.filename) free(header.filename);
-        return -1;
-    }
-    
-    DEBUG("Mime Type: %s\n", header.mime_type);
-    DEBUG("Acceptable Mime Types: %s\n", acceptable_mime_types);
-    if (header.mime_type)
-    {
-        if (!strstr(acceptable_mime_types, header.mime_type))
-        {
-            socExit();
-            free(data.result_buf);
-            free(socubuf);
-            if (header.mime_type) free(header.mime_type);
-            if (header.filename) free(header.filename);
-            return -2;
-        }
-    } 
-
-    DEBUG("Content-Disposition: %s\n", header.filename);
-    if (out_filename)
-    {
-        if (header.filename)
-        {
-            char *filename = strstr(header.filename, "filename=");
-            if (filename)
-            {
-                filename = strpbrk(filename, "=") + 1;
-                char *end = strpbrk(filename, ";");
-                if (end)
-                    *end = '\0';
-
-                if (filename[0] == '"')
-                {
-                    filename[strlen(filename) - 1] = '\0';
-                    filename++;
-                }
-
-                *out_filename = malloc(0x100);
-                strcpy(*out_filename, filename);
-            } else {
-                *out_filename = NULL;
-            }
-        } else {
-            *out_filename = NULL;
-        }
-    }
-
-    *buf = data.result_buf;
-    *size = data.result_written;
-
-    socExit();
-    if (header.mime_type) free(header.mime_type);
-    if (header.filename) free(header.filename);
-    free(socubuf);
-
-    return 0;
-}
-
-static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
-{
-    const char *zip_not_available = language.remote.zip_not_found;
-    Result ret;
-    httpcContext context;
-    char redirect_url[0x824] = {0};
-    char new_url[0x824] = {0};
-
-    struct header _header = { .filename = filename };
-
-    DEBUG("Original URL: %s\n", url);
-
-redirect: // goto here if we need to redirect
-    ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
-    if (R_FAILED(ret))
-    {
-        httpcCloseContext(&context);
-        DEBUG("httpcOpenContext %.8lx\n", ret);
-        return ret;
-    }
-
-    httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
-    httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-    httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
-    httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-    if (acceptable_mime_types)
-        httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
-
-    ret = httpcBeginRequest(&context);
-    if (R_FAILED(ret))
-    {
-        httpcCloseContext(&context);
-        DEBUG("httpcBeginRequest %.8lx\n", ret);
-        return ret;
-    }
-
-#define ERROR_BUFFER_SIZE 0x80
-    char err_buf[ERROR_BUFFER_SIZE];
-    Result res;
-    ParseResult parse = parse_header(&_header, &context, acceptable_mime_types);
-    switch (parse)
-    {
-    case SUCCESS:
-        break;
-    case HTTPC_ERROR:
-        DEBUG("httpc error %lx\n", _header.result_code);
-        switch (_header.result_code)
-        {
-        case 0xd8a0a028: // bad zip file
-        case 0xd8a0a03c: // SSL failure
-            // try curl?
-            res = curl_http_get(url, filename, buf, size, acceptable_mime_types);
-            if (R_SUCCEEDED(res))
-            {
-                return res;
-            }
-
-            if(_header.result_code == 0xd8a0a028)
-            {
-                snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-            }
-            else
-            {
-                snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_ssl_error, _header.result_code);
-            }
-            quit = false;
-            break;
-        case 0xd8a0a049:
-            // Timeout (bad wifi/proxy)
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_timeout);
-            quit = false;
-            break;
-        case 0xd8a0a046:
-            // poor reception/no wifi/custom dns set
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_no_network);
-            quit = false;
-            break;
-        default:
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.generic_httpc_error, _header.result_code);
+        if (kDown & KEY_START)
             quit = true;
-            break;
-        }
-        throw_error(err_buf, ERROR_LEVEL_ERROR);
-        httpcCloseContext(&context);
-        return _header.result_code;
-    case SEE_OTHER:
-        if (strstr(url, THEMEPLAZA_BASE_URL))
+        else if (kDown & KEY_B)
+            return false;
+        else if (kDown & KEY_A)
+            return true;
+        else if (kDown & (KEY_LEFT | KEY_L))
+            *provider = REMOTE_PROVIDER_THEMEPLAZA;
+        else if (kDown & (KEY_RIGHT | KEY_R))
+            *provider = REMOTE_PROVIDER_THEMEZER;
+        else if (kDown & KEY_TOUCH)
         {
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http303_tp);
-            goto error;
+            touchPosition touch = {0};
+            hidTouchRead(&touch);
+
+            const bool card_row = touch.py >= PROVIDER_CARD_Y && touch.py < PROVIDER_CARD_Y + PROVIDER_CARD_HEIGHT;
+            if (card_row && touch.px >= PROVIDER_CARD_THEMEPLAZA_X && touch.px < PROVIDER_CARD_THEMEPLAZA_X + PROVIDER_CARD_WIDTH)
+            {
+                *provider = REMOTE_PROVIDER_THEMEPLAZA;
+                return true;
+            }
+            else if (card_row && touch.px >= PROVIDER_CARD_THEMEZER_X && touch.px < PROVIDER_CARD_THEMEZER_X + PROVIDER_CARD_WIDTH)
+            {
+                *provider = REMOTE_PROVIDER_THEMEZER;
+                return true;
+            }
         }
-        else
-        {
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http303);
-            goto error;
-        }
-    case REDIRECT:
-        httpcGetResponseHeader(&context, "Location", redirect_url, 0x824);
-        httpcCloseContext(&context);
-        if (*redirect_url == '/') // if relative URL
-        {
-            strcpy(new_url, url);
-            char * last_slash = strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/');
-            if (last_slash) *last_slash = '\0'; // prevents a NULL deref in case the original domain was not /-delimited
-            strncat(new_url, redirect_url, 0x824 - strlen(new_url));
-            url = new_url;
-        }
-        else
-        {
-            url = redirect_url;
-        }
-        DEBUG("HTTP Redirect: %s %s\n", new_url, *redirect_url == '/' ? "relative" : "absolute");
-        goto redirect;
-    case SERVER_IS_MISBEHAVING:
-        DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-        goto error;
-    case HTTP_NOT_FOUND:
-        if (!not_found_is_error)
-            goto not_found_non_error;
-        [[fallthrough]];
-    case HTTP_GONE:
-        const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
-        DEBUG("HTTP %s; URL: %s\n", http_error, url);
-        if (strstr(url, THEMEPLAZA_BASE_URL) && parse == HTTP_NOT_FOUND)
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http404);
-        else
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_err_url, http_error);
-        goto error;
-    case HTTP_UNACCEPTABLE:
-        DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-        goto error;
-    case HTTP_UNAUTHORIZED:
-    case HTTP_FORBIDDEN:
-    case HTTP_PROXY_UNAUTHORIZED:
-        DEBUG("HTTP %u: device not authenticated\n", parse);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_errcode_generic, parse == HTTP_UNAUTHORIZED
-            ? language.remote.http401
-            : parse == HTTP_FORBIDDEN
-            ? language.remote.http403
-            : language.remote.http407);
-        goto error;
-    case HTTP_URI_TOO_LONG:
-        DEBUG("HTTP 414; URL is too long, maybe too many redirects?\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http414);
-        goto error;
-    case HTTP_IM_A_TEAPOT:
-        DEBUG("HTTP 418 I'm a teapot\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http418);
-        goto error;
-    case HTTP_UPGRADE_REQUIRED:
-        DEBUG("HTTP 426; HTTP/2 required\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http426);
-        goto error;
-    case HTTP_LEGAL_REASONS:
-        DEBUG("HTTP 451; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http451);
-        goto error;
-    case HTTP_INTERNAL_SERVER_ERROR:
-        DEBUG("HTTP 500; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http500);
-        goto error;
-    case HTTP_BAD_GATEWAY:
-        DEBUG("HTTP 502; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http502);
-        goto error;
-    case HTTP_SERVICE_UNAVAILABLE:
-        DEBUG("HTTP 503; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http503);
-        goto error;
-    case HTTP_GATEWAY_TIMEOUT:
-        DEBUG("HTTP 504; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http504);
-        goto error;
-    default:
-        DEBUG("HTTP %u; URL: %s\n", parse, url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_unexpected, parse);
-        goto error;
     }
 
-    goto no_error;
-error:
-    throw_error(err_buf, ERROR_LEVEL_WARNING);
-    res = httpcCloseContext(&context);
-    if (R_FAILED(res)) return res;
-    return MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
-not_found_non_error:
-    res = httpcCloseContext(&context);
-    if (R_FAILED(res)) return res;
-    return MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
-no_error:;
-    u32 chunk_size;
-    if (_header.file_size)
-        // the only reason we chunk this at all is for the download bar;
-        // in terms of efficiency, allocating the full size
-        // would avoid 3 reallocs whenever the server isn't lying
-        chunk_size = _header.file_size / 4;
-    else
-        chunk_size = 0x80000;
+    return false;
+}
 
-    *buf = NULL;
-    char * new_buf;
-    *size = 0;
-    u32 read_size = 0;
+bool browse_remote(RemoteMode mode)
+{
+    // remembered while the app is open
+    static RemoteProvider provider = REMOTE_PROVIDER_THEMEPLAZA;
+    if (!select_remote_provider(&provider))
+        return false;
 
-    do
-    {
-        new_buf = realloc(*buf, *size + chunk_size);
-        if (new_buf == NULL)
-        {
-            httpcCloseContext(&context);
-            free(*buf);
-            DEBUG("realloc failed in http_get - file possibly too large?\n");
-            return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
-        }
-        *buf = new_buf;
-
-        // download exactly chunk_size bytes and toss them into buf.
-        // size contains the current offset into buf.
-        ret = httpcDownloadData(&context, (u8 *)(*buf) + *size, chunk_size, &read_size);
-        /* FIXME: I have no idea why this doesn't work, but it causes problems. Look into it later
-        if (R_FAILED(ret))
-        {
-            httpcCloseContext(&context);
-            free(*buf);
-            DEBUG("download failed in http_get\n");
-            return ret;
-        }
-        */
-        *size += read_size;
-
-        if (_header.file_size && install_type != INSTALL_NONE)
-            draw_loading_bar(*size, _header.file_size, install_type);
-    } while (ret == (Result)HTTPC_RESULTCODE_DOWNLOADPENDING);
-    httpcCloseContext(&context);
-
-    // shrink to size
-    new_buf = realloc(*buf, *size);
-    if (new_buf == NULL)
-    {
-        httpcCloseContext(&context);
-        free(*buf);
-        DEBUG("shrinking realloc failed\n"); // 何？
-        return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
-    }
-    *buf = new_buf;
-
-    DEBUG("size: %lu\n", *size);
-    if (filename) { DEBUG("filename: %s\n", *filename); }
-    return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
- }
+    return remote_browser(mode, provider);
+}

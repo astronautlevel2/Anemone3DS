@@ -104,6 +104,9 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_THEMEPLAZA_THEME_MODE], staticBuf, language.draw.tp_theme_mode);
     C2D_TextParse(&text[TEXT_THEMEPLAZA_SPLASH_MODE], staticBuf, language.draw.tp_splash_mode);
     C2D_TextParse(&text[TEXT_THEMEPLAZA_BADGE_MODE], staticBuf, language.draw.tp_badge_mode);
+    C2D_TextParse(&text[TEXT_THEMEZER_THEME_MODE], staticBuf, language.draw.tz_theme_mode);
+    C2D_TextParse(&text[TEXT_THEMEZER_SPLASH_MODE], staticBuf, language.draw.tz_splash_mode);
+    C2D_TextParse(&text[TEXT_THEMEZER_BADGE_MODE], staticBuf, language.draw.tz_badge_mode);
 
     C2D_TextParse(&text[TEXT_SEARCH], staticBuf, language.draw.search);
     C2D_TextParse(&text[TEXT_PAGE], staticBuf, language.draw.page);
@@ -381,32 +384,73 @@ void draw_preview(C2D_Image preview, int preview_offset, float preview_scale)
     C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, preview_scale, preview_scale);
 }
 
+static bool cancel_requested = false;
+
+void set_loading_cancel_requested(bool requested)
+{
+    cancel_requested = requested;
+}
+
+bool loading_cancel_requested(void)
+{
+    return cancel_requested;
+}
+
+static bool is_network_loading_type(InstallType type)
+{
+    return type == INSTALL_DOWNLOAD
+        || type == INSTALL_LOADING_REMOTE_THEMES
+        || type == INSTALL_LOADING_REMOTE_SPLASHES
+        || type == INSTALL_LOADING_REMOTE_BADGES
+        || type == INSTALL_LOADING_REMOTE_PREVIEW
+        || type == INSTALL_LOADING_REMOTE_BGM;
+}
+
+static void draw_loading_bar_frame(u32 width)
+{
+    set_screen(bottom);
+    C2D_DrawRectSolid(60-1, 110-1, 0.5f, 200+2, 20+2, colors[COLOR_CURSOR]);
+    C2D_DrawRectSolid(60, 110, 0.5f, width, 20, colors[COLOR_ACCENT]);
+}
+
 static void draw_install_handler(InstallType type)
 {
     if(type != INSTALL_NONE)
     {
         C2D_Text * install_text = &text[type];
         draw_c2d_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE_BACKGROUND], install_text);
+
+        if(is_network_loading_type(type))
+            draw_text_center(GFX_TOP, 168.0f, 0.5f, 0.55f, 0.55f, colors[COLOR_WHITE_BACKGROUND], language.draw.cancel_loading);
     }
 }
 
 void draw_install(InstallType type)
 {
+    set_loading_cancel_requested(false);
     draw_base_interface();
     draw_install_handler(type);
+    // an empty bar until the download reports its progress
+    if(is_network_loading_type(type))
+        draw_loading_bar_frame(0);
     end_frame();
 }
 
 void draw_loading_bar(u32 current, u32 max, InstallType type)
 {
+    if(is_network_loading_type(type))
+    {
+        hidScanInput();
+        if(hidKeysHeld() & KEY_B)
+            set_loading_cancel_requested(true);
+    }
+
     draw_base_interface();
     draw_install_handler(type);
-    set_screen(bottom);
-    double percent = 100 * ((double)current / (double)max);
-    u32 width = (u32)percent;
-    width *= 2;
-    C2D_DrawRectSolid(60-1, 110-1, 0.5f, 200+2, 20+2, colors[COLOR_CURSOR]);
-    C2D_DrawRectSolid(60, 110, 0.5f, width, 20, colors[COLOR_ACCENT]);
+    u32 width = 0;
+    if(max != 0)
+        width = (u32)(200 * ((double)min(current, max) / (double)max));
+    draw_loading_bar_frame(width);
     end_frame();
 }
 
@@ -547,18 +591,58 @@ static void draw_entry_info(Entry_s * entry)
     draw_text_wrap(20, 70, 0.5, 0.5, 0.5, colors[COLOR_WHITE_BACKGROUND], description, 363);
 }
 
+static void draw_provider_card(RemoteProvider provider, float x, bool selected)
+{
+    static const char * names[REMOTE_PROVIDER_AMOUNT] = {
+        "ThemePlaza",
+        "Themezer",
+    };
+    static const int icons[REMOTE_PROVIDER_AMOUNT] = {
+        sprites_themeplaza_icon_idx,
+        sprites_themezer_icon_idx,
+    };
+
+    const float y = PROVIDER_CARD_Y;
+    C2D_DrawRectSolid(x - 2, y - 2, 0.5f, PROVIDER_CARD_WIDTH + 4, PROVIDER_CARD_HEIGHT + 4, selected ? colors[COLOR_ACCENT] : C2D_Color32(68, 68, 68, 255));
+    C2D_DrawRectSolid(x, y, 0.5f, PROVIDER_CARD_WIDTH, PROVIDER_CARD_HEIGHT, selected ? C2D_Color32(35, 35, 35, 235) : C2D_Color32(20, 20, 20, 220));
+    draw_image(icons[provider], x + (PROVIDER_CARD_WIDTH - 48) / 2, y + 8);
+
+    float width = 0;
+    get_text_dimensions(names[provider], 0.62f, 0.62f, &width, NULL);
+    draw_text(x + (PROVIDER_CARD_WIDTH - width) / 2, y + 66, 0.6f, 0.62f, 0.62f, colors[COLOR_WHITE_ACCENT], names[provider]);
+}
+
+void draw_remote_provider_picker(RemoteProvider selected)
+{
+    draw_base_interface();
+    draw_text_center(GFX_TOP, 98, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE_BACKGROUND], language.remote.select_source);
+    draw_text_center(GFX_TOP, 126, 0.5f, 0.62f, 0.62f, colors[COLOR_WHITE_BACKGROUND], language.remote.select_source_hint);
+
+    set_screen(bottom);
+    draw_provider_card(REMOTE_PROVIDER_THEMEPLAZA, PROVIDER_CARD_THEMEPLAZA_X, selected == REMOTE_PROVIDER_THEMEPLAZA);
+    draw_provider_card(REMOTE_PROVIDER_THEMEZER, PROVIDER_CARD_THEMEZER_X, selected == REMOTE_PROVIDER_THEMEZER);
+    end_frame();
+}
+
 void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int extra_mode)
 {
     draw_base_interface();
     EntryMode current_mode = list->mode;
 
-    C2D_Text * mode_string[REMOTE_MODE_AMOUNT] = {
-        &text[TEXT_THEMEPLAZA_THEME_MODE],
-        &text[TEXT_THEMEPLAZA_SPLASH_MODE],
-        &text[TEXT_THEMEPLAZA_BADGE_MODE],
+    C2D_Text * mode_string[REMOTE_PROVIDER_AMOUNT][REMOTE_MODE_AMOUNT] = {
+        {
+            &text[TEXT_THEMEPLAZA_THEME_MODE],
+            &text[TEXT_THEMEPLAZA_SPLASH_MODE],
+            &text[TEXT_THEMEPLAZA_BADGE_MODE],
+        },
+        {
+            &text[TEXT_THEMEZER_THEME_MODE],
+            &text[TEXT_THEMEZER_SPLASH_MODE],
+            &text[TEXT_THEMEZER_BADGE_MODE],
+        },
     };
 
-    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE_ACCENT], mode_string[current_mode]);
+    draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE_ACCENT], mode_string[list->remote_provider][current_mode]);
 
     draw_instructions(instructions);
 

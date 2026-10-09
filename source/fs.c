@@ -567,14 +567,40 @@ static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, con
 }
 
 // assumes the input buffer is a ZIP. if it isn't, why are you calling this?
-void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode)
+void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode, RemoteProvider provider)
 {
     static char path_to_file[32761]; // FAT32 paths can be quite long.
     const int max_chars = 250;
     char new_filename[max_chars + 5]; // .zip + \0
+    // http_get leaves the name NULL when the server sends no Content-Disposition (e.g. arbitrary QR URLs)
+    if (filename == NULL || filename[0] == '\0')
+        filename = "download.zip";
 renamed:
     char * curr_filename;
-    if (mode == REMOTE_MODE_BADGES)
+    if (mode == REMOTE_MODE_BADGES && provider == REMOTE_PROVIDER_THEMEZER)
+    {
+        // every Themezer badge pack becomes its own badge set (folder), named after the zip
+        char set_name[max_chars + 1];
+        const int name_length = min(strlen(filename), max_chars);
+        memcpy(set_name, filename, name_length);
+        set_name[name_length] = '\0';
+        char * set_extension = strrchr(set_name, '.');
+        if (set_extension != NULL && !strcmp(set_extension, ".zip"))
+            *set_extension = '\0';
+        for (char * c = set_name; (c = strpbrk(c, ILLEGAL_CHARS)) != NULL; ++c)
+            *c = '-';
+        if (set_name[0] == '\0')
+            strcpy(set_name, "Themezer");
+
+        sprintf(path_to_file, "%s%s", main_paths[REMOTE_MODE_BADGES], set_name);
+        u16 set_path[0x106] = {0};
+        utf8_to_utf16(set_path, (u8 *) path_to_file, 0x105);
+        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, set_path), FS_ATTRIBUTE_DIRECTORY);
+
+        curr_filename = path_to_file + strlen(path_to_file) + 1;
+        sprintf(path_to_file + strlen(path_to_file), "/%s", filename);
+    }
+    else if (mode == REMOTE_MODE_BADGES)
     {
         sprintf(path_to_file, "%sThemePlaza Badges/%s", main_paths[REMOTE_MODE_BADGES], filename);
         DEBUG("Remote mode badges! Saving to %s/\n", path_to_file);
@@ -595,7 +621,10 @@ renamed:
         {
             // skip initial . (this is allowed)
             if (illegal_char == curr_filename)
+            {
+                illegal_char++;
                 continue;
+            }
             // skip extension delimiter
             if (strpbrk(illegal_char + 1, ".") == NULL)
             {

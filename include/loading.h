@@ -73,6 +73,8 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
 void free_preview(C2D_Image preview_image);
 Result load_audio(const Entry_s *, audio_s *);
 Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio);
+// takes ownership of filebuf; like load_audio_ogg, frees audio on failure
+Result load_audio_ogg_buffer(char * filebuf, u32 filesize, audio_ogg_s * audio);
 void load_icons_first(Entry_List_s * current_list, bool silent);
 void handle_scrolling(Entry_List_s * list);
 void load_icons_thread(void * void_arg);
