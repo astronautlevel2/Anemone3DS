@@ -956,12 +956,70 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
 }
 
 
+static int url_hex_digit(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+// The last segment of a URL's path, percent-decoded: the name to save a download under when the server names none (no
+// Content-Disposition), e.g. "MyTheme.zip" for a QR code's https://example.com/themes/MyTheme.zip?raw=1. NULL when the
+// path has no last segment.
+static char * url_filename(const char * url)
+{
+    const char * end = url + strcspn(url, "?#");
+    const char * host = strstr(url, "://");
+    const char * path = strchr(host != NULL ? host + 3 : url, '/');
+    if (path == NULL || path >= end)
+        return NULL;
+
+    const char * start = end;
+    while (start > path && start[-1] != '/')
+        --start;
+
+    char * name = malloc(end - start + 1);
+    if (name == NULL)
+        return NULL;
+
+    size_t length = 0;
+    for (const char * c = start; c < end; ++c)
+    {
+        if (*c == '%' && end - c > 2 && url_hex_digit(c[1]) >= 0 && url_hex_digit(c[2]) >= 0)
+        {
+            name[length++] = (char)(url_hex_digit(c[1]) * 16 + url_hex_digit(c[2]));
+            c += 2;
+        }
+        else
+            name[length++] = *c;
+    }
+    name[length] = '\0';
+
+    // only keep the name itself, never a path
+    const char * base = name;
+    for (const char * c = name; *c; ++c)
+    {
+        if (*c == '/' || *c == '\\')
+            base = c + 1;
+    }
+
+    char * result = *base && strcmp(base, ".") && strcmp(base, "..") ? strdup(base) : NULL;
+    free(name);
+    return result;
+}
+
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
  */
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    return http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
+    Result res = http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
+    // the server named no file: use the URL's name (save_zip_to_sd falls back to "download.zip" when that's
+    // missing too)
+    if (R_SUCCEEDED(res) && filename != NULL && *filename == NULL)
+        *filename = url_filename(url);
+    return res;
 }
 
 /* 
