@@ -87,6 +87,9 @@ typedef struct {
     const char * loading_path;
 } Entry_List_s;
 
+bool list_has_installed_entries(const Entry_List_s * list);
+void clear_installed_entries(Entry_List_s * list);
+
 void sort_by_name(Entry_List_s * list);
 void sort_by_author(Entry_List_s * list);
 void sort_by_filename(Entry_List_s * list);

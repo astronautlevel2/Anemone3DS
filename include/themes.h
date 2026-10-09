@@ -73,6 +73,7 @@ typedef struct {
 Result theme_install(Entry_s * theme);
 Result no_bgm_install(Entry_s * theme);
 Result bgm_install(Entry_s * theme);
+Result theme_uninstall(void);
 
 Result shuffle_install(const Entry_List_s * themes);
 

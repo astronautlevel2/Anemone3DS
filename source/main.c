@@ -1023,6 +1023,7 @@ int main(void)
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
+                        clear_installed_entries(current_list);
                     }
                     break;
                 default:
@@ -1107,6 +1108,32 @@ int main(void)
                     {
                         extra_mode = true;
                         draw_mode = DRAW_MODE_EXTRA;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y) && list_has_installed_entries(current_list))
+                    {
+                        if(current_mode == MODE_THEMES && draw_confirm(language.main.uninstall_theme_confirm, current_list, draw_mode))
+                        {
+                            aptSetHomeAllowed(false);
+                            draw_install(INSTALL_THEME_UNINSTALL);
+                            Result res = theme_uninstall();
+                            if(R_SUCCEEDED(res))
+                            {
+                                clear_installed_entries(current_list);
+                                // the HOME Menu still holds the old theme, it has to be reloaded on exit
+                                installed_themes = true;
+                            }
+                            else
+                            {
+                                DEBUG("theme uninstall result: %lx\n", res);
+                                throw_error(language.themes.uninstall_failed, ERROR_LEVEL_WARNING);
+                            }
+                        }
+                        else if(current_mode == MODE_SPLASHES && draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
+                        {
+                            draw_install(INSTALL_SPLASH_DELETE);
+                            splash_delete();
+                            clear_installed_entries(current_list);
+                        }
                     }
                     else if(toolbar_hit(x, y, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y))
                     {

@@ -124,6 +124,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, language.draw.install_splash);
     C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, language.draw.delete_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_THEME_UNINSTALL], staticBuf, language.draw.delete_theme);
 
     C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, language.draw.install_theme);
     C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, language.draw.install_shuffle);
@@ -742,6 +743,8 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
     if (draw_mode == DRAW_MODE_LIST)
     {
         draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        if(list_has_installed_entries(list))
+            draw_image_tint(sprites_uninstall_idx, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_qr_idx, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
         draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
