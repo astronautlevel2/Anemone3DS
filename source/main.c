@@ -132,6 +132,22 @@ static void stop_install_check(void)
     }
 }
 
+static void restart_splash_install_check(void)
+{
+    Thread_Arg_s * arg = &install_check_threads_arg[MODE_SPLASHES];
+    arg->run_thread = false;
+    if(install_check_threads[MODE_SPLASHES] != NULL)
+    {
+        threadJoin(install_check_threads[MODE_SPLASHES], U64_MAX);
+        threadFree(install_check_threads[MODE_SPLASHES]);
+        install_check_threads[MODE_SPLASHES] = NULL;
+    }
+
+    arg->run_thread = true;
+    arg->thread_arg = (void **)&lists[MODE_SPLASHES];
+    install_check_threads[MODE_SPLASHES] = threadCreate(splash_check_installed, arg, __stacksize__, 0x3f, -2, false);
+}
+
 static inline void wait_scroll(void)
 {
     released = true;
@@ -457,7 +473,7 @@ int main(void)
 
         Instructions_s instructions = language.normal_instructions[current_mode];
         if(install_mode)
-            instructions = language.install_instructions;
+            instructions = current_mode == MODE_SPLASHES ? language.splash_install_instructions : language.install_instructions;
         if(extra_mode)
         {
             instructions = language.extra_instructions[extra_index];
@@ -667,7 +683,61 @@ int main(void)
             goto touch;
 
 
-        if(install_mode)
+        if(install_mode && current_mode == MODE_SPLASHES)
+        {
+            bool leave = kDown & KEY_B;
+            int install_type = -1;
+
+            if(kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+
+                if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_NORMAL_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_NORMAL;
+                else if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_TOP_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_TOP;
+                else if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_BOTTOM_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_BOTTOM;
+                else if(toolbar_hit(x, y, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y))
+                    leave = true;
+            }
+            else if(kDown & KEY_DUP)
+                install_type = SPLASH_INSTALL_NORMAL;
+            else if(kDown & KEY_DDOWN)
+                install_type = SPLASH_INSTALL_TOP;
+            else if(kDown & KEY_DLEFT)
+                install_type = SPLASH_INSTALL_BOTTOM;
+
+            if(leave || install_type >= 0)
+            {
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+            }
+
+            if(install_type >= 0)
+            {
+                draw_install(INSTALL_SPLASH);
+                splash_install(current_entry, (SplashInstallType)install_type);
+                if(install_type == SPLASH_INSTALL_NORMAL)
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * splash = &current_list->entries[i];
+                        splash->installed = splash == current_entry;
+                    }
+                }
+                else
+                {
+                    // the other screen keeps its splash, so let the check thread work out which entries are installed
+                    restart_splash_install_check();
+                }
+            }
+            continue;
+        }
+        else if(install_mode)
         {
             if ((kDown | kHeld) & KEY_TOUCH)
             {
@@ -996,16 +1066,8 @@ int main(void)
                     draw_mode = DRAW_MODE_INSTALL;
                     break;
                 case MODE_SPLASHES:
-                    draw_install(INSTALL_SPLASH);
-                    splash_install(current_entry);
-                    for(int i = 0; i < current_list->entries_count; i++)
-                    {
-                        Entry_s * splash = &current_list->entries[i];
-                        if(splash == current_entry)
-                            splash->installed = true;
-                        else
-                            splash->installed = false;
-                    }
+                    install_mode = true;
+                    draw_mode = DRAW_MODE_INSTALL;
                     break;
                 default:
                     break;
@@ -1169,16 +1231,8 @@ int main(void)
                             draw_mode = DRAW_MODE_INSTALL;
                         } else if (current_mode == MODE_SPLASHES)
                         {
-                            draw_install(INSTALL_SPLASH);
-                            splash_install(current_entry);
-                            for(int i = 0; i < current_list->entries_count; i++)
-                            {
-                                Entry_s * splash = &current_list->entries[i];
-                                if(splash == current_entry)
-                                    splash->installed = true;
-                                else
-                                    splash->installed = false;
-                            }
+                            install_mode = true;
+                            draw_mode = DRAW_MODE_INSTALL;
                         }
                     }
                     else if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)

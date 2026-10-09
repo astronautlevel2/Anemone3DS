@@ -191,6 +191,11 @@ enum {
     TOOLBAR_INSTALL_SHUFFLE_X = 320 - 48,
     TOOLBAR_INSTALL_NORMAL_X = 320 - 24,
 
+    // splash install options: top bar (back is TOOLBAR_INSTALL_BACK_X)
+    TOOLBAR_SPLASH_INSTALL_TOP_X = 320 - 72,
+    TOOLBAR_SPLASH_INSTALL_BOTTOM_X = 320 - 48,
+    TOOLBAR_SPLASH_INSTALL_NORMAL_X = 320 - 24,
+
     // extra menu: top bar
     TOOLBAR_EXTRA_BACK_X = 2,
     TOOLBAR_EXTRA_BADGES_X = 320 - 96,

@@ -758,7 +758,14 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
     }
     else
     {
-        if (draw_mode == DRAW_MODE_INSTALL)
+        if (draw_mode == DRAW_MODE_INSTALL && current_mode == MODE_SPLASHES)
+        {
+            draw_image_tint(sprites_arrow_up_idx, TOOLBAR_SPLASH_INSTALL_TOP_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_arrow_down_idx, TOOLBAR_SPLASH_INSTALL_BOTTOM_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_install_idx, TOOLBAR_SPLASH_INSTALL_NORMAL_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_back_idx, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+        }
+        else if (draw_mode == DRAW_MODE_INSTALL)
         {
             draw_image_tint(sprites_install_idx, TOOLBAR_INSTALL_NORMAL_X, TOOLBAR_TOP_Y, accent_tint);
             draw_image_tint(sprites_shuffle_idx, TOOLBAR_INSTALL_SHUFFLE_X, TOOLBAR_TOP_Y, accent_tint);

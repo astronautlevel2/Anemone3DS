@@ -118,6 +118,29 @@ const Language_s language_english = {
         }
     },
 
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Cancel splash install",
+        .instructions = {
+            {
+                "\uE079 Normal install",
+                "\uE07A Top screen only"
+            },
+            {
+                "\uE07B Bottom screen only",
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Exit",
+                NULL
+            }
+        }
+    },
+
     .extra_instructions = 
     {
         {
@@ -542,6 +565,29 @@ const Language_s language_spanish = {
             {
                 "\uE07B Instalación solo BGM",
                 "\uE07C Instalación sin BGM"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Salir",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Cancelar instalación del fondo",
+        .instructions = {
+            {
+                "\uE079 Instalación normal",
+                "\uE07A Solo pantalla superior"
+            },
+            {
+                "\uE07B Solo pantalla inferior",
+                NULL
             },
             {
                 NULL,
@@ -991,6 +1037,29 @@ const Language_s language_french = {
         }
     },
 
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Annuler l'installation du splash",
+        .instructions = {
+            {
+                "\uE079 Installation normale",
+                "\uE07A Écran du haut seulement"
+            },
+            {
+                "\uE07B Écran du bas seulement",
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Quitter",
+                NULL
+            }
+        }
+    },
+
     .extra_instructions = 
     {
         {
@@ -1415,6 +1484,29 @@ const Language_s language_portuguese = {
             {
                 "\uE07B Instalar só BGM",
                 "\uE07C Instalar sem BGM"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Sair",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Cancelar instalação do splash",
+        .instructions = {
+            {
+                "\uE079 Instalação normal",
+                "\uE07A Apenas tela superior"
+            },
+            {
+                "\uE07B Apenas tela inferior",
+                NULL
             },
             {
                 NULL,
@@ -1865,6 +1957,29 @@ const Language_s language_korean = {
         }
     },
 
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 취소: 스플래시 설치",
+        .instructions = {
+            {
+                "\uE079 일반 설치",
+                "\uE07A 상단 화면만"
+            },
+            {
+                "\uE07B 하단 화면만",
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "종료",
+                NULL
+            }
+        }
+    },
+
     .extra_instructions = 
     {
         {
@@ -2290,6 +2405,29 @@ const Language_s language_SChinese = {
             {
                 "\uE07B 仅安装主题BGM",
                 "\uE07C 仅安装主题背景"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "退出",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 取消开机图画安装",
+        .instructions = {
+            {
+                "\uE079 正常安装",
+                "\uE07A 仅上屏"
+            },
+            {
+                "\uE07B 仅下屏",
+                NULL
             },
             {
                 NULL,

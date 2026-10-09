@@ -35,40 +35,50 @@ void splash_delete(void)
     remove("/luma/splashbottom.bin");
 }
 
-void splash_install(const Entry_s * splash)
+void splash_install(const Entry_s * splash, SplashInstallType install_type)
 {
     char *screen_buf = NULL;
+    bool installed_any = false;
 
-    u32 size = load_data("/splash.bin", splash, &screen_buf);
-    if(size != 0)
+    if(install_type != SPLASH_INSTALL_BOTTOM)
     {
-        remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
-        buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
+        u32 size = load_data("/splash.bin", splash, &screen_buf);
+        if(size != 0)
+        {
+            installed_any = true;
+            remake_file(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, size);
+            buf_to_file(size, fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, screen_buf);
+        }
+        free(screen_buf);
+        screen_buf = NULL;
     }
 
-    u32 bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
-    if(bottom_size != 0)
+    if(install_type != SPLASH_INSTALL_TOP)
     {
-        remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
-        buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
+        u32 bottom_size = load_data("/splashbottom.bin", splash, &screen_buf);
+        if(bottom_size != 0)
+        {
+            installed_any = true;
+            remake_file(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, bottom_size);
+            buf_to_file(bottom_size, fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, screen_buf);
+        }
+        free(screen_buf);
+        screen_buf = NULL;
     }
 
-    if(size == 0 && bottom_size == 0)
+    if(!installed_any)
     {
         throw_error(language.splashes.no_splash_found, ERROR_LEVEL_WARNING);
     }
     else
     {
-        char *config_buf;
-        size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/config.bin"), ArchiveSD, &config_buf);
-        if(size)
+        char *config_buf = NULL;
+        u32 size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/config.bin"), ArchiveSD, &config_buf);
+        if(size && config_buf[0xC] == 0)
         {
-            if(config_buf[0xC] == 0)
-            {
-                free(config_buf);
-                throw_error(language.splashes.splash_disabled, ERROR_LEVEL_WARNING);
-            }
+            throw_error(language.splashes.splash_disabled, ERROR_LEVEL_WARNING);
         }
+        free(config_buf);
     }
 }
 
@@ -79,6 +89,10 @@ void splash_check_installed(void * void_arg)
     if(list == NULL || list->entries == NULL) return;
 
     #ifndef CITRA_MODE
+    // this also runs again after a top or bottom only install, so start from a clean state
+    for(int i = 0; i < list->entries_count; i++)
+        list->entries[i].installed = false;
+
     char * top_buf = NULL;
     u32 top_size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, &top_buf);
     char * bottom_buf = NULL;
@@ -91,6 +105,9 @@ void splash_check_installed(void * void_arg)
         return;
     }
 
+    const bool has_top = top_size != 0;
+    const bool has_bottom = bottom_size != 0;
+
     #define HASH_SIZE_BYTES 256/8
     u8 top_hash[HASH_SIZE_BYTES] = {0};
     FSUSER_UpdateSha256Context(top_buf, top_size, top_hash);
@@ -101,6 +118,10 @@ void splash_check_installed(void * void_arg)
     free(bottom_buf);
     bottom_buf = NULL;
 
+    // with top or bottom only installs, each screen can come from a different splash
+    int top_match = -1;
+    int bottom_match = -1;
+
     for(int i = 0; i < list->entries_count && arg->run_thread; i++)
     {
         Entry_s * splash = &list->entries[i];
@@ -109,8 +130,15 @@ void splash_check_installed(void * void_arg)
 
         if(!top_size && !bottom_size)
         {
+            free(top_buf);
+            free(bottom_buf);
+            top_buf = NULL;
+            bottom_buf = NULL;
             continue;
         }
+
+        const bool splash_has_top = top_size != 0;
+        const bool splash_has_bottom = bottom_size != 0;
 
         u8 splash_top_hash[HASH_SIZE_BYTES] = {0};
         FSUSER_UpdateSha256Context(top_buf, top_size, splash_top_hash);
@@ -121,11 +149,28 @@ void splash_check_installed(void * void_arg)
         free(bottom_buf);
         bottom_buf = NULL;
 
-        if(!memcmp(splash_bottom_hash, bottom_hash, HASH_SIZE_BYTES) && !memcmp(splash_top_hash, top_hash, HASH_SIZE_BYTES))
+        const bool same_top = !memcmp(splash_top_hash, top_hash, HASH_SIZE_BYTES);
+        const bool same_bottom = !memcmp(splash_bottom_hash, bottom_hash, HASH_SIZE_BYTES);
+
+        if(same_top && same_bottom)
         {
             splash->installed = true;
-            break;
+            return;
         }
+
+        if(same_top && has_top && splash_has_top && top_match < 0)
+            top_match = i;
+        if(same_bottom && has_bottom && splash_has_bottom && bottom_match < 0)
+            bottom_match = i;
     }
+    #undef HASH_SIZE_BYTES
+
+    if(!arg->run_thread)
+        return;
+
+    if(top_match >= 0)
+        list->entries[top_match].installed = true;
+    if(bottom_match >= 0)
+        list->entries[bottom_match].installed = true;
     #endif
 }
