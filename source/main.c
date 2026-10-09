@@ -472,6 +472,8 @@ int main(void)
         current_list = &lists[current_mode];
 
         Instructions_s instructions = language.normal_instructions[current_mode];
+        if(current_mode == MODE_SPLASHES && !list_has_installed_entries(current_list))
+            instructions.instructions[1][0] = NULL; // nothing to uninstall with X
         if(install_mode)
             instructions = current_mode == MODE_SPLASHES ? language.splash_install_instructions : language.install_instructions;
         if(extra_mode)
@@ -1075,13 +1077,18 @@ int main(void)
         }
         else if(kDown & KEY_B)
         {
+            extra_mode = true;
+            draw_mode = DRAW_MODE_EXTRA;
+        }
+        else if(kDown & KEY_X)
+        {
             switch(current_mode)
             {
                 case MODE_THEMES:
                     toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
+                    if(list_has_installed_entries(current_list) && draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
@@ -1091,11 +1098,6 @@ int main(void)
                 default:
                     break;
             }
-        }
-        else if(kDown & KEY_X)
-        {
-            extra_mode = true;
-            draw_mode = DRAW_MODE_EXTRA;
         }
         else if(kDown & KEY_SELECT)
         {

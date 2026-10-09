@@ -35,10 +35,10 @@ const Language_s language_english = {
             .instructions = {
                 {
                     "\uE000 Install Theme(s)",
-                    "\uE001 Queue shuffle theme"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Queue shuffle theme",
                     "\uE003 Preview theme"
                 },
                 {
@@ -56,10 +56,10 @@ const Language_s language_english = {
             .instructions = {
                 {
                     "\uE000 Install splash",
-                    "\uE001 Delete installed splash"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Delete installed splash",
                     "\uE003 Preview splash"
                 },
                 {
@@ -495,10 +495,10 @@ const Language_s language_spanish = {
             .instructions = {
                 {
                     "\uE000 Instalar tema(s)",
-                    "\uE001 Cola de temas aleatorios"
+                    "\uE001 Más opciones"
                 },
                 {
-                    "\uE002 Más opciones",
+                    "\uE002 Cola de temas aleatorios",
                     "\uE003 Vista previa del tema"
                 },
                 {
@@ -516,10 +516,10 @@ const Language_s language_spanish = {
             .instructions = {
                 {
                     "\uE000 Instalar fondo",
-                    "\uE001 Eliminar fondo instalado"
+                    "\uE001 Más opciones"
                 },
                 {
-                    "\uE002 Más opciones",
+                    "\uE002 Eliminar fondo instalado",
                     "\uE003 Vista previa del fondo"
                 },
                 {
@@ -956,10 +956,10 @@ const Language_s language_french = {
             .instructions = {
                 {
                     "\uE000 Installer",
-                    "\uE001 Ajout thème aléatoire"
+                    "\uE001 Plus d'options"
                 },
                 {
-                    "\uE002 Plus d'options",
+                    "\uE002 Ajout thème aléatoire",
                     "\uE003 Aperçu"
                 },
                 {
@@ -977,10 +977,10 @@ const Language_s language_french = {
             .instructions = {
                 {
                     "\uE000 Installer",
-                    "\uE001 Effacer le splash installé"
+                    "\uE001 Plus d'options"
                 },
                 {
-                    "\uE002 Plus d'options",
+                    "\uE002 Effacer le splash installé",
                     "\uE003 Aperçu"
                 },
                 {
@@ -1416,10 +1416,10 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Tema(s)",
-                    "\uE001 Adicionar ao shuffle"
+                    "\uE001 Mais opções"
                 },
                 {
-                    "\uE002 Mais opções",
+                    "\uE002 Adicionar ao shuffle",
                     "\uE003 Pré-visualizar"
                 },
                 {
@@ -1437,10 +1437,10 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Splash",
-                    "\uE001 Excluir splash instalado"
+                    "\uE001 Mais opções"
                 },
                 {
-                    "\uE002 Mais opções",
+                    "\uE002 Excluir splash instalado",
                     "\uE003 Pré-visualizar"
                 },
                 {
@@ -1878,10 +1878,10 @@ const Language_s language_korean = {
             .instructions = {
                 {
                     "\uE000 Install Theme(s)",
-                    "\uE001 Queue shuffle"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Queue shuffle",
                     "\uE003 Preview theme"
                 },
                 {
@@ -1899,10 +1899,10 @@ const Language_s language_korean = {
             .instructions = {
                 {
                     "\uE000 Install splash",
-                    "\uE001 Delete cur. splash"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Delete cur. splash",
                     "\uE003 Preview splash"
                 },
                 {
@@ -2339,10 +2339,10 @@ const Language_s language_SChinese = {
             .instructions = {
                 {
                     "\uE000 安装主题",
-                    "\uE001 安装随机主题"
+                    "\uE001 更多选项"
                 },
                 {
-                    "\uE002 更多选项",
+                    "\uE002 安装随机主题",
                     "\uE003 预览主题"
                 },
                 {
@@ -2360,10 +2360,10 @@ const Language_s language_SChinese = {
             .instructions = {
                 {
                     "\uE000 安装开机图画",
-                    "\uE001 删除已安装的开机图画"
+                    "\uE001 更多选项"
                 },
                 {
-                    "\uE002 更多选项",
+                    "\uE002 删除已安装的开机图画",
                     "\uE003 预览开机图像"
                 },
                 {
