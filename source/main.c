@@ -40,7 +40,7 @@ bool quit = false;
 bool dspfirm = false;
 static audio_s * audio = NULL;
 static bool homebrew = false;
-static bool installed_themes = false;
+bool installed_themes = false;
 bool home_displayed = false;
 u64 time_home_pressed = 0;
 
@@ -70,12 +70,15 @@ const char * main_paths[REMOTE_MODE_AMOUNT] = {
 const int entries_per_screen_v[MODE_AMOUNT] = {
     4,
     4,
+    4,
 };
 const int entries_per_screen_h[MODE_AMOUNT] = { //for themeplaza browser
     6,
     6,
+    6,
 };
 const int entry_size[MODE_AMOUNT] = {
+    48,
     48,
     48,
 };
@@ -129,6 +132,22 @@ static void stop_install_check(void)
     }
 }
 
+static void restart_splash_install_check(void)
+{
+    Thread_Arg_s * arg = &install_check_threads_arg[MODE_SPLASHES];
+    arg->run_thread = false;
+    if(install_check_threads[MODE_SPLASHES] != NULL)
+    {
+        threadJoin(install_check_threads[MODE_SPLASHES], U64_MAX);
+        threadFree(install_check_threads[MODE_SPLASHES]);
+        install_check_threads[MODE_SPLASHES] = NULL;
+    }
+
+    arg->run_thread = true;
+    arg->thread_arg = (void **)&lists[MODE_SPLASHES];
+    install_check_threads[MODE_SPLASHES] = threadCreate(splash_check_installed, arg, __stacksize__, 0x3f, -2, false);
+}
+
 static inline void wait_scroll(void)
 {
     released = true;
@@ -156,7 +175,8 @@ void free_lists(void)
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * const current_list = &lists[i];
-        C3D_TexDelete(&current_list->icons_texture);
+        if(current_list->icons_texture.data != NULL)
+            C3D_TexDelete(&current_list->icons_texture);
         free(current_list->icons_info);
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
@@ -214,6 +234,13 @@ static void load_lists(Entry_List_s * lists)
     free_lists();
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
+        // badges are installed straight from the badges folder, there is no list to load
+        if(i == MODE_BADGES)
+        {
+            lists[i].mode = i;
+            continue;
+        }
+
         InstallType loading_screen = INSTALL_NONE;
         if(i == MODE_THEMES)
             loading_screen = INSTALL_LOADING_THEMES;
@@ -445,8 +472,10 @@ int main(void)
         current_list = &lists[current_mode];
 
         Instructions_s instructions = language.normal_instructions[current_mode];
+        if(current_mode == MODE_SPLASHES && !list_has_installed_entries(current_list))
+            instructions.instructions[1][0] = NULL; // nothing to uninstall with X
         if(install_mode)
-            instructions = language.install_instructions;
+            instructions = current_mode == MODE_SPLASHES ? language.splash_install_instructions : language.install_instructions;
         if(extra_mode)
         {
             instructions = language.extra_instructions[extra_index];
@@ -489,7 +518,48 @@ int main(void)
 
         if(kDown & KEY_START) quit = true;
 
-        if(current_list->entries_count == 0)
+        if(current_mode == MODE_BADGES)
+        {
+            bool install = kDown & KEY_A;
+            if (kDown & KEY_R)
+            {
+                goto enable_qr;
+            } else if (kDown & KEY_L)
+            {
+                goto switch_mode;
+            } else if (kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
+                {
+                    goto switch_mode;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
+                {
+                    quit = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
+                {
+                    goto browse_themeplaza;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y))
+                {
+                    goto enable_qr;
+                } else if(toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
+                {
+                    install = true;
+                }
+            }
+
+            if(install)
+            {
+                draw_install(INSTALL_BADGES);
+                install_badges();
+            }
+            continue;
+        }
+        else if(current_list->entries_count == 0)
         {
             if (kDown & KEY_R)
             {
@@ -506,21 +576,23 @@ int main(void)
                 u16 y = touch.py;
                 if (y < 24)
                 {
-                    if(BETWEEN(320-24, x, 320))
+                    if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
                     {
                         goto switch_mode;
-                    } else if(BETWEEN(320-48, x, 320-24))
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
                     {
                         quit = true;
                         continue;
-                    } else if(BETWEEN(320-72, x, 320-48))
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
                     {
                         goto browse_themeplaza;
-                    } else if(BETWEEN(320-96, x, 320-72))
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y))
                     {
                         goto enable_qr;
                     }
                 }
+                // the list's own buttons aren't shown here, don't let the tap reach them
+                continue;
             }
         }
         else if(!install_mode && !extra_mode)
@@ -613,7 +685,61 @@ int main(void)
             goto touch;
 
 
-        if(install_mode)
+        if(install_mode && current_mode == MODE_SPLASHES)
+        {
+            bool leave = kDown & KEY_B;
+            int install_type = -1;
+
+            if(kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+
+                if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_NORMAL_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_NORMAL;
+                else if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_TOP_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_TOP;
+                else if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_BOTTOM_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_BOTTOM;
+                else if(toolbar_hit(x, y, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y))
+                    leave = true;
+            }
+            else if(kDown & KEY_DUP)
+                install_type = SPLASH_INSTALL_NORMAL;
+            else if(kDown & KEY_DDOWN)
+                install_type = SPLASH_INSTALL_TOP;
+            else if(kDown & KEY_DLEFT)
+                install_type = SPLASH_INSTALL_BOTTOM;
+
+            if(leave || install_type >= 0)
+            {
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+            }
+
+            if(install_type >= 0)
+            {
+                draw_install(INSTALL_SPLASH);
+                splash_install(current_entry, (SplashInstallType)install_type);
+                if(install_type == SPLASH_INSTALL_NORMAL)
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * splash = &current_list->entries[i];
+                        splash->installed = splash == current_entry;
+                    }
+                }
+                else
+                {
+                    // the other screen keeps its splash, so let the check thread work out which entries are installed
+                    restart_splash_install_check();
+                }
+            }
+            continue;
+        }
+        else if(install_mode)
         {
             if ((kDown | kHeld) & KEY_TOUCH)
             {
@@ -626,19 +752,19 @@ int main(void)
                 {
                     if (y < 24)
                     {
-                        if (BETWEEN(320-24, x, 320))
+                        if (toolbar_hit(x, y, TOOLBAR_INSTALL_NORMAL_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_single;
-                        } else if (BETWEEN(320-48, x, 320-24))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_SHUFFLE_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_shuffle;
-                        } else if (BETWEEN(320-72, x, 320-48))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_NO_BGM_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_no_bgm;
-                        } else if (BETWEEN(320-96, x, 320-72))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_BGM_ONLY_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_bgm_only;
-                        } else if (BETWEEN(2, x, 26))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y))
                         {
                             goto install_leave;
                         }
@@ -764,13 +890,16 @@ int main(void)
                 {
                     if (y < 24)
                     {
-                        if (BETWEEN(320-24, x, 320))
-                        {
-                            goto browse_themeplaza;
-                        } else if (BETWEEN(320-48, x, 320-24))
+                        if (toolbar_hit(x, y, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y))
                         {
                             goto dump_single;
-                        } else if (BETWEEN(320-72, x, 320-48))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y))
+                        {
+                            load_icons_first(current_list, false);
+                            extra_mode = false;
+                            draw_mode = DRAW_MODE_LIST;
+                            extra_index = 1;
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y))
                         {
                             switch (current_list->current_sort)
                             {
@@ -786,15 +915,19 @@ int main(void)
                                 default:
                                     break;
                             }
-                        } else if (BETWEEN(320-96, x, 320-72))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_BADGES_X, TOOLBAR_TOP_Y))
                         {
                             goto badge_install;
-                        } else if (BETWEEN(2, x, 26))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y))
                         {
                             extra_mode = false;
                             extra_index = 1;
                             draw_mode = DRAW_MODE_LIST;
                         }
+                    }
+                    else if (toolbar_hit(x, y, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y))
+                    {
+                        quit = true;
                     }
                 }
             }
@@ -935,16 +1068,8 @@ int main(void)
                     draw_mode = DRAW_MODE_INSTALL;
                     break;
                 case MODE_SPLASHES:
-                    draw_install(INSTALL_SPLASH);
-                    splash_install(current_entry);
-                    for(int i = 0; i < current_list->entries_count; i++)
-                    {
-                        Entry_s * splash = &current_list->entries[i];
-                        if(splash == current_entry)
-                            splash->installed = true;
-                        else
-                            splash->installed = false;
-                    }
+                    install_mode = true;
+                    draw_mode = DRAW_MODE_INSTALL;
                     break;
                 default:
                     break;
@@ -952,26 +1077,27 @@ int main(void)
         }
         else if(kDown & KEY_B)
         {
+            extra_mode = true;
+            draw_mode = DRAW_MODE_EXTRA;
+        }
+        else if(kDown & KEY_X)
+        {
             switch(current_mode)
             {
                 case MODE_THEMES:
                     toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
+                    if(list_has_installed_entries(current_list) && draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
+                        clear_installed_entries(current_list);
                     }
                     break;
                 default:
                     break;
             }
-        }
-        else if(kDown & KEY_X)
-        {
-            extra_mode = true;
-            draw_mode = DRAW_MODE_EXTRA;
         }
         else if(kDown & KEY_SELECT)
         {
@@ -1042,19 +1168,64 @@ int main(void)
             {
                 if(y < 24)
                 {
-                    if(BETWEEN(320-144, x, 320-120))
+                    if(toolbar_hit(x, y, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y))
+                    {
+                        extra_mode = true;
+                        draw_mode = DRAW_MODE_EXTRA;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y) && list_has_installed_entries(current_list))
+                    {
+                        if(current_mode == MODE_THEMES && draw_confirm(language.main.uninstall_theme_confirm, current_list, draw_mode))
+                        {
+                            aptSetHomeAllowed(false);
+                            draw_install(INSTALL_THEME_UNINSTALL);
+                            Result res = theme_uninstall();
+                            if(R_SUCCEEDED(res))
+                            {
+                                clear_installed_entries(current_list);
+                                // the HOME Menu still holds the old theme, it has to be reloaded on exit
+                                installed_themes = true;
+                            }
+                            else
+                            {
+                                DEBUG("theme uninstall result: %lx\n", res);
+                                throw_error(language.themes.uninstall_failed, ERROR_LEVEL_WARNING);
+                            }
+                        }
+                        else if(current_mode == MODE_SPLASHES && draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
+                        {
+                            draw_install(INSTALL_SPLASH_DELETE);
+                            splash_delete();
+                            clear_installed_entries(current_list);
+                        }
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y))
+                    {
+                        goto enable_qr;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
+                    {
+                        goto browse_themeplaza;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_MODE_X, TOOLBAR_TOP_Y))
+                    {
+                        goto switch_mode;
+                    }
+                }
+                else if(y >= TOOLBAR_BOTTOM_Y)
+                {
+                    if(toolbar_hit(x, y, TOOLBAR_LIST_PREVIEW_X, TOOLBAR_BOTTOM_Y))
+                    {
+                        goto toggle_preview;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_SHUFFLE_X, TOOLBAR_BOTTOM_Y))
                     {
                         if (current_mode == MODE_THEMES)
                         {
                             toggle_shuffle(current_list);
                         }
                     }
-                    else if(BETWEEN(2, x, 26))
-                    {
-                        extra_mode = true;
-                        draw_mode = DRAW_MODE_EXTRA;
-                    }
-                    else if(BETWEEN(320-120, x, 320-96))
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_INSTALL_X, TOOLBAR_BOTTOM_Y))
                     {
                         if (current_mode == MODE_THEMES)
                         {
@@ -1062,38 +1233,11 @@ int main(void)
                             draw_mode = DRAW_MODE_INSTALL;
                         } else if (current_mode == MODE_SPLASHES)
                         {
-                            draw_install(INSTALL_SPLASH);
-                            splash_install(current_entry);
-                            for(int i = 0; i < current_list->entries_count; i++)
-                            {
-                                Entry_s * splash = &current_list->entries[i];
-                                if(splash == current_entry)
-                                    splash->installed = true;
-                                else
-                                    splash->installed = false;
-                            }
+                            install_mode = true;
+                            draw_mode = DRAW_MODE_INSTALL;
                         }
                     }
-                    else if(BETWEEN(320-96, x, 320-72))
-                    {
-                        goto enable_qr;
-                    }
-                    else if(BETWEEN(320-72, x, 320-48))
-                    {
-                        quit = true;
-                    }
-                    else if(BETWEEN(320-48, x, 320-24))
-                    {
-                        goto toggle_preview;
-                    }
-                    else if(BETWEEN(320-24, x, 320))
-                    {
-                        goto switch_mode;
-                    }
-                }
-                else if(y >= 216)
-                {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    else if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
                         change_selected(current_list, -current_list->entries_per_screen_v);
                     }

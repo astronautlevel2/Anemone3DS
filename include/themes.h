@@ -73,6 +73,10 @@ typedef struct {
 Result theme_install(Entry_s * theme);
 Result no_bgm_install(Entry_s * theme);
 Result bgm_install(Entry_s * theme);
+Result theme_uninstall(void);
+
+// set after any change to the HOME Menu theme; the HOME Menu is reloaded on exit when true
+extern bool installed_themes;
 
 Result shuffle_install(const Entry_List_s * themes);
 

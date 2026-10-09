@@ -12,11 +12,13 @@ battery5.png
 browse.png
 charging.png
 install.png
+uninstall.png
 exit.png
 installed.png
 menu.png
 no_home.png
 preview.png
+download.png
 select.png
 shuffle.png
 shuffle_no_bgm.png
@@ -27,3 +29,4 @@ bgm_only.png
 back.png
 dump.png
 badge.png
+reload.png

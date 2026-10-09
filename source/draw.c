@@ -42,8 +42,10 @@ static C2D_SpriteSheet spritesheet;
 static C2D_Sprite sprite_shuffle, sprite_shuffle_no_bgm, sprite_installed, sprite_start, sprite_select;
 
 C2D_Text text[TEXT_AMOUNT];
+// letter of the mode the mode button switches to
 static const char * mode_switch_char[MODE_AMOUNT] = {
     "S",
+    "B",
     "T",
 };
 
@@ -86,6 +88,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_THEME_MODE], staticBuf, language.draw.theme_mode);
     C2D_TextParse(&text[TEXT_SPLASH_MODE], staticBuf, language.draw.splash_mode);
+    C2D_TextParse(&text[TEXT_BADGE_MODE], staticBuf, language.draw.badge_mode);
 
     C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, language.draw.no_themes);
     C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, language.draw.no_splashes);
@@ -94,6 +97,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, language.draw.switch_splashes);
     C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, language.draw.switch_themes);
+    C2D_TextParse(&text[TEXT_SWITCH_TO_BADGES], staticBuf, language.draw.switch_badges);
 
     C2D_TextParse(&text[TEXT_OR_START_TO_QUIT], staticBuf, language.draw.quit);
 
@@ -112,6 +116,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_ERROR_CONTINUE], staticBuf, language.draw.warn_continue);
 
     C2D_TextParse(&text[TEXT_CONFIRM_YES_NO], staticBuf, language.draw.yes_no);
+    C2D_TextParse(&text[TEXT_INSTALL_BADGES_BUTTON], staticBuf, language.draw.install_badges_button);
 
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_THEMES], staticBuf, language.draw.load_themes);
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_SPLASHES], staticBuf, language.draw.load_splash);
@@ -119,6 +124,7 @@ void init_screens(void)
 
     C2D_TextParse(&text[TEXT_INSTALL_SPLASH], staticBuf, language.draw.install_splash);
     C2D_TextParse(&text[TEXT_INSTALL_SPLASH_DELETE], staticBuf, language.draw.delete_splash);
+    C2D_TextParse(&text[TEXT_INSTALL_THEME_UNINSTALL], staticBuf, language.draw.delete_theme);
 
     C2D_TextParse(&text[TEXT_INSTALL_SINGLE], staticBuf, language.draw.install_theme);
     C2D_TextParse(&text[TEXT_INSTALL_SHUFFLE], staticBuf, language.draw.install_shuffle);
@@ -296,7 +302,6 @@ void draw_base_interface(void)
 
     C2D_DrawRectSolid(0, 0, 0.5f, 320, 24, colors[COLOR_ACCENT]);
     C2D_DrawRectSolid(0, 216, 0.5f, 320, 24, colors[COLOR_ACCENT]);
-    C2D_DrawText(&text[TEXT_VERSION], C2D_WithColor, 7, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT]);
 
     set_screen(top);
 }
@@ -568,16 +573,16 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
 
     set_screen(bottom);
 
-    draw_c2d_text(7, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
-
     C2D_ImageTint accent_tint;
     C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
 
-    draw_image_tint(sprites_back_idx, 320-96, 0, accent_tint);
-    draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
-    draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
+    draw_image_tint(sprites_back_idx, TOOLBAR_REMOTE_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_c2d_text(TOOLBAR_REMOTE_SEARCH_X + 4, 3, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_SEARCH]);
+    draw_image_tint(sprites_sort_idx, TOOLBAR_REMOTE_FILTER_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_text(TOOLBAR_REMOTE_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
 
-    draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], remote_mode_switch_char[current_mode]);
+    draw_image_tint(sprites_preview_idx, TOOLBAR_REMOTE_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
+    draw_image_tint(sprites_download_idx, TOOLBAR_REMOTE_DOWNLOAD_X, TOOLBAR_BOTTOM_Y, accent_tint);
 
     C2D_ImageTint background_tint;
     C2D_PlainImageTint(&background_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
@@ -655,6 +660,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
     C2D_Text * mode_string[MODE_AMOUNT] = {
         &text[TEXT_THEME_MODE],
         &text[TEXT_SPLASH_MODE],
+        &text[TEXT_BADGE_MODE],
     };
 
     C2D_ImageTint accent_tint;
@@ -662,11 +668,30 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE_ACCENT], mode_string[current_mode]);
 
+    if(current_mode == MODE_BADGES)
+    {
+        draw_instructions(instructions);
+
+        set_screen(bottom);
+
+        draw_image_tint(sprites_qr_idx, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_text(TOOLBAR_EMPTY_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
+
+        C2D_DrawRectSolid(BADGE_INSTALL_BUTTON_X - 2, BADGE_INSTALL_BUTTON_Y - 2, 0.55f, BADGE_INSTALL_BUTTON_WIDTH + 4, BADGE_INSTALL_BUTTON_HEIGHT + 4, colors[COLOR_CURSOR]);
+        C2D_DrawRectSolid(BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, 0.56f, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT, colors[COLOR_ACCENT]);
+        draw_c2d_text_center(GFX_BOTTOM, BADGE_INSTALL_BUTTON_Y + 14, 0.7f, 0.7f, 0.7f, colors[COLOR_WHITE_ACCENT], &text[TEXT_INSTALL_BADGES_BUTTON]);
+
+        return;
+    }
+
     if(list->entries == NULL || list->entries_count == 0)
     {
         C2D_Text * mode_found_string[MODE_AMOUNT] = {
             &text[TEXT_NO_THEME_FOUND],
             &text[TEXT_NO_SPLASH_FOUND],
+            NULL,
         };
 
         draw_c2d_text_center(GFX_TOP, 80, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_found_string[current_mode]);
@@ -674,6 +699,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         C2D_Text * mode_switch_string[MODE_AMOUNT] = {
             &text[TEXT_SWITCH_TO_SPLASHES],
+            &text[TEXT_SWITCH_TO_BADGES],
             &text[TEXT_SWITCH_TO_THEMES],
         };
 
@@ -689,11 +715,11 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
-        draw_image_tint(sprites_browse_idx, 320-72, 0, accent_tint);
-        draw_image_tint(sprites_exit_idx, 320-48, 0, accent_tint);
+        draw_image_tint(sprites_qr_idx, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
 
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
+        draw_text(TOOLBAR_EMPTY_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
 
         return;
     }
@@ -716,33 +742,46 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     if (draw_mode == DRAW_MODE_LIST)
     {
-        draw_image_tint(sprites_install_idx, 320-120, 0, accent_tint);
-        draw_image_tint(sprites_qr_idx, 320-96, 0, accent_tint);
-        draw_image_tint(sprites_exit_idx, 320-72, 0, accent_tint);
-        draw_image_tint(sprites_preview_idx, 320-48, 0, accent_tint);
-        draw_text(320-24+2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[!current_mode]);
-        draw_image_tint(sprites_menu_idx, 2, 0, accent_tint);
+        draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        if(list_has_installed_entries(list))
+            draw_image_tint(sprites_uninstall_idx, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_qr_idx, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
+
+        draw_image_tint(sprites_preview_idx, TOOLBAR_LIST_PREVIEW_X, TOOLBAR_BOTTOM_Y, accent_tint);
+        draw_image_tint(sprites_install_idx, TOOLBAR_LIST_INSTALL_X, TOOLBAR_BOTTOM_Y, accent_tint);
         if (current_mode == MODE_THEMES)
         {
-            draw_image_tint(sprites_shuffle_idx, 320-144, 0, accent_tint);
+            draw_image_tint(sprites_shuffle_idx, TOOLBAR_LIST_SHUFFLE_X, TOOLBAR_BOTTOM_Y, accent_tint);
         }
     }
     else
     {
-        if (draw_mode == DRAW_MODE_INSTALL)
+        if (draw_mode == DRAW_MODE_INSTALL && current_mode == MODE_SPLASHES)
         {
-            draw_image_tint(sprites_install_idx, 320-24, 0, accent_tint);
-            draw_image_tint(sprites_shuffle_idx, 320-48, 0, accent_tint);
-            draw_image_tint(sprites_shuffle_no_bgm_idx, 320-72, 0, accent_tint);
-            draw_image_tint(sprites_bgm_only_idx, 320-96, 0, accent_tint);
-            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
+            draw_image_tint(sprites_arrow_up_idx, TOOLBAR_SPLASH_INSTALL_TOP_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_arrow_down_idx, TOOLBAR_SPLASH_INSTALL_BOTTOM_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_install_idx, TOOLBAR_SPLASH_INSTALL_NORMAL_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_back_idx, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+        }
+        else if (draw_mode == DRAW_MODE_INSTALL)
+        {
+            draw_image_tint(sprites_install_idx, TOOLBAR_INSTALL_NORMAL_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_shuffle_idx, TOOLBAR_INSTALL_SHUFFLE_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_shuffle_no_bgm_idx, TOOLBAR_INSTALL_NO_BGM_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_bgm_only_idx, TOOLBAR_INSTALL_BGM_ONLY_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_back_idx, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y, accent_tint);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
-            draw_image_tint(sprites_browse_idx, 320-24, 0, accent_tint);
-            draw_image_tint(sprites_dump_idx, 320-48, 0, accent_tint);
-            draw_image_tint(sprites_sort_idx, 320-72, 0, accent_tint);
-            draw_image_tint(sprites_badge_idx, 320-96, 0, accent_tint);
-            draw_image_tint(sprites_back_idx, 2, 0, accent_tint);
+            draw_image_tint(sprites_back_idx, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_badge_idx, TOOLBAR_EXTRA_BADGES_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_sort_idx, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_reload_idx, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y, accent_tint);
+            draw_image_tint(sprites_dump_idx, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y, accent_tint);
+
+            draw_image_tint(sprites_exit_idx, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y, accent_tint);
+            draw_c2d_text(TOOLBAR_EXTRA_VERSION_X, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_VERSION]);
         }
     }
 

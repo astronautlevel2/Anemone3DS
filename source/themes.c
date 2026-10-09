@@ -327,6 +327,48 @@ Result bgm_install(Entry_s * theme)
     return install_theme_internal(&list, THEME_INSTALL_BGM);
 }
 
+// Switch the HOME Menu back to its built-in theme
+Result theme_uninstall(void)
+{
+    Result res;
+
+    // SaveData first, so the HOME Menu stops pointing at the theme cache before it is cleared
+    char * savedata_buf = NULL;
+    u32 savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    if(savedata_size < sizeof(SaveData_dat_s))
+    {
+        free(savedata_buf);
+        return MAKERESULT(RL_PERMANENT, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
+
+    SaveData_dat_s * savedata = (SaveData_dat_s *)savedata_buf;
+    memset(&savedata->theme_entry, 0, sizeof(ThemeEntry_s));
+    savedata->shuffle = 0;
+    memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s) * MAX_SHUFFLE_THEMES);
+
+    res = buf_to_file(savedata_size, fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
+    free(savedata_buf);
+    if(R_FAILED(res)) return res;
+
+    char * thememanage_buf = NULL;
+    u32 thememanage_size = file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
+    if(thememanage_size < sizeof(ThemeManage_bin_s))
+    {
+        free(thememanage_buf);
+        return MAKERESULT(RL_PERMANENT, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
+
+    ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
+    memset(theme_manage, 0, sizeof(ThemeManage_bin_s));
+    theme_manage->unk4 = 1;
+    theme_manage->dlc_theme_content_index = 0xFF;
+    theme_manage->use_theme_cache = 0x0200;
+
+    res = buf_to_file(thememanage_size, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, thememanage_buf);
+    free(thememanage_buf);
+    return res;
+}
+
 Result no_bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};

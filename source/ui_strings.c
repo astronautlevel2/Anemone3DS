@@ -35,10 +35,10 @@ const Language_s language_english = {
             .instructions = {
                 {
                     "\uE000 Install Theme(s)",
-                    "\uE001 Queue shuffle theme"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Queue shuffle theme",
                     "\uE003 Preview theme"
                 },
                 {
@@ -56,11 +56,32 @@ const Language_s language_english = {
             .instructions = {
                 {
                     "\uE000 Install splash",
-                    "\uE001 Delete installed splash"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Delete installed splash",
                     "\uE003 Preview splash"
+                },
+                {
+                    "\uE004 Switch to badges",
+                    "\uE005 Scan QR code"
+                },
+                {
+                    "Exit",
+                    "Delete from SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Install badges",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
                 },
                 {
                     "\uE004 Switch to themes",
@@ -68,7 +89,7 @@ const Language_s language_english = {
                 },
                 {
                     "Exit",
-                    "Delete from SD"
+                    NULL
                 }
             }
         }
@@ -85,6 +106,29 @@ const Language_s language_english = {
             {
                 "\uE07B BGM-only install",
                 "\uE07C No-BGM install"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Exit",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Cancel splash install",
+        .instructions = {
+            {
+                "\uE079 Normal install",
+                "\uE07A Top screen only"
+            },
+            {
+                "\uE07B Bottom screen only",
+                NULL
             },
             {
                 NULL,
@@ -176,11 +220,13 @@ const Language_s language_english = {
     {
         .theme_mode = "Theme mode",
         .splash_mode = "Splash mode",
+        .badge_mode = "Badge mode",
         .no_themes = "No theme found",
         .no_splashes = "No splash found",
         .qr_download = "Press \uE005 to download from QR",
         .switch_splashes = "Or \uE004 to switch to splashes",
         .switch_themes = "Or \uE004 to switch to themes",
+        .switch_badges = "Or \uE004 to switch to badges",
         .quit = "Or        to quit",
         .start_pos = 162, // Adjust x pos of start glyph to line up with quit string
         .by = "By ",
@@ -199,6 +245,7 @@ const Language_s language_english = {
         .load_icons = "Loading icons, please wait...",
         .install_splash = "Installing a splash...",
         .delete_splash = "Deleting installed splash...",
+        .delete_theme = "Uninstalling installed theme...",
         .install_theme = "Installing a single theme...",
         .install_shuffle = "Installing shuffle themes...",
         .install_bgm = "Installing BGM-only theme...",
@@ -215,6 +262,7 @@ const Language_s language_english = {
         .dump_all_official = "Dumping official themes, please wait...",
         .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installing badges, please wait...",
+        .install_badges_button = "Install badges",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -247,6 +295,7 @@ const Language_s language_english = {
         .too_many_themes = "You have too many themes selected.",
         .not_enough_themes = "You don't have enough themes selected.",
         .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
+        .uninstall_theme_confirm = "Are you sure you would like to uninstall\nthe installed theme?",
         .delete_confirm = "Are you sure you would like to delete this?",
     },
     .remote =
@@ -283,6 +332,7 @@ const Language_s language_english = {
         .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
         .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
         .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .install_now = "Do you want to install it now?",
     },
     .remote_instructions =
     {
@@ -428,7 +478,8 @@ const Language_s language_english = {
         .illegal_char = "Illegal character used.",
         .name_folder = "Name of output folder",
         .cancel = "Cancel",
-        .done = "Done"
+        .done = "Done",
+        .uninstall_failed = "Uninstalling the theme failed."
     },
     .badges = 
     {
@@ -444,10 +495,10 @@ const Language_s language_spanish = {
             .instructions = {
                 {
                     "\uE000 Instalar tema(s)",
-                    "\uE001 Cola de temas aleatorios"
+                    "\uE001 Más opciones"
                 },
                 {
-                    "\uE002 Más opciones",
+                    "\uE002 Cola de temas aleatorios",
                     "\uE003 Vista previa del tema"
                 },
                 {
@@ -465,11 +516,32 @@ const Language_s language_spanish = {
             .instructions = {
                 {
                     "\uE000 Instalar fondo",
-                    "\uE001 Eliminar fondo instalado"
+                    "\uE001 Más opciones"
                 },
                 {
-                    "\uE002 Más opciones",
+                    "\uE002 Eliminar fondo instalado",
                     "\uE003 Vista previa del fondo"
+                },
+                {
+                    "\uE004 Cambiar a insignias",
+                    "\uE005 Escanear código QR"
+                },
+                {
+                    "Salir",
+                    "Eliminar de la SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Instalar insignias",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
                 },
                 {
                     "\uE004 Cambiar a temas",
@@ -477,7 +549,7 @@ const Language_s language_spanish = {
                 },
                 {
                     "Salir",
-                    "Eliminar de la SD"
+                    NULL
                 }
             }
         }
@@ -494,6 +566,29 @@ const Language_s language_spanish = {
             {
                 "\uE07B Instalación solo BGM",
                 "\uE07C Instalación sin BGM"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Salir",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Cancelar instalación del fondo",
+        .instructions = {
+            {
+                "\uE079 Instalación normal",
+                "\uE07A Solo pantalla superior"
+            },
+            {
+                "\uE07B Solo pantalla inferior",
+                NULL
             },
             {
                 NULL,
@@ -585,11 +680,13 @@ const Language_s language_spanish = {
     {
         .theme_mode = "Modo tema",
         .splash_mode = "Modo fondo",
+        .badge_mode = "Modo insignias",
         .no_themes = "No se encontraron temas",
         .no_splashes = "No se encontraron fondos",
         .qr_download = "Presiona \uE005 para descargar desde el código QR",
         .switch_splashes = "O \uE004 para cambiar a fondos",
         .switch_themes = "O \uE004 para cambiar a temas",
+        .switch_badges = "O \uE004 para cambiar a insignias",
         .quit = "O        para salir",
         .start_pos = 162,
         .by = "Por ",
@@ -608,6 +705,7 @@ const Language_s language_spanish = {
         .load_icons = "Cargando iconos, por favor espera...",
         .install_splash = "Instalando fondo...",
         .delete_splash = "Eliminando fondo instalado...",
+        .delete_theme = "Desinstalando tema instalado...",
         .install_theme = "Instalando un solo tema...",
         .install_shuffle = "Instalando temas aleatorios...",
         .install_bgm = "Instalando tema solo BGM...",
@@ -624,6 +722,7 @@ const Language_s language_spanish = {
         .dump_all_official = "Volcando temas oficiales,\npor favor espera...",
         .dump_badges = "Volcando insignias instaladas,\npor favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
+        .install_badges_button = "Instalar insignias",
         .shuffle = "Aleatorio: %i/10",
     },
     .fs =
@@ -656,6 +755,7 @@ const Language_s language_spanish = {
         .too_many_themes = "Tienes demasiados temas seleccionados.",
         .not_enough_themes = "No tienes suficientes temas seleccionados.",
         .uninstall_confirm = "¿Estás seguro de que deseas eliminar\nel fondo instalado?",
+        .uninstall_theme_confirm = "¿Estás seguro de que deseas desinstalar\nel tema instalado?",
         .delete_confirm = "¿Estás seguro de que deseas eliminar esto?",
     },
     .remote =
@@ -692,6 +792,7 @@ const Language_s language_spanish = {
         .http503 = "HTTP 503 Servicio No Disponible\nContacta al administrador del sitio.",
         .http504 = "HTTP 504 Tiempo de Espera de la Puerta de Enlace\nContacta al administrador del sitio.",
         .http_unexpected = "HTTP %u\nSi crees que esto es inesperado, por favor\ncontacta al administrador del sitio.",
+        .install_now = "¿Quieres instalarlo ahora?",
     },
     .remote_instructions =
     {
@@ -837,7 +938,8 @@ const Language_s language_spanish = {
         .illegal_char = "Se utilizó un carácter ilegal.",
         .name_folder = "Nombre de la carpeta de salida",
         .cancel = "Cancelar",
-        .done = "Listo"
+        .done = "Listo",
+        .uninstall_failed = "No se pudo desinstalar el tema."
     },
     .badges =
     {
@@ -854,10 +956,10 @@ const Language_s language_french = {
             .instructions = {
                 {
                     "\uE000 Installer",
-                    "\uE001 Ajout thème aléatoire"
+                    "\uE001 Plus d'options"
                 },
                 {
-                    "\uE002 Plus d'options",
+                    "\uE002 Ajout thème aléatoire",
                     "\uE003 Aperçu"
                 },
                 {
@@ -875,11 +977,32 @@ const Language_s language_french = {
             .instructions = {
                 {
                     "\uE000 Installer",
-                    "\uE001 Effacer le splash installé"
+                    "\uE001 Plus d'options"
                 },
                 {
-                    "\uE002 Plus d'options",
+                    "\uE002 Effacer le splash installé",
                     "\uE003 Aperçu"
+                },
+                {
+                    "\uE004 Menu des badges",
+                    "\uE005 Scanner un QR code"
+                },
+                {
+                    "Quitter",
+                    "Supprimer"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Installer les badges",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
                 },
                 {
                     "\uE004 Menu des thèmes",
@@ -887,7 +1010,7 @@ const Language_s language_french = {
                 },
                 {
                     "Quitter",
-                    "Supprimer"
+                    NULL
                 }
             }
         }
@@ -904,6 +1027,29 @@ const Language_s language_french = {
             {
                 "\uE07B Musique du thème",
                 "\uE07C Thème sans musique"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Quitter",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Annuler l'installation du splash",
+        .instructions = {
+            {
+                "\uE079 Installation normale",
+                "\uE07A Écran du haut seulement"
+            },
+            {
+                "\uE07B Écran du bas seulement",
+                NULL
             },
             {
                 NULL,
@@ -995,11 +1141,13 @@ const Language_s language_french = {
     {
         .theme_mode = "Thèmes",
         .splash_mode = "Splashs",
+        .badge_mode = "Badges",
         .no_themes = "Aucun thème trouvé",
         .no_splashes = "Aucun splash trouvé",
         .qr_download = "Appuyez sur \uE005 pour téléch. depuis un QR",
         .switch_splashes = "Ou \uE004 pour aller sur les splashs",
         .switch_themes = "Ou \uE004 pour aller sur les thèmes",
+        .switch_badges = "Ou \uE004 pour aller sur les badges",
         .quit = "Ou        pour quitter",
         .start_pos = 142, // Adjust x pos of start glyph to line up with quit string
         .by = "Par ",
@@ -1018,6 +1166,7 @@ const Language_s language_french = {
         .load_icons = "Chargement des icônes,\nveuillez patienter...",
         .install_splash = "Installation su splash...",
         .delete_splash = "Effacement du splash installé...",
+        .delete_theme = "Désinstallation du thème installé...",
         .install_theme = "Installation du thème...",
         .install_shuffle = "Installation de thèmes aléatoire...",
         .install_bgm = "Installation de la musique du thème...",
@@ -1034,6 +1183,7 @@ const Language_s language_french = {
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
         .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
+        .install_badges_button = "Installer les badges",
         .shuffle = "Aléatoire: %i/10",
     },
     .fs =
@@ -1066,6 +1216,7 @@ const Language_s language_french = {
         .too_many_themes = "Il y a trop de thèmes sélectionnés.",
         .not_enough_themes = "Il n'y a pas assez de thèmes sélectionnés.",
         .uninstall_confirm = "Voulez-vous supprimer le splash\nactuellement installé?",
+        .uninstall_theme_confirm = "Voulez-vous désinstaller le thème\nactuellement installé?",
         .delete_confirm = "Voulez-vous supprimer ceci?",
     },
     .remote =
@@ -1102,6 +1253,7 @@ const Language_s language_french = {
         .http503 = "HTTP 503 Service Unavailable\nContactez l'administrateur du site.",
         .http504 = "HTTP 504 Gateway Timeout\nContactez l'administrateur du site.",
         .http_unexpected = "HTTP %u\nSi vous pensez que ceci est inattendu,\ncontactez l'administrateur du site.",
+        .install_now = "Voulez-vous l'installer maintenant ?",
     },
     .remote_instructions =
     {
@@ -1247,7 +1399,8 @@ const Language_s language_french = {
         .illegal_char = "Caractère interdit utilisé.",
         .name_folder = "Nom du dossier de destination",
         .cancel = "Annuler",
-        .done = "OK"
+        .done = "OK",
+        .uninstall_failed = "Impossible de désinstaller le thème."
     },
     .badges = 
     {
@@ -1263,10 +1416,10 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Tema(s)",
-                    "\uE001 Adicionar ao shuffle"
+                    "\uE001 Mais opções"
                 },
                 {
-                    "\uE002 Mais opções",
+                    "\uE002 Adicionar ao shuffle",
                     "\uE003 Pré-visualizar"
                 },
                 {
@@ -1284,11 +1437,32 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Splash",
-                    "\uE001 Excluir splash instalado"
+                    "\uE001 Mais opções"
                 },
                 {
-                    "\uE002 Mais opções",
+                    "\uE002 Excluir splash instalado",
                     "\uE003 Pré-visualizar"
+                },
+                {
+                    "\uE004 Mudar para Insígnias",
+                    "\uE005 Escanear código QR"
+                },
+                {
+                    "Sair",
+                    "Excluir do SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Instalar Insígnias",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
                 },
                 {
                     "\uE004 Mudar para Temas",
@@ -1296,7 +1470,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "Sair",
-                    "Excluir do SD"
+                    NULL
                 }
             }
         }
@@ -1313,6 +1487,29 @@ const Language_s language_portuguese = {
             {
                 "\uE07B Instalar só BGM",
                 "\uE07C Instalar sem BGM"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Sair",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 Cancelar instalação do splash",
+        .instructions = {
+            {
+                "\uE079 Instalação normal",
+                "\uE07A Apenas tela superior"
+            },
+            {
+                "\uE07B Apenas tela inferior",
+                NULL
             },
             {
                 NULL,
@@ -1404,11 +1601,13 @@ const Language_s language_portuguese = {
     {
         .theme_mode = "Modo Tema",
         .splash_mode = "Modo Splash",
+        .badge_mode = "Modo Insígnia",
         .no_themes = "Nenhum tema encontrado",
         .no_splashes = "Nenhum splash encontrado",
         .qr_download = "Aperte \uE005 para baixar do QR",
         .switch_splashes = "Ou \uE004 para mudar para splashes",
         .switch_themes = "Ou \uE004 para mudar para temas",
+        .switch_badges = "Ou \uE004 para mudar para insígnias",
         .quit = "Ou        para sair",
         .start_pos = 165, // Adjust x pos of start glyph to line up with quit string
         .by = "Por ",
@@ -1427,6 +1626,7 @@ const Language_s language_portuguese = {
         .load_icons = "Carregando ícones, aguarde...",
         .install_splash = "Instalando um splash...",
         .delete_splash = "Excluindo splash instalado...",
+        .delete_theme = "Desinstalando tema instalado...",
         .install_theme = "Instalando um único tema...",
         .install_shuffle = "Instalando temas shuffle...",
         .install_bgm = "Instalando somente o BGM...",
@@ -1443,6 +1643,7 @@ const Language_s language_portuguese = {
         .dump_all_official = "Exportando temas oficiais, aguarde...",
         .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
+        .install_badges_button = "Instalar Insígnias",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -1475,6 +1676,7 @@ const Language_s language_portuguese = {
         .too_many_themes = "Você tem muitos temas selecionados.",
         .not_enough_themes = "Você não tem temas suficientes selecionados.",
         .uninstall_confirm = "Tem certeza de que deseja excluir\no splash instalado?",
+        .uninstall_theme_confirm = "Tem certeza de que deseja desinstalar\no tema instalado?",
         .delete_confirm = "Tem certeza de que deseja excluir isso?",
     },
     .remote =
@@ -1511,6 +1713,7 @@ const Language_s language_portuguese = {
         .http503 = "HTTP 503 Service Unavailable\nContate o administrador do site.",
         .http504 = "HTTP 504 Gateway Timeout\nContate o administrador do site.",
         .http_unexpected = "HTTP %u\nSe achar que isso é inesperado,\ncontate o administrador do site.",
+        .install_now = "Deseja instalar agora?",
     },
     .remote_instructions =
     {
@@ -1656,7 +1859,8 @@ const Language_s language_portuguese = {
         .illegal_char = "Caractere ilegal usado.",
         .name_folder = "Nome da pasta de saída",
         .cancel = "Cancelar",
-        .done = "Pronto"
+        .done = "Pronto",
+        .uninstall_failed = "Não foi possível desinstalar o tema."
     },
     .badges = 
     {
@@ -1674,10 +1878,10 @@ const Language_s language_korean = {
             .instructions = {
                 {
                     "\uE000 Install Theme(s)",
-                    "\uE001 Queue shuffle"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Queue shuffle",
                     "\uE003 Preview theme"
                 },
                 {
@@ -1695,11 +1899,32 @@ const Language_s language_korean = {
             .instructions = {
                 {
                     "\uE000 Install splash",
-                    "\uE001 Delete cur. splash"
+                    "\uE001 More options"
                 },
                 {
-                    "\uE002 More options",
+                    "\uE002 Delete cur. splash",
                     "\uE003 Preview splash"
+                },
+                {
+                    "\uE004 Go to badges",
+                    "\uE005 Scan QR code"
+                },
+                {
+                    "Exit",
+                    "Delete from SD"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 Install badges",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
                 },
                 {
                     "\uE004 Go to themes",
@@ -1707,7 +1932,7 @@ const Language_s language_korean = {
                 },
                 {
                     "Exit",
-                    "Delete from SD"
+                    NULL
                 }
             }
         }
@@ -1731,6 +1956,29 @@ const Language_s language_korean = {
             },
             {
                 "Exit",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 취소: 스플래시 설치",
+        .instructions = {
+            {
+                "\uE079 일반 설치",
+                "\uE07A 상단 화면만"
+            },
+            {
+                "\uE07B 하단 화면만",
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "종료",
                 NULL
             }
         }
@@ -1815,11 +2063,13 @@ const Language_s language_korean = {
     {
         .theme_mode = "Theme mode",
         .splash_mode = "Splash mode",
+        .badge_mode = "Badge mode",
         .no_themes = "No theme found",
         .no_splashes = "No splash found",
         .qr_download = "Press \uE005 to dl from QR",
         .switch_splashes = "Or \uE004 to go to splashes",
         .switch_themes = "Or \uE004 to go to themes",
+        .switch_badges = "Or \uE004 to go to badges",
         .quit = "Or        to quit",
         .start_pos = 162, // Adjust x pos of start glyph to line up with quit string
         .by = "By ",
@@ -1838,6 +2088,7 @@ const Language_s language_korean = {
         .load_icons = "Loading icons, please wait...",
         .install_splash = "Installing a splash...",
         .delete_splash = "Deleting installed splash...",
+        .delete_theme = "Uninstalling installed theme...",
         .install_theme = "Installing a single theme...",
         .install_shuffle = "Installing shuffle themes...",
         .install_bgm = "Installing BGM-only theme...",
@@ -1854,6 +2105,7 @@ const Language_s language_korean = {
         .dump_all_official = "Dumping official themes,\nplease wait...",
         .dump_badges = "Dumping installed badges,\nplease wait...",
         .install_badges = "Installing badges, please wait...",
+        .install_badges_button = "Install badges",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -1887,6 +2139,7 @@ const Language_s language_korean = {
         .too_many_themes = "You have too many themes selected.",
         .not_enough_themes = "You don't have enough themes selected.",
         .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
+        .uninstall_theme_confirm = "Are you sure you would like to uninstall\nthe installed theme?",
         .delete_confirm = "Are you sure you would like\nto delete this?",
     },
     .remote =
@@ -1923,6 +2176,7 @@ const Language_s language_korean = {
         .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
         .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
         .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .install_now = "Do you want to install it now?",
     },
     .remote_instructions =
     {
@@ -2068,7 +2322,8 @@ const Language_s language_korean = {
         .illegal_char = "Illegal character used.",
         .name_folder = "Name of output folder",
         .cancel = "Cancel",
-        .done = "Done"
+        .done = "Done",
+        .uninstall_failed = "Uninstalling the theme failed."
     },
     .badges = 
     {
@@ -2084,10 +2339,10 @@ const Language_s language_SChinese = {
             .instructions = {
                 {
                     "\uE000 安装主题",
-                    "\uE001 安装随机主题"
+                    "\uE001 更多选项"
                 },
                 {
-                    "\uE002 更多选项",
+                    "\uE002 安装随机主题",
                     "\uE003 预览主题"
                 },
                 {
@@ -2105,11 +2360,32 @@ const Language_s language_SChinese = {
             .instructions = {
                 {
                     "\uE000 安装开机图画",
-                    "\uE001 删除已安装的开机图画"
+                    "\uE001 更多选项"
                 },
                 {
-                    "\uE002 更多选项",
+                    "\uE002 删除已安装的开机图画",
                     "\uE003 预览开机图像"
+                },
+                {
+                    "\uE004 选择徽章",
+                    "\uE005 扫描QR码"
+                },
+                {
+                    "退出",
+                    "从SD卡删除"
+                }
+            }
+        },
+        {
+            .info_line = NULL,
+            .instructions = {
+                {
+                    "\uE000 安装徽章",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
                 },
                 {
                     "\uE004 选择主题",
@@ -2117,7 +2393,7 @@ const Language_s language_SChinese = {
                 },
                 {
                     "退出",
-                    "从SD卡删除"
+                    NULL
                 }
             }
         }
@@ -2134,6 +2410,29 @@ const Language_s language_SChinese = {
             {
                 "\uE07B 仅安装主题BGM",
                 "\uE07C 仅安装主题背景"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "退出",
+                NULL
+            }
+        }
+    },
+
+    .splash_install_instructions =
+    {
+        .info_line = "\uE001 取消开机图画安装",
+        .instructions = {
+            {
+                "\uE079 正常安装",
+                "\uE07A 仅上屏"
+            },
+            {
+                "\uE07B 仅下屏",
+                NULL
             },
             {
                 NULL,
@@ -2225,11 +2524,13 @@ const Language_s language_SChinese = {
     {
         .theme_mode = "主题",
         .splash_mode = "开机图画",
+        .badge_mode = "徽章",
         .no_themes = "未发现主题",
         .no_splashes = "未发现开机图画",
         .qr_download = "按 \uE005 从QR码下载",
         .switch_splashes = "按 \uE004 选择开机图画",
         .switch_themes = "按 \uE004 查看主题",
+        .switch_badges = "按 \uE004 查看徽章",
         .quit = "或         退出",
         .start_pos = 164, // Adjust x pos of start glyph to line up with quit string
         .by = "作者： ",
@@ -2248,6 +2549,7 @@ const Language_s language_SChinese = {
         .load_icons = "正在加载图标, 请稍等...",
         .install_splash = "正在安装开机图画...",
         .delete_splash = "正在删除安装的开机图画...",
+        .delete_theme = "正在卸载已安装的主题...",
         .install_theme = "正在安装主题...",
         .install_shuffle = "正在安装随机主题...",
         .install_bgm = "正在安装仅主题BGM...",
@@ -2264,6 +2566,7 @@ const Language_s language_SChinese = {
         .dump_all_official = "正在导出官方主题, 请稍等...",
         .dump_badges = "正在导出已安装的徽章, 请稍等...",
         .install_badges = "正在安装徽章, 请稍等...",
+        .install_badges_button = "安装徽章",
         .shuffle = "已选: %i/10",
     },
     .fs =
@@ -2296,6 +2599,7 @@ const Language_s language_SChinese = {
         .too_many_themes = "你选择了太多主题",
         .not_enough_themes = "你没有足够的主题可以选择",
         .uninstall_confirm = "真的要删除已安装的开机图画吗?",
+        .uninstall_theme_confirm = "真的要卸载已安装的主题吗?",
         .delete_confirm = "真的要删除这个?",
     },
     .remote =
@@ -2332,6 +2636,7 @@ const Language_s language_SChinese = {
         .http503 = "HTTP 503 Service Unavailable\n请联系网站管理员",
         .http504 = "HTTP 504 Gateway Timeout\n请联系网站管理员",
         .http_unexpected = "HTTP %u\n如果你认为这是错误, 请联系网站管理员",
+        .install_now = "要现在安装吗?",
     },
     .remote_instructions =
     {
@@ -2477,7 +2782,8 @@ const Language_s language_SChinese = {
         .illegal_char = "使用了非法字符",
         .name_folder = "输出文件夹名",
         .cancel = "取消",
-        .done = "完成"
+        .done = "完成",
+        .uninstall_failed = "卸载主题失败。"
     },
     .badges = 
     {

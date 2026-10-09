@@ -40,6 +40,7 @@ typedef enum InstallType_e {
 
     INSTALL_SPLASH,
     INSTALL_SPLASH_DELETE,
+    INSTALL_THEME_UNINSTALL,
 
     INSTALL_SINGLE,
     INSTALL_SHUFFLE,
@@ -72,6 +73,7 @@ typedef enum {
 
     TEXT_INSTALL_SPLASH,
     TEXT_INSTALL_SPLASH_DELETE,
+    TEXT_INSTALL_THEME_UNINSTALL,
 
     TEXT_INSTALL_SINGLE,
     TEXT_INSTALL_SHUFFLE,
@@ -98,6 +100,7 @@ typedef enum {
 
     TEXT_THEME_MODE,
     TEXT_SPLASH_MODE,
+    TEXT_BADGE_MODE,
 
     TEXT_NO_THEME_FOUND,
     TEXT_NO_SPLASH_FOUND,
@@ -106,6 +109,7 @@ typedef enum {
 
     TEXT_SWITCH_TO_SPLASHES,
     TEXT_SWITCH_TO_THEMES,
+    TEXT_SWITCH_TO_BADGES,
 
     TEXT_OR_START_TO_QUIT,
 
@@ -124,6 +128,7 @@ typedef enum {
     TEXT_ERROR_CONTINUE,
 
     TEXT_CONFIRM_YES_NO,
+    TEXT_INSTALL_BADGES_BUTTON,
 
     TEXT_AMOUNT
 } Text;
@@ -155,6 +160,80 @@ typedef struct {
     const char * info_line;
     const char * instructions[BUTTONS_INFO_LINES][BUTTONS_INFO_COLUNMNS];
 } Instructions_s;
+
+// Bottom screen toolbar buttons, shared by the drawing code and the touch handling
+enum {
+    TOOLBAR_BUTTON_SIZE = 24,
+    TOOLBAR_TOP_Y = 0,
+    TOOLBAR_BOTTOM_Y = 240 - TOOLBAR_BUTTON_SIZE,
+
+    // list: top bar
+    TOOLBAR_LIST_MENU_X = 2,
+    TOOLBAR_LIST_UNINSTALL_X = 320 - 96,
+    TOOLBAR_LIST_QR_X = 320 - 72,
+    TOOLBAR_LIST_BROWSE_X = 320 - 48,
+    TOOLBAR_LIST_MODE_X = 320 - 24,
+    // list: bottom bar
+    TOOLBAR_LIST_PREVIEW_X = 2,
+    TOOLBAR_LIST_INSTALL_X = 26,
+    TOOLBAR_LIST_SHUFFLE_X = 50,
+
+    // empty list and badge mode: top bar
+    TOOLBAR_EMPTY_QR_X = 320 - 96,
+    TOOLBAR_EMPTY_BROWSE_X = 320 - 72,
+    TOOLBAR_EMPTY_EXIT_X = 320 - 48,
+    TOOLBAR_EMPTY_MODE_X = 320 - 24,
+
+    // theme install options: top bar
+    TOOLBAR_INSTALL_BACK_X = 2,
+    TOOLBAR_INSTALL_BGM_ONLY_X = 320 - 96,
+    TOOLBAR_INSTALL_NO_BGM_X = 320 - 72,
+    TOOLBAR_INSTALL_SHUFFLE_X = 320 - 48,
+    TOOLBAR_INSTALL_NORMAL_X = 320 - 24,
+
+    // splash install options: top bar (back is TOOLBAR_INSTALL_BACK_X)
+    TOOLBAR_SPLASH_INSTALL_TOP_X = 320 - 72,
+    TOOLBAR_SPLASH_INSTALL_BOTTOM_X = 320 - 48,
+    TOOLBAR_SPLASH_INSTALL_NORMAL_X = 320 - 24,
+
+    // extra menu: top bar
+    TOOLBAR_EXTRA_BACK_X = 2,
+    TOOLBAR_EXTRA_BADGES_X = 320 - 96,
+    TOOLBAR_EXTRA_SORT_X = 320 - 72,
+    TOOLBAR_EXTRA_RELOAD_X = 320 - 48,
+    TOOLBAR_EXTRA_DUMP_X = 320 - 24,
+    // extra menu: bottom bar
+    TOOLBAR_EXTRA_EXIT_X = 2,
+    TOOLBAR_EXTRA_VERSION_X = 30,
+
+    // remote browser: top bar
+    TOOLBAR_REMOTE_BACK_X = 2,
+    TOOLBAR_REMOTE_SEARCH_X = 26,
+    TOOLBAR_REMOTE_SEARCH_WIDTH = 170,
+    TOOLBAR_REMOTE_FILTER_X = 320 - 48,
+    TOOLBAR_REMOTE_MODE_X = 320 - 24,
+    // remote browser: bottom bar
+    TOOLBAR_REMOTE_PREVIEW_X = 2,
+    TOOLBAR_REMOTE_DOWNLOAD_X = 26,
+};
+
+// badge mode: install button in the middle of the bottom screen
+enum {
+    BADGE_INSTALL_BUTTON_X = 60,
+    BADGE_INSTALL_BUTTON_Y = 96,
+    BADGE_INSTALL_BUTTON_WIDTH = 200,
+    BADGE_INSTALL_BUTTON_HEIGHT = 48,
+};
+
+static inline bool toolbar_hit_rect(u16 x, u16 y, int rect_x, int rect_y, int width, int height)
+{
+    return x >= rect_x && x < rect_x + width && y >= rect_y && y < rect_y + height;
+}
+
+static inline bool toolbar_hit(u16 x, u16 y, int button_x, int button_y)
+{
+    return toolbar_hit_rect(x, y, button_x, button_y, TOOLBAR_BUTTON_SIZE, TOOLBAR_BUTTON_SIZE);
+}
 
 extern C3D_RenderTarget * top;
 extern C3D_RenderTarget * bottom;
