@@ -247,7 +247,7 @@ int start_play(audio_s *audio) {
         ndspChnWaveBufClear(audio->channel[i]);
         
         static float mix[16];
-        ndspChnSetFormat(audio->channel[i], NDSP_FORMAT_ADPCM | NDSP_3D_SURROUND_PREPROCESSED);
+        ndspChnSetFormat(audio->channel[i], NDSP_FORMAT_ADPCM);
         ndspChnSetRate(audio->channel[i], audio->sample_rate);
         
         if (audio->channel_count == 1)
