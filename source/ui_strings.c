@@ -189,6 +189,9 @@ const Language_s language_english = {
         .tp_theme_mode = "ThemePlaza Theme mode",
         .tp_splash_mode = "ThemePlaza Splash mode",
         .tp_badge_mode = "ThemePlaza Badge mode",
+        .tz_theme_mode = "Themezer Theme mode",
+        .tz_splash_mode = "Themezer Splash mode",
+        .tz_badge_mode = "Themezer Badge mode",
         .search = "Search...",
         .page = "Page:",
         .err_quit = "Press \uE000 to quit.",
@@ -284,6 +287,8 @@ const Language_s language_english = {
         .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
         .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
         .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .select_source = "Select a source",
+        .select_source_hint = "\uE000 Select   \uE001 Cancel",
     },
     .remote_instructions =
     {
@@ -599,6 +604,9 @@ const Language_s language_spanish = {
         .tp_theme_mode = "Modo tema de ThemePlaza",
         .tp_splash_mode = "Modo fondo de ThemePlaza",
         .tp_badge_mode = "ThemePlaza Badge mode",
+        .tz_theme_mode = "Modo tema de Themezer",
+        .tz_splash_mode = "Modo fondo de Themezer",
+        .tz_badge_mode = "Modo insignias de Themezer",
         .search = "Buscar...",
         .page = "Página:",
         .err_quit = "Presiona \uE000 para salir.",
@@ -694,6 +702,8 @@ const Language_s language_spanish = {
         .http503 = "HTTP 503 Servicio No Disponible\nContacta al administrador del sitio.",
         .http504 = "HTTP 504 Tiempo de Espera de la Puerta de Enlace\nContacta al administrador del sitio.",
         .http_unexpected = "HTTP %u\nSi crees que esto es inesperado, por favor\ncontacta al administrador del sitio.",
+        .select_source = "Elige una fuente",
+        .select_source_hint = "\uE000 Elegir   \uE001 Cancelar",
     },
     .remote_instructions =
     {
@@ -1010,6 +1020,9 @@ const Language_s language_french = {
         .tp_theme_mode = "Thèmes sur ThemePlaza",
         .tp_splash_mode = "Splashs sur ThemePlaza",
         .tp_badge_mode = "Badges sur ThemePlaza",
+        .tz_theme_mode = "Thèmes sur Themezer",
+        .tz_splash_mode = "Splashs sur Themezer",
+        .tz_badge_mode = "Badges sur Themezer",
         .search = "Rechercher...",
         .page = "Page:",
         .err_quit = "Appuyez sur \uE000 pour quitter.",
@@ -1105,6 +1118,8 @@ const Language_s language_french = {
         .http503 = "HTTP 503 Service Unavailable\nContactez l'administrateur du site.",
         .http504 = "HTTP 504 Gateway Timeout\nContactez l'administrateur du site.",
         .http_unexpected = "HTTP %u\nSi vous pensez que ceci est inattendu,\ncontactez l'administrateur du site.",
+        .select_source = "Choisissez une source",
+        .select_source_hint = "\uE000 Choisir   \uE001 Annuler",
     },
     .remote_instructions =
     {
@@ -1420,6 +1435,9 @@ const Language_s language_portuguese = {
         .tp_theme_mode = "Modo de Tema ThemePlaza",
         .tp_splash_mode = "Modo de Splash ThemePlaza",
         .tp_badge_mode = "Modo de Insígnia ThemePlaza",
+        .tz_theme_mode = "Modo de Tema Themezer",
+        .tz_splash_mode = "Modo de Splash Themezer",
+        .tz_badge_mode = "Modo de Insígnia Themezer",
         .search = "Pesquisar...",
         .page = "Página:",
         .err_quit = "Aperte \uE000 para sair.",
@@ -1515,6 +1533,8 @@ const Language_s language_portuguese = {
         .http503 = "HTTP 503 Service Unavailable\nContate o administrador do site.",
         .http504 = "HTTP 504 Gateway Timeout\nContate o administrador do site.",
         .http_unexpected = "HTTP %u\nSe achar que isso é inesperado,\ncontate o administrador do site.",
+        .select_source = "Escolha uma fonte",
+        .select_source_hint = "\uE000 Escolher   \uE001 Cancelar",
     },
     .remote_instructions =
     {
@@ -1832,6 +1852,9 @@ const Language_s language_korean = {
         .tp_theme_mode = "ThemePlaza Theme mode",
         .tp_splash_mode = "ThemePlaza Splash mode",
         .tp_badge_mode = "ThemePlaza Badge mode",
+        .tz_theme_mode = "Themezer Theme mode",
+        .tz_splash_mode = "Themezer Splash mode",
+        .tz_badge_mode = "Themezer Badge mode",
         .search = "Search...",
         .page = "Page:",
         .err_quit = "Press \uE000 to quit.",
@@ -1928,6 +1951,8 @@ const Language_s language_korean = {
         .http503 = "HTTP 503 Service Unavailable\nContact the site administrator.",
         .http504 = "HTTP 504 Gateway Timeout\nContact the site administrator.",
         .http_unexpected = "HTTP %u\nIf you believe this is unexpected, please\ncontact the site administrator.",
+        .select_source = "Select a source",
+        .select_source_hint = "\uE000 Select   \uE001 Cancel",
     },
     .remote_instructions =
     {
@@ -2243,6 +2268,9 @@ const Language_s language_SChinese = {
         .tp_theme_mode = "ThemePlaza主题",
         .tp_splash_mode = "ThemePlaza开机图画",
         .tp_badge_mode = "ThemePlaza徽章",
+        .tz_theme_mode = "Themezer主题",
+        .tz_splash_mode = "Themezer开机图画",
+        .tz_badge_mode = "Themezer徽章",
         .search = "搜索...",
         .page = "页面:",
         .err_quit = "按 \uE000 退出",
@@ -2338,6 +2366,8 @@ const Language_s language_SChinese = {
         .http503 = "HTTP 503 Service Unavailable\n请联系网站管理员",
         .http504 = "HTTP 504 Gateway Timeout\n请联系网站管理员",
         .http_unexpected = "HTTP %u\n如果你认为这是错误, 请联系网站管理员",
+        .select_source = "选择来源",
+        .select_source_hint = "\uE000 选择   \uE001 取消",
     },
     .remote_instructions =
     {

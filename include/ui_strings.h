@@ -55,6 +55,9 @@ typedef struct {
     const char *tp_theme_mode;
     const char *tp_splash_mode;
     const char *tp_badge_mode;
+    const char *tz_theme_mode;
+    const char *tz_splash_mode;
+    const char *tz_badge_mode;
     const char *search;
     const char *page;
     const char *err_quit;
@@ -151,6 +154,8 @@ typedef struct {
     const char *http503;
     const char *http504;
     const char *http_unexpected;
+    const char *select_source;
+    const char *select_source_hint;
 } Remote_Strings_s;
 
 typedef struct {

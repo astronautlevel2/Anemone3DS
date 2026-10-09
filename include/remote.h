@@ -58,6 +58,7 @@
 
 #define CACHE_PATH_FORMAT            "/3ds/"  APP_TITLE  "/cache/%"  JSON_INTEGER_FORMAT
 
-bool themeplaza_browser(RemoteMode mode);
+// asks which site to browse, then opens the browser; returns whether something was downloaded
+bool browse_remote(RemoteMode mode);
 
 #endif

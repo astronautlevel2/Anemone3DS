@@ -807,7 +807,7 @@ int main(void)
                 else if(kDown & KEY_DLEFT)
                 {
                     browse_themeplaza:
-                    if(themeplaza_browser((RemoteMode) current_mode))
+                    if(browse_remote((RemoteMode) current_mode))
                     {
                         current_mode = MODE_THEMES;
                         load_lists(lists);

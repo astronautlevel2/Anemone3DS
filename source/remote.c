@@ -35,6 +35,7 @@
 #include "urls.h"
 #include "conversion.h"
 #include "ui_strings.h"
+#include "themezer.h"
 
 char *last_search = NULL;
 json_int_t last_page = 1;
@@ -173,8 +174,29 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
     }
 }
 
+static void load_themezer_page(Entry_List_s * list, json_t * root, json_int_t page, RemoteMode mode)
+{
+    if (themezer_load_page(list, root))
+    {
+        list->tp_current_page = page;
+        list->mode = (EntryMode) mode;
+        last_page = page;
+    }
+    else
+    {
+        // the current page stays as it was, only the search has to be put back
+        throw_error(language.remote.no_results, ERROR_LEVEL_WARNING);
+        free(list->tp_search);
+        asprintf(&list->tp_search, "%s", last_search);
+    }
+}
+
 static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mode, bool ignore_cache)
 {
+    const bool themezer = list->remote_provider == REMOTE_PROVIDER_THEMEZER;
+    if (themezer)
+        themezer_stop_icons();
+
     if (page > list->tp_page_count)
         page = 1;
     if (page <= 0)
@@ -193,17 +215,33 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
 
     char * page_json = NULL;
     char * api_url = NULL;
-    asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode + 1, list->tp_search);
+    if (themezer)
+        api_url = themezer_page_url(mode, page, list->tp_search);
+    else
+        asprintf(&api_url, THEMEPLAZA_PAGE_FORMAT, page, mode + 1, list->tp_search);
     u32 json_len;
     Result res = http_get(api_url, NULL, &page_json, &json_len, INSTALL_NONE, "application/json");
     free(api_url);
     if (R_FAILED(res))
     {
         free(page_json);
+        if (themezer)
+            themezer_start_icons(list);
         return;
     }
 
-    if (json_len)
+    if (json_len && themezer)
+    {
+        json_error_t error;
+        json_t * root = json_loadb(page_json, json_len, 0, &error);
+        if (root)
+            load_themezer_page(list, root, page, mode);
+        else
+            DEBUG("json error on line %d: %s\n", error.line, error.text);
+
+        json_decref(root);
+    }
+    else if (json_len)
     {
         list->tp_current_page = page;
         list->mode = (EntryMode) mode;
@@ -241,18 +279,23 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
         throw_error(language.remote.check_wifi, ERROR_LEVEL_WARNING);
 
     free(page_json);
+
+    if (themezer)
+        themezer_start_icons(list);
 }
 
 static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset, u32 height)
+// Theme Plaza entries are cached on the SD card, Themezer ones are always downloaded
+static bool load_remote_preview(const Entry_s * entry, RemoteProvider provider, C2D_Image * preview_image, int * preview_offset, u32 height)
 {
+    const bool use_cache = provider == REMOTE_PROVIDER_THEMEPLAZA;
     bool not_cached = true;
 
     if (!memcmp(&previous_path_preview, entry->path, 0x106 * sizeof(u16))) return true;
 
     char * preview_png = NULL;
-    u32 preview_size = load_data("/preview.png", entry, &preview_png);
+    u32 preview_size = use_cache ? load_data("/preview.png", entry, &preview_png) : 0;
 
     not_cached = !preview_size;
 
@@ -262,7 +305,12 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
         preview_png = NULL;
 
         char * preview_url = NULL;
-        asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry->tp_download_id);
+        if (use_cache)
+            asprintf(&preview_url, THEMEPLAZA_PREVIEW_FORMAT, entry->tp_download_id);
+        else if (entry->remote_preview_url != NULL)
+            preview_url = strdup(entry->remote_preview_url);
+        else
+            return false;
 
         draw_install(INSTALL_LOADING_REMOTE_PREVIEW);
         Result res = http_get(preview_url, NULL, &preview_png, &preview_size, INSTALL_LOADING_REMOTE_PREVIEW, "image/png");
@@ -290,7 +338,7 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset, height);
     free(preview_buf);
 
-    if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
+    if (ret && not_cached && use_cache) // only save the preview if it loaded correctly - isn't corrupted
     {
         u16 path[0x107] = { 0 };
         strucat(path, entry->path);
@@ -305,6 +353,18 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
 }
 
 static u16 previous_path_bgm[0x106];
+
+// Themezer BGM is downloaded into a buffer every time (no SD cache); *size is 0 if the theme has none
+static Result load_themezer_bgm(const Entry_s * entry, char ** bgm_ogg, u32 * bgm_size)
+{
+    *bgm_ogg = NULL;
+    *bgm_size = 0;
+    if (entry->remote_audio_url == NULL)
+        return MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
+
+    draw_install(INSTALL_LOADING_REMOTE_BGM);
+    return http_get_optional(entry->remote_audio_url, bgm_ogg, bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
+}
 
 static void load_remote_bgm(const Entry_s * entry)
 {
@@ -343,10 +403,13 @@ static void load_remote_bgm(const Entry_s * entry)
     free(bgm_ogg);
 }
 
-static void download_remote_entry(Entry_s * entry, RemoteMode mode)
+static void download_remote_entry(Entry_s * entry, RemoteMode mode, RemoteProvider provider)
 {
     char * download_url = NULL;
-    asprintf(&download_url, THEMEPLAZA_DOWNLOAD_FORMAT, entry->tp_download_id);
+    if (provider == REMOTE_PROVIDER_THEMEZER)
+        download_url = strdup(entry->remote_download_url);
+    else
+        asprintf(&download_url, THEMEPLAZA_DOWNLOAD_FORMAT, entry->tp_download_id);
 
     char * zip_buf = NULL;
     char * filename = NULL;
@@ -359,6 +422,9 @@ static void download_remote_entry(Entry_s * entry, RemoteMode mode)
         return;
     }
     free(download_url);
+
+    if (filename == NULL && entry->remote_filename != NULL)
+        filename = strdup(entry->remote_filename);
 
     save_zip_to_sd(filename, zip_size, zip_buf, mode);
     free(filename);
@@ -468,7 +534,20 @@ static void change_selected(Entry_List_s * list, int change_value)
     list->selected_entry = newval;
 }
 
-bool themeplaza_browser(RemoteMode mode)
+// Themezer icons download in the background; stop that while something else uses the network or the keyboard is open
+static void pause_icons(Entry_List_s * list)
+{
+    if (list->remote_provider == REMOTE_PROVIDER_THEMEZER)
+        themezer_stop_icons();
+}
+
+static void resume_icons(Entry_List_s * list)
+{
+    if (list->remote_provider == REMOTE_PROVIDER_THEMEZER)
+        themezer_start_icons(list);
+}
+
+static bool remote_browser(RemoteMode mode, RemoteProvider provider)
 {
     bool downloaded = false;
 
@@ -493,12 +572,16 @@ bool themeplaza_browser(RemoteMode mode)
         }
     }
 
+    if (provider == REMOTE_PROVIDER_THEMEZER && R_FAILED(themezer_icons_init()))
+        return downloaded;
+
     bool preview_mode = false;
     int preview_offset = 0;
     audio_ogg_s * audio = NULL;
 
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
+    current_list->remote_provider = provider;
     current_list->tp_search = strdup("");
     last_search = strdup("");
     last_page = 1;
@@ -548,7 +631,8 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (preview_mode)
         {
-            if (mode == REMOTE_MODE_BADGES) draw_preview(preview, -40, 0.625f);
+            // Theme Plaza badge previews are 512x1024, everything else uses the 400x480 theme layout
+            if (mode == REMOTE_MODE_BADGES && provider == REMOTE_PROVIDER_THEMEPLAZA) draw_preview(preview, -40, 0.625f);
             else draw_preview(preview, preview_offset, 1.0f);
             
         }
@@ -556,8 +640,18 @@ bool themeplaza_browser(RemoteMode mode)
         {
             Instructions_s instructions = language.remote_instructions[mode];
             if (extra_mode)
+            {
                 instructions = language.remote_extra_instructions[mode];
+                // Themezer entries aren't cached, so there is nothing to reload without cache
+                if (provider == REMOTE_PROVIDER_THEMEZER)
+                    instructions.instructions[1][1] = NULL;
+            }
+
+            if (provider == REMOTE_PROVIDER_THEMEZER)
+                themezer_lock_icons();
             draw_grid_interface(current_list, instructions, extra_mode);
+            if (provider == REMOTE_PROVIDER_THEMEZER)
+                themezer_unlock_icons();
         }
 
         if (home_displayed)
@@ -595,6 +689,7 @@ bool themeplaza_browser(RemoteMode mode)
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);
+                mode = (RemoteMode) current_list->mode; // unchanged if the new mode couldn't be loaded
             }
             else if (kDown & KEY_R)
             {
@@ -604,13 +699,16 @@ bool themeplaza_browser(RemoteMode mode)
                 free(current_list->tp_search);
                 current_list->tp_search = strdup("");
                 load_remote_list(current_list, 1, mode, false);
+                mode = (RemoteMode) current_list->mode;
             }
             else if (kDown & KEY_DUP)
             {
                 extra_mode = false;
+                pause_icons(current_list);
                 jump_menu(current_list);
+                resume_icons(current_list);
             }
-            else if (kDown & KEY_DRIGHT)
+            else if (kDown & KEY_DRIGHT && provider == REMOTE_PROVIDER_THEMEPLAZA)
             {
                 extra_mode = false;
                 load_remote_list(current_list, current_list->tp_current_page, mode, true);
@@ -618,7 +716,9 @@ bool themeplaza_browser(RemoteMode mode)
             else if (kDown & KEY_DDOWN)
             {
                 extra_mode = false;
+                pause_icons(current_list);
                 search_menu(current_list);
+                resume_icons(current_list);
             }
             continue;
         }
@@ -631,15 +731,30 @@ bool themeplaza_browser(RemoteMode mode)
         toggle_preview:
             if (!preview_mode)
             {
-                u32 height = mode == REMOTE_MODE_BADGES ? 1024 : 480;
-                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset, height);
-                if (mode == REMOTE_MODE_THEMES && dspfirm)
+                pause_icons(current_list);
+                u32 height = mode == REMOTE_MODE_BADGES && provider == REMOTE_PROVIDER_THEMEPLAZA ? 1024 : 480;
+                preview_mode = load_remote_preview(current_entry, provider, &preview, &preview_offset, height);
+                if (mode == REMOTE_MODE_THEMES && dspfirm && provider == REMOTE_PROVIDER_THEMEZER)
+                {
+                    char * bgm_ogg = NULL;
+                    u32 bgm_size = 0;
+                    if (preview_mode && R_SUCCEEDED(load_themezer_bgm(current_entry, &bgm_ogg, &bgm_size)) && bgm_size)
+                    {
+                        audio = calloc(1, sizeof(audio_ogg_s));
+                        if (R_FAILED(load_audio_ogg_buffer(bgm_ogg, bgm_size, audio))) audio = NULL;
+                        if (audio != NULL) play_audio_ogg(audio);
+                    }
+                    else
+                        free(bgm_ogg);
+                }
+                else if (mode == REMOTE_MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
                     audio = calloc(1, sizeof(audio_ogg_s));
                     if (R_FAILED(load_audio_ogg(current_entry, audio))) audio = NULL;
                     if (audio != NULL) play_audio_ogg(audio);
                 }
+                resume_icons(current_list);
             }
             else
             {
@@ -670,7 +785,9 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (kDown & KEY_A)
         {
-            download_remote_entry(current_entry, mode);
+            pause_icons(current_list);
+            download_remote_entry(current_entry, mode, provider);
+            resume_icons(current_list);
             downloaded = true;
         }
         else if (kDown & KEY_X)
@@ -733,7 +850,9 @@ bool themeplaza_browser(RemoteMode mode)
                 {
                     if (BETWEEN(0, x, 80))
                     {
+                        pause_icons(current_list);
                         search_menu(current_list);
+                        resume_icons(current_list);
                     }
                     else if (BETWEEN(320 - 96, x, 320 - 72))
                     {
@@ -756,11 +875,14 @@ bool themeplaza_browser(RemoteMode mode)
                         current_list->tp_search = strdup("");
 
                         load_remote_list(current_list, 1, mode, false);
+                        mode = (RemoteMode) current_list->mode;
                     }
                 }
                 else if (BETWEEN(240 - 24, y, 240) && BETWEEN(176, x, 320))
                 {
+                    pause_icons(current_list);
                     jump_menu(current_list);
+                    resume_icons(current_list);
                 }
                 else
                 {
@@ -800,10 +922,64 @@ bool themeplaza_browser(RemoteMode mode)
 
     free_preview(preview);
 
+    if (provider == REMOTE_PROVIDER_THEMEZER)
+        themezer_icons_exit();
+
     free_icons(current_list);
-    free(current_list->entries);
+    free_remote_entries(current_list);
     free(current_list->tp_search);
     free(last_search);
 
     return downloaded;
+}
+
+static bool select_remote_provider(RemoteProvider * provider)
+{
+    while (aptMainLoop() && !quit)
+    {
+        draw_remote_provider_picker(*provider);
+
+        hidScanInput();
+        u32 kDown = hidKeysDown();
+
+        if (kDown & KEY_START)
+            quit = true;
+        else if (kDown & KEY_B)
+            return false;
+        else if (kDown & KEY_A)
+            return true;
+        else if (kDown & (KEY_LEFT | KEY_L))
+            *provider = REMOTE_PROVIDER_THEMEPLAZA;
+        else if (kDown & (KEY_RIGHT | KEY_R))
+            *provider = REMOTE_PROVIDER_THEMEZER;
+        else if (kDown & KEY_TOUCH)
+        {
+            touchPosition touch = {0};
+            hidTouchRead(&touch);
+
+            const bool card_row = touch.py >= PROVIDER_CARD_Y && touch.py < PROVIDER_CARD_Y + PROVIDER_CARD_HEIGHT;
+            if (card_row && touch.px >= PROVIDER_CARD_THEMEPLAZA_X && touch.px < PROVIDER_CARD_THEMEPLAZA_X + PROVIDER_CARD_WIDTH)
+            {
+                *provider = REMOTE_PROVIDER_THEMEPLAZA;
+                return true;
+            }
+            else if (card_row && touch.px >= PROVIDER_CARD_THEMEZER_X && touch.px < PROVIDER_CARD_THEMEZER_X + PROVIDER_CARD_WIDTH)
+            {
+                *provider = REMOTE_PROVIDER_THEMEZER;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool browse_remote(RemoteMode mode)
+{
+    // remembered while the app is open
+    static RemoteProvider provider = REMOTE_PROVIDER_THEMEPLAZA;
+    if (!select_remote_provider(&provider))
+        return false;
+
+    return remote_browser(mode, provider);
 }
