@@ -1,6 +1,6 @@
 /*
 *   This file is part of Anemone3DS
-*   Copyright (C) 2016-2024 Contributors in CONTRIBUTORS.md
+*   Copyright (C) 2016-2020 Contributors in CONTRIBUTORS.md
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -24,28 +24,24 @@
 *         reasonable ways as different from the original version.
 */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef UPDATE_H
+#define UPDATE_H
 
 #include "common.h"
-#include "fs.h"
-#include <jansson.h>
 
-typedef struct {
-    u32 accent_color;
-    u32 background_color;
-    u32 white_color_background;
-    u32 white_color_accent;
-    u32 cursor_color;
-    u32 black_color;
-    u32 red_color_background;
-    u32 red_color_accent;
-    u32 yellow_color;
-    bool disable_update_check;
-} Config_s;
+// Looks for a newer stable release of Anemone3DS on GitHub in the background
+// (the result is cached for a day, so most launches don't need the network)
+void update_check_start(void);
+void update_check_stop(void);
 
-extern Config_s config;
+// true once the check finished (or was skipped); tag of the newer stable release, or NULL
+bool update_check_done(void);
+const char * update_check_newer_tag(void);
 
-void load_config(void);
+// app_path is the path of the running 3dsx (argv[0]), unused for the CIA build
+bool update_can_install(const char * app_path);
+// downloads the update for the running build (CIA or 3dsx), checks it and installs it;
+// shows its own errors. The app has to be restarted afterwards.
+bool update_install(const char * app_path);
 
 #endif

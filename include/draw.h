@@ -60,6 +60,7 @@ typedef enum InstallType_e {
     INSTALL_DUMPING_ALL_THEMES,
     INSTALL_DUMPING_BADGES,
     INSTALL_BADGES,
+    INSTALL_UPDATE,
 
     INSTALL_NONE,
 } InstallType;
@@ -92,6 +93,7 @@ typedef enum {
     TEXT_INSTALL_DUMPING_ALL_THEMES,
     TEXT_INSTALL_DUMPING_BADGES,
     TEXT_INSTALL_BADGES,
+    TEXT_INSTALL_UPDATE,
 
     // Other text
     TEXT_VERSION,
@@ -168,6 +170,10 @@ void exit_screens(void);
 void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
+
+// set while the user holds B during a network operation; cleared by draw_install()
+void set_loading_cancel_requested(bool requested);
+bool loading_cancel_requested(void);
 
 void throw_error(const char * error, ErrorLevel level);
 bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);

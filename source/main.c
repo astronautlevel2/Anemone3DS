@@ -34,6 +34,7 @@
 #include "remote.h"
 #include "ui_strings.h"
 #include "badges.h"
+#include "update.h"
 #include <time.h>
 
 bool quit = false;
@@ -89,7 +90,6 @@ static void init_services(void)
     dspfirm = !ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
-    httpcInit(0);
     init_sd();
     archive_result = open_archives();
     badge_archive_result = open_badge_extdata();
@@ -107,7 +107,7 @@ static void exit_services(void)
     cfguExit();
     ptmuExit();
     if (old_time_limit != UINT32_MAX) APT_SetAppCpuTimeLimit(old_time_limit);
-    httpcExit();
+    http_exit();
     acExit();
     ndspExit();
 }
@@ -166,6 +166,7 @@ void free_lists(void)
 
 void exit_function(bool power_pressed)
 {
+    update_check_stop();
     if(audio)
     {
         stop_audio(&audio);
@@ -377,8 +378,11 @@ static void toggle_shuffle(Entry_List_s * list)
     }
 }
 
-int main(void)
+int main(int argc, char ** argv)
 {
+    // the 3dsx build updates the file it was started from
+    const char * app_path = argc > 0 ? argv[0] : NULL;
+
     srand(time(NULL));
     init_services();
     const CFG_Language lang = get_system_language();
@@ -401,6 +405,9 @@ int main(void)
     #else
     load_lists(lists);
     #endif
+
+    update_check_start();
+    bool update_checked = false;
 
     EntryMode current_mode = MODE_THEMES;
 
@@ -436,6 +443,31 @@ int main(void)
             continue;
         }
         #endif
+
+        // the check runs in the background, tell the user once it found a newer release
+        if(!update_checked && update_check_done())
+        {
+            update_checked = true;
+            const char * newer_tag = update_check_newer_tag();
+            if(newer_tag != NULL && update_can_install(app_path))
+            {
+                char update_message[0x100] = {0};
+                snprintf(update_message, sizeof(update_message), language.draw.update_ask, newer_tag, VERSION);
+                if(draw_confirm_no_interface(update_message) && update_install(app_path))
+                {
+                    throw_error(language.draw.update_done, ERROR_LEVEL_WARNING);
+                    quit = true;
+                    continue;
+                }
+            }
+            else if(newer_tag != NULL)
+            {
+                // no download for this build (or the 3dsx path is unknown): just let the user know
+                char update_message[0x100] = {0};
+                snprintf(update_message, sizeof(update_message), language.draw.update_available, newer_tag, VERSION);
+                throw_error(update_message, ERROR_LEVEL_WARNING);
+            }
+        }
 
         hidScanInput();
         u32 kDown = hidKeysDown();

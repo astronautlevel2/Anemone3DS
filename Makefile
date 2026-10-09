@@ -69,21 +69,30 @@ PRODUCT_CODE        :=	CTR-P-ANEM
 # Don't really need to change this
 ICON_FLAGS          :=	nosavebackups,visible
 
-ifeq ($(strip $(NOGIT)),)
-    VERSION           :=  $(shell git describe --tags --match v[0-9]* --abbrev=7 | sed 's/-[0-9]*-g/-/')
-    VERSION_MAJOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f1 -d.)
-    VERSION_MINOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f2 -d.)
-    VERSION_BUILD     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f3 -d.)
+# GitHub repository (owner/name) whose stable releases are checked for updates
+UPDATE_REPO         ?=  astronautlevel2/Anemone3DS
 
-	ifeq ($(strip $(VERSION_MAJOR)),)
-		VERSION_MAJOR := 0
-	endif
-	ifeq ($(strip $(VERSION_MINOR)),)
-		VERSION_MINOR := 0
-	endif
-    ifeq ($(strip $(VERSION_BUILD)),)
-        VERSION_BUILD := 0
-    endif
+ifeq ($(strip $(NOGIT)),)
+    VERSION           :=  $(shell git describe --tags --match v[0-9]* --abbrev=7 2>/dev/null | sed 's/-[0-9]*-g/-/')
+endif
+
+# no git, no tags, or NOGIT=1 without VERSION=vX.Y.Z on the command line
+ifeq ($(strip $(VERSION)),)
+    VERSION           :=  v0.0.0
+endif
+
+VERSION_MAJOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f1 -d.)
+VERSION_MINOR     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f2 -d.)
+VERSION_BUILD     :=  $(shell echo $(VERSION) | cut -c2- | cut -f1 -d- | cut -f3 -d.)
+
+ifeq ($(strip $(VERSION_MAJOR)),)
+    VERSION_MAJOR := 0
+endif
+ifeq ($(strip $(VERSION_MINOR)),)
+    VERSION_MINOR := 0
+endif
+ifeq ($(strip $(VERSION_BUILD)),)
+    VERSION_BUILD := 0
 endif
 
 #---------------------------------------------------------------------------------
@@ -96,6 +105,7 @@ CFLAGS	:=	-g -Wall -Wextra -O2 -mword-relocations \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -D__3DS__ -D_GNU_SOURCE -DVERSION="\"$(VERSION)\"" -DUSER_AGENT="\"$(APP_TITLE)/$(VERSION)\"" -DAPP_TITLE="\"$(APP_TITLE)\""
+CFLAGS	+=	-DUPDATE_REPO="\"$(UPDATE_REPO)\""
 CFLAGS	+=	`arm-none-eabi-pkg-config --cflags-only-other libcurl vorbisidec libarchive jansson libpng`
 ifneq ($(strip $(CITRA_MODE)),)
 	CFLAGS += -DCITRA_MODE

@@ -138,6 +138,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, language.draw.dump_all_official);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_BADGES], staticBuf, language.draw.dump_badges);
     C2D_TextParse(&text[TEXT_INSTALL_BADGES], staticBuf, language.draw.install_badges);
+    C2D_TextParse(&text[TEXT_INSTALL_UPDATE], staticBuf, language.draw.install_update);
 
     for(int i = 0; i < TEXT_AMOUNT; i++)
         C2D_TextOptimize(&text[i]);
@@ -381,32 +382,73 @@ void draw_preview(C2D_Image preview, int preview_offset, float preview_scale)
     C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, preview_scale, preview_scale);
 }
 
+static bool cancel_requested = false;
+
+void set_loading_cancel_requested(bool requested)
+{
+    cancel_requested = requested;
+}
+
+bool loading_cancel_requested(void)
+{
+    return cancel_requested;
+}
+
+static bool is_network_loading_type(InstallType type)
+{
+    return type == INSTALL_DOWNLOAD
+        || type == INSTALL_LOADING_REMOTE_THEMES
+        || type == INSTALL_LOADING_REMOTE_SPLASHES
+        || type == INSTALL_LOADING_REMOTE_BADGES
+        || type == INSTALL_LOADING_REMOTE_PREVIEW
+        || type == INSTALL_LOADING_REMOTE_BGM;
+}
+
+static void draw_loading_bar_frame(u32 width)
+{
+    set_screen(bottom);
+    C2D_DrawRectSolid(60-1, 110-1, 0.5f, 200+2, 20+2, colors[COLOR_CURSOR]);
+    C2D_DrawRectSolid(60, 110, 0.5f, width, 20, colors[COLOR_ACCENT]);
+}
+
 static void draw_install_handler(InstallType type)
 {
     if(type != INSTALL_NONE)
     {
         C2D_Text * install_text = &text[type];
         draw_c2d_text_center(GFX_TOP, 120.0f, 0.5f, 0.8f, 0.8f, colors[COLOR_WHITE_BACKGROUND], install_text);
+
+        if(is_network_loading_type(type))
+            draw_text_center(GFX_TOP, 168.0f, 0.5f, 0.55f, 0.55f, colors[COLOR_WHITE_BACKGROUND], language.draw.cancel_loading);
     }
 }
 
 void draw_install(InstallType type)
 {
+    set_loading_cancel_requested(false);
     draw_base_interface();
     draw_install_handler(type);
+    // an empty bar until the download reports its progress
+    if(is_network_loading_type(type))
+        draw_loading_bar_frame(0);
     end_frame();
 }
 
 void draw_loading_bar(u32 current, u32 max, InstallType type)
 {
+    if(is_network_loading_type(type))
+    {
+        hidScanInput();
+        if(hidKeysHeld() & KEY_B)
+            set_loading_cancel_requested(true);
+    }
+
     draw_base_interface();
     draw_install_handler(type);
-    set_screen(bottom);
-    double percent = 100 * ((double)current / (double)max);
-    u32 width = (u32)percent;
-    width *= 2;
-    C2D_DrawRectSolid(60-1, 110-1, 0.5f, 200+2, 20+2, colors[COLOR_CURSOR]);
-    C2D_DrawRectSolid(60, 110, 0.5f, width, 20, colors[COLOR_ACCENT]);
+    u32 width = 0;
+    if(max != 0)
+        width = (u32)(200 * ((double)min(current, max) / (double)max));
+    draw_loading_bar_frame(width);
     end_frame();
 }
 
