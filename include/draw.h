@@ -169,6 +169,10 @@ void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
 
+// set while the user holds B during a network operation; cleared by draw_install()
+void set_loading_cancel_requested(bool requested);
+bool loading_cancel_requested(void);
+
 void throw_error(const char * error, ErrorLevel level);
 bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);
 

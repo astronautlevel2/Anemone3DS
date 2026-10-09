@@ -89,7 +89,6 @@ static void init_services(void)
     dspfirm = !ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
-    httpcInit(0);
     init_sd();
     archive_result = open_archives();
     badge_archive_result = open_badge_extdata();
@@ -107,7 +106,7 @@ static void exit_services(void)
     cfguExit();
     ptmuExit();
     if (old_time_limit != UINT32_MAX) APT_SetAppCpuTimeLimit(old_time_limit);
-    httpcExit();
+    http_exit();
     acExit();
     ndspExit();
 }
