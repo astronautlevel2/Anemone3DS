@@ -378,8 +378,11 @@ static void toggle_shuffle(Entry_List_s * list)
     }
 }
 
-int main(void)
+int main(int argc, char ** argv)
 {
+    // the 3dsx build updates the file it was started from
+    const char * app_path = argc > 0 ? argv[0] : NULL;
+
     srand(time(NULL));
     init_services();
     const CFG_Language lang = get_system_language();
@@ -446,8 +449,20 @@ int main(void)
         {
             update_checked = true;
             const char * newer_tag = update_check_newer_tag();
-            if(newer_tag != NULL)
+            if(newer_tag != NULL && update_can_install(app_path))
             {
+                char update_message[0x100] = {0};
+                snprintf(update_message, sizeof(update_message), language.draw.update_ask, newer_tag, VERSION);
+                if(draw_confirm_no_interface(update_message) && update_install(app_path))
+                {
+                    throw_error(language.draw.update_done, ERROR_LEVEL_WARNING);
+                    quit = true;
+                    continue;
+                }
+            }
+            else if(newer_tag != NULL)
+            {
+                // no download for this build (or the 3dsx path is unknown): just let the user know
                 char update_message[0x100] = {0};
                 snprintf(update_message, sizeof(update_message), language.draw.update_available, newer_tag, VERSION);
                 throw_error(update_message, ERROR_LEVEL_WARNING);

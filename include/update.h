@@ -38,4 +38,10 @@ void update_check_stop(void);
 bool update_check_done(void);
 const char * update_check_newer_tag(void);
 
+// app_path is the path of the running 3dsx (argv[0]), unused for the CIA build
+bool update_can_install(const char * app_path);
+// downloads the update for the running build (CIA or 3dsx), checks it and installs it;
+// shows its own errors. The app has to be restarted afterwards.
+bool update_install(const char * app_path);
+
 #endif
