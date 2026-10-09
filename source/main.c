@@ -34,6 +34,7 @@
 #include "remote.h"
 #include "ui_strings.h"
 #include "badges.h"
+#include "update.h"
 #include <time.h>
 
 bool quit = false;
@@ -165,6 +166,7 @@ void free_lists(void)
 
 void exit_function(bool power_pressed)
 {
+    update_check_stop();
     if(audio)
     {
         stop_audio(&audio);
@@ -401,6 +403,9 @@ int main(void)
     load_lists(lists);
     #endif
 
+    update_check_start();
+    bool update_checked = false;
+
     EntryMode current_mode = MODE_THEMES;
 
     bool preview_mode = false;
@@ -435,6 +440,19 @@ int main(void)
             continue;
         }
         #endif
+
+        // the check runs in the background, tell the user once it found a newer release
+        if(!update_checked && update_check_done())
+        {
+            update_checked = true;
+            const char * newer_tag = update_check_newer_tag();
+            if(newer_tag != NULL)
+            {
+                char update_message[0x100] = {0};
+                snprintf(update_message, sizeof(update_message), language.draw.update_available, newer_tag, VERSION);
+                throw_error(update_message, ERROR_LEVEL_WARNING);
+            }
+        }
 
         hidScanInput();
         u32 kDown = hidKeysDown();

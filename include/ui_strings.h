@@ -82,6 +82,7 @@ typedef struct {
     const char *dump_badges;
     const char *install_badges;
     const char *cancel_loading;
+    const char *update_available;
     float start_pos;
     const char *shuffle;
 } Draw_Strings_s;
