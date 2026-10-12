@@ -53,6 +53,8 @@ static Thread install_check_threads[MODE_AMOUNT] = {0};
 static Thread_Arg_s install_check_threads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
+// a list is only loaded the first time its mode is shown, see load_list()
+static bool lists_loaded[MODE_AMOUNT] = {0};
 
 Language_s language = {0};
 
@@ -180,8 +182,15 @@ void free_lists(void)
         free(current_list->icons_info);
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
+        lists_loaded[i] = false;
     }
     exit_thread();
+}
+
+// Drops every list: each one is loaded again the next time its mode is shown
+static void reload_lists(void)
+{
+    free_lists();
 }
 
 void exit_function(bool power_pressed)
@@ -210,7 +219,7 @@ void exit_function(bool power_pressed)
 
 static void start_thread(void)
 {
-    if(iconLoadingThread_arg.run_thread)
+    if(iconLoadingThread_arg.run_thread && iconLoadingThread == NULL)
     {
         DEBUG("starting thread\n");
         iconLoadingThread = threadCreate(load_icons_thread, &iconLoadingThread_arg, __stacksize__, 0x38, -2, false);
@@ -229,93 +238,93 @@ static u32 next_or_equal_power_of_2(u32 v)
     return v;
 }
 
-static void load_lists(Entry_List_s * lists)
+// Loads the list of one mode. Called when the mode is shown and its list isn't loaded yet, so starting
+// the app only reads the themes and the splashes are read the first time the splash mode is opened.
+static void load_list(EntryMode mode)
 {
-    free_lists();
-    for(int i = 0; i < MODE_AMOUNT; i++)
+    // badges are installed straight from the badges folder, there is no list to load
+    if(mode == MODE_BADGES)
     {
-        // badges are installed straight from the badges folder, there is no list to load
-        if(i == MODE_BADGES)
+        lists[mode].mode = mode;
+        lists_loaded[mode] = true;
+        return;
+    }
+
+    InstallType loading_screen = INSTALL_NONE;
+    if(mode == MODE_THEMES)
+        loading_screen = INSTALL_LOADING_THEMES;
+    else if(mode == MODE_SPLASHES)
+        loading_screen = INSTALL_LOADING_SPLASHES;
+
+    draw_install(loading_screen);
+
+    Entry_List_s * const current_list = &lists[mode];
+    current_list->mode = mode;
+    current_list->entries_per_screen_v = entries_per_screen_v[mode];
+    current_list->entries_per_screen_h = 1;
+    current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
+    current_list->entry_size = entry_size[mode];
+
+    const int x_component = max(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+    const int y_component = min(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+    // A texture must have power of 2 dimensions (not necessarily the same)
+    // so, get the power of two greater than or equal to:
+    // - the size of the largest length (row or column) of icons for the width
+    // - the size of all of those lengths to fit the total for the height
+    C3D_TexInit(&current_list->icons_texture,
+        next_or_equal_power_of_2(x_component * current_list->entry_size),
+        next_or_equal_power_of_2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
+        GPU_RGB565);
+    C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
+
+    const float inv_width = 1.0f / current_list->icons_texture.width;
+    const float inv_height = 1.0f / current_list->icons_texture.height;
+    current_list->icons_info = (Entry_Icon_s *)calloc(x_component * y_component * ICONS_OFFSET_AMOUNT, sizeof(Entry_Icon_s));
+    for(int j = 0; j < y_component * ICONS_OFFSET_AMOUNT; ++j)
+    {
+        const int index = j * x_component;
+        for(int h = 0; h < x_component; ++h)
         {
-            lists[i].mode = i;
-            continue;
-        }
-
-        InstallType loading_screen = INSTALL_NONE;
-        if(i == MODE_THEMES)
-            loading_screen = INSTALL_LOADING_THEMES;
-        else if(i == MODE_SPLASHES)
-            loading_screen = INSTALL_LOADING_SPLASHES;
-
-        draw_install(loading_screen);
-
-        Entry_List_s * const current_list = &lists[i];
-        current_list->mode = i;
-        current_list->entries_per_screen_v = entries_per_screen_v[i];
-        current_list->entries_per_screen_h = 1;
-        current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
-        current_list->entry_size = entry_size[i];
-
-        const int x_component = max(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
-        const int y_component = min(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
-        // A texture must have power of 2 dimensions (not necessarily the same)
-        // so, get the power of two greater than or equal to:
-        // - the size of the largest length (row or column) of icons for the width
-        // - the size of all of those lengths to fit the total for the height
-        C3D_TexInit(&current_list->icons_texture,
-            next_or_equal_power_of_2(x_component * current_list->entry_size),
-            next_or_equal_power_of_2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
-            GPU_RGB565);
-        C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
-
-        const float inv_width = 1.0f / current_list->icons_texture.width;
-        const float inv_height = 1.0f / current_list->icons_texture.height;
-        current_list->icons_info = (Entry_Icon_s *)calloc(x_component * y_component * ICONS_OFFSET_AMOUNT, sizeof(Entry_Icon_s));
-        for(int j = 0; j < y_component * ICONS_OFFSET_AMOUNT; ++j)
-        {
-            const int index = j * x_component;
-            for(int h = 0; h < x_component; ++h)
-            {
-                Entry_Icon_s * const icon_info = &current_list->icons_info[index + h];
-                icon_info->x = h * current_list->entry_size;
-                icon_info->y = j * current_list->entry_size;
-                icon_info->subtex.width = current_list->entry_size;
-                icon_info->subtex.height = current_list->entry_size;
-                icon_info->subtex.left = icon_info->x * inv_width;
-                icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
-                icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
-                icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
-            }
-        }
-
-        Result res = load_entries(main_paths[i], current_list, loading_screen);
-        if(R_SUCCEEDED(res))
-        {
-            if(current_list->entries_count > current_list->entries_loaded * ICONS_OFFSET_AMOUNT)
-                iconLoadingThread_arg.run_thread = true;
-
-            DEBUG("total: %i\n", current_list->entries_count);
-
-            sort_by_name(current_list);
-            load_icons_first(current_list, false);
-
-            void (*install_check_function)(void *) = NULL;
-            if(i == MODE_THEMES)
-                install_check_function = themes_check_installed;
-            else if(i == MODE_SPLASHES)
-                install_check_function = splash_check_installed;
-
-            Thread_Arg_s * current_arg = &install_check_threads_arg[i];
-            current_arg->run_thread = true;
-            current_arg->thread_arg = (void **)current_list;
-
-            if(install_check_function != NULL)
-            {
-                install_check_threads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
-                svcSleepThread(1e8);
-            }
+            Entry_Icon_s * const icon_info = &current_list->icons_info[index + h];
+            icon_info->x = h * current_list->entry_size;
+            icon_info->y = j * current_list->entry_size;
+            icon_info->subtex.width = current_list->entry_size;
+            icon_info->subtex.height = current_list->entry_size;
+            icon_info->subtex.left = icon_info->x * inv_width;
+            icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
+            icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
+            icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
         }
     }
+
+    Result res = load_entries(main_paths[mode], current_list, loading_screen);
+    if(R_SUCCEEDED(res))
+    {
+        if(current_list->entries_count > current_list->entries_loaded * ICONS_OFFSET_AMOUNT)
+            iconLoadingThread_arg.run_thread = true;
+
+        DEBUG("total: %i\n", current_list->entries_count);
+
+        sort_by_name(current_list);
+        load_icons_first(current_list, false);
+
+        void (*install_check_function)(void *) = NULL;
+        if(mode == MODE_THEMES)
+            install_check_function = themes_check_installed;
+        else if(mode == MODE_SPLASHES)
+            install_check_function = splash_check_installed;
+
+        Thread_Arg_s * current_arg = &install_check_threads_arg[mode];
+        current_arg->run_thread = true;
+        current_arg->thread_arg = (void **)current_list;
+
+        if(install_check_function != NULL)
+        {
+            install_check_threads[mode] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
+            svcSleepThread(1e8);
+        }
+    }
+    lists_loaded[mode] = true;
     start_thread();
 }
 
@@ -422,13 +431,6 @@ int main(void)
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
 
-    #ifndef CITRA_MODE
-    if(R_SUCCEEDED(archive_result))
-        load_lists(lists);
-    #else
-    load_lists(lists);
-    #endif
-
     EntryMode current_mode = MODE_THEMES;
 
     bool preview_mode = false;
@@ -468,6 +470,13 @@ int main(void)
         u32 kDown = hidKeysDown();
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
+
+        #ifndef CITRA_MODE
+        if(R_SUCCEEDED(archive_result) && !lists_loaded[current_mode])
+        #else
+        if(!lists_loaded[current_mode])
+        #endif
+            load_list(current_mode);
 
         current_list = &lists[current_mode];
 
@@ -617,7 +626,7 @@ int main(void)
                     {
                         if(init_qr())
                         {
-                            load_lists(lists);
+                            reload_lists();
                         }
                     }
                     else
@@ -939,7 +948,7 @@ int main(void)
                     if(themeplaza_browser((RemoteMode) current_mode))
                     {
                         current_mode = MODE_THEMES;
-                        load_lists(lists);
+                        reload_lists();
                     }
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
@@ -1012,7 +1021,7 @@ int main(void)
                     draw_install(INSTALL_DUMPING_THEME);
                     Result res = dump_current_theme();
                     if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
-                    else load_lists(lists);
+                    else reload_lists();
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
@@ -1022,7 +1031,7 @@ int main(void)
                     draw_install(INSTALL_DUMPING_ALL_THEMES);
                     Result res = dump_all_themes();
                     if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
-                    else load_lists(lists);
+                    else reload_lists();
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
@@ -1091,7 +1100,7 @@ int main(void)
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(current_entry, current_entry->is_zip);
-                load_lists(lists);
+                reload_lists();
             }
         }
 
