@@ -32,6 +32,7 @@
 #include "ui_strings.h"
 
 #define SOC_BUFFER_SIZE 0x100000
+#define MAX_DOWNLOAD_SIZE (32 * 1024 * 1024)
 #define MAX_REDIRECTS 10
 #define ERROR_BUFFER_SIZE 0x100
 #define PROGRESS_REDRAW_MS 33
@@ -40,6 +41,8 @@ typedef struct {
     char * buf;
     size_t size;
     size_t capacity;
+    size_t content_length; // 0 when the server didn't send one
+    bool too_large;
 
     char * content_type;
     char * content_disposition;
@@ -83,11 +86,22 @@ static size_t write_callback(char * ptr, size_t size, size_t nmemb, void * userd
     http_response * response = (http_response *)userdata;
     const size_t bytes = size * nmemb;
 
+    if (response->size + bytes + 1 > MAX_DOWNLOAD_SIZE)
+    {
+        response->too_large = true;
+        return 0;
+    }
+
     if (response->size + bytes + 1 > response->capacity)
     {
-        size_t capacity = response->capacity ? response->capacity : 0x10000;
-        while (response->size + bytes + 1 > capacity)
-            capacity *= 2;
+        // the whole file at once when its size is known, otherwise grow in steps
+        size_t capacity = response->content_length + 1;
+        if (capacity < response->size + bytes + 1 || capacity > MAX_DOWNLOAD_SIZE)
+        {
+            capacity = response->capacity ? response->capacity : 0x10000;
+            while (response->size + bytes + 1 > capacity)
+                capacity *= 2;
+        }
 
         char * new_buf = realloc(response->buf, capacity);
         if (new_buf == NULL)
@@ -109,6 +123,7 @@ static void free_response_headers(http_response * response)
     free(response->content_disposition);
     response->content_type = NULL;
     response->content_disposition = NULL;
+    response->content_length = 0;
 }
 
 static size_t header_callback(char * buffer, size_t size, size_t nitems, void * userdata)
@@ -150,6 +165,8 @@ static size_t header_callback(char * buffer, size_t size, size_t nitems, void * 
         free(*field);
         *field = strndup(value, value_length);
     }
+    else if (name_length == strlen("Content-Length") && !strncasecmp(buffer, "Content-Length", name_length))
+        response->content_length = strtoul(value, NULL, 10);
 
     return length;
 }
