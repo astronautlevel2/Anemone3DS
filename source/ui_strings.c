@@ -215,6 +215,7 @@ const Language_s language_english = {
         .dump_all_official = "Dumping official themes, please wait...",
         .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installing badges, please wait...",
+        .cancel_loading = "Hold \uE001 to cancel",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -624,6 +625,7 @@ const Language_s language_spanish = {
         .dump_all_official = "Volcando temas oficiales,\npor favor espera...",
         .dump_badges = "Volcando insignias instaladas,\npor favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
+        .cancel_loading = "Mantén \uE001 para cancelar",
         .shuffle = "Aleatorio: %i/10",
     },
     .fs =
@@ -1034,6 +1036,7 @@ const Language_s language_french = {
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
         .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
+        .cancel_loading = "Maintenez \uE001 pour annuler",
         .shuffle = "Aléatoire: %i/10",
     },
     .fs =
@@ -1443,6 +1446,7 @@ const Language_s language_portuguese = {
         .dump_all_official = "Exportando temas oficiais, aguarde...",
         .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
+        .cancel_loading = "Segure \uE001 para cancelar",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -1854,6 +1858,7 @@ const Language_s language_korean = {
         .dump_all_official = "Dumping official themes,\nplease wait...",
         .dump_badges = "Dumping installed badges,\nplease wait...",
         .install_badges = "Installing badges, please wait...",
+        .cancel_loading = "Hold \uE001 to cancel",
         .shuffle = "Shuffle: %i/10",
     },
     .fs =
@@ -2264,6 +2269,7 @@ const Language_s language_SChinese = {
         .dump_all_official = "正在导出官方主题, 请稍等...",
         .dump_badges = "正在导出已安装的徽章, 请稍等...",
         .install_badges = "正在安装徽章, 请稍等...",
+        .cancel_loading = "按住 \uE001 取消",
         .shuffle = "已选: %i/10",
     },
     .fs =

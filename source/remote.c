@@ -157,6 +157,19 @@ static void load_remote_entries(Entry_List_s * list, json_t * ids_array, bool ig
         free(entry_path);
 
         load_remote_smdh(current_entry, &list->icons_texture, &list->icons_info[i], ignore_cache);
+
+        // canceled: only keep the entries that were fully loaded
+        if (loading_cancel_requested())
+        {
+            list->entries_count = i;
+            list->entries_loaded = i;
+            if (i == 0)
+            {
+                free(list->entries);
+                list->entries = NULL;
+            }
+            break;
+        }
     }
 }
 

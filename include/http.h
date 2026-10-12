@@ -34,7 +34,8 @@
  * Downloads url into a newly allocated *buf (NUL terminated, *size excludes the terminator).
  * filename, if not NULL, receives the Content-Disposition filename (or NULL).
  * acceptable_mime_types is sent as the Accept header and checked against the Content-Type.
- * Failures show an error to the user and return a failed Result.
+ * Failures show an error to the user and return a failed Result. Holding B cancels the
+ * download without an error message: the Result then has the RD_CANCEL_REQUESTED description.
  *
  * call example: http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
  */
