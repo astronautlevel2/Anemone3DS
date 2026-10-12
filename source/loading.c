@@ -308,9 +308,46 @@ void load_icons_thread(void * void_arg)
     } while(arg->run_thread);
 }
 
-bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset, int height)
+/*
+ * Screenshot-shaped previews (a top screen above a centered bottom screen) are shown like a screenshot:
+ * 400x480 (the usual preview.png), 406x480 to 412x480 (editors that keep the wider top screen texture),
+ * 412x482 (YATA+, two padding rows) and 432x528 (HOME Menu screenshots with a 16px border).
+ * Anything else, like Theme Plaza's 512x1024 badge previews, is scaled to the width of the bottom
+ * screen and runs from the top screen onto the bottom one.
+ */
+static void layout_preview(int width, int height, Preview_Layout_s * layout)
 {
-    int width = (uint32_t)((size / 4) / height);
+    if(width >= TOP_SCREEN_WIDTH && width <= 432 && height >= SCREEN_HEIGHT * 2 && height <= 528)
+    {
+        const int border = (width == 432 && height == 528) ? 16 : 0;
+        layout->scale = 1.0f;
+        layout->top_x = -((width - TOP_SCREEN_WIDTH) / 2);
+        layout->top_y = -border;
+        layout->bottom_x = -((width - BOTTOM_SCREEN_WIDTH) / 2);
+        layout->bottom_y = -(SCREEN_HEIGHT + border * 2);
+    }
+    else
+    {
+        layout->scale = (float)BOTTOM_SCREEN_WIDTH / width;
+        layout->top_x = (TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2;
+        layout->top_y = 0;
+        layout->bottom_x = 0;
+        layout->bottom_y = -SCREEN_HEIGHT;
+    }
+}
+
+bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, Preview_Layout_s * layout, int image_height)
+{
+    const int image_width = (uint32_t)((size / 4) / image_height);
+    if(image_width <= 0 || image_height <= 0)
+        return false;
+
+    // the texture is at most 512x1024: bigger images skip pixels, they are drawn smaller anyway
+    int step = 1;
+    while((image_width + step - 1) / step > 512 || (image_height + step - 1) / step > 1024)
+        ++step;
+    const int width = (image_width + step - 1) / step;
+    const int height = (image_height + step - 1) / step;
     float tex_height = height > 512.0f ? 1024.0f : 512.0f;
 
     free_preview(*preview_image);
@@ -332,22 +369,22 @@ bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview
     memset(preview_image->tex->data, 0, preview_image->tex->size);
 
     for(int j = 0; j < height; j++) {
-        png_bytep row = (png_bytep)(row_pointers + (width * 4 * j));
+        png_bytep row = (png_bytep)(row_pointers + (image_width * 4 * j * step));
         for(int i = 0; i < width; i++) {
-            png_bytep px = &(row[i * 4]);
+            png_bytep px = &(row[i * step * 4]);
             u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
 
             memcpy(preview_image->tex->data + dst, px, sizeof(u32));
         }
     }
 
-    *preview_offset = (width - TOP_SCREEN_WIDTH) / 2;
+    layout_preview(width, height, layout);
 
     return true;
 }
 
 static u16 previous_path_preview[0x106] = {0};
-bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset)
+bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, Preview_Layout_s * layout)
 {
     if(list->entries == NULL) return false;
 
@@ -420,7 +457,7 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
         preview_buffer = rgba_buffer;
     }
 
-    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset, height);
+    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, layout, height);
     free(preview_buffer);
 
     if(ret)

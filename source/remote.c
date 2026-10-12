@@ -238,7 +238,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
 
 static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset, u32 height)
+static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, Preview_Layout_s * preview_layout)
 {
     bool not_cached = true;
 
@@ -274,13 +274,14 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     u32 preview_buf_size = preview_size;
     memcpy(preview_buf, preview_png, preview_size);
 
+    u32 height = 0;
     if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size, &height)))
     {
         free(preview_buf);
         return false;
     }
 
-    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset, height);
+    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_layout, height);
     free(preview_buf);
 
     if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
@@ -487,7 +488,7 @@ bool themeplaza_browser(RemoteMode mode)
     }
 
     bool preview_mode = false;
-    int preview_offset = 0;
+    Preview_Layout_s preview_layout = {0};
     audio_ogg_s * audio = NULL;
 
     Entry_List_s list = { 0 };
@@ -541,8 +542,7 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (preview_mode)
         {
-            if (mode == REMOTE_MODE_BADGES) draw_preview(preview, -40, 0.625f);
-            else draw_preview(preview, preview_offset, 1.0f);
+            draw_preview(preview, &preview_layout);
             
         }
         else
@@ -624,8 +624,7 @@ bool themeplaza_browser(RemoteMode mode)
         toggle_preview:
             if (!preview_mode)
             {
-                u32 height = mode == REMOTE_MODE_BADGES ? 1024 : 480;
-                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset, height);
+                preview_mode = load_remote_preview(current_entry, &preview, &preview_layout);
                 if (mode == REMOTE_MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);

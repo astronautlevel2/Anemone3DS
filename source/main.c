@@ -405,7 +405,7 @@ int main(void)
     EntryMode current_mode = MODE_THEMES;
 
     bool preview_mode = false;
-    int preview_offset = 0;
+    Preview_Layout_s preview_layout = {0};
 
     bool install_mode = false;
     DrawMode draw_mode = DRAW_MODE_LIST;
@@ -454,7 +454,7 @@ int main(void)
 
         if(preview_mode)
         {
-            draw_preview(preview, preview_offset, 1.0f);
+            draw_preview(preview, &preview_layout);
         }
         else {
             if(!iconLoadingThread_arg.run_thread)
@@ -570,11 +570,11 @@ int main(void)
                 toggle_preview:
                 if(!preview_mode)
                 {
-                    preview_mode = load_preview(current_list, &preview, &preview_offset);
+                    preview_mode = load_preview(current_list, &preview, &preview_layout);
                     if(preview_mode)
                     {
                         end_frame();
-                        draw_preview(preview, preview_offset, 1.0f);
+                        draw_preview(preview, &preview_layout);
                         end_frame();
                         if(current_mode == MODE_THEMES && dspfirm)
                         {
