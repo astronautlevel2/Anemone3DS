@@ -31,148 +31,397 @@
 #include "remote.h"
 #include "ui_strings.h"
 
-static bool mime_type_is_acceptable(const char *acceptable_mime_types, const char *mime_type);
+#define SOC_BUFFER_SIZE 0x100000
+#define MAX_REDIRECTS 10
+#define ERROR_BUFFER_SIZE 0x100
+#define PROGRESS_REDRAW_MS 33
 
-typedef struct header
+typedef struct {
+    char * buf;
+    size_t size;
+    size_t capacity;
+
+    char * content_type;
+    char * content_disposition;
+} http_response;
+
+typedef struct {
+    InstallType install_type;
+    u64 last_redraw;
+} http_progress;
+
+static bool mime_type_is_acceptable(const char *acceptable_mime_types, const char *mime_type)
 {
-    char ** filename; // pointer to location for filename; if NULL, no filename is parsed
-    u32 file_size; // if == 0, fall back to chunked read
-    Result result_code;
-} header;
+    if (!acceptable_mime_types || !mime_type)
+        return true;
 
-typedef enum ParseResult
-{
-    SUCCESS, // 200/203 (203 indicates a successful request with a transformation applied by a proxy)
-    REDIRECT, // 301/302/307/308
-    HTTPC_ERROR,
-    SERVER_IS_MISBEHAVING,
-    SEE_OTHER = 303, // Theme Plaza returns these
-    HTTP_UNAUTHORIZED = 401,
-    HTTP_FORBIDDEN = 403,
-    HTTP_NOT_FOUND = 404,
-    HTTP_UNACCEPTABLE = 406, // like 204, usually doesn't happen
-    HTTP_PROXY_UNAUTHORIZED = 407,
-    HTTP_GONE = 410,
-    HTTP_URI_TOO_LONG = 414,
-    HTTP_IM_A_TEAPOT = 418, // Note that a combined coffee/tea pot that is temporarily out of coffee should instead return 503.
-    HTTP_UPGRADE_REQUIRED = 426, // the 3DS doesn't support HTTP/2, so we can't upgrade - inform and return
-    HTTP_LEGAL_REASONS = 451,
-    HTTP_INTERNAL_SERVER_ERROR = 500,
-    HTTP_BAD_GATEWAY = 502,
-    HTTP_SERVICE_UNAVAILABLE = 503,
-    HTTP_GATEWAY_TIMEOUT = 504,
-} ParseResult;
+    while (*mime_type == ' ' || *mime_type == '\t')
+        ++mime_type;
 
-// the good paths for this function return SUCCESS, ABORTED, or REDIRECT;
-// all other paths are failures
-static ParseResult parse_header(struct header * out, httpcContext * context, const char * mime)
-{
-    // status code
-    u32 status_code;
+    size_t mime_len = strcspn(mime_type, "; \t\r\n");
 
-    out->result_code = httpcGetResponseStatusCode(context, &status_code);
-    if (R_FAILED(out->result_code))
+    const char *cursor = acceptable_mime_types;
+    while (*cursor)
     {
-        DEBUG("httpcGetResponseStatusCode\n");
-        return HTTPC_ERROR;
+        while (*cursor == ' ' || *cursor == ',' || *cursor == ';')
+            ++cursor;
+
+        const char *token_start = cursor;
+        while (*cursor && *cursor != ' ' && *cursor != ',' && *cursor != ';')
+            ++cursor;
+
+        size_t token_len = cursor - token_start;
+        if (token_len != 0 && token_len == mime_len && !strncasecmp(token_start, mime_type, mime_len))
+            return true;
     }
 
-    DEBUG("HTTP %lu\n", status_code);
-    switch (status_code)
-    {
-    case 301:
-    case 302:
-    case 307:
-    case 308:
-        return REDIRECT;
-    case 200:
-    case 203:
-        break;
-    default:
-        return (ParseResult)status_code;
-    }
-
-    char content_buf[1024] = {0};
-
-    // Content-Type
-
-    if (mime)
-    {
-        out->result_code = httpcGetResponseHeader(context, "Content-Type", content_buf, 1024);
-        if (R_FAILED(out->result_code))
-        {
-            return HTTPC_ERROR;
-        }
-
-        if (!mime_type_is_acceptable(mime, content_buf))
-        {
-            return SERVER_IS_MISBEHAVING;
-        }
-    }
-
-    // Content-Length
-
-    out->result_code = httpcGetDownloadSizeState(context, NULL, &out->file_size);
-    if (R_FAILED(out->result_code))
-    {
-        DEBUG("httpcGetDownloadSizeState\n");
-        return HTTPC_ERROR; // no need to free, program dies anyway
-    }
-
-    // Content-Disposition
-
-    if (out->filename)
-    {
-        bool present = 1;
-        out->result_code = httpcGetResponseHeader(context, "Content-Disposition", content_buf, 1024);
-        if (R_FAILED(out->result_code))
-        {
-            if (out->result_code == (long)0xD8A0A028L)
-                present = 0;
-            else
-            {
-                DEBUG("httpcGetResponseHeader\n");
-                return HTTPC_ERROR;
-            }
-        }
-
-        // content_buf: Content-Disposition: attachment; ... filename=<filename>;? ...
-
-        if (present)
-        {
-            char * filename = strstr(content_buf, "filename="); // filename=<filename>;? ...
-            // in the extreme fringe case that filename is missing:
-            if (filename != NULL)
-            {
-                filename = strpbrk(filename, "=") + 1; // <filename>;?
-                char * end = strpbrk(filename, ";");
-                if (end)
-                    *end = '\0'; // <filename>
-
-                // safe to assume the filename is quoted
-                // (if it isn't, then we already have a null-terminated string <filename>)
-                if (filename[0] == '"')
-                {
-                    filename[strlen(filename) - 1] = '\0';
-                    filename++;
-                }
-
-                *out->filename = malloc(strlen(filename) + 1);
-                strcpy(*out->filename, filename);
-            }
-            else
-            {
-                *out->filename = NULL;
-            }
-        }
-        else
-        {
-            *out->filename = NULL;
-        }
-    }
-    return SUCCESS;
+    return false;
 }
 
+static size_t write_callback(char * ptr, size_t size, size_t nmemb, void * userdata)
+{
+    http_response * response = (http_response *)userdata;
+    const size_t bytes = size * nmemb;
+
+    if (response->size + bytes + 1 > response->capacity)
+    {
+        size_t capacity = response->capacity ? response->capacity : 0x10000;
+        while (response->size + bytes + 1 > capacity)
+            capacity *= 2;
+
+        char * new_buf = realloc(response->buf, capacity);
+        if (new_buf == NULL)
+            return 0;
+
+        response->buf = new_buf;
+        response->capacity = capacity;
+    }
+
+    memcpy(response->buf + response->size, ptr, bytes);
+    response->size += bytes;
+    response->buf[response->size] = '\0';
+    return bytes;
+}
+
+static void free_response_headers(http_response * response)
+{
+    free(response->content_type);
+    free(response->content_disposition);
+    response->content_type = NULL;
+    response->content_disposition = NULL;
+}
+
+static size_t header_callback(char * buffer, size_t size, size_t nitems, void * userdata)
+{
+    http_response * response = (http_response *)userdata;
+    const size_t length = size * nitems;
+
+    // a new status line starts the headers of another response (e.g. after a 100 Continue)
+    if (length >= 5 && !strncmp(buffer, "HTTP/", 5))
+    {
+        free_response_headers(response);
+        return length;
+    }
+
+    const char * colon = memchr(buffer, ':', length);
+    if (colon == NULL)
+        return length;
+
+    const size_t name_length = colon - buffer;
+    const char * value = colon + 1;
+    size_t value_length = length - name_length - 1;
+
+    while (value_length && (*value == ' ' || *value == '\t'))
+    {
+        ++value;
+        --value_length;
+    }
+    while (value_length && (value[value_length - 1] == '\r' || value[value_length - 1] == '\n' || value[value_length - 1] == ' '))
+        --value_length;
+
+    char ** field = NULL;
+    if (name_length == strlen("Content-Type") && !strncasecmp(buffer, "Content-Type", name_length))
+        field = &response->content_type;
+    else if (name_length == strlen("Content-Disposition") && !strncasecmp(buffer, "Content-Disposition", name_length))
+        field = &response->content_disposition;
+
+    if (field != NULL)
+    {
+        free(*field);
+        *field = strndup(value, value_length);
+    }
+
+    return length;
+}
+
+static int progress_callback(void * clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+{
+    (void)ultotal;
+    (void)ulnow;
+
+    http_progress * progress = (http_progress *)clientp;
+    if (progress->install_type == INSTALL_NONE || dltotal <= 0)
+        return 0;
+
+    const u64 now = svcGetSystemTick() / CPU_TICKS_PER_MSEC;
+    if (now - progress->last_redraw >= PROGRESS_REDRAW_MS || dlnow == dltotal)
+    {
+        progress->last_redraw = now;
+        draw_loading_bar((u32)dlnow, (u32)dltotal, progress->install_type);
+    }
+
+    return 0;
+}
+
+// Content-Disposition: attachment; filename="name.zip"
+static char * parse_disposition_filename(const char * disposition)
+{
+    if (disposition == NULL)
+        return NULL;
+
+    const char * value = strstr(disposition, "filename=");
+    if (value == NULL)
+        return NULL;
+
+    value += strlen("filename=");
+    size_t length;
+    if (*value == '"')
+    {
+        ++value;
+        length = strcspn(value, "\"");
+    }
+    else
+        length = strcspn(value, ";");
+
+    return strndup(value, length);
+}
+
+static bool is_themeplaza_url(const char * url)
+{
+    return strstr(url, THEMEPLAZA_BASE_URL) != NULL;
+}
+
+static void show_curl_error(CURLcode code)
+{
+    char err_buf[ERROR_BUFFER_SIZE];
+    switch (code)
+    {
+    case CURLE_OPERATION_TIMEDOUT:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http_timeout);
+        break;
+    case CURLE_COULDNT_RESOLVE_PROXY:
+    case CURLE_COULDNT_RESOLVE_HOST:
+    case CURLE_COULDNT_CONNECT:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http_no_network);
+        break;
+    case CURLE_SSL_CONNECT_ERROR:
+    case CURLE_PEER_FAILED_VERIFICATION:
+    case CURLE_SSL_CERTPROBLEM:
+    case CURLE_SSL_CIPHER:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_ssl_error, (u32)code);
+        break;
+    default:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.network_error, curl_easy_strerror(code));
+        break;
+    }
+    throw_error(err_buf, ERROR_LEVEL_WARNING);
+}
+
+// returns false and shows an error for anything that isn't a usable response
+static bool check_status(long status, const char * url, bool not_found_is_error)
+{
+    char err_buf[ERROR_BUFFER_SIZE];
+    switch (status)
+    {
+    case 200:
+    case 203: // a successful request with a transformation applied by a proxy
+        return true;
+    case 303: // Theme Plaza returns these
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", is_themeplaza_url(url) ? language.remote.http303_tp : language.remote.http303);
+        break;
+    case 401:
+    case 403:
+    case 407:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_errcode_generic, status == 401
+            ? language.remote.http401
+            : status == 403
+            ? language.remote.http403
+            : language.remote.http407);
+        break;
+    case 404:
+        if (!not_found_is_error)
+            return false;
+        if (is_themeplaza_url(url))
+            snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http404);
+        else
+            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_err_url, "404 Not Found");
+        break;
+    case 406:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.zip_not_found);
+        break;
+    case 410:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_err_url, "410 Gone");
+        break;
+    case 414:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http414);
+        break;
+    case 418:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http418);
+        break;
+    case 426:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http426);
+        break;
+    case 451:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http451);
+        break;
+    case 500:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http500);
+        break;
+    case 502:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http502);
+        break;
+    case 503:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http503);
+        break;
+    case 504:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, "%s", language.remote.http504);
+        break;
+    default:
+        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_unexpected, (unsigned int)status);
+        break;
+    }
+
+    DEBUG("HTTP %ld; URL: %s\n", status, url);
+    throw_error(err_buf, ERROR_LEVEL_WARNING);
+    return false;
+}
+
+static Result http_request(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
+{
+    const Result shown_error = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
+
+    *buf = NULL;
+    *size = 0;
+    if (filename != NULL)
+        *filename = NULL;
+
+    u32 * soc_buffer = memalign(0x1000, SOC_BUFFER_SIZE);
+    if (soc_buffer == NULL || R_FAILED(socInit(soc_buffer, SOC_BUFFER_SIZE)))
+    {
+        free(soc_buffer);
+        show_curl_error(CURLE_FAILED_INIT);
+        return shown_error;
+    }
+
+    CURL * curl = curl_easy_init();
+    if (curl == NULL)
+    {
+        socExit();
+        free(soc_buffer);
+        show_curl_error(CURLE_FAILED_INIT);
+        return shown_error;
+    }
+
+    char accept_header[0x100] = {0};
+    struct curl_slist * headers = NULL;
+    if (acceptable_mime_types != NULL)
+    {
+        snprintf(accept_header, sizeof(accept_header), "Accept: %s", acceptable_mime_types);
+        headers = curl_slist_append(headers, accept_header);
+    }
+
+    http_response response = {0};
+    http_progress progress = { .install_type = install_type };
+    char * current_url = strdup(url);
+    long status = 0;
+    CURLcode code = CURLE_OK;
+
+    DEBUG("HTTP GET %s\n", url);
+
+    // redirects are followed here rather than by curl, so a 303 can be reported instead of followed
+    for (int redirects = 0; current_url != NULL; ++redirects)
+    {
+        curl_easy_reset(curl);
+        curl_easy_setopt(curl, CURLOPT_URL, current_url);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 102400L);
+        // no CA bundle is shipped (bundled certificates expire); httpc never verified either
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &progress);
+
+        response.size = 0;
+        free_response_headers(&response);
+
+        code = curl_easy_perform(curl);
+        if (code != CURLE_OK)
+            break;
+
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+        if (status != 301 && status != 302 && status != 307 && status != 308)
+            break;
+
+        char * location = NULL;
+        curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &location);
+        free(current_url);
+        current_url = NULL;
+        if (location == NULL || redirects >= MAX_REDIRECTS)
+        {
+            code = CURLE_TOO_MANY_REDIRECTS;
+            break;
+        }
+
+        DEBUG("HTTP redirect to %s\n", location);
+        current_url = strdup(location);
+    }
+
+    free(current_url);
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    socExit();
+    free(soc_buffer);
+
+    Result ret = shown_error;
+    if (code != CURLE_OK)
+    {
+        DEBUG("curl error %d: %s\n", code, curl_easy_strerror(code));
+        show_curl_error(code);
+    }
+    else if (!check_status(status, url, not_found_is_error))
+    {
+        if (status == 404 && !not_found_is_error)
+            ret = MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
+    }
+    else if (!mime_type_is_acceptable(acceptable_mime_types, response.content_type))
+    {
+        DEBUG("Server sent %s, expected %s\n", response.content_type, acceptable_mime_types);
+        throw_error(language.remote.zip_not_found, ERROR_LEVEL_WARNING);
+    }
+    else
+    {
+        if (filename != NULL)
+            *filename = parse_disposition_filename(response.content_disposition);
+
+        if (response.buf == NULL)
+            response.buf = calloc(1, 1);
+
+        *buf = response.buf;
+        *size = response.size;
+        response.buf = NULL;
+        ret = MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
+        DEBUG("size: %lu\n", *size);
+    }
+
+    free(response.buf);
+    free_response_headers(&response);
+    return ret;
+}
 
 static int url_hex_digit(char c)
 {
@@ -227,12 +476,9 @@ static char * url_filename(const char * url)
     return result;
 }
 
-/*
- * call example: written = http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
- */
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    Result res = http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
+    Result res = http_request(url, filename, buf, size, install_type, acceptable_mime_types, true);
     // the server named no file: use the URL's name (save_zip_to_sd falls back to "download.zip" when that's
     // missing too)
     if (R_SUCCEEDED(res) && filename != NULL && *filename == NULL)
@@ -240,477 +486,7 @@ Result http_get(const char * url, char ** filename, char ** buf, u32 * size, Ins
     return res;
 }
 
-/* 
- * curl functions modified from Universal-Updater download.cpp
- */
-static size_t handle_data(char *ptr, size_t size, size_t nmemb, void *userdata)
+Result http_get_optional(const char * url, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    curl_data *data = (curl_data *) userdata;
-    const size_t bsz = size * nmemb;
-
-    if (data->result_sz == 0 || !(data->result_buf))
-    {
-        data->result_sz = 0x1000;
-        data->result_buf = (char *) malloc(data->result_sz);
-    }
-
-    bool need_realloc = false;
-    while (data->result_written + bsz > data->result_sz)
-    {
-        data->result_sz <<= 1;
-        need_realloc = true;
-    }
-
-    if (need_realloc)
-    {
-        char *new_buf = (char *)realloc(data->result_buf, data->result_sz);
-        if (!new_buf) return 0;
-
-        data->result_buf = new_buf;
-    }
-
-    memcpy(data->result_buf + data->result_written, ptr, bsz);
-    data->result_written += bsz;
-    return bsz;
+    return http_request(url, NULL, buf, size, install_type, acceptable_mime_types, false);
 }
-
-static size_t curl_parse_header(char *buffer, size_t size, size_t nitems, void *userdata)
-{
-    curl_header *header = (curl_header *) userdata;
-    for (size_t i = 0; i < size * nitems; ++i)
-    {
-        if (buffer[i] == '\n' || buffer[i] == '\r')
-        {
-            buffer[i] = '\0';
-            break;
-        }
-    }
-
-    if (!strncasecmp(buffer, "Content-Type: ", 14))
-    {
-        header->mime_type = malloc(strlen(buffer) - 13);
-        strncpy(header->mime_type, buffer + 14, strlen(buffer) - 14);
-        header->mime_type[strlen(buffer) - 14] = '\0';
-    } else if (!strncasecmp(buffer, "Content-Disposition: ", 21))
-    {
-        header->filename = malloc(strlen(buffer) - 20);
-        memcpy(header->filename, buffer + 21, strlen(buffer) - 21);
-        header->filename[strlen(buffer) - 21] = '\0';
-    } 
-
-    return nitems * size;
-}
-
-static bool mime_type_is_acceptable(const char *acceptable_mime_types, const char *mime_type)
-{
-    if (!acceptable_mime_types || !mime_type)
-        return true;
-
-    while (*mime_type == ' ' || *mime_type == '\t')
-        ++mime_type;
-
-    char mime_base[128] = {0};
-    size_t mime_len = strcspn(mime_type, "; \t\r\n");
-    if (mime_len >= sizeof(mime_base))
-        mime_len = sizeof(mime_base) - 1;
-    memcpy(mime_base, mime_type, mime_len);
-    mime_base[mime_len] = '\0';
-
-    const char *cursor = acceptable_mime_types;
-    while (*cursor)
-    {
-        while (*cursor == ' ' || *cursor == ',' || *cursor == ';')
-            ++cursor;
-
-        const char *token_start = cursor;
-        while (*cursor && *cursor != ' ' && *cursor != ',' && *cursor != ';')
-            ++cursor;
-
-        size_t token_len = cursor - token_start;
-        if (token_len == 0)
-            continue;
-
-        if (token_len == mime_len)
-        {
-            bool match = true;
-            for (size_t i = 0; i < mime_len; ++i)
-            {
-                if (tolower((unsigned char)token_start[i]) != tolower((unsigned char)mime_base[i]))
-                {
-                    match = false;
-                    break;
-                }
-            }
-
-            if (match)
-                return true;
-        }
-    }
-
-    return false;
-}
-
-static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf, u32 * size, const char * acceptable_mime_types)
-{
-    DEBUG("attempting curl_http_get\n");
-    curl_data data = {0};
-    curl_header header = {0};
-    void *socubuf = memalign(0x1000, 0x100000);
-    if (!socubuf)
-    {
-        return -1;
-    }
-
-    Result ret = socInit((u32 *) socubuf, 0x100000);
-    if (R_FAILED(ret))
-    {
-        free(socubuf);
-        return ret;
-    }
-
-    CURL *handle;
-    handle = curl_easy_init();
-
-    curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, 102400L);
-    curl_easy_setopt(handle, CURLOPT_URL, url);
-    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, USER_AGENT);
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(handle, CURLOPT_MAXREDIRS, 50L);
-    curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handle_data);
-    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(handle, CURLOPT_STDERR, stderr);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, &data);
-    curl_easy_setopt(handle, CURLOPT_HEADERDATA, &header);
-    curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, curl_parse_header);
-
-    struct curl_slist *list = NULL;
-    char mime_string[512] = {0};
-    sprintf(mime_string, "Accept:%s", acceptable_mime_types);
-    list = curl_slist_append(list, mime_string);
-
-    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, list);
-
-    CURLcode cres = curl_easy_perform(handle);
-    curl_easy_cleanup(handle);
-    char *newbuf = (char *) realloc(data.result_buf, data.result_written + 1);
-    data.result_buf = newbuf;
-    data.result_buf[data.result_written] = 0;
-    if (cres != CURLE_OK)
-    {
-        socExit();
-        free(data.result_buf);
-        free(socubuf);
-        if (header.mime_type) free(header.mime_type);
-        if (header.filename) free(header.filename);
-        return -1;
-    }
-    
-    DEBUG("Mime Type: %s\n", header.mime_type);
-    DEBUG("Acceptable Mime Types: %s\n", acceptable_mime_types);
-    if (header.mime_type)
-    {
-        if (!mime_type_is_acceptable(acceptable_mime_types, header.mime_type))
-        {
-            socExit();
-            free(data.result_buf);
-            free(socubuf);
-            if (header.mime_type) free(header.mime_type);
-            if (header.filename) free(header.filename);
-            return -2;
-        }
-    } 
-
-    DEBUG("Content-Disposition: %s\n", header.filename);
-    if (out_filename)
-    {
-        if (header.filename)
-        {
-            char *filename = strstr(header.filename, "filename=");
-            if (filename)
-            {
-                filename = strpbrk(filename, "=") + 1;
-                char *end = strpbrk(filename, ";");
-                if (end)
-                    *end = '\0';
-
-                if (filename[0] == '"')
-                {
-                    filename[strlen(filename) - 1] = '\0';
-                    filename++;
-                }
-
-                *out_filename = strdup(filename);
-            } else {
-                *out_filename = NULL;
-            }
-        } else {
-            *out_filename = NULL;
-        }
-    }
-
-    *buf = data.result_buf;
-    *size = data.result_written;
-
-    socExit();
-    if (header.mime_type) free(header.mime_type);
-    if (header.filename) free(header.filename);
-    free(socubuf);
-
-    return 0;
-}
-
-Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
-{
-    const char *zip_not_available = language.remote.zip_not_found;
-    Result ret;
-    httpcContext context;
-    char redirect_url[0x824] = {0};
-    char new_url[0x824] = {0};
-
-    struct header _header = { .filename = filename };
-
-    DEBUG("Original URL: %s\n", url);
-
-redirect: // goto here if we need to redirect
-    ret = httpcOpenContext(&context, HTTPC_METHOD_GET, url, 1);
-    if (R_FAILED(ret))
-    {
-        httpcCloseContext(&context);
-        DEBUG("httpcOpenContext %.8lx\n", ret);
-        return ret;
-    }
-
-    httpcSetSSLOpt(&context, SSLCOPT_DisableVerify); // should let us do https
-    httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
-    httpcAddRequestHeaderField(&context, "User-Agent", USER_AGENT);
-    httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive");
-    if (acceptable_mime_types)
-        httpcAddRequestHeaderField(&context, "Accept", acceptable_mime_types);
-
-    ret = httpcBeginRequest(&context);
-    if (R_FAILED(ret))
-    {
-        httpcCloseContext(&context);
-        DEBUG("httpcBeginRequest %.8lx\n", ret);
-        return ret;
-    }
-
-#define ERROR_BUFFER_SIZE 0x80
-    char err_buf[ERROR_BUFFER_SIZE];
-    Result res;
-    ParseResult parse = parse_header(&_header, &context, acceptable_mime_types);
-    switch (parse)
-    {
-    case SUCCESS:
-        break;
-    case HTTPC_ERROR:
-        DEBUG("httpc error %lx\n", _header.result_code);
-        switch (_header.result_code)
-        {
-        case 0xd8a0a028: // bad zip file
-        case 0xd8a0a03c: // SSL failure
-            // try curl?
-            res = curl_http_get(url, filename, buf, size, acceptable_mime_types);
-            if (R_SUCCEEDED(res))
-            {
-                return res;
-            }
-
-            if(_header.result_code == 0xd8a0a028)
-            {
-                snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-            }
-            else
-            {
-                snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_ssl_error, _header.result_code);
-            }
-            quit = false;
-            break;
-        case 0xd8a0a049:
-            // Timeout (bad wifi/proxy)
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_timeout);
-            quit = false;
-            break;
-        case 0xd8a0a046:
-            // poor reception/no wifi/custom dns set
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_no_network);
-            quit = false;
-            break;
-        default:
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.generic_httpc_error, _header.result_code);
-            quit = true;
-            break;
-        }
-        throw_error(err_buf, ERROR_LEVEL_ERROR);
-        httpcCloseContext(&context);
-        return _header.result_code;
-    case SEE_OTHER:
-        if (strstr(url, THEMEPLAZA_BASE_URL))
-        {
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http303_tp);
-            goto error;
-        }
-        else
-        {
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http303);
-            goto error;
-        }
-    case REDIRECT:
-        httpcGetResponseHeader(&context, "Location", redirect_url, 0x824);
-        httpcCloseContext(&context);
-        if (*redirect_url == '/') // if relative URL
-        {
-            strcpy(new_url, url);
-            char * last_slash = strchr(strchr(strchr(new_url, '/') + 1, '/') + 1, '/');
-            if (last_slash) *last_slash = '\0'; // prevents a NULL deref in case the original domain was not /-delimited
-            strncat(new_url, redirect_url, 0x824 - strlen(new_url));
-            url = new_url;
-        }
-        else
-        {
-            url = redirect_url;
-        }
-        DEBUG("HTTP Redirect: %s %s\n", new_url, *redirect_url == '/' ? "relative" : "absolute");
-        goto redirect;
-    case SERVER_IS_MISBEHAVING:
-        DEBUG("Server is misbehaving (provided resource with incorrect MIME)\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-        goto error;
-    case HTTP_NOT_FOUND:
-        if (!not_found_is_error)
-            goto not_found_non_error;
-        [[fallthrough]];
-    case HTTP_GONE:
-        const char * http_error = parse == HTTP_NOT_FOUND ? "404 Not Found" : "410 Gone";
-        DEBUG("HTTP %s; URL: %s\n", http_error, url);
-        if (strstr(url, THEMEPLAZA_BASE_URL) && parse == HTTP_NOT_FOUND)
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http404);
-        else
-            snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_err_url, http_error);
-        goto error;
-    case HTTP_UNACCEPTABLE:
-        DEBUG("HTTP 406 Unacceptable; Accept: %s\n", acceptable_mime_types);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, zip_not_available);
-        goto error;
-    case HTTP_UNAUTHORIZED:
-    case HTTP_FORBIDDEN:
-    case HTTP_PROXY_UNAUTHORIZED:
-        DEBUG("HTTP %u: device not authenticated\n", parse);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_errcode_generic, parse == HTTP_UNAUTHORIZED
-            ? language.remote.http401
-            : parse == HTTP_FORBIDDEN
-            ? language.remote.http403
-            : language.remote.http407);
-        goto error;
-    case HTTP_URI_TOO_LONG:
-        DEBUG("HTTP 414; URL is too long, maybe too many redirects?\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http414);
-        goto error;
-    case HTTP_IM_A_TEAPOT:
-        DEBUG("HTTP 418 I'm a teapot\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http418);
-        goto error;
-    case HTTP_UPGRADE_REQUIRED:
-        DEBUG("HTTP 426; HTTP/2 required\n");
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http426);
-        goto error;
-    case HTTP_LEGAL_REASONS:
-        DEBUG("HTTP 451; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http451);
-        goto error;
-    case HTTP_INTERNAL_SERVER_ERROR:
-        DEBUG("HTTP 500; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http500);
-        goto error;
-    case HTTP_BAD_GATEWAY:
-        DEBUG("HTTP 502; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http502);
-        goto error;
-    case HTTP_SERVICE_UNAVAILABLE:
-        DEBUG("HTTP 503; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http503);
-        goto error;
-    case HTTP_GATEWAY_TIMEOUT:
-        DEBUG("HTTP 504; URL: %s\n", url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http504);
-        goto error;
-    default:
-        DEBUG("HTTP %u; URL: %s\n", parse, url);
-        snprintf(err_buf, ERROR_BUFFER_SIZE, language.remote.http_unexpected, parse);
-        goto error;
-    }
-
-    goto no_error;
-error:
-    throw_error(err_buf, ERROR_LEVEL_WARNING);
-    res = httpcCloseContext(&context);
-    if (R_FAILED(res)) return res;
-    return MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
-not_found_non_error:
-    res = httpcCloseContext(&context);
-    if (R_FAILED(res)) return res;
-    return MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
-no_error:;
-    u32 chunk_size;
-    if (_header.file_size)
-        // the only reason we chunk this at all is for the download bar;
-        // in terms of efficiency, allocating the full size
-        // would avoid 3 reallocs whenever the server isn't lying
-        chunk_size = _header.file_size / 4;
-    else
-        chunk_size = 0x80000;
-
-    *buf = NULL;
-    char * new_buf;
-    *size = 0;
-    u32 read_size = 0;
-
-    do
-    {
-        new_buf = realloc(*buf, *size + chunk_size);
-        if (new_buf == NULL)
-        {
-            httpcCloseContext(&context);
-            free(*buf);
-            DEBUG("realloc failed in http_get - file possibly too large?\n");
-            return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
-        }
-        *buf = new_buf;
-
-        // download exactly chunk_size bytes and toss them into buf.
-        // size contains the current offset into buf.
-        ret = httpcDownloadData(&context, (u8 *)(*buf) + *size, chunk_size, &read_size);
-        /* FIXME: I have no idea why this doesn't work, but it causes problems. Look into it later
-        if (R_FAILED(ret))
-        {
-            httpcCloseContext(&context);
-            free(*buf);
-            DEBUG("download failed in http_get\n");
-            return ret;
-        }
-        */
-        *size += read_size;
-
-        if (_header.file_size && install_type != INSTALL_NONE)
-            draw_loading_bar(*size, _header.file_size, install_type);
-    } while (ret == (Result)HTTPC_RESULTCODE_DOWNLOADPENDING);
-    httpcCloseContext(&context);
-
-    // shrink to size
-    new_buf = realloc(*buf, *size);
-    if (new_buf == NULL)
-    {
-        httpcCloseContext(&context);
-        free(*buf);
-        DEBUG("shrinking realloc failed\n"); // 何？
-        return MAKERESULT(RL_FATAL, RS_INTERNAL, RM_KERNEL, RD_OUT_OF_MEMORY);
-    }
-    *buf = new_buf;
-
-    DEBUG("size: %lu\n", *size);
-    if (filename) { DEBUG("filename: %s\n", *filename); }
-    return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
- }

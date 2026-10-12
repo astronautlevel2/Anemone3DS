@@ -30,21 +30,20 @@
 #include "common.h"
 #include "draw.h"
 
-typedef struct {
-    char *result_buf;
-    size_t result_written;
-    size_t result_sz;
-} curl_data;
-
-typedef struct {
-    char *filename;
-    char *mime_type;
-} curl_header;
-
+/*
+ * Downloads url into a newly allocated *buf (NUL terminated, *size excludes the terminator).
+ * filename, if not NULL, receives the Content-Disposition filename (or NULL).
+ * acceptable_mime_types is sent as the Accept header and checked against the Content-Type.
+ * Failures show an error to the user and return a failed Result.
+ *
+ * call example: http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
+ */
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
 
-// special case used only by load_remote_bgm
-// TODO: replace this travesty with a proper handler
-Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error);
+/*
+ * Same as http_get, but a 404 is not an error: it returns
+ * MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA) with *size == 0.
+ */
+Result http_get_optional(const char * url, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
 
 #endif

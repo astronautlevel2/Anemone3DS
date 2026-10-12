@@ -311,7 +311,7 @@ static void load_remote_bgm(const Entry_s * entry)
 
         draw_install(INSTALL_LOADING_REMOTE_BGM);
 
-        Result res = http_get_with_not_found_flag(bgm_url, NULL, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg", false);
+        Result res = http_get_optional(bgm_url, &bgm_ogg, &bgm_size, INSTALL_LOADING_REMOTE_BGM, "application/ogg, audio/ogg");
         free(bgm_url);
         if (R_FAILED(res))
             return;

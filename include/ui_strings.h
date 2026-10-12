@@ -129,7 +129,7 @@ typedef struct {
     const char *search;
     const char *parental_fail;
     const char *zip_not_found;
-    const char *generic_httpc_error;
+    const char *network_error;
     const char *http_timeout;
     const char *http_no_network;
     const char *http_ssl_error;
