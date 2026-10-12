@@ -40,7 +40,7 @@ bool quit = false;
 bool dspfirm = false;
 static audio_s * audio = NULL;
 static bool homebrew = false;
-static bool installed_themes = false;
+bool installed_themes = false;
 bool home_displayed = false;
 u64 time_home_pressed = 0;
 
