@@ -106,6 +106,7 @@ static void exit_services(void)
     cfguExit();
     ptmuExit();
     if (old_time_limit != UINT32_MAX) APT_SetAppCpuTimeLimit(old_time_limit);
+    http_exit();
     acExit();
     ndspExit();
 }

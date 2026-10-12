@@ -36,6 +36,9 @@
 #define MAX_REDIRECTS 10
 #define ERROR_BUFFER_SIZE 0x100
 #define PROGRESS_REDRAW_MS 33
+// The 3DS offers an 8 KB TCP window by default, which holds Wi-Fi downloads to about 360 KB/s; 32 KB nearly doubles that.
+// 64 KB or more no longer fits the window field (the 3DS doesn't scale it) and stalls every transfer.
+#define SOCKET_RECEIVE_BUFFER 0x8000
 
 typedef struct {
     char * buf;
@@ -52,6 +55,73 @@ typedef struct {
     InstallType install_type;
     u64 last_redraw;
 } http_progress;
+
+typedef struct {
+    CURL * easy;
+    CURLM * multi; // runs the transfers, and keeps their connections open for the next one
+} http_handle;
+
+static u32 * soc_buffer = NULL;
+static http_handle * main_handle = NULL; // main thread only
+
+static void http_handle_free(http_handle * handle)
+{
+    if (handle == NULL)
+        return;
+
+    if (handle->multi != NULL)
+        curl_multi_cleanup(handle->multi);
+    if (handle->easy != NULL)
+        curl_easy_cleanup(handle->easy);
+    free(handle);
+}
+
+static bool http_init(void)
+{
+    if (main_handle != NULL)
+        return true;
+
+    if (soc_buffer == NULL)
+    {
+        soc_buffer = memalign(0x1000, SOC_BUFFER_SIZE);
+        if (soc_buffer == NULL)
+            return false;
+
+        if (R_FAILED(socInit(soc_buffer, SOC_BUFFER_SIZE)))
+        {
+            free(soc_buffer);
+            soc_buffer = NULL;
+            return false;
+        }
+    }
+
+    main_handle = calloc(1, sizeof(http_handle));
+    if (main_handle == NULL)
+        return false;
+
+    main_handle->easy = curl_easy_init();
+    main_handle->multi = curl_multi_init();
+    if (main_handle->easy == NULL || main_handle->multi == NULL)
+    {
+        http_handle_free(main_handle);
+        main_handle = NULL;
+        return false;
+    }
+    return true;
+}
+
+void http_exit(void)
+{
+    http_handle_free(main_handle);
+    main_handle = NULL;
+
+    if (soc_buffer != NULL)
+    {
+        socExit();
+        free(soc_buffer);
+        soc_buffer = NULL;
+    }
+}
 
 static bool mime_type_is_acceptable(const char *acceptable_mime_types, const char *mime_type)
 {
@@ -364,6 +434,41 @@ static bool check_status(long status, const char * url, bool not_found_is_error)
     return false;
 }
 
+static int sockopt_callback(void * clientp, curl_socket_t fd, curlsocktype purpose)
+{
+    (void)clientp;
+    (void)purpose;
+
+    const int size = SOCKET_RECEIVE_BUFFER;
+    setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+    return CURL_SOCKOPT_OK;
+}
+
+// Like curl_easy_perform(), but until the response starts poll() only waits 10 ms at a time: the 3DS doesn't wake
+// poll() when a connect() finishes, so curl would sleep out the rest of its 1 s wait before sending the request
+static CURLcode perform(http_handle * handle)
+{
+    CURLMcode mcode = curl_multi_add_handle(handle->multi, handle->easy);
+    int running = 1;
+    while (mcode == CURLM_OK && running)
+    {
+        mcode = curl_multi_perform(handle->multi, &running);
+        curl_off_t first_byte = 0;
+        curl_easy_getinfo(handle->easy, CURLINFO_STARTTRANSFER_TIME_T, &first_byte);
+        if (mcode == CURLM_OK && running)
+            mcode = curl_multi_poll(handle->multi, NULL, 0, first_byte ? 1000 : 10, NULL);
+    }
+
+    CURLcode code = mcode == CURLM_OUT_OF_MEMORY ? CURLE_OUT_OF_MEMORY : CURLE_FAILED_INIT;
+    int queued = 0;
+    const CURLMsg * msg = mcode == CURLM_OK ? curl_multi_info_read(handle->multi, &queued) : NULL;
+    if (msg != NULL && msg->msg == CURLMSG_DONE)
+        code = msg->data.result;
+
+    curl_multi_remove_handle(handle->multi, handle->easy);
+    return code;
+}
+
 static Result http_request(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
 {
     const Result shown_error = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
@@ -373,22 +478,12 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     if (filename != NULL)
         *filename = NULL;
 
-    u32 * soc_buffer = memalign(0x1000, SOC_BUFFER_SIZE);
-    if (soc_buffer == NULL || R_FAILED(socInit(soc_buffer, SOC_BUFFER_SIZE)))
+    if (!http_init())
     {
-        free(soc_buffer);
         show_curl_error(CURLE_FAILED_INIT);
         return shown_error;
     }
-
-    CURL * curl = curl_easy_init();
-    if (curl == NULL)
-    {
-        socExit();
-        free(soc_buffer);
-        show_curl_error(CURLE_FAILED_INIT);
-        return shown_error;
-    }
+    CURL * const curl = main_handle->easy;
 
     char accept_header[0x100] = {0};
     struct curl_slist * headers = NULL;
@@ -414,6 +509,8 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
         curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 102400L);
+        curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+        curl_easy_setopt(curl, CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
         // no CA bundle is shipped (bundled certificates expire); httpc never verified either
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -427,7 +524,7 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
         response.size = 0;
         free_response_headers(&response);
 
-        code = curl_easy_perform(curl);
+        code = perform(main_handle);
         if (code != CURLE_OK)
             break;
 
@@ -451,9 +548,6 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
 
     free(current_url);
     curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-    socExit();
-    free(soc_buffer);
 
     Result ret = shown_error;
     if (code != CURLE_OK)

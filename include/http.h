@@ -46,4 +46,6 @@ Result http_get(const char * url, char ** filename, char ** buf, u32 * size, Ins
  */
 Result http_get_optional(const char * url, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
 
+void http_exit(void);
+
 #endif
