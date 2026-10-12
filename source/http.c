@@ -173,27 +173,78 @@ static int progress_callback(void * clientp, curl_off_t dltotal, curl_off_t dlno
     return 0;
 }
 
-// Content-Disposition: attachment; filename="name.zip"
+static int hex_value(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+// Content-Disposition: attachment; filename="name.zip"; filename*=UTF-8''name.zip
 static char * parse_disposition_filename(const char * disposition)
 {
     if (disposition == NULL)
         return NULL;
 
-    const char * value = strstr(disposition, "filename=");
-    if (value == NULL)
+    char * filename = NULL;
+    const char * value = strcasestr(disposition, "filename*=");
+    if (value != NULL)
+    {
+        value += strlen("filename*=");
+        const char * encoded = strstr(value, "''");
+        if (encoded != NULL)
+            value = encoded + 2;
+
+        const size_t length = strcspn(value, ";");
+        filename = malloc(length + 1);
+        if (filename == NULL)
+            return NULL;
+
+        size_t out = 0;
+        for (size_t i = 0; i < length; ++i)
+        {
+            if (value[i] == '%' && i + 2 < length && hex_value(value[i + 1]) >= 0 && hex_value(value[i + 2]) >= 0)
+            {
+                filename[out++] = (char)(hex_value(value[i + 1]) * 16 + hex_value(value[i + 2]));
+                i += 2;
+            }
+            else
+                filename[out++] = value[i];
+        }
+        filename[out] = '\0';
+    }
+    else if ((value = strcasestr(disposition, "filename=")) != NULL)
+    {
+        value += strlen("filename=");
+        size_t length;
+        if (*value == '"')
+        {
+            ++value;
+            length = strcspn(value, "\"");
+        }
+        else
+            length = strcspn(value, ";");
+
+        filename = strndup(value, length);
+    }
+
+    if (filename == NULL)
         return NULL;
 
-    value += strlen("filename=");
-    size_t length;
-    if (*value == '"')
+    // only keep the name itself, never a path
+    char * name = filename;
+    for (char * c = filename; *c; ++c)
     {
-        ++value;
-        length = strcspn(value, "\"");
+        if (*c == '/' || *c == '\\')
+            name = c + 1;
     }
-    else
-        length = strcspn(value, ";");
+    while (*name == ' ')
+        ++name;
 
-    return strndup(value, length);
+    char * result = *name ? strdup(name) : NULL;
+    free(filename);
+    return result;
 }
 
 static bool is_themeplaza_url(const char * url)
@@ -423,14 +474,6 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     return ret;
 }
 
-static int url_hex_digit(char c)
-{
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-    return -1;
-}
-
 // The last segment of a URL's path, percent-decoded: the name to save a download under when the server names none (no
 // Content-Disposition), e.g. "MyTheme.zip" for a QR code's https://example.com/themes/MyTheme.zip?raw=1. NULL when the
 // path has no last segment.
@@ -453,9 +496,9 @@ static char * url_filename(const char * url)
     size_t length = 0;
     for (const char * c = start; c < end; ++c)
     {
-        if (*c == '%' && end - c > 2 && url_hex_digit(c[1]) >= 0 && url_hex_digit(c[2]) >= 0)
+        if (*c == '%' && end - c > 2 && hex_value(c[1]) >= 0 && hex_value(c[2]) >= 0)
         {
-            name[length++] = (char)(url_hex_digit(c[1]) * 16 + url_hex_digit(c[2]));
+            name[length++] = (char)(hex_value(c[1]) * 16 + hex_value(c[2]));
             c += 2;
         }
         else
