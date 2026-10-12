@@ -478,6 +478,13 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     if (filename != NULL)
         *filename = NULL;
 
+    u32 wifi_status = 0;
+    if (R_SUCCEEDED(ACU_GetWifiStatus(&wifi_status)) && wifi_status == 0)
+    {
+        throw_error(language.remote.http_no_network, ERROR_LEVEL_WARNING);
+        return shown_error;
+    }
+
     if (!http_init())
     {
         show_curl_error(CURLE_FAILED_INIT);
@@ -513,6 +520,9 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
         curl_easy_setopt(curl, CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
         // no CA bundle is shipped (bundled certificates expire); httpc never verified either
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1L);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
