@@ -29,6 +29,7 @@
 
 #include "common.h"
 #include "draw.h"
+#include <curl/curl.h>
 
 /*
  * Downloads url into a newly allocated *buf (NUL terminated, *size excludes the terminator).
@@ -46,6 +47,17 @@ Result http_get(const char * url, char ** filename, char ** buf, u32 * size, Ins
  * MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA) with *size == 0.
  */
 Result http_get_optional(const char * url, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types);
+
+/*
+ * For worker threads: each thread needs its own handle, created on the main thread with
+ * http_background_handle(). These transfers never poll the buttons, draw or show errors,
+ * and abort as soon as *keep_running becomes false. Like http_get_optional, a 404 is not an
+ * error: the Result is a success with RS_NOTFOUND and *size == 0.
+ */
+typedef struct http_handle http_handle;
+http_handle * http_background_handle(void);
+void http_background_handle_free(http_handle * handle);
+Result http_get_background(http_handle * handle, const char * url, char ** buf, u32 * size, const char * acceptable_mime_types, const volatile bool * keep_running);
 
 void http_exit(void);
 

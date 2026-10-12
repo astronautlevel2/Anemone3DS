@@ -54,17 +54,39 @@ typedef struct {
 typedef struct {
     InstallType install_type;
     u64 last_redraw;
+    // background transfers: never touch the buttons, the screen or error dialogs, stop once this is false
+    const volatile bool * keep_running;
 } http_progress;
 
-typedef struct {
+struct http_handle {
     CURL * easy;
     CURLM * multi; // runs the transfers, and keeps their connections open for the next one
-} http_handle;
+};
 
 static u32 * soc_buffer = NULL;
 static http_handle * main_handle = NULL; // main thread only
 
-static void http_handle_free(http_handle * handle)
+static bool http_init_sockets(void)
+{
+    if (soc_buffer != NULL)
+        return true;
+
+    soc_buffer = memalign(0x1000, SOC_BUFFER_SIZE);
+    if (soc_buffer == NULL)
+        return false;
+
+    if (R_FAILED(socInit(soc_buffer, SOC_BUFFER_SIZE)))
+    {
+        free(soc_buffer);
+        soc_buffer = NULL;
+        return false;
+    }
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    return true;
+}
+
+void http_background_handle_free(http_handle * handle)
 {
     if (handle == NULL)
         return;
@@ -76,47 +98,40 @@ static void http_handle_free(http_handle * handle)
     free(handle);
 }
 
+http_handle * http_background_handle(void)
+{
+    if (!http_init_sockets())
+        return NULL;
+
+    http_handle * handle = calloc(1, sizeof(http_handle));
+    if (handle == NULL)
+        return NULL;
+
+    handle->easy = curl_easy_init();
+    handle->multi = curl_multi_init();
+    if (handle->easy == NULL || handle->multi == NULL)
+    {
+        http_background_handle_free(handle);
+        return NULL;
+    }
+    return handle;
+}
+
 static bool http_init(void)
 {
-    if (main_handle != NULL)
-        return true;
-
-    if (soc_buffer == NULL)
-    {
-        soc_buffer = memalign(0x1000, SOC_BUFFER_SIZE);
-        if (soc_buffer == NULL)
-            return false;
-
-        if (R_FAILED(socInit(soc_buffer, SOC_BUFFER_SIZE)))
-        {
-            free(soc_buffer);
-            soc_buffer = NULL;
-            return false;
-        }
-    }
-
-    main_handle = calloc(1, sizeof(http_handle));
     if (main_handle == NULL)
-        return false;
-
-    main_handle->easy = curl_easy_init();
-    main_handle->multi = curl_multi_init();
-    if (main_handle->easy == NULL || main_handle->multi == NULL)
-    {
-        http_handle_free(main_handle);
-        main_handle = NULL;
-        return false;
-    }
-    return true;
+        main_handle = http_background_handle();
+    return main_handle != NULL;
 }
 
 void http_exit(void)
 {
-    http_handle_free(main_handle);
+    http_background_handle_free(main_handle);
     main_handle = NULL;
 
     if (soc_buffer != NULL)
     {
+        curl_global_cleanup();
         socExit();
         free(soc_buffer);
         soc_buffer = NULL;
@@ -248,7 +263,10 @@ static int progress_callback(void * clientp, curl_off_t dltotal, curl_off_t dlno
 
     http_progress * progress = (http_progress *)clientp;
 
-    // http_get only runs on the main thread, so polling the buttons here is safe
+    if (progress->keep_running != NULL)
+        return *progress->keep_running ? 0 : 1;
+
+    // only main thread transfers get here, so polling the buttons is safe
     hidScanInput();
     if (hidKeysHeld() & KEY_B)
         set_loading_cancel_requested(true);
@@ -374,7 +392,7 @@ static void show_curl_error(CURLcode code)
 }
 
 // returns false and shows an error for anything that isn't a usable response
-static bool check_status(long status, const char * url, bool not_found_is_error)
+static bool check_status(long status, const char * url, bool not_found_is_error, bool silent)
 {
     char err_buf[ERROR_BUFFER_SIZE];
     switch (status)
@@ -438,7 +456,8 @@ static bool check_status(long status, const char * url, bool not_found_is_error)
     }
 
     DEBUG("HTTP %ld; URL: %s\n", status, url);
-    throw_error(err_buf, ERROR_LEVEL_WARNING);
+    if (!silent)
+        throw_error(err_buf, ERROR_LEVEL_WARNING);
     return false;
 }
 
@@ -477,8 +496,10 @@ static CURLcode perform(http_handle * handle)
     return code;
 }
 
-static Result http_request(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
+// http == NULL: main thread transfer with progress, B to cancel and error dialogs
+static Result http_request(http_handle * http, const volatile bool * keep_running, const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
 {
+    const bool background = http != NULL;
     const Result shown_error = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
     const Result canceled = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_CANCEL_REQUESTED);
 
@@ -487,22 +508,26 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     if (filename != NULL)
         *filename = NULL;
 
-    if (loading_cancel_requested())
-        return canceled;
-
-    u32 wifi_status = 0;
-    if (R_SUCCEEDED(ACU_GetWifiStatus(&wifi_status)) && wifi_status == 0)
+    if (!background)
     {
-        throw_error(language.remote.http_no_network, ERROR_LEVEL_WARNING);
-        return shown_error;
-    }
+        if (loading_cancel_requested())
+            return canceled;
 
-    if (!http_init())
-    {
-        show_curl_error(CURLE_FAILED_INIT);
-        return shown_error;
+        u32 wifi_status = 0;
+        if (R_SUCCEEDED(ACU_GetWifiStatus(&wifi_status)) && wifi_status == 0)
+        {
+            throw_error(language.remote.http_no_network, ERROR_LEVEL_WARNING);
+            return shown_error;
+        }
+
+        if (!http_init())
+        {
+            show_curl_error(CURLE_FAILED_INIT);
+            return shown_error;
+        }
+        http = main_handle;
     }
-    CURL * const curl = main_handle->easy;
+    CURL * const handle = http->easy;
 
     char accept_header[0x100] = {0};
     struct curl_slist * headers = NULL;
@@ -513,7 +538,7 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     }
 
     http_response response = {0};
-    http_progress progress = { .install_type = install_type };
+    http_progress progress = { .install_type = install_type, .keep_running = keep_running };
     char * current_url = strdup(url);
     long status = 0;
     CURLcode code = CURLE_OK;
@@ -523,39 +548,39 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     // redirects are followed here rather than by curl, so a 303 can be reported instead of followed
     for (int redirects = 0; current_url != NULL; ++redirects)
     {
-        curl_easy_reset(curl);
-        curl_easy_setopt(curl, CURLOPT_URL, current_url);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 102400L);
-        curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
-        curl_easy_setopt(curl, CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
+        curl_easy_reset(handle);
+        curl_easy_setopt(handle, CURLOPT_URL, current_url);
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, USER_AGENT);
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, 102400L);
+        curl_easy_setopt(handle, CURLOPT_TCP_KEEPALIVE, 1L);
+        curl_easy_setopt(handle, CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
         // no CA bundle is shipped (bundled certificates expire); httpc never verified either
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1L);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
-        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
-        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &progress);
+        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, 15L);
+        curl_easy_setopt(handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
+        curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, 30L);
+        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, header_callback);
+        curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response);
+        curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, progress_callback);
+        curl_easy_setopt(handle, CURLOPT_XFERINFODATA, &progress);
 
         response.size = 0;
         free_response_headers(&response);
 
-        code = perform(main_handle);
+        code = perform(http);
         if (code != CURLE_OK)
             break;
 
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &status);
         if (status != 301 && status != 302 && status != 307 && status != 308)
             break;
 
         char * location = NULL;
-        curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &location);
+        curl_easy_getinfo(handle, CURLINFO_REDIRECT_URL, &location);
         free(current_url);
         current_url = NULL;
         if (location == NULL || redirects >= MAX_REDIRECTS)
@@ -580,9 +605,10 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     else if (code != CURLE_OK)
     {
         DEBUG("curl error %d: %s\n", code, curl_easy_strerror(code));
-        show_curl_error(code);
+        if (!background)
+            show_curl_error(code);
     }
-    else if (!check_status(status, url, not_found_is_error))
+    else if (!check_status(status, url, not_found_is_error, background))
     {
         if (status == 404 && !not_found_is_error)
             ret = MAKERESULT(RL_SUCCESS, RS_NOTFOUND, RM_FILE_SERVER, RD_NO_DATA);
@@ -590,7 +616,8 @@ static Result http_request(const char * url, char ** filename, char ** buf, u32 
     else if (!mime_type_is_acceptable(acceptable_mime_types, response.content_type))
     {
         DEBUG("Server sent %s, expected %s\n", response.content_type, acceptable_mime_types);
-        throw_error(language.remote.zip_not_found, ERROR_LEVEL_WARNING);
+        if (!background)
+            throw_error(language.remote.zip_not_found, ERROR_LEVEL_WARNING);
     }
     else
     {
@@ -659,7 +686,7 @@ static char * url_filename(const char * url)
 
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    Result res = http_request(url, filename, buf, size, install_type, acceptable_mime_types, true);
+    Result res = http_request(NULL, NULL, url, filename, buf, size, install_type, acceptable_mime_types, true);
     // the server named no file: use the URL's name (save_zip_to_sd falls back to "download.zip" when that's
     // missing too)
     if (R_SUCCEEDED(res) && filename != NULL && *filename == NULL)
@@ -669,5 +696,13 @@ Result http_get(const char * url, char ** filename, char ** buf, u32 * size, Ins
 
 Result http_get_optional(const char * url, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    return http_request(url, NULL, buf, size, install_type, acceptable_mime_types, false);
+    return http_request(NULL, NULL, url, NULL, buf, size, install_type, acceptable_mime_types, false);
+}
+
+Result http_get_background(http_handle * handle, const char * url, char ** buf, u32 * size, const char * acceptable_mime_types, const volatile bool * keep_running)
+{
+    if (handle == NULL || keep_running == NULL)
+        return MAKERESULT(RL_PERMANENT, RS_INVALIDARG, RM_APPLICATION, RD_INVALID_POINTER);
+
+    return http_request(handle, keep_running, url, NULL, buf, size, INSTALL_NONE, acceptable_mime_types, false);
 }
