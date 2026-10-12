@@ -437,20 +437,21 @@ static void draw_instructions(Instructions_s instructions)
     C2D_ImageTint white_tint;
     C2D_PlainImageTint(&white_tint, colors[COLOR_WHITE_BACKGROUND], 1.0f);
 
-    const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
-    if(start_line != NULL)
-    {
-        C2D_SpriteSetPos(&sprite_start, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
-        C2D_DrawSpriteTinted(&sprite_start, &white_tint);
-        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], start_line, 0.6, 0, BUTTONS_X_RIGHT-2);
-    }
-
+    // SELECT is left of START on the console, so its hint is drawn on the left
     const char * select_line = instructions.instructions[BUTTONS_INFO_LINES-1][1];
     if(select_line != NULL)
     {
-        C2D_SpriteSetPos(&sprite_select, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_SpriteSetPos(&sprite_select, BUTTONS_X_LEFT-10, BUTTONS_Y_LINE_4 + 3);
         C2D_DrawSpriteTinted(&sprite_select, &white_tint);
-        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], select_line, 0.6, 0, BUTTONS_X_MAX-2);
+        draw_text_wrap_scaled(BUTTONS_X_LEFT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], select_line, 0.6, 0, BUTTONS_X_RIGHT-2);
+    }
+
+    const char * start_line = instructions.instructions[BUTTONS_INFO_LINES-1][0];
+    if(start_line != NULL)
+    {
+        C2D_SpriteSetPos(&sprite_start, BUTTONS_X_RIGHT-10, BUTTONS_Y_LINE_4 + 3);
+        C2D_DrawSpriteTinted(&sprite_start, &white_tint);
+        draw_text_wrap_scaled(BUTTONS_X_RIGHT+26, BUTTONS_Y_LINE_4, 0.5, colors[COLOR_WHITE_BACKGROUND], start_line, 0.6, 0, BUTTONS_X_MAX-2);
     }
 }
 
