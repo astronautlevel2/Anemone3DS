@@ -478,10 +478,25 @@ void free_preview(C2D_Image preview)
 }
 
 // Initialize the audio struct
+static u32 open_data_stream(const char * filename, const Entry_s * entry, File_Stream_s * stream)
+{
+    if(entry->is_zip)
+        return zip_file_stream_open(filename + 1, entry->path, stream);
+
+    u16 path[0x106] = {0};
+    strucat(path, entry->path);
+    struacat(path, filename);
+    return file_stream_open(fsMakePath(PATH_UTF16, path), ArchiveSD, stream);
+}
+
 Result load_audio(const Entry_s * entry, audio_s * audio) 
 {
-    audio->music_size = load_data("/bgm.bcstm", entry, &audio->music_buf);
-    if (audio->music_size == 0) {
+    // only open the file: the audio thread reads it while the music plays
+    audio->music_size = open_data_stream("/bgm.bcstm", entry, &audio->stream);
+    audio->music_buf = audio->music_size != 0 ? malloc(audio->music_size) : NULL;
+    audio->loaded = 0;
+    if (audio->music_buf == NULL) {
+        file_stream_close(&audio->stream);
         free(audio);
         DEBUG("<load_audio> File not found!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);

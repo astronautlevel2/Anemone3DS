@@ -453,6 +453,21 @@ static Zip_Lookup_e zip_seek_file(File_Stream_s * stream, const char * file_name
     return ZIP_NOT_FOUND;
 }
 
+u32 file_stream_open(FS_Path path, FS_Archive archive, File_Stream_s * stream)
+{
+    memset(stream, 0, sizeof(File_Stream_s));
+    if(R_FAILED(FSUSER_OpenFile(&stream->file, archive, path, FS_OPEN_READ, 0)))
+    {
+        stream->file = 0;
+        return 0;
+    }
+
+    u64 size = 0;
+    FSFILE_GetSize(stream->file, &size);
+    stream->left = size;
+    return stream->left;
+}
+
 u32 zip_file_stream_open(const char * file_name, const u16 * zip_path, File_Stream_s * stream)
 {
     memset(stream, 0, sizeof(File_Stream_s));
