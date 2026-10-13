@@ -34,6 +34,7 @@
 
 #include <archive.h>
 #include <archive_entry.h>
+#include <zlib.h>
 
 FS_Archive ArchiveSD;
 FS_Archive ArchiveHomeExt;
@@ -347,13 +348,228 @@ u32 zip_memory_to_buf(const char * file_name, void * zip_memory, size_t zip_size
     return zip_to_buf(a, file_name, buf);
 }
 
-u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf)
+/*
+ * A file in a zip is found through the central directory at the end of the zip, instead of going through the
+ * zip from its start like libarchive does. Zips this doesn't handle are read with libarchive.
+ */
+#define ZIP_TAIL_SIZE 0x1000 // holds the central directory of a theme or splash zip
+#define ZIP_EOCD_SIZE 22
+#define ZIP_CENTRAL_HEADER_SIZE 46
+#define ZIP_LOCAL_HEADER_SIZE 30
+#define ZIP_READ_CHUNK 0x10000
+
+typedef enum {
+    ZIP_FOUND,
+    ZIP_NOT_FOUND,
+    ZIP_UNSUPPORTED,
+} Zip_Lookup_e;
+
+static u16 get_u16(const u8 * p)
 {
-    struct archive * a = open_zip(zip_path);
-    if(a == NULL)
+    return p[0] | (p[1] << 8);
+}
+
+static u32 get_u32(const u8 * p)
+{
+    return p[0] | (p[1] << 8) | (p[2] << 16) | ((u32)p[3] << 24);
+}
+
+static bool read_at(Handle file, u64 offset, void * buf, u32 size)
+{
+    u32 read = 0;
+    return R_SUCCEEDED(FSFILE_Read(file, &read, offset, buf, size)) && read == size;
+}
+
+static Zip_Lookup_e zip_seek_data(File_Stream_s * stream, const u8 * entry, u32 * size, bool * deflated)
+{
+    const u16 method = get_u16(entry + 10);
+    const u32 compressed_size = get_u32(entry + 20);
+    const u32 local_offset = get_u32(entry + 42);
+    *size = get_u32(entry + 24);
+    *deflated = method == 8;
+
+    // encrypted files, other compression methods and zip64 sizes are left to libarchive
+    u8 local[ZIP_LOCAL_HEADER_SIZE];
+    if((get_u16(entry + 8) & 1) || !(*deflated || (method == 0 && compressed_size == *size))
+        || *size == 0xFFFFFFFF || compressed_size == 0xFFFFFFFF
+        || !read_at(stream->file, local_offset, local, sizeof(local)) || get_u32(local) != 0x04034B50)
+        return ZIP_UNSUPPORTED;
+
+    stream->offset = (u64)local_offset + ZIP_LOCAL_HEADER_SIZE + get_u16(local + 26) + get_u16(local + 28);
+    stream->left = compressed_size;
+    return ZIP_FOUND;
+}
+
+static Zip_Lookup_e zip_seek_file(File_Stream_s * stream, const char * file_name, u32 * size, bool * deflated)
+{
+    u64 zip_size = 0;
+    u8 tail[ZIP_TAIL_SIZE];
+    if(R_FAILED(FSFILE_GetSize(stream->file, &zip_size)) || zip_size < ZIP_EOCD_SIZE)
+        return ZIP_UNSUPPORTED;
+
+    const u32 tail_size = zip_size < ZIP_TAIL_SIZE ? zip_size : ZIP_TAIL_SIZE;
+    const u64 tail_offset = zip_size - tail_size;
+    if(!read_at(stream->file, tail_offset, tail, tail_size))
+        return ZIP_UNSUPPORTED;
+
+    // the end of central directory record, followed only by the zip's comment
+    s32 eocd = tail_size - ZIP_EOCD_SIZE;
+    while(eocd >= 0 && !(get_u32(tail + eocd) == 0x06054B50 && eocd + ZIP_EOCD_SIZE + get_u16(tail + eocd + 20) == (s32)tail_size))
+        eocd--;
+    if(eocd < 0)
+        return ZIP_UNSUPPORTED;
+
+    const u16 entries = get_u16(tail + eocd + 10);
+    const u32 central_size = get_u32(tail + eocd + 12);
+    const u32 central_offset = get_u32(tail + eocd + 16);
+    // zip64, split zips and central directories that don't fit in the tail are left to libarchive
+    if(entries == 0xFFFF || get_u16(tail + eocd + 4) != 0 || central_offset < tail_offset
+        || (u64)central_offset + central_size > tail_offset + eocd)
+        return ZIP_UNSUPPORTED;
+
+    const size_t name_len = strlen(file_name);
+    const u8 * entry = tail + (central_offset - tail_offset);
+    const u8 * const end = entry + central_size;
+    for(u16 i = 0; i < entries; i++)
+    {
+        if(end - entry < ZIP_CENTRAL_HEADER_SIZE || get_u32(entry) != 0x02014B50)
+            return ZIP_UNSUPPORTED;
+
+        const u16 entry_name_len = get_u16(entry + 28);
+        const u32 entry_size = ZIP_CENTRAL_HEADER_SIZE + entry_name_len + get_u16(entry + 30) + get_u16(entry + 32);
+        if((u32)(end - entry) < entry_size)
+            return ZIP_UNSUPPORTED;
+
+        if(entry_name_len == name_len && !strncasecmp((const char *)entry + ZIP_CENTRAL_HEADER_SIZE, file_name, name_len))
+            return zip_seek_data(stream, entry, size, deflated);
+
+        entry += entry_size;
+    }
+
+    return ZIP_NOT_FOUND;
+}
+
+u32 zip_file_stream_open(const char * file_name, const u16 * zip_path, File_Stream_s * stream)
+{
+    memset(stream, 0, sizeof(File_Stream_s));
+    if(R_FAILED(FSUSER_OpenFile(&stream->file, ArchiveSD, fsMakePath(PATH_UTF16, zip_path), FS_OPEN_READ, 0)))
+    {
+        stream->file = 0;
+        return 0;
+    }
+
+    u32 size = 0;
+    bool deflated = false;
+    Zip_Lookup_e lookup = zip_seek_file(stream, file_name, &size, &deflated);
+    if(lookup == ZIP_FOUND && deflated)
+    {
+        stream->inflater = calloc(1, sizeof(z_stream));
+        stream->in = malloc(ZIP_READ_CHUNK);
+        // raw deflate, zips have no zlib header
+        if(stream->inflater == NULL || stream->in == NULL || inflateInit2(stream->inflater, -MAX_WBITS) != Z_OK)
+        {
+            free(stream->inflater);
+            stream->inflater = NULL;
+            lookup = ZIP_UNSUPPORTED;
+        }
+    }
+
+    if(lookup == ZIP_FOUND)
+        return size;
+
+    file_stream_close(stream);
+    if(lookup == ZIP_NOT_FOUND)
         return 0;
 
-    return zip_to_buf(a, file_name, buf);
+    stream->archive = open_zip(zip_path);
+    struct archive_entry * entry;
+    while(stream->archive != NULL && archive_read_next_header(stream->archive, &entry) == ARCHIVE_OK)
+    {
+        if(!strcasecmp(archive_entry_pathname(entry), file_name))
+            return (u32)archive_entry_size(entry);
+    }
+
+    file_stream_close(stream);
+    return 0;
+}
+
+u32 file_stream_read(File_Stream_s * stream, char * buf, u32 size)
+{
+    if(stream->archive != NULL)
+    {
+        const la_ssize_t read = archive_read_data(stream->archive, buf, size);
+        return read > 0 ? (u32)read : 0;
+    }
+
+    if(stream->inflater == NULL)
+    {
+        const u32 read = size < stream->left ? size : stream->left;
+        if(read == 0 || !read_at(stream->file, stream->offset, buf, read))
+            return 0;
+        stream->offset += read;
+        stream->left -= read;
+        return read;
+    }
+
+    z_stream * const inflater = stream->inflater;
+    inflater->next_out = (Bytef *)buf;
+    inflater->avail_out = size;
+    while(inflater->avail_out > 0)
+    {
+        if(inflater->avail_in == 0)
+        {
+            const u32 chunk = stream->left < ZIP_READ_CHUNK ? stream->left : ZIP_READ_CHUNK;
+            if(chunk == 0 || !read_at(stream->file, stream->offset, stream->in, chunk))
+                break;
+            stream->offset += chunk;
+            stream->left -= chunk;
+            inflater->next_in = stream->in;
+            inflater->avail_in = chunk;
+        }
+
+        if(inflate(inflater, Z_NO_FLUSH) != Z_OK)
+            break;
+    }
+
+    return size - inflater->avail_out;
+}
+
+void file_stream_close(File_Stream_s * stream)
+{
+    if(stream->inflater != NULL)
+        inflateEnd(stream->inflater);
+    free(stream->inflater);
+    free(stream->in);
+    if(stream->archive != NULL)
+        archive_read_free(stream->archive);
+    if(stream->file != 0)
+        FSFILE_Close(stream->file);
+    memset(stream, 0, sizeof(File_Stream_s));
+}
+
+u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf)
+{
+    File_Stream_s stream;
+    const u32 size = zip_file_stream_open(file_name, zip_path, &stream);
+    char * data = size != 0 ? malloc(size) : NULL;
+    u32 loaded = 0;
+    while(data != NULL && loaded < size)
+    {
+        const u32 read = file_stream_read(&stream, data + loaded, size - loaded);
+        if(read == 0)
+            break;
+        loaded += read;
+    }
+    file_stream_close(&stream);
+
+    if(data == NULL || loaded != size)
+    {
+        free(data);
+        return 0;
+    }
+
+    *buf = data;
+    return size;
 }
 
 Result buf_to_file(u32 size, FS_Path path, FS_Archive archive, char * buf)
