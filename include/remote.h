@@ -55,8 +55,6 @@
 #define THEMEPLAZA_ICON_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/preview/icon"
 #define THEMEPLAZA_SMDH_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/smdh"
 
-#define CACHE_PATH_FORMAT            "/3ds/"  APP_TITLE  "/cache/%"  JSON_INTEGER_FORMAT
-
 typedef struct {
     char *result_buf;
     size_t result_written;

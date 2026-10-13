@@ -361,7 +361,7 @@ const Language_s language_english = {
                 },
                 {
                     NULL,
-                    "\uE07C Reload without cache"
+                    NULL
                 },
                 {
                     "\uE004 Switch to Badges",
@@ -382,7 +382,7 @@ const Language_s language_english = {
                 },
                 {
                     NULL,
-                    "\uE07C Reload without cache"
+                    NULL
                 },
                 {
                     "\uE004 Switch to Themes",
@@ -403,7 +403,7 @@ const Language_s language_english = {
                 },
                 {
                     NULL,
-                    "\uE07C Reload without cache"
+                    NULL
                 },
                 {
                     "\uE004 Switch to Splashes",
@@ -1180,7 +1180,7 @@ const Language_s language_french = {
                 },
                 {
                     NULL,
-                    "\uE07C Actualiser sans cache"
+                    NULL
                 },
                 {
                     "\uE004 Naviguer les Badges",
@@ -1201,7 +1201,7 @@ const Language_s language_french = {
                 },
                 {
                     NULL,
-                    "\uE07C Actualiser sans cache"
+                    NULL
                 },
                 {
                     "\uE004 Naviguer les Thèmes",
@@ -1222,7 +1222,7 @@ const Language_s language_french = {
                 },
                 {
                     NULL,
-                    "\uE07C Actualiser sans cache"
+                    NULL
                 },
                 {
                     "\uE004 Naviguer les Splashs",
@@ -1589,7 +1589,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     NULL,
-                    "\uE07C Recarregar sem cache"
+                    NULL
                 },
                 {
                     "\uE004 Mudar p. Insígnias",
@@ -1610,7 +1610,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     NULL,
-                    "\uE07C Recarregar sem cache"
+                    NULL
                 },
                 {
                     "\uE004 Mudar p. Temas",
@@ -1631,7 +1631,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     NULL,
-                    "\uE07C Recarregar sem cache"
+                    NULL
                 },
                 {
                     "\uE004 Mudar p. Splashes",
@@ -2001,7 +2001,7 @@ const Language_s language_korean = {
                 },
                 {
                     NULL,
-                    "\uE07C Reload w/o cache"
+                    NULL
                 },
                 {
                     "\uE004 Go to Badges",
@@ -2022,7 +2022,7 @@ const Language_s language_korean = {
                 },
                 {
                     NULL,
-                    "\uE07C Reload w/o cache"
+                    NULL
                 },
                 {
                     "\uE004 Go to Themes",
@@ -2043,7 +2043,7 @@ const Language_s language_korean = {
                 },
                 {
                     NULL,
-                    "\uE07C Reload w/o cache"
+                    NULL
                 },
                 {
                     "\uE004 Go to Splashes",

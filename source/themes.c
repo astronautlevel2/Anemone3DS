@@ -30,9 +30,6 @@
 #include "draw.h"
 #include "ui_strings.h"
 
-#define BODY_CACHE_SIZE 0x150000
-#define BGM_MAX_SIZE 0x337000
-
 static Result install_theme_internal(const Entry_List_s * themes, int installmode)
 {
     Result res = 0;
