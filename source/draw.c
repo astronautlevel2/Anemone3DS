@@ -129,6 +129,8 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_CHECKING_DOWNLOAD], staticBuf, language.draw.checking_dl);
     C2D_TextParse(&text[TEXT_INSTALL_ENTRY_DELETE], staticBuf, language.draw.delete_sd);
 
+    C2D_TextParse(&text[TEXT_INSTALL_CLEAN_CACHE], staticBuf, language.draw.cleaning_cache);
+
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_THEMES], staticBuf, language.draw.download_themes);
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_SPLASHES], staticBuf, language.draw.download_splashes);
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BADGES], staticBuf, language.draw.download_badges);

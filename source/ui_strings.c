@@ -206,6 +206,7 @@ const Language_s language_english = {
         .downloading = "Downloading...",
         .checking_dl = "Checking downloaded file...",
         .delete_sd = "Deleting from SD...",
+        .cleaning_cache = "Cleaning up...\nThis might take a while.",
         .download_themes = "Downloading theme list, please wait...",
         .download_splashes = "Downloading splash list, please wait...",
         .download_badges = "Downloading badge list, please wait...",
@@ -615,6 +616,7 @@ const Language_s language_spanish = {
         .downloading = "Descargando...",
         .checking_dl = "Comprobando archivo descargado...",
         .delete_sd = "Eliminando de la SD...",
+        .cleaning_cache = "Cleaning up...\nThis might take a while.",
         .download_themes = "Descargando lista de temas,\npor favor espera...",
         .download_splashes = "Descargando lista de fondos, por favor espera...",
         .download_badges = "Descargando lista de insignias,\npor favor espera...",
@@ -770,7 +772,7 @@ const Language_s language_spanish = {
                 },
                 {
                     NULL,
-                    "\uE07C Recargar sin caché"
+                    NULL
                 },
                 {
                     "\uE004 Cambiar Insignias",
@@ -791,7 +793,7 @@ const Language_s language_spanish = {
                 },
                 {
                     NULL,
-                    "\uE07C Recargar sin caché"
+                    NULL
                 },
                 {
                     "\uE004 Cambiar Temas",
@@ -812,7 +814,7 @@ const Language_s language_spanish = {
                 },
                 {
                     NULL,
-                    "\uE07C Recargar sin caché"
+                    NULL
                 },
                 {
                     "\uE004 Cambiar Splashes",
@@ -1025,6 +1027,7 @@ const Language_s language_french = {
         .downloading = "Téléchargement...",
         .checking_dl = "Vérification du fichier...",
         .delete_sd = "Effacement...",
+        .cleaning_cache = "Nettoyage en cours...\nCeci peut prendre un moment...",
         .download_themes = "Téléchargement de la liste des thèmes,\nveuillez patienter...",
         .download_splashes = "Téléchargement de la liste des splashs,\nveuillez patienter...",
         .download_badges = "Téléchargement de la liste des badges,\nveuillez patienter...",
@@ -1434,6 +1437,7 @@ const Language_s language_portuguese = {
         .downloading = "Baixando...",
         .checking_dl = "Verificando arquivo instalado...",
         .delete_sd = "Deletando do SD...",
+        .cleaning_cache = "Cleaning up...\nThis might take a while.",
         .download_themes = "Baixando a lista de temas, aguarde...",
         .download_splashes = "Baixando a lista de splashes, aguarde...",
         .download_badges = "Baixando a lista de insígnias, aguarde...",
@@ -1845,6 +1849,7 @@ const Language_s language_korean = {
         .downloading = "Downloading...",
         .checking_dl = "Checking downloaded file...",
         .delete_sd = "Deleting from SD...",
+        .cleaning_cache = "Cleaning up...\nThis might take a while.",
         .download_themes = "Downloading theme list,\nplease wait...",
         .download_splashes = "Downloading splash list,\nplease wait...",
         .download_badges = "Downloading badge list,\nplease wait...",
@@ -2255,6 +2260,7 @@ const Language_s language_SChinese = {
         .downloading = "下载中...",
         .checking_dl = "正在检查下载的文件...",
         .delete_sd = "正在从SD卡删除...",
+        .cleaning_cache = "Cleaning up...\nThis might take a while.",
         .download_themes = "正在下载主题列表, 请稍等...",
         .download_splashes = "正在下载开机图画列表, 请稍等...",
         .download_badges = "正在下载徽章列表, 请稍等...",

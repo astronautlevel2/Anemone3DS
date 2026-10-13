@@ -384,6 +384,7 @@ int main(void)
     const CFG_Language lang = get_system_language();
     language = init_strings(lang);
     init_screens();
+    clean_old_cache();
 
     svcCreateMutex(&update_icons_mutex, true);
 
