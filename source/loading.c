@@ -466,6 +466,14 @@ Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio)
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
     }
 
+    return load_audio_ogg_from_buffer(audio->filebuf, audio->filesize, audio);
+}
+
+Result load_audio_ogg_from_buffer(char * buffer, u32 size, audio_ogg_s * audio)
+{
+    audio->filebuf = buffer;
+    audio->filesize = size;
+
     audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
 
     ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 

@@ -72,6 +72,7 @@ typedef struct {
     const char *downloading;
     const char *checking_dl;
     const char *delete_sd;
+    const char *cleaning_cache;
     const char *download_themes;
     const char *download_splashes;
     const char *download_badges;

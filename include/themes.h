@@ -31,6 +31,8 @@
 #include "loading.h"
 
 #define MAX_SHUFFLE_THEMES 10
+#define BODY_CACHE_SIZE 0x150000
+#define BGM_MAX_SIZE 0x337000
 
 enum ThemeInstall {
     THEME_INSTALL_SHUFFLE = BIT(0),

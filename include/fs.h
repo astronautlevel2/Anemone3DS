@@ -56,6 +56,7 @@ typedef struct {
 } Parental_Restrictions_s;
 
 Result init_sd(void);
+void clean_old_cache(void);
 Result open_archives(void);
 Result open_badge_extdata(void);
 Result close_archives(void);

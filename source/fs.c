@@ -75,10 +75,23 @@ Result init_sd(void)
 
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/" APP_TITLE "/BadgeBackups"), FS_ATTRIBUTE_DIRECTORY);
 
     return 0;
+}
+
+void clean_old_cache(void) {
+    const FS_Path cache_path = fsMakePath(PATH_ASCII, "/3ds/" APP_TITLE "/cache");
+    Handle cache_dir;
+    if (R_FAILED(FSUSER_OpenDirectory(&cache_dir, ArchiveSD, cache_path)))
+        return;
+
+    FSDIR_Close(cache_dir);
+    draw_install(INSTALL_CLEAN_CACHE);
+
+    Result res = FSUSER_DeleteDirectoryRecursively(ArchiveSD, cache_path);
+    if (R_FAILED(res))
+        throw_error(language.fs.fs_error, ERROR_LEVEL_WARNING); // should be silent, but if it happens, something clearly wrong
 }
 
 Result open_archives(void)
