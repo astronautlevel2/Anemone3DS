@@ -264,26 +264,34 @@ u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf)
     return (u32)size;
 }
 
-s16 for_each_file_zip(u16 *zip_path, u32 (*zip_iter_callback)(char *filebuf, u64 file_size, const char *name, void *userdata), void *userdata)
+static struct archive * open_zip(const u16 * zip_path)
 {
-    struct archive *a = archive_read_new();
-    archive_read_support_format_zip(a);
-
-    ssize_t len = strulen(zip_path, 0x106);
-    char * path = calloc(len, sizeof(u16));
-    utf16_to_utf8((u8 *)path, zip_path, len * sizeof(u16));
+    // a UTF-16 unit takes up to 3 bytes in UTF-8
+    const size_t path_size = strulen(zip_path, 0x106) * 3 + 1;
+    char * path = calloc(path_size, 1);
+    if(path == NULL)
+        return NULL;
+    utf16_to_utf8((u8 *)path, zip_path, path_size - 1);
     DEBUG("Attempting to open zip %s\n", path);
 
+    struct archive * a = archive_read_new();
+    archive_read_support_format_zip(a);
     int r = archive_read_open_filename(a, path, 0x4000);
     free(path);
     if(r != ARCHIVE_OK)
     {
         DEBUG("Invalid zip being opened\n");
-        char path[0x128] = {0};
-        utf16_to_utf8((u8 *) path, zip_path, 0x128);
-        DEBUG("%s\n", path);
-        return -1;
+        archive_read_free(a);
+        return NULL;
     }
+    return a;
+}
+
+s16 for_each_file_zip(u16 *zip_path, u32 (*zip_iter_callback)(char *filebuf, u64 file_size, const char *name, void *userdata), void *userdata)
+{
+    struct archive *a = open_zip(zip_path);
+    if(a == NULL)
+        return -1;
 
     struct archive_entry *entry;
     u64 file_size = 0;
@@ -345,23 +353,9 @@ u32 zip_memory_to_buf(const char * file_name, void * zip_memory, size_t zip_size
 
 u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf)
 {
-    ssize_t len = strulen(zip_path, 0x106);
-    char * path = calloc(len, sizeof(u16));
-    utf16_to_utf8((u8 *)path, zip_path, len * sizeof(u16));
-
-    struct archive * a = archive_read_new();
-    archive_read_support_format_zip(a);
-
-    int r = archive_read_open_filename(a, path, 0x4000);
-    free(path);
-    if(r != ARCHIVE_OK)
-    {
-        DEBUG("Invalid zip being opened\n");
-        char path[0x128] = {0};
-        utf16_to_utf8((u8 *) path, zip_path, 0x128);
-        DEBUG("%s\n", path);
+    struct archive * a = open_zip(zip_path);
+    if(a == NULL)
         return 0;
-    }
 
     return zip_to_buf(a, file_name, buf);
 }
