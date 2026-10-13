@@ -41,11 +41,19 @@
 #define SOCKET_RECEIVE_BUFFER 0x8000
 
 typedef struct {
+    char * buf; // written as it arrives instead of buf, for http_get_background_into()
+    u32 capacity;
+    volatile u32 * received;
+} http_stream;
+
+typedef struct {
     char * buf;
     size_t size;
     size_t capacity;
     size_t content_length; // 0 when the server didn't send one
     bool too_large;
+    long status; // of the response being received
+    const http_stream * stream;
 
     char * content_type;
     char * content_disposition;
@@ -171,6 +179,24 @@ static size_t write_callback(char * ptr, size_t size, size_t nmemb, void * userd
     http_response * response = (http_response *)userdata;
     const size_t bytes = size * nmemb;
 
+    if (response->stream != NULL)
+    {
+        // only the file itself, not the body of a redirect or an error
+        if (response->status < 200 || response->status >= 300)
+            return bytes;
+        if (response->size + bytes > response->stream->capacity)
+        {
+            response->too_large = true;
+            return 0;
+        }
+
+        memcpy(response->stream->buf + response->size, ptr, bytes);
+        response->size += bytes;
+        __sync_synchronize(); // the data before the count that says it's there
+        *response->stream->received = response->size;
+        return bytes;
+    }
+
     if (response->size + bytes + 1 > MAX_DOWNLOAD_SIZE)
     {
         response->too_large = true;
@@ -220,6 +246,8 @@ static size_t header_callback(char * buffer, size_t size, size_t nitems, void * 
     if (length >= 5 && !strncmp(buffer, "HTTP/", 5))
     {
         free_response_headers(response);
+        const char * code = memchr(buffer, ' ', length);
+        response->status = code != NULL ? strtol(code + 1, NULL, 10) : 0;
         return length;
     }
 
@@ -497,7 +525,7 @@ static CURLcode perform(http_handle * handle)
 }
 
 // http == NULL: main thread transfer with progress, B to cancel and error dialogs
-static Result http_request(http_handle * http, const volatile bool * keep_running, const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
+static Result http_request(http_handle * http, const volatile bool * keep_running, const http_stream * stream, const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error)
 {
     const bool background = http != NULL;
     const Result shown_error = MAKERESULT(RL_TEMPORARY, RS_CANCELED, RM_APPLICATION, RD_NO_DATA);
@@ -537,7 +565,7 @@ static Result http_request(http_handle * http, const volatile bool * keep_runnin
         headers = curl_slist_append(headers, accept_header);
     }
 
-    http_response response = {0};
+    http_response response = { .stream = stream };
     http_progress progress = { .install_type = install_type, .keep_running = keep_running };
     char * current_url = strdup(url);
     long status = 0;
@@ -624,7 +652,7 @@ static Result http_request(http_handle * http, const volatile bool * keep_runnin
         if (filename != NULL)
             *filename = parse_disposition_filename(response.content_disposition);
 
-        if (response.buf == NULL)
+        if (response.buf == NULL && stream == NULL)
             response.buf = calloc(1, 1);
 
         *buf = response.buf;
@@ -686,7 +714,7 @@ static char * url_filename(const char * url)
 
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    Result res = http_request(NULL, NULL, url, filename, buf, size, install_type, acceptable_mime_types, true);
+    Result res = http_request(NULL, NULL, NULL, url, filename, buf, size, install_type, acceptable_mime_types, true);
     // the server named no file: use the URL's name (save_zip_to_sd falls back to "download.zip" when that's
     // missing too)
     if (R_SUCCEEDED(res) && filename != NULL && *filename == NULL)
@@ -696,7 +724,7 @@ Result http_get(const char * url, char ** filename, char ** buf, u32 * size, Ins
 
 Result http_get_optional(const char * url, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    return http_request(NULL, NULL, url, NULL, buf, size, install_type, acceptable_mime_types, false);
+    return http_request(NULL, NULL, NULL, url, NULL, buf, size, install_type, acceptable_mime_types, false);
 }
 
 Result http_get_background(http_handle * handle, const char * url, char ** buf, u32 * size, const char * acceptable_mime_types, const volatile bool * keep_running)
@@ -704,5 +732,17 @@ Result http_get_background(http_handle * handle, const char * url, char ** buf, 
     if (handle == NULL || keep_running == NULL)
         return MAKERESULT(RL_PERMANENT, RS_INVALIDARG, RM_APPLICATION, RD_INVALID_POINTER);
 
-    return http_request(handle, keep_running, url, NULL, buf, size, INSTALL_NONE, acceptable_mime_types, false);
+    return http_request(handle, keep_running, NULL, url, NULL, buf, size, INSTALL_NONE, acceptable_mime_types, false);
+}
+
+Result http_get_background_into(http_handle * handle, const char * url, char * buf, u32 capacity, volatile u32 * received, const char * acceptable_mime_types, const volatile bool * keep_running)
+{
+    if (handle == NULL || keep_running == NULL || buf == NULL || received == NULL)
+        return MAKERESULT(RL_PERMANENT, RS_INVALIDARG, RM_APPLICATION, RD_INVALID_POINTER);
+
+    const http_stream stream = { .buf = buf, .capacity = capacity, .received = received };
+    char * unused = NULL;
+    u32 size = 0;
+    *received = 0;
+    return http_request(handle, keep_running, &stream, url, NULL, &unused, &size, INSTALL_NONE, acceptable_mime_types, false);
 }

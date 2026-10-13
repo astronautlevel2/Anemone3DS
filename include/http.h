@@ -58,6 +58,9 @@ typedef struct http_handle http_handle;
 http_handle * http_background_handle(void);
 void http_background_handle_free(http_handle * handle);
 Result http_get_background(http_handle * handle, const char * url, char ** buf, u32 * size, const char * acceptable_mime_types, const volatile bool * keep_running);
+// Same, but the file is written into buf (up to capacity bytes) as it arrives and *received counts the bytes written so far, so another thread can
+// use the start of the file while the rest downloads.
+Result http_get_background_into(http_handle * handle, const char * url, char * buf, u32 capacity, volatile u32 * received, const char * acceptable_mime_types, const volatile bool * keep_running);
 
 void http_exit(void);
 

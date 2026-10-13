@@ -37,8 +37,15 @@
 #include "ui_strings.h"
 #include "remote_api.h"
 
+extern int __stacksize__;
+
 char *last_search = NULL;
 json_int_t last_page = 1;
+
+#define REMOTE_BGM_MAX_SIZE 0x340000 // a theme's BGM is at most 3,371,008 bytes
+
+static http_handle * bgm_curl = NULL;
+static char * bgm_url = NULL;
 
 static void free_icons(Entry_List_s * list)
 {
@@ -128,6 +135,45 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     bool ret = load_preview_from_buffer(preview, preview_size, preview_image, preview_layout, height);
     free(preview);
     return ret;
+}
+
+static void download_bgm(void * arg)
+{
+    audio_s * audio = (audio_s *)arg;
+    http_get_background_into(bgm_curl, bgm_url, audio->music_buf, audio->music_size, &audio->downloaded, "audio/bcstm, application/octet-stream", &audio->download_running);
+    __sync_synchronize(); // the final count before saying it is final
+    audio->download_done = true;
+}
+
+// Plays the theme's bgm.bcstm while it downloads
+static audio_s * play_remote_bgm(const Entry_s * entry)
+{
+    if (entry->remote_audio_url == NULL)
+        return NULL;
+
+    if (bgm_curl == NULL)
+        bgm_curl = http_background_handle();
+    audio_s * audio = calloc(1, sizeof(audio_s));
+    if (bgm_curl == NULL || audio == NULL || (audio->music_buf = malloc(REMOTE_BGM_MAX_SIZE)) == NULL)
+    {
+        free(audio);
+        return NULL;
+    }
+
+    free(bgm_url);
+    bgm_url = strdup(entry->remote_audio_url);
+    audio->music_size = REMOTE_BGM_MAX_SIZE;
+    audio->download_running = true;
+    audio->download_thread = threadCreate(download_bgm, audio, __stacksize__, 0x38, -2, false);
+    if (audio->download_thread == NULL)
+    {
+        free(audio->music_buf);
+        free(audio);
+        return NULL;
+    }
+
+    play_audio(audio);
+    return audio;
 }
 
 static void download_remote_entry(Entry_s * entry, RemoteMode mode)
@@ -283,6 +329,7 @@ static bool remote_browser(RemoteMode mode, RemoteProvider provider)
 
     bool preview_mode = false;
     Preview_Layout_s preview_layout = {0};
+    audio_s * audio = NULL;
 
     Entry_List_s list = { 0 };
     Entry_List_s * current_list = &list;
@@ -424,18 +471,26 @@ static bool remote_browser(RemoteMode mode, RemoteProvider provider)
             {
                 remote_icons_stop();
                 preview_mode = load_remote_preview(current_entry, &preview, &preview_layout);
+                if (preview_mode && mode == REMOTE_MODE_THEMES && dspfirm)
+                    audio = play_remote_bgm(current_entry);
                 remote_icons_start(current_list);
             }
             else
             {
                 preview_mode = false;
+                if (audio != NULL)
+                    stop_audio(&audio);
             }
             continue;
         }
         else if (kDown & KEY_B)
         {
             if (preview_mode)
+            {
                 preview_mode = false;
+                if (audio != NULL)
+                    stop_audio(&audio);
+            }
             else
                 break;
         }
@@ -499,6 +554,8 @@ static bool remote_browser(RemoteMode mode, RemoteProvider provider)
                 if (preview_mode)
                 {
                     preview_mode = false;
+                    if (audio != NULL)
+                        stop_audio(&audio);
                     continue;
                 }
 
@@ -570,6 +627,13 @@ static bool remote_browser(RemoteMode mode, RemoteProvider provider)
             }
         }
     }
+
+    if (audio != NULL)
+        stop_audio(&audio);
+    http_background_handle_free(bgm_curl);
+    bgm_curl = NULL;
+    free(bgm_url);
+    bgm_url = NULL;
 
     free_preview(preview);
     remote_icons_exit();

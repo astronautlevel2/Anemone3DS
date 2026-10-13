@@ -31,16 +31,17 @@
 #include "fs.h"
 #include "unicode.h"
 
-#include <tremor/ivorbisfile.h>
-#include <tremor/ivorbiscodec.h>
-
 #define BUFFER_COUNT 8
-#define BUF_TO_READ 48000 // How much data should be buffered at a time for ogg
 
 typedef struct {
     char *music_buf;
     size_t music_size;
     File_Stream_s stream;
+    // remote previews: a download fills music_buf instead of the stream
+    Thread download_thread;
+    volatile bool download_running;
+    volatile bool download_done;
+    volatile u32 downloaded;
     size_t loaded;
     size_t cursor;
     u32 last_time;
@@ -68,23 +69,7 @@ typedef struct {
     Thread playing_thread;
 } audio_s;
 
-typedef struct {
-    OggVorbis_File vf;
-    ndspWaveBuf wave_buf[2];
-    float mix[12];
-    u8 buf_pos;
-    long data_read;
-    char * filebuf;
-    u32 filesize;
-    
-    volatile bool stop;
-    Thread playing_thread;
-} audio_ogg_s;
-
 void play_audio(audio_s *);
 void stop_audio(audio_s **);
-
-void play_audio_ogg(audio_ogg_s *);
-void stop_audio_ogg(audio_ogg_s **);
 
 #endif
