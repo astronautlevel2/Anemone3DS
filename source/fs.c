@@ -76,7 +76,6 @@ Result init_sd(void)
 
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE), FS_ATTRIBUTE_DIRECTORY);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/"  APP_TITLE  "/cache"), FS_ATTRIBUTE_DIRECTORY);
     FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, "/3ds/" APP_TITLE "/BadgeBackups"), FS_ATTRIBUTE_DIRECTORY);
 
     return 0;

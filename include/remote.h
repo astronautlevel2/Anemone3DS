@@ -32,32 +32,10 @@
 #include "http.h"
 #include <ctype.h>
 
+// downloads from this host get Theme Plaza's own HTTP error messages ("Has this theme been approved?")
 #define THEMEPLAZA_BASE_URL "http://themeplaza.art"
-#define THEMEPLAZA_API_URL "/api/anemone/v1"
-#define THEMEPLAZA_BASE_API_URL THEMEPLAZA_BASE_URL  THEMEPLAZA_API_URL
 
-#define THEMEPLAZA_PAGE_FORMAT THEMEPLAZA_BASE_API_URL  "/list?page=%"  JSON_INTEGER_FORMAT  "&category=%i&query=%s"
-#define THEMEPLAZA_JSON_PAGE_COUNT   "pages"
-#define THEMEPLAZA_JSON_PAGE_IDS     "items"
-
-#define THEMEPLAZA_QUERY_ENTRY_INFO THEMEPLAZA_BASE_API_URL  "/query?item_id=%" JSON_INTEGER_FORMAT
-#define THEMEPLAZA_JSON_TITLE   "title"
-#define THEMEPLAZA_JSON_AUTHOR  "author"
-#define THEMEPLAZA_JSON_DESC    "description"
-#define THEMEPLAZA_JSON_SUCCESS "success"
-
-#define THEMEPLAZA_JSON_ERROR_MESSAGE             "message"
-#define THEMEPLAZA_JSON_ERROR_MESSAGE_NOT_FOUND   "No items found"
-
-
-#define THEMEPLAZA_DOWNLOAD_FORMAT   THEMEPLAZA_BASE_URL  "/download/%"  JSON_INTEGER_FORMAT
-#define THEMEPLAZA_PREVIEW_FORMAT    THEMEPLAZA_DOWNLOAD_FORMAT  "/preview"
-#define THEMEPLAZA_BGM_FORMAT        THEMEPLAZA_DOWNLOAD_FORMAT  "/bgm"
-#define THEMEPLAZA_ICON_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/preview/icon"
-#define THEMEPLAZA_SMDH_FORMAT       THEMEPLAZA_DOWNLOAD_FORMAT  "/smdh"
-
-#define CACHE_PATH_FORMAT            "/3ds/"  APP_TITLE  "/cache/%"  JSON_INTEGER_FORMAT
-
-bool themeplaza_browser(RemoteMode mode);
+// asks which site to browse, then opens the browser; returns whether something was downloaded
+bool browse_remote(RemoteMode mode);
 
 #endif

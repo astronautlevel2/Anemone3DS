@@ -116,6 +116,9 @@ typedef enum {
     TEXT_THEMEPLAZA_THEME_MODE,
     TEXT_THEMEPLAZA_SPLASH_MODE,
     TEXT_THEMEPLAZA_BADGE_MODE,
+    TEXT_THEMEZER_THEME_MODE,
+    TEXT_THEMEZER_SPLASH_MODE,
+    TEXT_THEMEZER_BADGE_MODE,
 
     TEXT_SEARCH,
     TEXT_PAGE,
@@ -172,6 +175,16 @@ void set_screen(C3D_RenderTarget * screen);
 // set while the user holds B during a network operation; cleared by draw_install()
 void set_loading_cancel_requested(bool requested);
 bool loading_cancel_requested(void);
+
+// source selection before browsing: one card per provider on the bottom screen
+enum {
+    PROVIDER_CARD_Y = 78,
+    PROVIDER_CARD_WIDTH = 144,
+    PROVIDER_CARD_HEIGHT = 96,
+    PROVIDER_CARD_THEMEPLAZA_X = 14,
+    PROVIDER_CARD_THEMEZER_X = 166,
+};
+void draw_remote_provider_picker(RemoteProvider selected);
 
 void throw_error(const char * error, ErrorLevel level);
 bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);
