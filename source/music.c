@@ -124,6 +124,31 @@ typedef struct {
     u32 target;
 } bcstm_reference;
 
+#define MUSIC_HEADER_SIZE 0x10000 // the BCSTM header, before the first block of samples, fits in this
+#define MUSIC_LOAD_CHUNK 0x8000
+
+static bool load_music(audio_s *audio, size_t size)
+{
+    if (size > audio->music_size)
+        size = audio->music_size;
+
+    while (audio->loaded < size)
+    {
+        size_t chunk = audio->music_size - audio->loaded;
+        if (chunk > MUSIC_LOAD_CHUNK)
+            chunk = MUSIC_LOAD_CHUNK;
+
+        const u32 read = file_stream_read(&audio->stream, audio->music_buf + audio->loaded, chunk);
+        if (read == 0)
+            return false;
+
+        audio->loaded += read;
+        if (audio->loaded == audio->music_size)
+            file_stream_close(&audio->stream);
+    }
+    return true;
+}
+
 int init_audio(audio_s *audio)
 {
     u32 magic = read32(audio->music_buf, &audio->cursor);
@@ -305,11 +330,18 @@ void fill_buffers(audio_s *audio)
 
         for (u8 channelIndex = 0; channelIndex < audio->channel_count; ++channelIndex)
         {
+            const size_t block_size = (audio->current_block == audio->num_blocks - 1) ? audio->last_block_size : audio->block_size;
+            if (!load_music(audio, audio->cursor + block_size))
+            {
+                audio->stop = true;
+                return;
+            }
+
             ndspWaveBuf *buf = &(audio->wave_buf[channelIndex][bufIndex]);
             memset(buf, 0, sizeof(ndspWaveBuf));
             buf->data_adpcm = audio->buffer_data[channelIndex][bufIndex];
-            memcpy(buf->data_adpcm, audio->music_buf + audio->cursor, (audio->current_block == audio->num_blocks - 1) ? audio->last_block_size : audio->block_size);
-            audio->cursor += (audio->current_block == audio->num_blocks - 1) ? audio->last_block_size : audio->block_size;
+            memcpy(buf->data_adpcm, audio->music_buf + audio->cursor, block_size);
+            audio->cursor += block_size;
             DSP_FlushDataCache(buf->data_adpcm, audio->block_size);
 
             if (audio->current_block == 0)
@@ -341,14 +373,22 @@ void update_audio(audio_s * audio)
 
 void thread_audio(void * data) {
     audio_s * audio = (audio_s *)data;
+    if (!load_music(audio, MUSIC_HEADER_SIZE))
+    {
+        file_stream_close(&audio->stream);
+        free(audio->music_buf);
+        return;
+    }
     int res = init_audio(audio);
     if (res < 0)
     {
+        file_stream_close(&audio->stream);
         return;
     }
     start_play(audio);
     while(!audio->stop) {
         update_audio(audio);
+        load_music(audio, audio->loaded + MUSIC_LOAD_CHUNK);
     }
     for (u8 i = 0; i < audio->channel_count; ++i)
     {
@@ -359,11 +399,13 @@ void thread_audio(void * data) {
             linearFree(audio->buffer_data[i][j]);
         }
     }
+    file_stream_close(&audio->stream);
     free(audio->music_buf);
 }
 
 void play_audio(audio_s * audio) {
-    audio->playing_thread = threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, false);
+    // reading the music from a zip needs more stack than playing it
+    audio->playing_thread = threadCreate(thread_audio, audio, 0x4000, 0x3F, 1, false);
 }
 
 void stop_audio(audio_s ** audio_ptr) {
