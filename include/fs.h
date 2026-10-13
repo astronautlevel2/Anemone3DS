@@ -76,6 +76,7 @@ typedef struct {
     struct archive * archive;
 } File_Stream_s;
 
+u32 file_stream_open(FS_Path path, FS_Archive archive, File_Stream_s * stream);
 u32 zip_file_stream_open(const char * file_name, const u16 * zip_path, File_Stream_s * stream);
 // Can read less than size; returns 0 at the end of the file or on an error
 u32 file_stream_read(File_Stream_s * stream, char * buf, u32 size);

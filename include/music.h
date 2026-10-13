@@ -40,6 +40,8 @@
 typedef struct {
     char *music_buf;
     size_t music_size;
+    File_Stream_s stream;
+    size_t loaded;
     size_t cursor;
     u32 last_time;
     bool is_little_endian;
