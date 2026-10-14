@@ -64,6 +64,23 @@ Result load_parental_controls(Parental_Restrictions_s *restrictions);
 u32 file_to_buf(FS_Path path, FS_Archive archive, char ** buf);
 u32 zip_memory_to_buf(const char * file_name, void * zip_memory, size_t zip_size, char ** buf);
 u32 zip_file_to_buf(const char * file_name, const u16 * zip_path, char ** buf);
+
+struct archive;
+struct z_stream_s;
+typedef struct {
+    Handle file;
+    u64 offset;
+    u32 left;
+    struct z_stream_s * inflater;
+    u8 * in;
+    struct archive * archive;
+} File_Stream_s;
+
+u32 file_stream_open(FS_Path path, FS_Archive archive, File_Stream_s * stream);
+u32 zip_file_stream_open(const char * file_name, const u16 * zip_path, File_Stream_s * stream);
+// Can read less than size; returns 0 at the end of the file or on an error
+u32 file_stream_read(File_Stream_s * stream, char * buf, u32 size);
+void file_stream_close(File_Stream_s * stream);
 u32 decompress_lz_file(FS_Path file_name, FS_Archive archive, char ** buf);
 u32 compress_lz_file_fast(FS_Path path, FS_Archive archive, char * in_buf, u32 size);
 

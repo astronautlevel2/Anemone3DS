@@ -46,10 +46,16 @@ typedef struct {
     bool installed;
     u32 placeholder_color; // doubles as not-info-loaded when == 0
 
-    json_int_t tp_download_id;
     u16 name[0x41];
     u16 desc[0x81];
     u16 author[0x41];
+
+    // Themezer entries only, NULL otherwise
+    char * remote_download_url;
+    char * remote_preview_url;
+    char * remote_icon_url;
+    char * remote_audio_url;
+    char * remote_filename;
 } Entry_s;
 
 typedef struct {
@@ -84,8 +90,12 @@ typedef struct {
     json_int_t tp_current_page;
     json_int_t tp_page_count;
     char * tp_search;
+    RemoteProvider remote_provider;
     const char * loading_path;
 } Entry_List_s;
+
+// frees the entries of a remote list, including the Themezer fields
+void free_remote_entries(Entry_List_s * list);
 
 void sort_by_name(Entry_List_s * list);
 void sort_by_author(Entry_List_s * list);

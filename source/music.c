@@ -54,75 +54,46 @@ u8 read8(char *music_buf, size_t *cursor)
     return ret;
 }
 
-Result update_audio_ogg(audio_ogg_s * audio) 
-{
-    u32 size = audio->wave_buf[audio->buf_pos].nsamples * 4 - audio->data_read;
-    DEBUG("<update_audio> Audio Size: %ld\n", size);
-    if (audio->wave_buf[audio->buf_pos].status == NDSP_WBUF_DONE) // only run if the current selected buffer has already finished playing
-    { 
-        DEBUG("<update_audio> Attempting ov_read\n");
-        int bitstream;
-        u32 read = ov_read(&audio->vf, (char *)audio->wave_buf[audio->buf_pos].data_vaddr + audio->data_read, size, &bitstream); // read 1 vorbis packet into wave buffer
-        DEBUG("<update_audio> ov_read successful\n");
-
-        if (read <= 0) // EoF or error
-        { 
-            ov_clear(&audio->vf);
-            if (read == 0) // EoF
-            { 
-                ov_open(fmemopen(audio->filebuf, audio->filesize, "rb"), &audio->vf, NULL, 0); // Reopen file. Don't need to reinit channel stuff since it's all the same as before
-            } else // Error :(
-            { 
-                DEBUG("<update_audio> Vorbis play error: %ld\n", read);
-                ndspChnReset(0);
-                return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
-            }
-        } else 
-        {
-            audio->data_read += read;
-            if (read == size) {
-                audio->data_read = 0;
-                ndspChnWaveBufAdd(0, &audio->wave_buf[audio->buf_pos]); // Add buffer to ndsp 
-                audio->buf_pos = 1 - audio->buf_pos; // switch to other buffer to load and prepare it while the current one is playing
-            }
-        }
-    }
-    return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
-}
-
-void thread_audio_ogg(void * data) {
-    audio_ogg_s * audio = (audio_ogg_s *)data;
-    while(!audio->stop) {
-        update_audio_ogg(audio);
-    }
-    ndspChnWaveBufClear(0);
-    ndspChnReset(0);
-    ov_clear(&audio->vf);
-    free(audio->filebuf);
-    linearFree((void *)audio->wave_buf[0].data_vaddr);
-    linearFree((void *)audio->wave_buf[1].data_vaddr);
-}
-
-void play_audio_ogg(audio_ogg_s * audio) {
-    audio->playing_thread = threadCreate(thread_audio_ogg, audio, 0x1000, 0x3F, 1, false);
-}
-
-void stop_audio_ogg(audio_ogg_s ** audio_ptr) {
-    audio_ogg_s * audio = *audio_ptr;
-    if(audio->playing_thread)
-    {
-        audio->stop = true;
-        threadJoin(audio->playing_thread, U64_MAX);
-        threadFree(audio->playing_thread);
-    }
-    free(audio);
-    *audio_ptr = NULL;
-}
-
 typedef struct {
     u16 type;
     u32 target;
 } bcstm_reference;
+
+#define MUSIC_HEADER_SIZE 0x10000 // the BCSTM header, before the first block of samples, fits in this
+#define MUSIC_LOAD_CHUNK 0x8000
+
+static bool load_music(audio_s *audio, size_t size)
+{
+    if (size > audio->music_size)
+        size = audio->music_size;
+
+    if (audio->download_thread != NULL)
+    {
+        while (audio->downloaded < size && !audio->download_done && !audio->stop)
+            svcSleepThread(10 * 1000 * 1000);
+        __sync_synchronize(); // the count before the data it counts
+        if (audio->download_done)
+            audio->music_size = audio->downloaded;
+        audio->loaded = audio->downloaded;
+        return audio->loaded > 0 && audio->loaded >= (size < audio->music_size ? size : audio->music_size);
+    }
+
+    while (audio->loaded < size)
+    {
+        size_t chunk = audio->music_size - audio->loaded;
+        if (chunk > MUSIC_LOAD_CHUNK)
+            chunk = MUSIC_LOAD_CHUNK;
+
+        const u32 read = file_stream_read(&audio->stream, audio->music_buf + audio->loaded, chunk);
+        if (read == 0)
+            return false;
+
+        audio->loaded += read;
+        if (audio->loaded == audio->music_size)
+            file_stream_close(&audio->stream);
+    }
+    return true;
+}
 
 int init_audio(audio_s *audio)
 {
@@ -134,7 +105,6 @@ int init_audio(audio_s *audio)
 
     if (magic != 0x4D545343) // CSTM
     {
-        free(audio->music_buf);
         return -1;
     }
 
@@ -159,7 +129,6 @@ int init_audio(audio_s *audio)
     
     if (audio->data_offset == 0 || audio->info_offset == 0)
     {
-        free(audio->music_buf);
         return -2;
     }
 
@@ -167,7 +136,6 @@ int init_audio(audio_s *audio)
 
     if (read8(audio->music_buf, &audio->cursor) != 2) // Encoding - 2 is DSP_ADPCM
     {
-        free(audio->music_buf);
         return -3;
     }
 
@@ -176,7 +144,6 @@ int init_audio(audio_s *audio)
 
     if (audio->channel_count > 2)
     {
-        free(audio->music_buf);
         return -4;
     }
 
@@ -305,11 +272,18 @@ void fill_buffers(audio_s *audio)
 
         for (u8 channelIndex = 0; channelIndex < audio->channel_count; ++channelIndex)
         {
+            const size_t block_size = (audio->current_block == audio->num_blocks - 1) ? audio->last_block_size : audio->block_size;
+            if (!load_music(audio, audio->cursor + block_size))
+            {
+                audio->stop = true;
+                return;
+            }
+
             ndspWaveBuf *buf = &(audio->wave_buf[channelIndex][bufIndex]);
             memset(buf, 0, sizeof(ndspWaveBuf));
             buf->data_adpcm = audio->buffer_data[channelIndex][bufIndex];
-            memcpy(buf->data_adpcm, audio->music_buf + audio->cursor, (audio->current_block == audio->num_blocks - 1) ? audio->last_block_size : audio->block_size);
-            audio->cursor += (audio->current_block == audio->num_blocks - 1) ? audio->last_block_size : audio->block_size;
+            memcpy(buf->data_adpcm, audio->music_buf + audio->cursor, block_size);
+            audio->cursor += block_size;
             DSP_FlushDataCache(buf->data_adpcm, audio->block_size);
 
             if (audio->current_block == 0)
@@ -339,16 +313,33 @@ void update_audio(audio_s * audio)
     }
 }
 
+static void free_music(audio_s *audio)
+{
+    audio->download_running = false;
+    if (audio->download_thread != NULL)
+    {
+        threadJoin(audio->download_thread, U64_MAX);
+        threadFree(audio->download_thread);
+        audio->download_thread = NULL;
+    }
+    file_stream_close(&audio->stream);
+    free(audio->music_buf);
+    audio->music_buf = NULL;
+}
+
 void thread_audio(void * data) {
     audio_s * audio = (audio_s *)data;
-    int res = init_audio(audio);
-    if (res < 0)
+    if (!load_music(audio, MUSIC_HEADER_SIZE) || init_audio(audio) < 0)
     {
+        free_music(audio);
         return;
     }
     start_play(audio);
     while(!audio->stop) {
         update_audio(audio);
+        // a download reads ahead by itself
+        if (audio->download_thread == NULL)
+            load_music(audio, audio->loaded + MUSIC_LOAD_CHUNK);
     }
     for (u8 i = 0; i < audio->channel_count; ++i)
     {
@@ -359,11 +350,12 @@ void thread_audio(void * data) {
             linearFree(audio->buffer_data[i][j]);
         }
     }
-    free(audio->music_buf);
+    free_music(audio);
 }
 
 void play_audio(audio_s * audio) {
-    audio->playing_thread = threadCreate(thread_audio, audio, 0x1000, 0x3F, 1, false);
+    // reading the music from a zip needs more stack than playing it
+    audio->playing_thread = threadCreate(thread_audio, audio, 0x4000, 0x3F, 1, false);
 }
 
 void stop_audio(audio_s ** audio_ptr) {
@@ -371,8 +363,13 @@ void stop_audio(audio_s ** audio_ptr) {
     if(audio->playing_thread)
     {
         audio->stop = true;
+        audio->download_running = false;
         threadJoin(audio->playing_thread, U64_MAX);
         threadFree(audio->playing_thread);
+    }
+    else
+    {
+        free_music(audio); // it never started playing
     }
     free(audio);
     *audio_ptr = NULL;

@@ -110,6 +110,26 @@ static void sort_list(Entry_List_s * list, sort_comparator compare_entries)
         qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
 }
 
+void free_remote_entries(Entry_List_s * list)
+{
+    if(list->entries != NULL)
+    {
+        for(int i = 0; i < list->entries_count; i++)
+        {
+            Entry_s * entry = &list->entries[i];
+            free(entry->remote_download_url);
+            free(entry->remote_preview_url);
+            free(entry->remote_icon_url);
+            free(entry->remote_audio_url);
+            free(entry->remote_filename);
+        }
+    }
+
+    free(list->entries);
+    list->entries = NULL;
+    list->entries_count = 0;
+}
+
 void sort_by_name(Entry_List_s * list)
 {
     sort_list(list, compare_entries_by_name);

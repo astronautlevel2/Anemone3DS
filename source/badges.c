@@ -120,7 +120,9 @@ int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *bad
     res = file_to_buf(badge_path, ArchiveSD, &file_buf);
     if (res != badge_file.fileSize)
     {
-        return -1;
+        // the caller adds this to the set's badge count
+        free(file_buf);
+        return 0;
     }
 
     int badges = install_badge_generic(file_buf, badge_file.fileSize, badge_file.name, badge_count, set_id);
@@ -132,52 +134,70 @@ typedef struct {
     int *badge_count;
     int set_id;
     int installed;
+    // receive the set icon (_seticon.png) instead of installing it as a badge
+    char **icon_buf;
+    int *icon_size;
 } zip_userdata;
 
 u32 zip_callback(char *file_buf, u64 file_size, const char *name, void *userdata)
 {
     progress_finish += 1;
     zip_userdata *data = (zip_userdata *) userdata;
-    u16 *utf16_name = calloc(strlen(name), sizeof(u16));
-    utf8_to_utf16(utf16_name, (u8 *) name, strlen(name));
+    // named after the file itself, without the folders it is in inside the zip
+    const char *file_name = strrchr(name, '/') ? strrchr(name, '/') + 1 : name;
+    if (!strcmp(file_name, "_seticon.png"))
+    {
+        if (*data->icon_buf == NULL && (*data->icon_buf = malloc(file_size)) != NULL)
+        {
+            memcpy(*data->icon_buf, file_buf, file_size);
+            *data->icon_size = file_size;
+        }
+        progress_status += 1;
+        return 0;
+    }
+    // as large as a directory entry's name, which install_badge_generic gets for images outside zips
+    u16 utf16_name[0x106] = {0};
+    utf8_to_utf16(utf16_name, (u8 *) file_name, 0x105);
     data->installed += install_badge_generic(file_buf, file_size, utf16_name, data->badge_count, data->set_id);
-    free(utf16_name);
     progress_status += 1;
 
     return 0;
 }
 
-int install_badge_zip(u16 *path, int *badge_count, int set_id)
+int install_badge_zip(u16 *path, int *badge_count, int set_id, char **icon_buf, int *icon_size)
 {
     zip_userdata data = {0};
     data.set_id = set_id;
     data.badge_count = badge_count;
+    data.icon_buf = icon_buf;
+    data.icon_size = icon_size;
     for_each_file_zip(path, zip_callback, &data);
 
     return data.installed;
 }
 
-int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
+// A set is the folder /Badges/<name>/ (its images and zips, with _seticon.png as the set icon) and the zip /Badges/<name>.zip
+int install_badge_set(const u16 *set_name, bool has_folder, bool has_zip, int *badge_count, int set_id)
 {
     Result res;
-    Handle folder;
+    Handle folder = 0;
     int start_idx = *badge_count;
     char *icon_buf = NULL;
     int icon_size = 0;
     
-    FS_DirectoryEntry *badge_files = calloc(1024, sizeof(FS_DirectoryEntry));
+    FS_DirectoryEntry *badge_files = has_folder ? calloc(1024, sizeof(FS_DirectoryEntry)) : NULL;
     u16 path[512] = {0};
     u16 set_icon[17] = {0};
     utf8_to_utf16(set_icon, (u8 *) "_seticon.png", 16);
     struacat(path, main_paths[REMOTE_MODE_BADGES]);
-    strucat(path, set_dir.name);
-    res = FSUSER_OpenDirectory(&folder, ArchiveSD, fsMakePath(PATH_UTF16, path));
-    if (R_FAILED(res))
+    strucat(path, set_name);
+    u32 entries_read = 0;
+    if (has_folder && badge_files != NULL)
     {
-        return -1;
+        res = FSUSER_OpenDirectory(&folder, ArchiveSD, fsMakePath(PATH_UTF16, path));
+        if (R_SUCCEEDED(res))
+            res = FSDIR_Read(folder, &entries_read, 1024, badge_files);
     }
-    u32 entries_read;
-    res = FSDIR_Read(folder, &entries_read, 1024, badge_files);
     int badges_in_set = 0;
     progress_finish += entries_read;
     for (u32 i = 0; i < entries_read && *badge_count < 1000; ++i)
@@ -186,12 +206,15 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
         {
             memset(path, 0, 512 * sizeof(u16));
             struacat(path, main_paths[REMOTE_MODE_BADGES]);
-            strucat(path, set_dir.name);
+            strucat(path, set_name);
             struacat(path, "/");
             strucat(path, badge_files[i].name);
             if (!memcmp(set_icon, badge_files[i].name, 16))
             {
                 DEBUG("Found set icon for folder set %d\n", set_id);
+                // the folder's own icon wins over one from a zip in it
+                free(icon_buf);
+                icon_buf = NULL;
                 icon_size = file_to_buf(fsMakePath(PATH_UTF16, path), ArchiveSD, &icon_buf);
                 continue;
             }
@@ -200,13 +223,22 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
         {
             memset(path, 0, 512 * sizeof(u16));
             struacat(path, main_paths[REMOTE_MODE_BADGES]);
-            strucat(path, set_dir.name);
+            strucat(path, set_name);
             struacat(path, "/");
             strucat(path, badge_files[i].name);
-            badges_in_set += install_badge_zip(path, badge_count, set_id);
+            badges_in_set += install_badge_zip(path, badge_count, set_id, &icon_buf, &icon_size);
         }
         progress_status += 1;
         draw_loading_bar(progress_status, progress_finish, INSTALL_BADGES);
+    }
+
+    if (has_zip)
+    {
+        memset(path, 0, 512 * sizeof(u16));
+        struacat(path, main_paths[REMOTE_MODE_BADGES]);
+        strucat(path, set_name);
+        struacat(path, ".zip");
+        badges_in_set += install_badge_zip(path, badge_count, set_id, &icon_buf, &icon_size);
     }
 
     if (!badges_in_set)
@@ -218,7 +250,7 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
     u32 total_count = 0xFFFF * badges_in_set;
     for (int i = 0; i < 16; ++i)
     {
-        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_dir.name, strulen(set_dir.name, 0x45) * 2 + 2, 0);
+        FSFILE_Write(badgeDataHandle, NULL, set_index * 0x8A0 + i * 0x8A, set_name, strulen(set_name, 0x45) * 2 + 2, 0);
     }
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
 
@@ -248,13 +280,42 @@ int install_badge_dir(FS_DirectoryEntry set_dir, int *badge_count, int set_id)
         pngToRGB565(icon_buf, icon_size, rgb_buf_64x64, alpha_buf_64x64, rgb_buf_32x32, alpha_buf_32x32, true);
     }
 
-    free(icon_buf);
     FSFILE_Write(badgeDataHandle, NULL, 0x250F80 + set_index * 0x2000, rgb_buf_64x64, 64 * 64 * 2, 0);
     badgeMngBuffer[0x3D8 + set_index/8] |= 0 << (set_index % 8);
     end:
+    free(icon_buf);
     free(badge_files);
-    FSDIR_Close(folder);
+    if (folder)
+        FSDIR_Close(folder);
     return badges_in_set;
+}
+
+static bool is_badge_set(const FS_DirectoryEntry *entry)
+{
+    return (entry->attributes & FS_ATTRIBUTE_DIRECTORY) || !strcmp(entry->shortExt, "ZIP");
+}
+
+// the set a folder or zip belongs to: its name, without .zip
+static void badge_set_name(const FS_DirectoryEntry *entry, u16 *set_name)
+{
+    memcpy(set_name, entry->name, sizeof(entry->name));
+    size_t length = strulen(set_name, 0x106);
+    if (!(entry->attributes & FS_ATTRIBUTE_DIRECTORY) && length >= 4 && set_name[length - 4] == '.'
+        && (set_name[length - 3] | 0x20) == 'z' && (set_name[length - 2] | 0x20) == 'i' && (set_name[length - 1] | 0x20) == 'p')
+        set_name[length - 4] = 0;
+}
+
+// names on the SD card don't differ by case
+static bool same_badge_set(const u16 *a, const u16 *b)
+{
+    for (; *a && *b; ++a, ++b)
+    {
+        const u16 lower_a = *a >= 'A' && *a <= 'Z' ? *a + 0x20 : *a;
+        const u16 lower_b = *b >= 'A' && *b <= 'Z' ? *b + 0x20 : *b;
+        if (lower_a != lower_b)
+            return false;
+    }
+    return *a == *b;
 }
 
 typedef struct set_node_s {
@@ -629,6 +690,14 @@ Result install_badges(void)
     int default_idx = 0;
 
     progress_finish = entries_read + 12;
+    bool has_loose_images = false;
+    u16 (*set_names)[0x106] = calloc(entries_read, sizeof(*set_names));
+    for (u32 i = 0; i < entries_read; ++i)
+    {
+        has_loose_images |= !strcmp(badge_files[i].shortExt, "PNG");
+        if (set_names != NULL && is_badge_set(&badge_files[i]))
+            badge_set_name(&badge_files[i], set_names[i]);
+    }
     progress_status = 12;
     draw_loading_bar(progress_status, progress_finish, INSTALL_BADGES);
     for (u32 i = 0; i < entries_read && badge_count < 1000; ++i)
@@ -645,28 +714,35 @@ Result install_badges(void)
             struacat(path, main_paths[REMOTE_MODE_BADGES]);
             strucat(path, badge_files[i].name);
             default_set_count += install_badge_png(fsMakePath(PATH_UTF16, path), badge_files[i], &badge_count, default_set);
-        } else if (!strcmp(badge_files[i].shortExt, "ZIP"))
+        } else if (set_names != NULL && is_badge_set(&badge_files[i]))
         {
-            if (default_set == 0)
+            // a folder and a zip with the same name are one set, installed when the first of them comes up
+            bool installed = false, has_folder = false, has_zip = false;
+            for (u32 j = 0; j < entries_read; ++j)
+            {
+                if (!is_badge_set(&badge_files[j]) || !same_badge_set(set_names[i], set_names[j]))
+                    continue;
+                installed |= j < i;
+                if (badge_files[j].attributes & FS_ATTRIBUTE_DIRECTORY)
+                    has_folder = true;
+                else
+                    has_zip = true;
+            }
+
+            // the HOME Menu has room for MAX_BADGE_SETS sets, one of them kept for "Other Badges" while it may still be needed
+            const int reserved = default_set == 0 && has_loose_images;
+            if (!installed && set_count + reserved < MAX_BADGE_SETS)
             {
                 set_count += 1;
-                default_set = set_count;
+                u32 count = install_badge_set(set_names[i], has_folder, has_zip, &badge_count, set_count);
+                if (count == 0)
+                    set_count -= 1;
             }
-            u16 path[0x512] = {0};
-            struacat(path, main_paths[REMOTE_MODE_BADGES]);
-            strucat(path, badge_files[i].name);
-
-            default_set_count += install_badge_zip(path, &badge_count, default_set);
-        } else if (badge_files[i].attributes & FS_ATTRIBUTE_DIRECTORY)
-        {
-            set_count += 1;
-            u32 count = install_badge_dir(badge_files[i], &badge_count, set_count);
-            if (count == 0)
-                set_count -= 1;
         }
         progress_status += 1;
         draw_loading_bar(progress_status, progress_finish, INSTALL_BADGES);
     }
+    free(set_names);
 
     DEBUG("Badges installed - doing metadata\n");
     if (default_set != 0)
@@ -716,7 +792,7 @@ Result install_badges(void)
     memcpy(badgeMngBuffer + 0x18, &total_badges, 4);
     memcpy(badgeMngBuffer + 0x1C, &nnidNum, 4);
 
-    for (int i = set_count; i < 100; ++i) // default values for remaining sets
+    for (int i = set_count; i < MAX_BADGE_SETS; ++i) // default values for remaining sets
     {
         memset(badgeMngBuffer + 0xA028 + 0x30 * i, 0xFF, 0x8);
         memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0x8, 0x00, 0x4);

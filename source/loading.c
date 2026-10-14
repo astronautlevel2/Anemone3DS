@@ -308,9 +308,46 @@ void load_icons_thread(void * void_arg)
     } while(arg->run_thread);
 }
 
-bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, int * preview_offset, int height)
+/*
+ * Screenshot-shaped previews (a top screen above a centered bottom screen) are shown like a screenshot:
+ * 400x480 (the usual preview.png), 406x480 to 412x480 (editors that keep the wider top screen texture),
+ * 412x482 (YATA+, two padding rows) and 432x528 (HOME Menu screenshots with a 16px border).
+ * Anything else, like Theme Plaza's 512x1024 badge previews, is scaled to the width of the bottom
+ * screen and runs from the top screen onto the bottom one.
+ */
+static void layout_preview(int width, int height, Preview_Layout_s * layout)
 {
-    int width = (uint32_t)((size / 4) / height);
+    if(width >= TOP_SCREEN_WIDTH && width <= 432 && height >= SCREEN_HEIGHT * 2 && height <= 528)
+    {
+        const int border = (width == 432 && height == 528) ? 16 : 0;
+        layout->scale = 1.0f;
+        layout->top_x = -((width - TOP_SCREEN_WIDTH) / 2);
+        layout->top_y = -border;
+        layout->bottom_x = -((width - BOTTOM_SCREEN_WIDTH) / 2);
+        layout->bottom_y = -(SCREEN_HEIGHT + border * 2);
+    }
+    else
+    {
+        layout->scale = (float)BOTTOM_SCREEN_WIDTH / width;
+        layout->top_x = (TOP_SCREEN_WIDTH - BOTTOM_SCREEN_WIDTH) / 2;
+        layout->top_y = 0;
+        layout->bottom_x = 0;
+        layout->bottom_y = -SCREEN_HEIGHT;
+    }
+}
+
+bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview_image, Preview_Layout_s * layout, int image_height)
+{
+    const int image_width = (uint32_t)((size / 4) / image_height);
+    if(image_width <= 0 || image_height <= 0)
+        return false;
+
+    // the texture is at most 512x1024: bigger images skip pixels, they are drawn smaller anyway
+    int step = 1;
+    while((image_width + step - 1) / step > 512 || (image_height + step - 1) / step > 1024)
+        ++step;
+    const int width = (image_width + step - 1) / step;
+    const int height = (image_height + step - 1) / step;
     float tex_height = height > 512.0f ? 1024.0f : 512.0f;
 
     free_preview(*preview_image);
@@ -332,22 +369,22 @@ bool load_preview_from_buffer(char * row_pointers, u32 size, C2D_Image * preview
     memset(preview_image->tex->data, 0, preview_image->tex->size);
 
     for(int j = 0; j < height; j++) {
-        png_bytep row = (png_bytep)(row_pointers + (width * 4 * j));
+        png_bytep row = (png_bytep)(row_pointers + (image_width * 4 * j * step));
         for(int i = 0; i < width; i++) {
-            png_bytep px = &(row[i * 4]);
+            png_bytep px = &(row[i * step * 4]);
             u32 dst = ((((j >> 3) * (512 >> 3) + (i >> 3)) << 6) + ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) | ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3))) * 4;
 
             memcpy(preview_image->tex->data + dst, px, sizeof(u32));
         }
     }
 
-    *preview_offset = (width - TOP_SCREEN_WIDTH) / 2;
+    layout_preview(width, height, layout);
 
     return true;
 }
 
 static u16 previous_path_preview[0x106] = {0};
-bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * preview_offset)
+bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, Preview_Layout_s * layout)
 {
     if(list->entries == NULL) return false;
 
@@ -420,7 +457,7 @@ bool load_preview(const Entry_List_s * list, C2D_Image * preview_image, int * pr
         preview_buffer = rgba_buffer;
     }
 
-    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, preview_offset, height);
+    bool ret = load_preview_from_buffer(preview_buffer, size, preview_image, layout, height);
     free(preview_buffer);
 
     if(ret)
@@ -441,10 +478,25 @@ void free_preview(C2D_Image preview)
 }
 
 // Initialize the audio struct
+static u32 open_data_stream(const char * filename, const Entry_s * entry, File_Stream_s * stream)
+{
+    if(entry->is_zip)
+        return zip_file_stream_open(filename + 1, entry->path, stream);
+
+    u16 path[0x106] = {0};
+    strucat(path, entry->path);
+    struacat(path, filename);
+    return file_stream_open(fsMakePath(PATH_UTF16, path), ArchiveSD, stream);
+}
+
 Result load_audio(const Entry_s * entry, audio_s * audio) 
 {
-    audio->music_size = load_data("/bgm.bcstm", entry, &audio->music_buf);
-    if (audio->music_size == 0) {
+    // only open the file: the audio thread reads it while the music plays
+    audio->music_size = open_data_stream("/bgm.bcstm", entry, &audio->stream);
+    audio->music_buf = audio->music_size != 0 ? malloc(audio->music_size) : NULL;
+    audio->loaded = 0;
+    if (audio->music_buf == NULL) {
+        file_stream_close(&audio->stream);
         free(audio);
         DEBUG("<load_audio> File not found!\n");
         return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
@@ -455,59 +507,4 @@ Result load_audio(const Entry_s * entry, audio_s * audio)
     audio->stop = false;
     audio->active_channels = 0;
     return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
-}
-
-Result load_audio_ogg(const Entry_s * entry, audio_ogg_s * audio) 
-{
-    audio->filesize = load_data("/bgm.ogg", entry, &audio->filebuf);
-    if (audio->filesize == 0) {
-        free(audio);
-        DEBUG("<load_audio> File not found!\n");
-        return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
-    }
-
-    audio->mix[0] = audio->mix[1] = 1.0f; // Determines volume for the 12 (?) different outputs. See http://smealum.github.io/ctrulib/channel_8h.html#a30eb26f1972cc3ec28370263796c0444
-
-    ndspChnSetInterp(0, NDSP_INTERP_LINEAR); 
-    ndspChnSetMix(0, audio->mix); // See mix comment above
-
-    FILE * file = fmemopen(audio->filebuf, audio->filesize, "rb");
-    DEBUG("<load_audio> Filesize: %ld\n", audio->filesize);
-    if(file != NULL) 
-    {
-        int e = ov_open(file, &audio->vf, NULL, 0);
-        if (e < 0) 
-        {
-            DEBUG("<load_audio> Vorbis: %d\n", e);
-            free(audio->filebuf);
-            free(audio);
-            fclose(file);
-            return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
-        }
-
-        vorbis_info * vi = ov_info(&audio->vf, -1);
-        ndspChnSetRate(0, vi->rate);// Set sample rate to what's read from the ogg file
-        if (vi->channels == 2) {
-            DEBUG("<load_audio> Using stereo\n");
-            ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16); // 2 channels == Stereo
-        } else {
-            DEBUG("<load_audio> Invalid number of channels\n");
-            free(audio->filebuf);
-            free(audio);
-            fclose(file);
-            return MAKERESULT(RL_FATAL, RS_INVALIDARG, RM_APPLICATION, RD_NO_DATA);
-        }
-
-        audio->wave_buf[0].nsamples = audio->wave_buf[1].nsamples = vi->rate / 4; // 4 bytes per sample, samples = rate (bytes) / 4
-        audio->wave_buf[0].status = audio->wave_buf[1].status = NDSP_WBUF_DONE; // Used in play to stop from writing to current buffer
-        audio->wave_buf[0].data_vaddr = linearAlloc(BUF_TO_READ); // Most vorbis packets should only be 4 KB at most (?) Possibly dangerous assumption
-        audio->wave_buf[1].data_vaddr = linearAlloc(BUF_TO_READ);
-        DEBUG("<load_audio> Success!\n");
-        return MAKERESULT(RL_SUCCESS, RS_SUCCESS, RM_APPLICATION, RD_SUCCESS);
-    } else {
-        free(audio->filebuf);
-        free(audio);
-        DEBUG("<load_audio> fmemopen failed!\n");
-        return MAKERESULT(RL_FATAL, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
-    }
 }
