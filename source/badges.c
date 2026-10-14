@@ -120,7 +120,9 @@ int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *bad
     res = file_to_buf(badge_path, ArchiveSD, &file_buf);
     if (res != badge_file.fileSize)
     {
-        return -1;
+        // the caller adds this to the set's badge count
+        free(file_buf);
+        return 0;
     }
 
     int badges = install_badge_generic(file_buf, badge_file.fileSize, badge_file.name, badge_count, set_id);
