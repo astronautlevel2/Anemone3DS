@@ -33,6 +33,7 @@
 #include "unicode.h"
 
 #define MAX_BADGE 1000
+#define MAX_BADGE_SETS 100
 #define BADGE_DATA_SIZE 0xF4DF80
 #define BADGE_MNG_SIZE 0xD4A8
 

@@ -188,28 +188,33 @@ Result open_badge_extdata()
     }
     FSFILE_Close(test_handle);
 
+    // badges used to be downloaded into "ThemePlaza Badges"; if that set is still there, it keeps its icon
     char tp_path[0x106] = {0};
     sprintf(tp_path, "%sThemePlaza Badges", main_paths[REMOTE_MODE_BADGES]);
-    FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_ASCII, tp_path), FS_ATTRIBUTE_DIRECTORY);
-    strcat(tp_path, "/_seticon.png");
+    Handle tp_dir;
+    if(R_SUCCEEDED(FSUSER_OpenDirectory(&tp_dir, ArchiveSD, fsMakePath(PATH_ASCII, tp_path))))
+    {
+        FSDIR_Close(tp_dir);
+        strcat(tp_path, "/_seticon.png");
 
-    if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, tp_path), FS_OPEN_READ, 0)))
-    {
-        FILE *fp = fopen("romfs:/tp_set.png", "rb");
-        fseek(fp, 0L, SEEK_END);
-        ssize_t size = ftell(fp);
-        char *icon_buf = malloc(size);
-        fseek(fp, 0L, SEEK_SET);
-        fread(icon_buf, 1, size, fp);
-        fclose(fp);
-        remake_file(fsMakePath(PATH_ASCII, tp_path), ArchiveSD, size);
-        buf_to_file(size, fsMakePath(PATH_ASCII, tp_path), ArchiveSD, icon_buf);
-        DEBUG("res: 0x%08lx\n", res);
-        free(icon_buf);
-    }
-    else
-    {
-        FSFILE_Close(test_handle);
+        if(R_FAILED(res = FSUSER_OpenFile(&test_handle, ArchiveSD, fsMakePath(PATH_ASCII, tp_path), FS_OPEN_READ, 0)))
+        {
+            FILE *fp = fopen("romfs:/tp_set.png", "rb");
+            fseek(fp, 0L, SEEK_END);
+            ssize_t size = ftell(fp);
+            char *icon_buf = malloc(size);
+            fseek(fp, 0L, SEEK_SET);
+            fread(icon_buf, 1, size, fp);
+            fclose(fp);
+            remake_file(fsMakePath(PATH_ASCII, tp_path), ArchiveSD, size);
+            buf_to_file(size, fsMakePath(PATH_ASCII, tp_path), ArchiveSD, icon_buf);
+            DEBUG("res: 0x%08lx\n", res);
+            free(icon_buf);
+        }
+        else
+        {
+            FSFILE_Close(test_handle);
+        }
     }
 
     return 0;
@@ -581,16 +586,8 @@ void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode)
         filename = "download.zip";
 renamed:
     char * curr_filename;
-    if (mode == REMOTE_MODE_BADGES)
-    {
-        sprintf(path_to_file, "%sThemePlaza Badges/%s", main_paths[REMOTE_MODE_BADGES], filename);
-        DEBUG("Remote mode badges! Saving to %s/\n", path_to_file);
-        curr_filename = path_to_file + strlen(main_paths[REMOTE_MODE_BADGES]) + strlen("ThemePlaza Badges/");
-    } else
-    {
-        sprintf(path_to_file, "%s%s", main_paths[mode], filename);
-        curr_filename = path_to_file + strlen(main_paths[mode]);
-    }
+    sprintf(path_to_file, "%s%s", main_paths[mode], filename);
+    curr_filename = path_to_file + strlen(main_paths[mode]);
 
     DEBUG("Filtering out illegal chars...\n");
     // filter out characters illegal in FAT32 filenames
