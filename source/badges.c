@@ -120,7 +120,9 @@ int install_badge_png(FS_Path badge_path, FS_DirectoryEntry badge_file, int *bad
     res = file_to_buf(badge_path, ArchiveSD, &file_buf);
     if (res != badge_file.fileSize)
     {
-        return -1;
+        // the caller adds this to the set's badge count
+        free(file_buf);
+        return 0;
     }
 
     int badges = install_badge_generic(file_buf, badge_file.fileSize, badge_file.name, badge_count, set_id);
@@ -138,10 +140,12 @@ u32 zip_callback(char *file_buf, u64 file_size, const char *name, void *userdata
 {
     progress_finish += 1;
     zip_userdata *data = (zip_userdata *) userdata;
-    u16 *utf16_name = calloc(strlen(name), sizeof(u16));
-    utf8_to_utf16(utf16_name, (u8 *) name, strlen(name));
+    // named after the file itself, without the folders it is in inside the zip
+    const char *file_name = strrchr(name, '/') ? strrchr(name, '/') + 1 : name;
+    // as large as a directory entry's name, which install_badge_generic gets for images outside zips
+    u16 utf16_name[0x106] = {0};
+    utf8_to_utf16(utf16_name, (u8 *) file_name, 0x105);
     data->installed += install_badge_generic(file_buf, file_size, utf16_name, data->badge_count, data->set_id);
-    free(utf16_name);
     progress_status += 1;
 
     return 0;

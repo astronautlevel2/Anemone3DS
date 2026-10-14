@@ -81,6 +81,12 @@ typedef struct {
     const char *dump_all_official;
     const char *dump_badges;
     const char *install_badges;
+    const char *cancel_loading;
+    const char *update_available;
+    const char *update_ask;
+    const char *update_done;
+    const char *update_failed;
+    const char *install_update;
     float start_pos;
     const char *shuffle;
 } Draw_Strings_s;
@@ -129,7 +135,7 @@ typedef struct {
     const char *search;
     const char *parental_fail;
     const char *zip_not_found;
-    const char *generic_httpc_error;
+    const char *network_error;
     const char *http_timeout;
     const char *http_no_network;
     const char *http_ssl_error;

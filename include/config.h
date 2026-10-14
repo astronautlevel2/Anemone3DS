@@ -41,6 +41,7 @@ typedef struct {
     u32 red_color_background;
     u32 red_color_accent;
     u32 yellow_color;
+    bool disable_update_check;
 } Config_s;
 
 extern Config_s config;

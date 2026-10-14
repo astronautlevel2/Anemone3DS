@@ -58,6 +58,10 @@ void load_config(void)
                         config.accent_color = C2D_Color32(r, g, b, a);
                     }
                 }
+                else if (json_is_boolean(value) && !strcmp(key, "Check For Updates"))
+                {
+                    config.disable_update_check = !json_is_true(value);
+                }
                 else if (json_is_array(value) && !strcmp(key, "Background Color") && json_array_size(value) == 4)
                 {
                     if (json_is_integer(json_array_get(value, 0)) && json_is_integer(json_array_get(value, 1))
