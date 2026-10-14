@@ -250,10 +250,28 @@ size_t png_to_abgr(char ** bufp, size_t size, u32 *height)
     uint32_t * buf = (uint32_t*)*bufp;
 
     FILE * fp = fmemopen(buf, size, "rb");;
-    png_bytep * row_pointers = NULL;
+    // set after the setjmp below, so they have to be volatile to be freed after an error
+    png_bytep * volatile row_pointers = NULL;
+    u32 * volatile out = NULL;
 
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_infop info = png_create_info_struct(png);
+    if(fp == NULL || png == NULL || info == NULL)
+    {
+        png_destroy_read_struct(&png, &info, NULL);
+        if (fp) fclose(fp);
+        return 0;
+    }
+
+    // libpng jumps back here on corrupt data instead of aborting the app
+    if(setjmp(png_jmpbuf(png)))
+    {
+        png_destroy_read_struct(&png, &info, NULL);
+        fclose(fp);
+        free(row_pointers);
+        free(out);
+        return 0;
+    }
 
     png_init_io(png, fp);
     png_read_info(png, info);
@@ -298,7 +316,9 @@ size_t png_to_abgr(char ** bufp, size_t size, u32 *height)
 
     row_pointers = malloc(sizeof(png_bytep) * *height);
     out_size = sizeof(u32) * (width * *height);
-    u32 * out = malloc(out_size);
+    out = malloc(out_size);
+    if(row_pointers == NULL || out == NULL)
+        png_error(png, "out of memory");
     for(u32 y = 0; y < *height; y++)
     {
         row_pointers[y] = (png_bytep)(out + (width * y));
