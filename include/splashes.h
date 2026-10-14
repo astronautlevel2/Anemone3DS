@@ -30,8 +30,15 @@
 #include "common.h"
 #include "loading.h"
 
+typedef enum {
+    SPLASH_INSTALL_NORMAL,
+    SPLASH_INSTALL_TOP,
+    SPLASH_INSTALL_BOTTOM,
+} SplashInstallType;
+
 void splash_delete(void);
-void splash_install(const Entry_s * splash);
+Result splash_dump(void);
+void splash_install(const Entry_s * splash, SplashInstallType install_type);
 
 void splash_check_installed(void * void_arg);
 

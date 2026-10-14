@@ -551,6 +551,34 @@ Result zero_handle_memeasy(Handle handle)
     return 0;
 }
 
+static SwkbdCallbackResult
+dir_name_callback(void * data, const char ** ppMessage, const char * text, size_t textlen)
+{
+    (void)textlen;
+    (void)data;
+    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    {
+        *ppMessage = language.themes.illegal_char;
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+bool ask_dump_folder_name(char * name, int max_chars)
+{
+    SwkbdState swkbd;
+
+    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
+    swkbdSetHintText(&swkbd, language.themes.name_folder);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.themes.cancel, false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.themes.done, true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
+    swkbdSetFilterCallback(&swkbd, dir_name_callback, NULL);
+
+    return swkbdInputText(&swkbd, name, max_chars) == SWKBD_BUTTON_CONFIRM;
+}
+
 static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;
@@ -567,7 +595,8 @@ static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, con
 }
 
 // assumes the input buffer is a ZIP. if it isn't, why are you calling this?
-void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode)
+// saved_path (optional, 0x106 u16s) receives the path of the written file; it is left untouched if nothing was saved
+void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode, u16 * saved_path)
 {
     static char path_to_file[32761]; // FAT32 paths can be quite long.
     const int max_chars = 250;
@@ -674,5 +703,6 @@ renamed:
 
     DEBUG("Saving to SD: %s\n", path_to_file);
     remake_file(path, ArchiveSD, size);
-    buf_to_file(size, path, ArchiveSD, buf);
+    if (R_SUCCEEDED(buf_to_file(size, path, ArchiveSD, buf)) && saved_path != NULL)
+        memcpy(saved_path, utf16path, sizeof(utf16path));
 }

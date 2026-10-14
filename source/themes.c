@@ -327,6 +327,48 @@ Result bgm_install(Entry_s * theme)
     return install_theme_internal(&list, THEME_INSTALL_BGM);
 }
 
+// Switch the HOME Menu back to its built-in theme
+Result theme_uninstall(void)
+{
+    Result res;
+
+    // SaveData first, so the HOME Menu stops pointing at the theme cache before it is cleared
+    char * savedata_buf = NULL;
+    u32 savedata_size = file_to_buf(fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, &savedata_buf);
+    if(savedata_size < sizeof(SaveData_dat_s))
+    {
+        free(savedata_buf);
+        return MAKERESULT(RL_PERMANENT, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
+
+    SaveData_dat_s * savedata = (SaveData_dat_s *)savedata_buf;
+    memset(&savedata->theme_entry, 0, sizeof(ThemeEntry_s));
+    savedata->shuffle = 0;
+    memset(savedata->shuffle_themes, 0, sizeof(ThemeEntry_s) * MAX_SHUFFLE_THEMES);
+
+    res = buf_to_file(savedata_size, fsMakePath(PATH_ASCII, "/SaveData.dat"), ArchiveHomeExt, savedata_buf);
+    free(savedata_buf);
+    if(R_FAILED(res)) return res;
+
+    char * thememanage_buf = NULL;
+    u32 thememanage_size = file_to_buf(fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, &thememanage_buf);
+    if(thememanage_size < sizeof(ThemeManage_bin_s))
+    {
+        free(thememanage_buf);
+        return MAKERESULT(RL_PERMANENT, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
+
+    ThemeManage_bin_s * theme_manage = (ThemeManage_bin_s *)thememanage_buf;
+    memset(theme_manage, 0, sizeof(ThemeManage_bin_s));
+    theme_manage->unk4 = 1;
+    theme_manage->dlc_theme_content_index = 0xFF;
+    theme_manage->use_theme_cache = 0x0200;
+
+    res = buf_to_file(thememanage_size, fsMakePath(PATH_ASCII, "/ThemeManage.bin"), ArchiveThemeExt, thememanage_buf);
+    free(thememanage_buf);
+    return res;
+}
+
 Result no_bgm_install(Entry_s * theme)
 {
     Entry_List_s list = {0};
@@ -341,39 +383,15 @@ Result shuffle_install(const Entry_List_s * themes)
     return install_theme_internal(themes, THEME_INSTALL_SHUFFLE | THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
 
-static SwkbdCallbackResult
-dir_name_callback(void * data, const char ** ppMessage, const char * text, size_t textlen)
-{
-    (void)textlen;
-    (void)data;
-    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
-    {
-        *ppMessage = language.themes.illegal_char;
-        return SWKBD_CALLBACK_CONTINUE;
-    }
-    return SWKBD_CALLBACK_OK;
-}
-
 Result dump_current_theme(void)
 {
     const int max_chars = 255;
     char * output_dir = calloc(max_chars + 1, sizeof(char));
 
-    SwkbdState swkbd;
-
-    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
-    swkbdSetHintText(&swkbd, language.themes.name_folder);
-
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.themes.cancel, false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.themes.done, true);
-    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
-    swkbdSetFilterCallback(&swkbd, dir_name_callback, NULL);
-
-    SwkbdButton button = swkbdInputText(&swkbd, output_dir, max_chars);
-
-    if (button != SWKBD_BUTTON_CONFIRM)
+    if (!ask_dump_folder_name(output_dir, max_chars))
     {
         DEBUG("<dump_theme> Something went wrong with getting swkbd\n");
+        free(output_dir);
         return MAKERESULT(RL_FATAL, RS_CANCELED, RM_UTIL, RD_CANCEL_REQUESTED);
     }
 

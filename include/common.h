@@ -59,6 +59,7 @@ static inline int max(const int a, const int b)
 typedef enum {
     MODE_THEMES = 0,
     MODE_SPLASHES,
+    MODE_BADGES,
 
     MODE_AMOUNT,
 } EntryMode;
@@ -67,6 +68,8 @@ typedef enum {
     DRAW_MODE_LIST = 0,
     DRAW_MODE_INSTALL,
     DRAW_MODE_EXTRA,
+    DRAW_MODE_BROWSE,
+    DRAW_MODE_DUMP,
 
     DRAW_MODE_AMOUNT,
 } DrawMode;

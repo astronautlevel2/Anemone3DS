@@ -36,6 +36,8 @@
 #include "urls.h"
 #include "conversion.h"
 #include "ui_strings.h"
+#include "themes.h"
+#include "splashes.h"
 
 char *last_search = NULL;
 json_int_t last_page = 1;
@@ -352,9 +354,39 @@ static void download_remote_entry(Entry_s * entry, RemoteMode mode)
     }
     free(download_url);
 
-    save_zip_to_sd(filename, zip_size, zip_buf, mode);
+    u16 saved_path[0x106] = {0};
+    save_zip_to_sd(filename, zip_size, zip_buf, mode, saved_path);
     free(filename);
     free(zip_buf);
+
+    offer_install_downloaded(saved_path, mode);
+}
+
+// ask to install a theme or splash right after it was downloaded to saved_path
+void offer_install_downloaded(const u16 * saved_path, RemoteMode mode)
+{
+    if (saved_path[0] == 0 || (mode != REMOTE_MODE_THEMES && mode != REMOTE_MODE_SPLASHES))
+        return;
+
+    if (!draw_confirm_no_interface(language.remote.install_now))
+        return;
+
+    Entry_s entry = {0};
+    memcpy(entry.path, saved_path, sizeof(entry.path));
+    entry.is_zip = true;
+
+    if (mode == REMOTE_MODE_THEMES)
+    {
+        aptSetHomeAllowed(false);
+        draw_install(INSTALL_SINGLE);
+        if (R_SUCCEEDED(theme_install(&entry)))
+            installed_themes = true;
+    }
+    else
+    {
+        draw_install(INSTALL_SPLASH);
+        splash_install(&entry, SPLASH_INSTALL_NORMAL);
+    }
 }
 
 static SwkbdCallbackResult
@@ -567,7 +599,6 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (kDown & KEY_START)
         {
-        exit:
             quit = true;
             downloaded = false;
             break;
@@ -723,23 +754,19 @@ bool themeplaza_browser(RemoteMode mode)
 
                 if (y < 24)
                 {
-                    if (BETWEEN(0, x, 80))
-                    {
-                        search_menu(current_list);
-                    }
-                    else if (BETWEEN(320 - 96, x, 320 - 72))
+                    if (toolbar_hit(x, y, TOOLBAR_REMOTE_BACK_X, TOOLBAR_TOP_Y))
                     {
                         break;
                     }
-                    else if (BETWEEN(320 - 72, x, 320 - 48))
+                    else if (toolbar_hit_rect(x, y, TOOLBAR_REMOTE_SEARCH_X, TOOLBAR_TOP_Y, TOOLBAR_REMOTE_SEARCH_WIDTH, TOOLBAR_BUTTON_SIZE))
                     {
-                        goto exit;
+                        search_menu(current_list);
                     }
-                    else if (BETWEEN(320 - 48, x, 320 - 24))
+                    else if (toolbar_hit(x, y, TOOLBAR_REMOTE_FILTER_X, TOOLBAR_TOP_Y))
                     {
-                        goto toggle_preview;
+                        extra_mode = true;
                     }
-                    else if (BETWEEN(320 - 24, x, 320))
+                    else if (toolbar_hit(x, y, TOOLBAR_REMOTE_MODE_X, TOOLBAR_TOP_Y))
                     {
                         mode++;
                         mode %= REMOTE_MODE_AMOUNT;
@@ -749,6 +776,15 @@ bool themeplaza_browser(RemoteMode mode)
 
                         load_remote_list(current_list, 1, mode, false);
                     }
+                }
+                else if (toolbar_hit(x, y, TOOLBAR_REMOTE_PREVIEW_X, TOOLBAR_BOTTOM_Y))
+                {
+                    goto toggle_preview;
+                }
+                else if (toolbar_hit(x, y, TOOLBAR_REMOTE_DOWNLOAD_X, TOOLBAR_BOTTOM_Y))
+                {
+                    download_remote_entry(current_entry, mode);
+                    downloaded = true;
                 }
                 else if (BETWEEN(240 - 24, y, 240) && BETWEEN(176, x, 320))
                 {

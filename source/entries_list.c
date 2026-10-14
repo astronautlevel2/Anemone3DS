@@ -110,6 +110,29 @@ static void sort_list(Entry_List_s * list, sort_comparator compare_entries)
         qsort(list->entries, list->entries_count, sizeof(Entry_s), compare_entries); //alphabet sort
 }
 
+bool list_has_installed_entries(const Entry_List_s * list)
+{
+    if(list == NULL || list->entries == NULL)
+        return false;
+
+    for(int i = 0; i < list->entries_count; i++)
+    {
+        if(list->entries[i].installed)
+            return true;
+    }
+
+    return false;
+}
+
+void clear_installed_entries(Entry_List_s * list)
+{
+    if(list == NULL || list->entries == NULL)
+        return;
+
+    for(int i = 0; i < list->entries_count; i++)
+        list->entries[i].installed = false;
+}
+
 void sort_by_name(Entry_List_s * list)
 {
     sort_list(list, compare_entries_by_name);

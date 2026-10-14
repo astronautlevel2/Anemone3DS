@@ -40,7 +40,7 @@ bool quit = false;
 bool dspfirm = false;
 static audio_s * audio = NULL;
 static bool homebrew = false;
-static bool installed_themes = false;
+bool installed_themes = false;
 bool home_displayed = false;
 u64 time_home_pressed = 0;
 
@@ -53,6 +53,8 @@ static Thread install_check_threads[MODE_AMOUNT] = {0};
 static Thread_Arg_s install_check_threads_arg[MODE_AMOUNT] = {0};
 
 static Entry_List_s lists[MODE_AMOUNT] = {0};
+// a list is only loaded the first time its mode is shown, see load_list()
+static bool lists_loaded[MODE_AMOUNT] = {0};
 
 Language_s language = {0};
 
@@ -70,12 +72,15 @@ const char * main_paths[REMOTE_MODE_AMOUNT] = {
 const int entries_per_screen_v[MODE_AMOUNT] = {
     4,
     4,
+    4,
 };
 const int entries_per_screen_h[MODE_AMOUNT] = { //for themeplaza browser
     6,
     6,
+    6,
 };
 const int entry_size[MODE_AMOUNT] = {
+    48,
     48,
     48,
 };
@@ -93,6 +98,7 @@ static void init_services(void)
     init_sd();
     archive_result = open_archives();
     badge_archive_result = open_badge_extdata();
+    check_installed_badges();
     if(envIsHomebrew())
     {
         s64 out;
@@ -129,6 +135,22 @@ static void stop_install_check(void)
     }
 }
 
+static void restart_splash_install_check(void)
+{
+    Thread_Arg_s * arg = &install_check_threads_arg[MODE_SPLASHES];
+    arg->run_thread = false;
+    if(install_check_threads[MODE_SPLASHES] != NULL)
+    {
+        threadJoin(install_check_threads[MODE_SPLASHES], U64_MAX);
+        threadFree(install_check_threads[MODE_SPLASHES]);
+        install_check_threads[MODE_SPLASHES] = NULL;
+    }
+
+    arg->run_thread = true;
+    arg->thread_arg = (void **)&lists[MODE_SPLASHES];
+    install_check_threads[MODE_SPLASHES] = threadCreate(splash_check_installed, arg, __stacksize__, 0x3f, -2, false);
+}
+
 static inline void wait_scroll(void)
 {
     released = true;
@@ -156,12 +178,20 @@ void free_lists(void)
     for(int i = 0; i < MODE_AMOUNT; i++)
     {
         Entry_List_s * const current_list = &lists[i];
-        C3D_TexDelete(&current_list->icons_texture);
+        if(current_list->icons_texture.data != NULL)
+            C3D_TexDelete(&current_list->icons_texture);
         free(current_list->icons_info);
         free(current_list->entries);
         memset(current_list, 0, sizeof(Entry_List_s));
+        lists_loaded[i] = false;
     }
     exit_thread();
+}
+
+// Drops every list: each one is loaded again the next time its mode is shown
+static void reload_lists(void)
+{
+    free_lists();
 }
 
 void exit_function(bool power_pressed)
@@ -190,7 +220,7 @@ void exit_function(bool power_pressed)
 
 static void start_thread(void)
 {
-    if(iconLoadingThread_arg.run_thread)
+    if(iconLoadingThread_arg.run_thread && iconLoadingThread == NULL)
     {
         DEBUG("starting thread\n");
         iconLoadingThread = threadCreate(load_icons_thread, &iconLoadingThread_arg, __stacksize__, 0x38, -2, false);
@@ -209,86 +239,93 @@ static u32 next_or_equal_power_of_2(u32 v)
     return v;
 }
 
-static void load_lists(Entry_List_s * lists)
+// Loads the list of one mode. Called when the mode is shown and its list isn't loaded yet, so starting
+// the app only reads the themes and the splashes are read the first time the splash mode is opened.
+static void load_list(EntryMode mode)
 {
-    free_lists();
-    for(int i = 0; i < MODE_AMOUNT; i++)
+    // badges are installed straight from the badges folder, there is no list to load
+    if(mode == MODE_BADGES)
     {
-        InstallType loading_screen = INSTALL_NONE;
-        if(i == MODE_THEMES)
-            loading_screen = INSTALL_LOADING_THEMES;
-        else if(i == MODE_SPLASHES)
-            loading_screen = INSTALL_LOADING_SPLASHES;
+        lists[mode].mode = mode;
+        lists_loaded[mode] = true;
+        return;
+    }
 
-        draw_install(loading_screen);
+    InstallType loading_screen = INSTALL_NONE;
+    if(mode == MODE_THEMES)
+        loading_screen = INSTALL_LOADING_THEMES;
+    else if(mode == MODE_SPLASHES)
+        loading_screen = INSTALL_LOADING_SPLASHES;
 
-        Entry_List_s * const current_list = &lists[i];
-        current_list->mode = i;
-        current_list->entries_per_screen_v = entries_per_screen_v[i];
-        current_list->entries_per_screen_h = 1;
-        current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
-        current_list->entry_size = entry_size[i];
+    draw_install(loading_screen);
 
-        const int x_component = max(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
-        const int y_component = min(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
-        // A texture must have power of 2 dimensions (not necessarily the same)
-        // so, get the power of two greater than or equal to:
-        // - the size of the largest length (row or column) of icons for the width
-        // - the size of all of those lengths to fit the total for the height
-        C3D_TexInit(&current_list->icons_texture,
-            next_or_equal_power_of_2(x_component * current_list->entry_size),
-            next_or_equal_power_of_2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
-            GPU_RGB565);
-        C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
+    Entry_List_s * const current_list = &lists[mode];
+    current_list->mode = mode;
+    current_list->entries_per_screen_v = entries_per_screen_v[mode];
+    current_list->entries_per_screen_h = 1;
+    current_list->entries_loaded = current_list->entries_per_screen_v * current_list->entries_per_screen_h;
+    current_list->entry_size = entry_size[mode];
 
-        const float inv_width = 1.0f / current_list->icons_texture.width;
-        const float inv_height = 1.0f / current_list->icons_texture.height;
-        current_list->icons_info = (Entry_Icon_s *)calloc(x_component * y_component * ICONS_OFFSET_AMOUNT, sizeof(Entry_Icon_s));
-        for(int j = 0; j < y_component * ICONS_OFFSET_AMOUNT; ++j)
+    const int x_component = max(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+    const int y_component = min(current_list->entries_per_screen_h, current_list->entries_per_screen_v);
+    // A texture must have power of 2 dimensions (not necessarily the same)
+    // so, get the power of two greater than or equal to:
+    // - the size of the largest length (row or column) of icons for the width
+    // - the size of all of those lengths to fit the total for the height
+    C3D_TexInit(&current_list->icons_texture,
+        next_or_equal_power_of_2(x_component * current_list->entry_size),
+        next_or_equal_power_of_2(y_component * current_list->entry_size * ICONS_OFFSET_AMOUNT),
+        GPU_RGB565);
+    C3D_TexSetFilter(&current_list->icons_texture, GPU_NEAREST, GPU_NEAREST);
+
+    const float inv_width = 1.0f / current_list->icons_texture.width;
+    const float inv_height = 1.0f / current_list->icons_texture.height;
+    current_list->icons_info = (Entry_Icon_s *)calloc(x_component * y_component * ICONS_OFFSET_AMOUNT, sizeof(Entry_Icon_s));
+    for(int j = 0; j < y_component * ICONS_OFFSET_AMOUNT; ++j)
+    {
+        const int index = j * x_component;
+        for(int h = 0; h < x_component; ++h)
         {
-            const int index = j * x_component;
-            for(int h = 0; h < x_component; ++h)
-            {
-                Entry_Icon_s * const icon_info = &current_list->icons_info[index + h];
-                icon_info->x = h * current_list->entry_size;
-                icon_info->y = j * current_list->entry_size;
-                icon_info->subtex.width = current_list->entry_size;
-                icon_info->subtex.height = current_list->entry_size;
-                icon_info->subtex.left = icon_info->x * inv_width;
-                icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
-                icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
-                icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
-            }
-        }
-
-        Result res = load_entries(main_paths[i], current_list, loading_screen);
-        if(R_SUCCEEDED(res))
-        {
-            if(current_list->entries_count > current_list->entries_loaded * ICONS_OFFSET_AMOUNT)
-                iconLoadingThread_arg.run_thread = true;
-
-            DEBUG("total: %i\n", current_list->entries_count);
-
-            sort_by_name(current_list);
-            load_icons_first(current_list, false);
-
-            void (*install_check_function)(void *) = NULL;
-            if(i == MODE_THEMES)
-                install_check_function = themes_check_installed;
-            else if(i == MODE_SPLASHES)
-                install_check_function = splash_check_installed;
-
-            Thread_Arg_s * current_arg = &install_check_threads_arg[i];
-            current_arg->run_thread = true;
-            current_arg->thread_arg = (void **)current_list;
-
-            if(install_check_function != NULL)
-            {
-                install_check_threads[i] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
-                svcSleepThread(1e8);
-            }
+            Entry_Icon_s * const icon_info = &current_list->icons_info[index + h];
+            icon_info->x = h * current_list->entry_size;
+            icon_info->y = j * current_list->entry_size;
+            icon_info->subtex.width = current_list->entry_size;
+            icon_info->subtex.height = current_list->entry_size;
+            icon_info->subtex.left = icon_info->x * inv_width;
+            icon_info->subtex.top = 1.0f - (icon_info->y * inv_height);
+            icon_info->subtex.right = icon_info->subtex.left + (icon_info->subtex.width * inv_width);
+            icon_info->subtex.bottom = icon_info->subtex.top - (icon_info->subtex.height * inv_height);
         }
     }
+
+    Result res = load_entries(main_paths[mode], current_list, loading_screen);
+    if(R_SUCCEEDED(res))
+    {
+        if(current_list->entries_count > current_list->entries_loaded * ICONS_OFFSET_AMOUNT)
+            iconLoadingThread_arg.run_thread = true;
+
+        DEBUG("total: %i\n", current_list->entries_count);
+
+        sort_by_name(current_list);
+        load_icons_first(current_list, false);
+
+        void (*install_check_function)(void *) = NULL;
+        if(mode == MODE_THEMES)
+            install_check_function = themes_check_installed;
+        else if(mode == MODE_SPLASHES)
+            install_check_function = splash_check_installed;
+
+        Thread_Arg_s * current_arg = &install_check_threads_arg[mode];
+        current_arg->run_thread = true;
+        current_arg->thread_arg = (void **)current_list;
+
+        if(install_check_function != NULL)
+        {
+            install_check_threads[mode] = threadCreate(install_check_function, current_arg, __stacksize__, 0x3f, -2, false);
+            svcSleepThread(1e8);
+        }
+    }
+    lists_loaded[mode] = true;
     start_thread();
 }
 
@@ -395,13 +432,6 @@ int main(void)
     iconLoadingThread_arg.thread_arg = iconLoadingThread_args_void;
     iconLoadingThread_arg.run_thread = false;
 
-    #ifndef CITRA_MODE
-    if(R_SUCCEEDED(archive_result))
-        load_lists(lists);
-    #else
-    load_lists(lists);
-    #endif
-
     EntryMode current_mode = MODE_THEMES;
 
     bool preview_mode = false;
@@ -442,15 +472,35 @@ int main(void)
         u32 kHeld = hidKeysHeld();
         u32 kUp = hidKeysUp();
 
+        #ifndef CITRA_MODE
+        if(R_SUCCEEDED(archive_result) && !lists_loaded[current_mode])
+        #else
+        if(!lists_loaded[current_mode])
+        #endif
+            load_list(current_mode);
+
         current_list = &lists[current_mode];
+        // badge mode has no list, and an empty list has no entries to act on
+        const bool no_list = current_mode == MODE_BADGES || current_list->entries_count == 0;
 
         Instructions_s instructions = language.normal_instructions[current_mode];
+        if((current_mode == MODE_SPLASHES && !list_has_installed_entries(current_list)) || (current_mode == MODE_BADGES && !badges_installed()))
+            instructions.instructions[1][0] = NULL; // nothing to uninstall with X
         if(install_mode)
-            instructions = language.install_instructions;
+            instructions = current_mode == MODE_SPLASHES ? language.splash_install_instructions : language.install_instructions;
         if(extra_mode)
         {
-            instructions = language.extra_instructions[extra_index];
+            instructions = extra_index == 2 ? language.dump_instructions[current_mode] : language.extra_instructions[extra_index];
+            if(no_list && extra_index == 1)
+            {
+                // jumping, reloading icons and sorting need a list
+                instructions.instructions[0][0] = NULL;
+                instructions.instructions[0][1] = NULL;
+                instructions.instructions[2][0] = NULL;
+            }
         }
+        if(draw_mode == DRAW_MODE_BROWSE)
+            instructions = language.browse_instructions;
 
         if(preview_mode)
         {
@@ -489,52 +539,35 @@ int main(void)
 
         if(kDown & KEY_START) quit = true;
 
-        if(current_list->entries_count == 0)
+        if(draw_mode == DRAW_MODE_BROWSE)
         {
-            if (kDown & KEY_R)
-            {
-                goto enable_qr;
-            } else if (kDown & KEY_L)
-            {
-                goto switch_mode;
-            } else if (kDown & KEY_TOUCH)
+            bool scan_qr = kDown & KEY_R;
+            bool browse_themeplaza = kDown & KEY_DUP;
+            bool leave = kDown & KEY_B;
+            if(kDown & KEY_TOUCH)
             {
                 touchPosition touch = {0};
                 hidTouchRead(&touch);
 
                 u16 x = touch.px;
                 u16 y = touch.py;
-                if (y < 24)
+                if(toolbar_hit_rect(x, y, BROWSE_QR_BUTTON_X, BROWSE_QR_BUTTON_Y, BROWSE_QR_BUTTON_WIDTH, BROWSE_QR_BUTTON_HEIGHT))
                 {
-                    if(BETWEEN(320-24, x, 320))
-                    {
-                        goto switch_mode;
-                    } else if(BETWEEN(320-48, x, 320-24))
-                    {
-                        quit = true;
-                        continue;
-                    } else if(BETWEEN(320-72, x, 320-48))
-                    {
-                        goto browse_themeplaza;
-                    } else if(BETWEEN(320-96, x, 320-72))
-                    {
-                        goto enable_qr;
-                    }
+                    scan_qr = true;
+                } else if(toolbar_hit_rect(x, y, BROWSE_THEMEPLAZA_CARD_X, BROWSE_THEMEPLAZA_CARD_Y, BROWSE_THEMEPLAZA_CARD_WIDTH, BROWSE_THEMEPLAZA_CARD_HEIGHT))
+                {
+                    browse_themeplaza = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_BROWSE_BACK_X, TOOLBAR_TOP_Y))
+                {
+                    leave = true;
                 }
             }
-        }
-        else if(!install_mode && !extra_mode)
-        {
-            if(!preview_mode && kDown & KEY_L) //toggle between splashes and themes
+
+            if(scan_qr || browse_themeplaza || leave)
+                draw_mode = DRAW_MODE_LIST;
+
+            if(scan_qr)
             {
-                switch_mode:
-                current_mode++;
-                current_mode %= MODE_AMOUNT;
-                continue;
-            }
-            else if(!preview_mode && kDown & KEY_R) //toggle QR mode
-            {
-                enable_qr:
                 draw_base_interface();
                 draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_BACKGROUND], language.main.loading_qr);
                 end_frame();
@@ -547,7 +580,7 @@ int main(void)
                     {
                         if(init_qr())
                         {
-                            load_lists(lists);
+                            reload_lists();
                         }
                     }
                     else
@@ -562,7 +595,86 @@ int main(void)
                     else
                         throw_error(language.main.camera_broke, ERROR_LEVEL_WARNING);
                 }
+            }
+            else if(browse_themeplaza)
+            {
+                if(themeplaza_browser((RemoteMode) current_mode))
+                {
+                    current_mode = MODE_THEMES;
+                    reload_lists();
+                }
+            }
+            continue;
+        }
 
+        if(no_list && !extra_mode)
+        {
+            bool install = current_mode == MODE_BADGES && (kDown & KEY_A);
+            bool uninstall = current_mode == MODE_BADGES && badges_installed() && (kDown & KEY_X);
+            bool open_menu = kDown & KEY_B;
+            if (kDown & KEY_R)
+            {
+                draw_mode = DRAW_MODE_BROWSE;
+            } else if (kDown & KEY_L)
+            {
+                goto switch_mode;
+            } else if (kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if(toolbar_hit(x, y, TOOLBAR_LIST_MODE_X, TOOLBAR_TOP_Y))
+                {
+                    goto switch_mode;
+                } else if(toolbar_hit(x, y, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y))
+                {
+                    open_menu = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
+                {
+                    draw_mode = DRAW_MODE_BROWSE;
+                } else if(current_mode == MODE_BADGES && badges_installed() && toolbar_hit(x, y, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y))
+                {
+                    uninstall = true;
+                } else if(current_mode == MODE_BADGES && toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
+                {
+                    install = true;
+                }
+            }
+
+            if(open_menu)
+            {
+                extra_mode = true;
+                draw_mode = DRAW_MODE_EXTRA;
+            }
+            else if(install)
+            {
+                draw_install(INSTALL_BADGES);
+                install_badges();
+                check_installed_badges();
+            }
+            else if(uninstall && draw_confirm(language.main.uninstall_badges_confirm, current_list, draw_mode))
+            {
+                draw_install(INSTALL_BADGES_UNINSTALL);
+                uninstall_badges();
+                check_installed_badges();
+            }
+            // the list's own buttons and keys don't apply here
+            continue;
+        }
+        else if(!install_mode && !extra_mode)
+        {
+            if(!preview_mode && kDown & KEY_L) //toggle between splashes and themes
+            {
+                switch_mode:
+                current_mode++;
+                current_mode %= MODE_AMOUNT;
+                continue;
+            }
+            else if(!preview_mode && kDown & KEY_R)
+            {
+                draw_mode = DRAW_MODE_BROWSE;
                 continue;
             }
             else if(kDown & KEY_Y && current_list->entries != NULL) //toggle preview mode
@@ -609,11 +721,65 @@ int main(void)
         int selected_entry = current_list->selected_entry;
         Entry_s * current_entry = &current_list->entries[selected_entry];
 
-        if(preview_mode || current_list->entries == NULL)
+        if(preview_mode || (current_list->entries == NULL && !extra_mode))
             goto touch;
 
 
-        if(install_mode)
+        if(install_mode && current_mode == MODE_SPLASHES)
+        {
+            bool leave = kDown & KEY_B;
+            int install_type = -1;
+
+            if(kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+
+                if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_NORMAL_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_NORMAL;
+                else if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_TOP_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_TOP;
+                else if(toolbar_hit(x, y, TOOLBAR_SPLASH_INSTALL_BOTTOM_X, TOOLBAR_TOP_Y))
+                    install_type = SPLASH_INSTALL_BOTTOM;
+                else if(toolbar_hit(x, y, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y))
+                    leave = true;
+            }
+            else if(kDown & KEY_DUP)
+                install_type = SPLASH_INSTALL_NORMAL;
+            else if(kDown & KEY_DLEFT)
+                install_type = SPLASH_INSTALL_TOP;
+            else if(kDown & KEY_DDOWN)
+                install_type = SPLASH_INSTALL_BOTTOM;
+
+            if(leave || install_type >= 0)
+            {
+                install_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+            }
+
+            if(install_type >= 0)
+            {
+                draw_install(INSTALL_SPLASH);
+                splash_install(current_entry, (SplashInstallType)install_type);
+                if(install_type == SPLASH_INSTALL_NORMAL)
+                {
+                    for(int i = 0; i < current_list->entries_count; i++)
+                    {
+                        Entry_s * splash = &current_list->entries[i];
+                        splash->installed = splash == current_entry;
+                    }
+                }
+                else
+                {
+                    // the other screen keeps its splash, so let the check thread work out which entries are installed
+                    restart_splash_install_check();
+                }
+            }
+            continue;
+        }
+        else if(install_mode)
         {
             if ((kDown | kHeld) & KEY_TOUCH)
             {
@@ -626,19 +792,19 @@ int main(void)
                 {
                     if (y < 24)
                     {
-                        if (BETWEEN(320-24, x, 320))
+                        if (toolbar_hit(x, y, TOOLBAR_INSTALL_NORMAL_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_single;
-                        } else if (BETWEEN(320-48, x, 320-24))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_SHUFFLE_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_shuffle;
-                        } else if (BETWEEN(320-72, x, 320-48))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_NO_BGM_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_no_bgm;
-                        } else if (BETWEEN(320-96, x, 320-72))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_BGM_ONLY_X, TOOLBAR_TOP_Y))
                         {
                             goto install_theme_bgm_only;
-                        } else if (BETWEEN(2, x, 26))
+                        } else if (toolbar_hit(x, y, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y))
                         {
                             goto install_leave;
                         }
@@ -752,6 +918,83 @@ int main(void)
             }
             continue;
         }
+        else if(extra_mode && extra_index == 2)
+        {
+            // the dump menu: the current mode's dumps, picked with up and down or their buttons
+            const int dump_count = dump_button_count(&instructions);
+            int dump = -1;
+            if(kDown & KEY_DUP)
+            {
+                dump = 0;
+            }
+            else if(kDown & KEY_DDOWN)
+            {
+                dump = 1;
+            }
+            else if(kDown & KEY_B)
+            {
+                extra_index = 1;
+                draw_mode = DRAW_MODE_EXTRA;
+            }
+            else if(kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if(toolbar_hit(x, y, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y))
+                {
+                    extra_index = 1;
+                    draw_mode = DRAW_MODE_EXTRA;
+                }
+                else if(toolbar_hit(x, y, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y))
+                {
+                    quit = true;
+                }
+                else
+                {
+                    for(int i = 0; i < dump_count; i++)
+                    {
+                        if(toolbar_hit_rect(x, y, DUMP_BUTTON_X, dump_button_y(i, dump_count), DUMP_BUTTON_WIDTH, DUMP_BUTTON_HEIGHT))
+                            dump = i;
+                    }
+                }
+            }
+
+            if(dump >= 0 && dump < dump_count)
+            {
+                if(current_mode == MODE_THEMES && dump == 0)
+                {
+                    draw_install(INSTALL_DUMPING_THEME);
+                    Result res = dump_current_theme();
+                    if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
+                    else reload_lists();
+                }
+                else if(current_mode == MODE_THEMES)
+                {
+                    draw_install(INSTALL_DUMPING_ALL_THEMES);
+                    Result res = dump_all_themes();
+                    if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
+                    else reload_lists();
+                }
+                else if(current_mode == MODE_SPLASHES)
+                {
+                    draw_install(INSTALL_DUMPING_SPLASH);
+                    Result res = splash_dump();
+                    if (R_FAILED(res)) DEBUG("Dump splash result: %lx\n", res);
+                    else reload_lists();
+                }
+                else
+                {
+                    draw_install(INSTALL_DUMPING_BADGES);
+                    extract_badges();
+                }
+                extra_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                extra_index = 1;
+            }
+            continue;
+        }
         else if(extra_mode)
         {
             if((kDown | kHeld) & KEY_TOUCH)
@@ -764,13 +1007,17 @@ int main(void)
                 {
                     if (y < 24)
                     {
-                        if (BETWEEN(320-24, x, 320))
+                        if (toolbar_hit(x, y, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y))
                         {
-                            goto browse_themeplaza;
-                        } else if (BETWEEN(320-48, x, 320-24))
+                            extra_index = 2;
+                            draw_mode = DRAW_MODE_DUMP;
+                        } else if (!no_list && toolbar_hit(x, y, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y))
                         {
-                            goto dump_single;
-                        } else if (BETWEEN(320-72, x, 320-48))
+                            load_icons_first(current_list, false);
+                            extra_mode = false;
+                            draw_mode = DRAW_MODE_LIST;
+                            extra_index = 1;
+                        } else if (!no_list && toolbar_hit(x, y, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y))
                         {
                             switch (current_list->current_sort)
                             {
@@ -786,15 +1033,16 @@ int main(void)
                                 default:
                                     break;
                             }
-                        } else if (BETWEEN(320-96, x, 320-72))
-                        {
-                            goto badge_install;
-                        } else if (BETWEEN(2, x, 26))
+                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y))
                         {
                             extra_mode = false;
                             extra_index = 1;
                             draw_mode = DRAW_MODE_LIST;
                         }
+                    }
+                    else if (toolbar_hit(x, y, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y))
+                    {
+                        quit = true;
                     }
                 }
             }
@@ -805,19 +1053,7 @@ int main(void)
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                 }
-                else if(kDown & KEY_DLEFT)
-                {
-                    browse_themeplaza:
-                    if(themeplaza_browser((RemoteMode) current_mode))
-                    {
-                        current_mode = MODE_THEMES;
-                        load_lists(lists);
-                    }
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_DUP)
+                else if(!no_list && kDown & KEY_DUP)
                 {
                     jump:
                     jump_menu(current_list);
@@ -826,27 +1062,19 @@ int main(void)
                     extra_index = 1;
 
                 }
-                else if(kDown & KEY_DDOWN)
+                else if(!no_list && kDown & KEY_DDOWN)
                 {
                     load_icons_first(current_list, false);
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                     extra_index = 1;
                 }
-                else if (kDown & KEY_DRIGHT)
-                {
-                    badge_install:
-                    extra_mode = false;
-                    extra_index = 1;
-                    draw_mode = DRAW_MODE_LIST;
-                    draw_install(INSTALL_BADGES);
-                    install_badges();
-                }
                 else if (kDown & KEY_R)
                 {
                     extra_index = 2;
+                    draw_mode = DRAW_MODE_DUMP;
                 }
-                else if(kDown & KEY_L)
+                else if(!no_list && kDown & KEY_L)
                 {
                     extra_index = 0;
                 }
@@ -885,42 +1113,6 @@ int main(void)
                     extra_index = 1;
                 }
             }
-            else if(extra_index == 2)
-            {
-                if(kDown & KEY_DUP)
-                {
-                    dump_single:
-                    draw_install(INSTALL_DUMPING_THEME);
-                    Result res = dump_current_theme();
-                    if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
-                    else load_lists(lists);
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_DDOWN)
-                {
-                    draw_install(INSTALL_DUMPING_ALL_THEMES);
-                    Result res = dump_all_themes();
-                    if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
-                    else load_lists(lists);
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_DLEFT)
-                {
-                    draw_install(INSTALL_DUMPING_BADGES);
-                    extract_badges();
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_B)
-                {
-                    extra_index = 1;
-                }
-            }
             continue;
         }
 
@@ -935,16 +1127,8 @@ int main(void)
                     draw_mode = DRAW_MODE_INSTALL;
                     break;
                 case MODE_SPLASHES:
-                    draw_install(INSTALL_SPLASH);
-                    splash_install(current_entry);
-                    for(int i = 0; i < current_list->entries_count; i++)
-                    {
-                        Entry_s * splash = &current_list->entries[i];
-                        if(splash == current_entry)
-                            splash->installed = true;
-                        else
-                            splash->installed = false;
-                    }
+                    install_mode = true;
+                    draw_mode = DRAW_MODE_INSTALL;
                     break;
                 default:
                     break;
@@ -952,26 +1136,27 @@ int main(void)
         }
         else if(kDown & KEY_B)
         {
+            extra_mode = true;
+            draw_mode = DRAW_MODE_EXTRA;
+        }
+        else if(kDown & KEY_X)
+        {
             switch(current_mode)
             {
                 case MODE_THEMES:
                     toggle_shuffle(current_list);
                     break;
                 case MODE_SPLASHES:
-                    if(draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
+                    if(list_has_installed_entries(current_list) && draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
                     {
                         draw_install(INSTALL_SPLASH_DELETE);
                         splash_delete();
+                        clear_installed_entries(current_list);
                     }
                     break;
                 default:
                     break;
             }
-        }
-        else if(kDown & KEY_X)
-        {
-            extra_mode = true;
-            draw_mode = DRAW_MODE_EXTRA;
         }
         else if(kDown & KEY_SELECT)
         {
@@ -979,7 +1164,7 @@ int main(void)
             {
                 draw_install(INSTALL_ENTRY_DELETE);
                 delete_entry(current_entry, current_entry->is_zip);
-                load_lists(lists);
+                reload_lists();
             }
         }
 
@@ -1042,19 +1227,60 @@ int main(void)
             {
                 if(y < 24)
                 {
-                    if(BETWEEN(320-144, x, 320-120))
+                    if(toolbar_hit(x, y, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y))
+                    {
+                        extra_mode = true;
+                        draw_mode = DRAW_MODE_EXTRA;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y) && list_has_installed_entries(current_list))
+                    {
+                        if(current_mode == MODE_THEMES && draw_confirm(language.main.uninstall_theme_confirm, current_list, draw_mode))
+                        {
+                            aptSetHomeAllowed(false);
+                            draw_install(INSTALL_THEME_UNINSTALL);
+                            Result res = theme_uninstall();
+                            if(R_SUCCEEDED(res))
+                            {
+                                clear_installed_entries(current_list);
+                                // the HOME Menu still holds the old theme, it has to be reloaded on exit
+                                installed_themes = true;
+                            }
+                            else
+                            {
+                                DEBUG("theme uninstall result: %lx\n", res);
+                                throw_error(language.themes.uninstall_failed, ERROR_LEVEL_WARNING);
+                            }
+                        }
+                        else if(current_mode == MODE_SPLASHES && draw_confirm(language.main.uninstall_confirm, current_list, draw_mode))
+                        {
+                            draw_install(INSTALL_SPLASH_DELETE);
+                            splash_delete();
+                            clear_installed_entries(current_list);
+                        }
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
+                    {
+                        draw_mode = DRAW_MODE_BROWSE;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_MODE_X, TOOLBAR_TOP_Y))
+                    {
+                        goto switch_mode;
+                    }
+                }
+                else if(y >= TOOLBAR_BOTTOM_Y)
+                {
+                    if(toolbar_hit(x, y, TOOLBAR_LIST_PREVIEW_X, TOOLBAR_BOTTOM_Y))
+                    {
+                        goto toggle_preview;
+                    }
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_SHUFFLE_X, TOOLBAR_BOTTOM_Y))
                     {
                         if (current_mode == MODE_THEMES)
                         {
                             toggle_shuffle(current_list);
                         }
                     }
-                    else if(BETWEEN(2, x, 26))
-                    {
-                        extra_mode = true;
-                        draw_mode = DRAW_MODE_EXTRA;
-                    }
-                    else if(BETWEEN(320-120, x, 320-96))
+                    else if(toolbar_hit(x, y, TOOLBAR_LIST_INSTALL_X, TOOLBAR_BOTTOM_Y))
                     {
                         if (current_mode == MODE_THEMES)
                         {
@@ -1062,38 +1288,11 @@ int main(void)
                             draw_mode = DRAW_MODE_INSTALL;
                         } else if (current_mode == MODE_SPLASHES)
                         {
-                            draw_install(INSTALL_SPLASH);
-                            splash_install(current_entry);
-                            for(int i = 0; i < current_list->entries_count; i++)
-                            {
-                                Entry_s * splash = &current_list->entries[i];
-                                if(splash == current_entry)
-                                    splash->installed = true;
-                                else
-                                    splash->installed = false;
-                            }
+                            install_mode = true;
+                            draw_mode = DRAW_MODE_INSTALL;
                         }
                     }
-                    else if(BETWEEN(320-96, x, 320-72))
-                    {
-                        goto enable_qr;
-                    }
-                    else if(BETWEEN(320-72, x, 320-48))
-                    {
-                        quit = true;
-                    }
-                    else if(BETWEEN(320-48, x, 320-24))
-                    {
-                        goto toggle_preview;
-                    }
-                    else if(BETWEEN(320-24, x, 320))
-                    {
-                        goto switch_mode;
-                    }
-                }
-                else if(y >= 216)
-                {
-                    if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
+                    else if(current_list->entries != NULL && BETWEEN(arrowStartX, x, arrowEndX) && current_list->scroll > 0)
                     {
                         change_selected(current_list, -current_list->entries_per_screen_v);
                     }

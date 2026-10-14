@@ -505,28 +505,53 @@ Result backup_badges_fast(void)
     return 0;
 }
 
+// keeps a copy of the badges from before Anemone first changed them
+static Result backup_badges_once(void)
+{
+    Handle handle = 0;
+    Result res = 0;
+    char testpath[128] = "/3ds/" APP_TITLE "/BadgeData.dat";
+    if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, testpath), FS_OPEN_READ, 0)))
+    {
+        if (R_SUMMARY(res) == RS_NOTFOUND)
+        {
+            res = backup_badges_fast();
+            if (R_FAILED(res)) return res;
+        } else
+        {
+            DEBUG("????: 0x%08lx\n", res);
+        }
+    }
+
+    if (handle) FSFILE_Close(handle);
+    return 0;
+}
+
+// gives the set slots from first on the values of unused ones
+static void clear_badge_sets(char *mng, int first)
+{
+    for (int i = first; i < 100; ++i) // default values for remaining sets
+    {
+        memset(mng + 0xA028 + 0x30 * i, 0xFF, 0x8);
+        memset(mng + 0xA028 + 0x30 * i + 0x8, 0x00, 0x4);
+        mng[0xA028 + 0x30 * i + 0xC] = 0x10;
+        mng[0xA028 + 0x30 * i + 0xD] = 0x27;
+        memset(mng + 0xA028 + 0x30 * i + 0xE, 0x0, 0x2);
+        memset(mng + 0xA028 + 0x30 * i + 0x10, 0xFF, 0xC);
+        memset(mng + 0xA028 + 0x30 * i + 0x1C, 0x00, 0x8);
+        memset(mng + 0xA028 + 0x30 * i + 0x24, 0xFF, 0x4);
+        memset(mng + 0xA028 + 0x30 * i + 0x28, 0x00, 0x8);
+    }
+}
+
 Result install_badges(void)
 {
     Handle handle = 0;
     Handle folder = 0;
     Result res = 0;
     draw_loading_bar(0, 1, INSTALL_BADGES);
-    {
-        char testpath[128] = "/3ds/" APP_TITLE "/BadgeData.dat";
-        if (R_FAILED(res = FSUSER_OpenFile(&handle, ArchiveSD, fsMakePath(PATH_ASCII, testpath), FS_OPEN_READ, 0)))
-        {
-            if (R_SUMMARY(res) == RS_NOTFOUND)
-            {
-                res = backup_badges_fast();
-                if (R_FAILED(res)) return res;
-            } else
-            {
-                DEBUG("????: 0x%08lx\n", res);
-            }
-        }
-    }
-
-    if (handle) FSFILE_Close(handle);
+    res = backup_badges_once();
+    if (R_FAILED(res)) return res;
 
     DEBUG("Initializing ACT\n");
     res = actInit(true);
@@ -716,18 +741,7 @@ Result install_badges(void)
     memcpy(badgeMngBuffer + 0x18, &total_badges, 4);
     memcpy(badgeMngBuffer + 0x1C, &nnidNum, 4);
 
-    for (int i = set_count; i < 100; ++i) // default values for remaining sets
-    {
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i, 0xFF, 0x8);
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0x8, 0x00, 0x4);
-        badgeMngBuffer[0xA028 + 0x30 * i + 0xC] = 0x10;
-        badgeMngBuffer[0xA028 + 0x30 * i + 0xD] = 0x27;
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0xE, 0x0, 0x2);
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0x10, 0xFF, 0xC);
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0x1C, 0x00, 0x8);
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0x24, 0xFF, 0x4);
-        memset(badgeMngBuffer + 0xA028 + 0x30 * i + 0x28, 0x00, 0x8);
-    }
+    clear_badge_sets(badgeMngBuffer, set_count);
 
     res = FSUSER_OpenFile(&handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), FS_OPEN_READ, 0);
     if (res == 0)
@@ -759,4 +773,53 @@ Result install_badges(void)
     if (badgeMngBuffer) free(badgeMngBuffer);
     if (badge_files) free(badge_files);
     return res;
+}
+
+Result uninstall_badges(void)
+{
+    Result res = backup_badges_once();
+    if (R_FAILED(res)) return res;
+
+    char *mng = calloc(1, BADGE_MNG_SIZE);
+    if (!mng) return MAKERESULT(RL_FATAL, RS_OUTOFRESOURCE, RM_APPLICATION, RD_OUT_OF_MEMORY);
+
+    // what an install without any badges writes, except that nothing stays placed on the HOME Menu either
+    Handle handle = 0;
+    if (R_SUCCEEDED(FSUSER_OpenFile(&handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), FS_OPEN_READ, 0)))
+    {
+        FSFILE_Read(handle, NULL, 0x1C, mng + 0x1C, 4); // NNID
+        FSFILE_Close(handle);
+    }
+    memset(mng + 0x10, 0xFF, 4); // Selected Set - 0xFFFFFFFF is all badges
+    clear_badge_sets(mng, 0);
+
+    res = buf_to_file(BADGE_MNG_SIZE, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), ArchiveBadgeExt, mng);
+    free(mng);
+    if (R_FAILED(res))
+    {
+        DEBUG("Error writing badge manage data! %lx\n", res);
+        char err_string[128] = {0};
+        sprintf(err_string, language.badges.extdata_locked, res);
+        throw_error(err_string, ERROR_LEVEL_WARNING);
+    }
+    return res;
+}
+
+static bool installed_badges = false;
+
+void check_installed_badges(void)
+{
+    u32 badge_count = 0;
+    Handle handle = 0;
+    if (R_SUCCEEDED(FSUSER_OpenFile(&handle, ArchiveBadgeExt, fsMakePath(PATH_ASCII, "/BadgeMngFile.dat"), FS_OPEN_READ, 0)))
+    {
+        FSFILE_Read(handle, NULL, 0x8, &badge_count, 4);
+        FSFILE_Close(handle);
+    }
+    installed_badges = badge_count != 0;
+}
+
+bool badges_installed(void)
+{
+    return installed_badges;
 }
