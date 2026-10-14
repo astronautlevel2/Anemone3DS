@@ -28,6 +28,7 @@
 #include "unicode.h"
 #include "colors.h"
 #include "ui_strings.h"
+#include "badges.h"
 
 #include "sprites.h"
 
@@ -145,6 +146,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_SPLASH], staticBuf, language.draw.dump_splash);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_BADGES], staticBuf, language.draw.dump_badges);
     C2D_TextParse(&text[TEXT_INSTALL_BADGES], staticBuf, language.draw.install_badges);
+    C2D_TextParse(&text[TEXT_INSTALL_BADGES_UNINSTALL], staticBuf, language.draw.uninstall_badges);
 
     for(int i = 0; i < TEXT_AMOUNT; i++)
         C2D_TextOptimize(&text[i]);
@@ -763,6 +765,8 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         }
 
         draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        if(badges_installed())
+            draw_image_tint(sprites_uninstall_idx, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
         draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
 

@@ -98,6 +98,7 @@ static void init_services(void)
     init_sd();
     archive_result = open_archives();
     badge_archive_result = open_badge_extdata();
+    check_installed_badges();
     if(envIsHomebrew())
     {
         s64 out;
@@ -483,7 +484,7 @@ int main(void)
         const bool no_list = current_mode == MODE_BADGES || current_list->entries_count == 0;
 
         Instructions_s instructions = language.normal_instructions[current_mode];
-        if(current_mode == MODE_SPLASHES && !list_has_installed_entries(current_list))
+        if((current_mode == MODE_SPLASHES && !list_has_installed_entries(current_list)) || (current_mode == MODE_BADGES && !badges_installed()))
             instructions.instructions[1][0] = NULL; // nothing to uninstall with X
         if(install_mode)
             instructions = current_mode == MODE_SPLASHES ? language.splash_install_instructions : language.install_instructions;
@@ -609,6 +610,7 @@ int main(void)
         if(no_list && !extra_mode)
         {
             bool install = current_mode == MODE_BADGES && (kDown & KEY_A);
+            bool uninstall = current_mode == MODE_BADGES && badges_installed() && (kDown & KEY_X);
             bool open_menu = kDown & KEY_B;
             if (kDown & KEY_R)
             {
@@ -632,6 +634,9 @@ int main(void)
                 } else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
                 {
                     draw_mode = DRAW_MODE_BROWSE;
+                } else if(current_mode == MODE_BADGES && badges_installed() && toolbar_hit(x, y, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y))
+                {
+                    uninstall = true;
                 } else if(current_mode == MODE_BADGES && toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
                 {
                     install = true;
@@ -647,6 +652,13 @@ int main(void)
             {
                 draw_install(INSTALL_BADGES);
                 install_badges();
+                check_installed_badges();
+            }
+            else if(uninstall && draw_confirm(language.main.uninstall_badges_confirm, current_list, draw_mode))
+            {
+                draw_install(INSTALL_BADGES_UNINSTALL);
+                uninstall_badges();
+                check_installed_badges();
             }
             // the list's own buttons and keys don't apply here
             continue;

@@ -85,6 +85,7 @@ typedef struct {
     const char *dump_splash;
     const char *dump_badges;
     const char *install_badges;
+    const char *uninstall_badges;
     const char *install_badges_button;
     float start_pos;
     const char *shuffle;
@@ -120,6 +121,7 @@ typedef struct {
     const char *not_enough_themes;
     const char *uninstall_confirm;
     const char *uninstall_theme_confirm;
+    const char *uninstall_badges_confirm;
     const char *delete_confirm;
 } Main_Strings_s;
 

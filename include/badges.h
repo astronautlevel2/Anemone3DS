@@ -37,6 +37,11 @@
 #define BADGE_MNG_SIZE 0xD4A8
 
 Result install_badges(void);
+Result uninstall_badges(void);
 Result extract_badges(void);
+
+// whether the HOME Menu has badges, as of the last check
+void check_installed_badges(void);
+bool badges_installed(void);
 
 #endif

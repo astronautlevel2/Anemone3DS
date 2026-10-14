@@ -80,7 +80,7 @@ const Language_s language_english = {
                     "\uE001 More options"
                 },
                 {
-                    NULL,
+                    "\uE002 Uninstall badges",
                     NULL
                 },
                 {
@@ -330,6 +330,7 @@ const Language_s language_english = {
         .dump_splash = "Dumping splash, please wait...",
         .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installing badges, please wait...",
+        .uninstall_badges = "Uninstalling installed badges...",
         .install_badges_button = "Install badges",
         .shuffle = "Shuffle: %i/10",
     },
@@ -364,6 +365,7 @@ const Language_s language_english = {
         .not_enough_themes = "You don't have enough themes selected.",
         .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
         .uninstall_theme_confirm = "Are you sure you would like to uninstall\nthe installed theme?",
+        .uninstall_badges_confirm = "Are you sure you would like to uninstall\nall installed badges?",
         .delete_confirm = "Are you sure you would like to delete this?",
     },
     .remote =
@@ -608,7 +610,7 @@ const Language_s language_spanish = {
                     "\uE001 Más opciones"
                 },
                 {
-                    NULL,
+                    "\uE002 Desinstalar insignias",
                     NULL
                 },
                 {
@@ -858,6 +860,7 @@ const Language_s language_spanish = {
         .dump_splash = "Volcando fondo, por favor espera...",
         .dump_badges = "Volcando insignias instaladas,\npor favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
+        .uninstall_badges = "Desinstalando insignias instaladas...",
         .install_badges_button = "Instalar insignias",
         .shuffle = "Aleatorio: %i/10",
     },
@@ -892,6 +895,7 @@ const Language_s language_spanish = {
         .not_enough_themes = "No tienes suficientes temas seleccionados.",
         .uninstall_confirm = "¿Estás seguro de que deseas eliminar\nel fondo instalado?",
         .uninstall_theme_confirm = "¿Estás seguro de que deseas desinstalar\nel tema instalado?",
+        .uninstall_badges_confirm = "¿Estás seguro de que deseas desinstalar\ntodas las insignias instaladas?",
         .delete_confirm = "¿Estás seguro de que deseas eliminar esto?",
     },
     .remote =
@@ -1137,7 +1141,7 @@ const Language_s language_french = {
                     "\uE001 Plus d'options"
                 },
                 {
-                    NULL,
+                    "\uE002 Désinstaller les badges",
                     NULL
                 },
                 {
@@ -1387,6 +1391,7 @@ const Language_s language_french = {
         .dump_splash = "Extraction du splash installé,\nveuillez patienter...",
         .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
+        .uninstall_badges = "Désinstallation des badges installés...",
         .install_badges_button = "Installer les badges",
         .shuffle = "Aléatoire: %i/10",
     },
@@ -1421,6 +1426,7 @@ const Language_s language_french = {
         .not_enough_themes = "Il n'y a pas assez de thèmes sélectionnés.",
         .uninstall_confirm = "Voulez-vous supprimer le splash\nactuellement installé?",
         .uninstall_theme_confirm = "Voulez-vous désinstaller le thème\nactuellement installé?",
+        .uninstall_badges_confirm = "Voulez-vous désinstaller tous les badges\nactuellement installés?",
         .delete_confirm = "Voulez-vous supprimer ceci?",
     },
     .remote =
@@ -1665,7 +1671,7 @@ const Language_s language_portuguese = {
                     "\uE001 Mais opções"
                 },
                 {
-                    NULL,
+                    "\uE002 Desinstalar Insígnias",
                     NULL
                 },
                 {
@@ -1915,6 +1921,7 @@ const Language_s language_portuguese = {
         .dump_splash = "Exportando splash, aguarde...",
         .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
+        .uninstall_badges = "Desinstalando insígnias instaladas...",
         .install_badges_button = "Instalar Insígnias",
         .shuffle = "Shuffle: %i/10",
     },
@@ -1949,6 +1956,7 @@ const Language_s language_portuguese = {
         .not_enough_themes = "Você não tem temas suficientes selecionados.",
         .uninstall_confirm = "Tem certeza de que deseja excluir\no splash instalado?",
         .uninstall_theme_confirm = "Tem certeza de que deseja desinstalar\no tema instalado?",
+        .uninstall_badges_confirm = "Tem certeza de que deseja desinstalar\ntodas as insígnias instaladas?",
         .delete_confirm = "Tem certeza de que deseja excluir isso?",
     },
     .remote =
@@ -2195,7 +2203,7 @@ const Language_s language_korean = {
                     "\uE001 More options"
                 },
                 {
-                    NULL,
+                    "\uE002 Uninstall badges",
                     NULL
                 },
                 {
@@ -2445,6 +2453,7 @@ const Language_s language_korean = {
         .dump_splash = "Dumping splash, please wait...",
         .dump_badges = "Dumping installed badges,\nplease wait...",
         .install_badges = "Installing badges, please wait...",
+        .uninstall_badges = "Uninstalling installed badges...",
         .install_badges_button = "Install badges",
         .shuffle = "Shuffle: %i/10",
     },
@@ -2480,6 +2489,7 @@ const Language_s language_korean = {
         .not_enough_themes = "You don't have enough themes selected.",
         .uninstall_confirm = "Are you sure you would like to delete\nthe installed splash?",
         .uninstall_theme_confirm = "Are you sure you would like to uninstall\nthe installed theme?",
+        .uninstall_badges_confirm = "Are you sure you would like to uninstall\nall installed badges?",
         .delete_confirm = "Are you sure you would like\nto delete this?",
     },
     .remote =
@@ -2724,7 +2734,7 @@ const Language_s language_SChinese = {
                     "\uE001 更多选项"
                 },
                 {
-                    NULL,
+                    "\uE002 卸载徽章",
                     NULL
                 },
                 {
@@ -2974,6 +2984,7 @@ const Language_s language_SChinese = {
         .dump_splash = "正在导出开机图画, 请稍等...",
         .dump_badges = "正在导出已安装的徽章, 请稍等...",
         .install_badges = "正在安装徽章, 请稍等...",
+        .uninstall_badges = "正在卸载已安装的徽章...",
         .install_badges_button = "安装徽章",
         .shuffle = "已选: %i/10",
     },
@@ -3008,6 +3019,7 @@ const Language_s language_SChinese = {
         .not_enough_themes = "你没有足够的主题可以选择",
         .uninstall_confirm = "真的要删除已安装的开机图画吗?",
         .uninstall_theme_confirm = "真的要卸载已安装的主题吗?",
+        .uninstall_badges_confirm = "真的要卸载所有已安装的徽章吗?",
         .delete_confirm = "真的要删除这个?",
     },
     .remote =
