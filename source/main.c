@@ -89,7 +89,6 @@ static void init_services(void)
     dspfirm = !ndspInit();
     APT_GetAppCpuTimeLimit(&old_time_limit);
     APT_SetAppCpuTimeLimit(30);
-    httpcInit(0);
     init_sd();
     archive_result = open_archives();
     badge_archive_result = open_badge_extdata();
@@ -107,7 +106,7 @@ static void exit_services(void)
     cfguExit();
     ptmuExit();
     if (old_time_limit != UINT32_MAX) APT_SetAppCpuTimeLimit(old_time_limit);
-    httpcExit();
+    http_exit();
     acExit();
     ndspExit();
 }
@@ -405,7 +404,7 @@ int main(void)
     EntryMode current_mode = MODE_THEMES;
 
     bool preview_mode = false;
-    int preview_offset = 0;
+    Preview_Layout_s preview_layout = {0};
 
     bool install_mode = false;
     DrawMode draw_mode = DRAW_MODE_LIST;
@@ -454,7 +453,7 @@ int main(void)
 
         if(preview_mode)
         {
-            draw_preview(preview, preview_offset, 1.0f);
+            draw_preview(preview, &preview_layout);
         }
         else {
             if(!iconLoadingThread_arg.run_thread)
@@ -570,11 +569,11 @@ int main(void)
                 toggle_preview:
                 if(!preview_mode)
                 {
-                    preview_mode = load_preview(current_list, &preview, &preview_offset);
+                    preview_mode = load_preview(current_list, &preview, &preview_layout);
                     if(preview_mode)
                     {
                         end_frame();
-                        draw_preview(preview, preview_offset, 1.0f);
+                        draw_preview(preview, &preview_layout);
                         end_frame();
                         if(current_mode == MODE_THEMES && dspfirm)
                         {

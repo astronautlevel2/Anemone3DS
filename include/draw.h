@@ -169,10 +169,14 @@ void start_frame(void);
 void end_frame(void);
 void set_screen(C3D_RenderTarget * screen);
 
+// set while the user holds B during a network operation; cleared by draw_install()
+void set_loading_cancel_requested(bool requested);
+bool loading_cancel_requested(void);
+
 void throw_error(const char * error, ErrorLevel level);
 bool draw_confirm(const char * conf_msg, Entry_List_s * list, DrawMode draw_mode);
 
-void draw_preview(C2D_Image preview, int preview_offset, float preview_scale);
+void draw_preview(C2D_Image preview, const Preview_Layout_s * layout);
 
 void draw_install(InstallType type);
 void draw_loading_bar(u32 current, u32 max, InstallType type);

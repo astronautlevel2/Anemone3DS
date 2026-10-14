@@ -207,6 +207,10 @@ Result open_badge_extdata()
         DEBUG("res: 0x%08lx\n", res);
         free(icon_buf);
     }
+    else
+    {
+        FSFILE_Close(test_handle);
+    }
 
     return 0;
 }
@@ -572,6 +576,9 @@ void save_zip_to_sd(char * filename, u32 size, char * buf, RemoteMode mode)
     static char path_to_file[32761]; // FAT32 paths can be quite long.
     const int max_chars = 250;
     char new_filename[max_chars + 5]; // .zip + \0
+    // http_get leaves the name NULL when neither the server (Content-Disposition) nor the URL names the file
+    if (filename == NULL || filename[0] == '\0')
+        filename = "download.zip";
 renamed:
     char * curr_filename;
     if (mode == REMOTE_MODE_BADGES)
@@ -595,7 +602,10 @@ renamed:
         {
             // skip initial . (this is allowed)
             if (illegal_char == curr_filename)
+            {
+                illegal_char++;
                 continue;
+            }
             // skip extension delimiter
             if (strpbrk(illegal_char + 1, ".") == NULL)
             {
