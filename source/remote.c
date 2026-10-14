@@ -43,6 +43,7 @@ json_int_t last_page = 1;
 // forward declaration of special case used only here
 // TODO: replace this travesty with a proper handler
 static Result http_get_with_not_found_flag(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types, bool not_found_is_error);
+static bool mime_type_is_acceptable(const char *acceptable_mime_types, const char *mime_type);
 
 static void free_icons(Entry_List_s * list)
 {
@@ -237,7 +238,7 @@ static void load_remote_list(Entry_List_s * list, json_int_t page, RemoteMode mo
 
 static u16 previous_path_preview[0x106];
 
-static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, int * preview_offset, u32 height)
+static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image, Preview_Layout_s * preview_layout)
 {
     bool not_cached = true;
 
@@ -273,13 +274,14 @@ static bool load_remote_preview(const Entry_s * entry, C2D_Image * preview_image
     u32 preview_buf_size = preview_size;
     memcpy(preview_buf, preview_png, preview_size);
 
+    u32 height = 0;
     if (!(preview_buf_size = png_to_abgr(&preview_buf, preview_buf_size, &height)))
     {
         free(preview_buf);
         return false;
     }
 
-    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_offset, height);
+    bool ret = load_preview_from_buffer(preview_buf, preview_buf_size, preview_image, preview_layout, height);
     free(preview_buf);
 
     if (ret && not_cached) // only save the preview if it loaded correctly - isn't corrupted
@@ -486,7 +488,7 @@ bool themeplaza_browser(RemoteMode mode)
     }
 
     bool preview_mode = false;
-    int preview_offset = 0;
+    Preview_Layout_s preview_layout = {0};
     audio_ogg_s * audio = NULL;
 
     Entry_List_s list = { 0 };
@@ -540,8 +542,7 @@ bool themeplaza_browser(RemoteMode mode)
 
         if (preview_mode)
         {
-            if (mode == REMOTE_MODE_BADGES) draw_preview(preview, -40, 0.625f);
-            else draw_preview(preview, preview_offset, 1.0f);
+            draw_preview(preview, &preview_layout);
             
         }
         else
@@ -623,8 +624,7 @@ bool themeplaza_browser(RemoteMode mode)
         toggle_preview:
             if (!preview_mode)
             {
-                u32 height = mode == REMOTE_MODE_BADGES ? 1024 : 480;
-                preview_mode = load_remote_preview(current_entry, &preview, &preview_offset, height);
+                preview_mode = load_remote_preview(current_entry, &preview, &preview_layout);
                 if (mode == REMOTE_MODE_THEMES && dspfirm)
                 {
                     load_remote_bgm(current_entry);
@@ -885,7 +885,7 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
             return HTTPC_ERROR;
         }
 
-        if (!strstr(mime, content_buf))
+        if (!mime_type_is_acceptable(mime, content_buf))
         {
             return SERVER_IS_MISBEHAVING;
         }
@@ -955,12 +955,70 @@ static ParseResult parse_header(struct header * out, httpcContext * context, con
 }
 
 
+static int url_hex_digit(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+// The last segment of a URL's path, percent-decoded: the name to save a download under when the server names none (no
+// Content-Disposition), e.g. "MyTheme.zip" for a QR code's https://example.com/themes/MyTheme.zip?raw=1. NULL when the
+// path has no last segment.
+static char * url_filename(const char * url)
+{
+    const char * end = url + strcspn(url, "?#");
+    const char * host = strstr(url, "://");
+    const char * path = strchr(host != NULL ? host + 3 : url, '/');
+    if (path == NULL || path >= end)
+        return NULL;
+
+    const char * start = end;
+    while (start > path && start[-1] != '/')
+        --start;
+
+    char * name = malloc(end - start + 1);
+    if (name == NULL)
+        return NULL;
+
+    size_t length = 0;
+    for (const char * c = start; c < end; ++c)
+    {
+        if (*c == '%' && end - c > 2 && url_hex_digit(c[1]) >= 0 && url_hex_digit(c[2]) >= 0)
+        {
+            name[length++] = (char)(url_hex_digit(c[1]) * 16 + url_hex_digit(c[2]));
+            c += 2;
+        }
+        else
+            name[length++] = *c;
+    }
+    name[length] = '\0';
+
+    // only keep the name itself, never a path
+    const char * base = name;
+    for (const char * c = name; *c; ++c)
+    {
+        if (*c == '/' || *c == '\\')
+            base = c + 1;
+    }
+
+    char * result = *base && strcmp(base, ".") && strcmp(base, "..") ? strdup(base) : NULL;
+    free(name);
+    return result;
+}
+
 /*
  * call example: written = http_get("url", &filename, &buffer_to_download_to, &filesize, INSTALL_DOWNLOAD, "application/json");
  */
 Result http_get(const char * url, char ** filename, char ** buf, u32 * size, InstallType install_type, const char * acceptable_mime_types)
 {
-    return http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
+    Result res = http_get_with_not_found_flag(url, filename, buf, size, install_type, acceptable_mime_types, true);
+    // the server named no file: use the URL's name (save_zip_to_sd falls back to "download.zip" when that's
+    // missing too)
+    if (R_SUCCEEDED(res) && filename != NULL && *filename == NULL)
+        *filename = url_filename(url);
+    return res;
 }
 
 /* 
@@ -1022,6 +1080,55 @@ static size_t curl_parse_header(char *buffer, size_t size, size_t nitems, void *
     } 
 
     return nitems * size;
+}
+
+static bool mime_type_is_acceptable(const char *acceptable_mime_types, const char *mime_type)
+{
+    if (!acceptable_mime_types || !mime_type)
+        return true;
+
+    while (*mime_type == ' ' || *mime_type == '\t')
+        ++mime_type;
+
+    char mime_base[128] = {0};
+    size_t mime_len = strcspn(mime_type, "; \t\r\n");
+    if (mime_len >= sizeof(mime_base))
+        mime_len = sizeof(mime_base) - 1;
+    memcpy(mime_base, mime_type, mime_len);
+    mime_base[mime_len] = '\0';
+
+    const char *cursor = acceptable_mime_types;
+    while (*cursor)
+    {
+        while (*cursor == ' ' || *cursor == ',' || *cursor == ';')
+            ++cursor;
+
+        const char *token_start = cursor;
+        while (*cursor && *cursor != ' ' && *cursor != ',' && *cursor != ';')
+            ++cursor;
+
+        size_t token_len = cursor - token_start;
+        if (token_len == 0)
+            continue;
+
+        if (token_len == mime_len)
+        {
+            bool match = true;
+            for (size_t i = 0; i < mime_len; ++i)
+            {
+                if (tolower((unsigned char)token_start[i]) != tolower((unsigned char)mime_base[i]))
+                {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match)
+                return true;
+        }
+    }
+
+    return false;
 }
 
 static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf, u32 * size, const char * acceptable_mime_types)
@@ -1086,7 +1193,7 @@ static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf
     DEBUG("Acceptable Mime Types: %s\n", acceptable_mime_types);
     if (header.mime_type)
     {
-        if (!strstr(acceptable_mime_types, header.mime_type))
+        if (!mime_type_is_acceptable(acceptable_mime_types, header.mime_type))
         {
             socExit();
             free(data.result_buf);
@@ -1116,8 +1223,7 @@ static int64_t curl_http_get(const char * url, char ** out_filename, char ** buf
                     filename++;
                 }
 
-                *out_filename = malloc(0x100);
-                strcpy(*out_filename, filename);
+                *out_filename = strdup(filename);
             } else {
                 *out_filename = NULL;
             }

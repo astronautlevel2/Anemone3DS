@@ -372,13 +372,13 @@ bool draw_confirm_no_interface(const char *conf_msg)
     return false;
 }
 
-void draw_preview(C2D_Image preview, int preview_offset, float preview_scale)
+void draw_preview(C2D_Image preview, const Preview_Layout_s * layout)
 {
     start_frame();
     set_screen(top);
-    C2D_DrawImageAt(preview, -preview_offset, 0, 0.5f, NULL, preview_scale, preview_scale);
+    C2D_DrawImageAt(preview, layout->top_x, layout->top_y, 0.5f, NULL, layout->scale, layout->scale);
     set_screen(bottom);
-    C2D_DrawImageAt(preview, -(preview_offset+40), -240, 0.5f, NULL, preview_scale, preview_scale);
+    C2D_DrawImageAt(preview, layout->bottom_x, layout->bottom_y, 0.5f, NULL, layout->scale, layout->scale);
 }
 
 static void draw_install_handler(InstallType type)
