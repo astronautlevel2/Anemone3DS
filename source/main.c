@@ -489,7 +489,7 @@ int main(void)
             instructions = current_mode == MODE_SPLASHES ? language.splash_install_instructions : language.install_instructions;
         if(extra_mode)
         {
-            instructions = language.extra_instructions[extra_index];
+            instructions = extra_index == 2 ? language.dump_instructions[current_mode] : language.extra_instructions[extra_index];
             if(no_list && extra_index == 1)
             {
                 // jumping, reloading icons and sorting need a list
@@ -906,6 +906,83 @@ int main(void)
             }
             continue;
         }
+        else if(extra_mode && extra_index == 2)
+        {
+            // the dump menu: the current mode's dumps, picked with up and down or their buttons
+            const int dump_count = dump_button_count(&instructions);
+            int dump = -1;
+            if(kDown & KEY_DUP)
+            {
+                dump = 0;
+            }
+            else if(kDown & KEY_DDOWN)
+            {
+                dump = 1;
+            }
+            else if(kDown & KEY_B)
+            {
+                extra_index = 1;
+                draw_mode = DRAW_MODE_EXTRA;
+            }
+            else if(kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if(toolbar_hit(x, y, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y))
+                {
+                    extra_index = 1;
+                    draw_mode = DRAW_MODE_EXTRA;
+                }
+                else if(toolbar_hit(x, y, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y))
+                {
+                    quit = true;
+                }
+                else
+                {
+                    for(int i = 0; i < dump_count; i++)
+                    {
+                        if(toolbar_hit_rect(x, y, DUMP_BUTTON_X, dump_button_y(i, dump_count), DUMP_BUTTON_WIDTH, DUMP_BUTTON_HEIGHT))
+                            dump = i;
+                    }
+                }
+            }
+
+            if(dump >= 0 && dump < dump_count)
+            {
+                if(current_mode == MODE_THEMES && dump == 0)
+                {
+                    draw_install(INSTALL_DUMPING_THEME);
+                    Result res = dump_current_theme();
+                    if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
+                    else reload_lists();
+                }
+                else if(current_mode == MODE_THEMES)
+                {
+                    draw_install(INSTALL_DUMPING_ALL_THEMES);
+                    Result res = dump_all_themes();
+                    if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
+                    else reload_lists();
+                }
+                else if(current_mode == MODE_SPLASHES)
+                {
+                    draw_install(INSTALL_DUMPING_SPLASH);
+                    Result res = splash_dump();
+                    if (R_FAILED(res)) DEBUG("Dump splash result: %lx\n", res);
+                    else reload_lists();
+                }
+                else
+                {
+                    draw_install(INSTALL_DUMPING_BADGES);
+                    extract_badges();
+                }
+                extra_mode = false;
+                draw_mode = DRAW_MODE_LIST;
+                extra_index = 1;
+            }
+            continue;
+        }
         else if(extra_mode)
         {
             if((kDown | kHeld) & KEY_TOUCH)
@@ -920,7 +997,8 @@ int main(void)
                     {
                         if (toolbar_hit(x, y, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y))
                         {
-                            goto dump_single;
+                            extra_index = 2;
+                            draw_mode = DRAW_MODE_DUMP;
                         } else if (!no_list && toolbar_hit(x, y, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y))
                         {
                             load_icons_first(current_list, false);
@@ -982,6 +1060,7 @@ int main(void)
                 else if (kDown & KEY_R)
                 {
                     extra_index = 2;
+                    draw_mode = DRAW_MODE_DUMP;
                 }
                 else if(!no_list && kDown & KEY_L)
                 {
@@ -1018,42 +1097,6 @@ int main(void)
                     extra_index = 1;
                 }
                 else if (kDown & KEY_B)
-                {
-                    extra_index = 1;
-                }
-            }
-            else if(extra_index == 2)
-            {
-                if(kDown & KEY_DUP)
-                {
-                    dump_single:
-                    draw_install(INSTALL_DUMPING_THEME);
-                    Result res = dump_current_theme();
-                    if (R_FAILED(res)) DEBUG("Dump theme result: %lx\n", res);
-                    else reload_lists();
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_DDOWN)
-                {
-                    draw_install(INSTALL_DUMPING_ALL_THEMES);
-                    Result res = dump_all_themes();
-                    if (R_FAILED(res)) DEBUG("Dump all themes result: %lx\n", res);
-                    else reload_lists();
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_DLEFT)
-                {
-                    draw_install(INSTALL_DUMPING_BADGES);
-                    extract_badges();
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
-                else if(kDown & KEY_B)
                 {
                     extra_index = 1;
                 }

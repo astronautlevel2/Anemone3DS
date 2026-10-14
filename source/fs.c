@@ -551,6 +551,34 @@ Result zero_handle_memeasy(Handle handle)
     return 0;
 }
 
+static SwkbdCallbackResult
+dir_name_callback(void * data, const char ** ppMessage, const char * text, size_t textlen)
+{
+    (void)textlen;
+    (void)data;
+    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
+    {
+        *ppMessage = language.themes.illegal_char;
+        return SWKBD_CALLBACK_CONTINUE;
+    }
+    return SWKBD_CALLBACK_OK;
+}
+
+bool ask_dump_folder_name(char * name, int max_chars)
+{
+    SwkbdState swkbd;
+
+    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
+    swkbdSetHintText(&swkbd, language.themes.name_folder);
+
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.themes.cancel, false);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.themes.done, true);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
+    swkbdSetFilterCallback(&swkbd, dir_name_callback, NULL);
+
+    return swkbdInputText(&swkbd, name, max_chars) == SWKBD_BUTTON_CONFIRM;
+}
+
 static SwkbdCallbackResult fat32filter(void * user, const char ** ppMessage, const char * text, size_t textlen)
 {
     (void)textlen;

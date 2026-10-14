@@ -142,6 +142,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_INSTALL_LOADING_REMOTE_BGM], staticBuf, language.draw.download_bgm);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_THEME], staticBuf, language.draw.dump_single);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_ALL_THEMES], staticBuf, language.draw.dump_all_official);
+    C2D_TextParse(&text[TEXT_INSTALL_DUMPING_SPLASH], staticBuf, language.draw.dump_splash);
     C2D_TextParse(&text[TEXT_INSTALL_DUMPING_BADGES], staticBuf, language.draw.dump_badges);
     C2D_TextParse(&text[TEXT_INSTALL_BADGES], staticBuf, language.draw.install_badges);
 
@@ -696,6 +697,27 @@ static void draw_browse_menu(void)
     draw_text(BROWSE_THEMEPLAZA_CARD_X + (BROWSE_THEMEPLAZA_CARD_WIDTH - label_width) / 2, BROWSE_THEMEPLAZA_CARD_Y + 66, 0.6f, 0.62f, 0.62f, colors[COLOR_WHITE_ACCENT], themeplaza_label);
 }
 
+static void draw_dump_menu(Instructions_s instructions)
+{
+    C2D_ImageTint accent_tint;
+    C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
+
+    draw_image_tint(sprites_back_idx, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+    draw_image_tint(sprites_exit_idx, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y, accent_tint);
+    draw_c2d_text(TOOLBAR_EXTRA_VERSION_X, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_VERSION]);
+
+    const int count = dump_button_count(&instructions);
+    for(int i = 0; i < count; i++)
+    {
+        const char * label = instructions.instructions[0][i];
+        const int y = dump_button_y(i, count);
+        float width = 0, height = 0;
+        get_text_dimensions(label, 0.6f, 0.6f, &width, &height);
+        draw_menu_button(DUMP_BUTTON_X, y, DUMP_BUTTON_WIDTH, DUMP_BUTTON_HEIGHT);
+        draw_text(DUMP_BUTTON_X + (DUMP_BUTTON_WIDTH - width) / 2, y + (DUMP_BUTTON_HEIGHT - height) / 2, 0.6f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], label);
+    }
+}
+
 void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode)
 {
     draw_base_interface();
@@ -717,6 +739,14 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         draw_instructions(instructions);
         set_screen(bottom);
         draw_browse_menu();
+        return;
+    }
+
+    if(draw_mode == DRAW_MODE_DUMP)
+    {
+        draw_instructions(instructions);
+        set_screen(bottom);
+        draw_dump_menu(instructions);
         return;
     }
 

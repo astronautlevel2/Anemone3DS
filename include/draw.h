@@ -59,6 +59,7 @@ typedef enum InstallType_e {
 
     INSTALL_DUMPING_THEME,
     INSTALL_DUMPING_ALL_THEMES,
+    INSTALL_DUMPING_SPLASH,
     INSTALL_DUMPING_BADGES,
     INSTALL_BADGES,
 
@@ -92,6 +93,7 @@ typedef enum {
 
     TEXT_INSTALL_DUMPING_THEME,
     TEXT_INSTALL_DUMPING_ALL_THEMES,
+    TEXT_INSTALL_DUMPING_SPLASH,
     TEXT_INSTALL_DUMPING_BADGES,
     TEXT_INSTALL_BADGES,
 
@@ -224,6 +226,26 @@ enum {
     BROWSE_THEMEPLAZA_CARD_X = (320 - BROWSE_THEMEPLAZA_CARD_WIDTH) / 2,
     BROWSE_THEMEPLAZA_CARD_Y = 96,
 };
+
+// dump menu: a button for each dump of the current mode, stacked in the middle of the bottom screen; they are the
+// hints in the first row of the dump menu's instructions (up, then down)
+enum {
+    DUMP_BUTTON_WIDTH = 220,
+    DUMP_BUTTON_HEIGHT = 40,
+    DUMP_BUTTON_GAP = 12,
+    DUMP_BUTTON_X = (320 - DUMP_BUTTON_WIDTH) / 2,
+};
+
+static inline int dump_button_count(const Instructions_s * instructions)
+{
+    return (instructions->instructions[0][0] != NULL) + (instructions->instructions[0][1] != NULL);
+}
+
+static inline int dump_button_y(int index, int count)
+{
+    const int height = count * DUMP_BUTTON_HEIGHT + (count - 1) * DUMP_BUTTON_GAP;
+    return (240 - height) / 2 + index * (DUMP_BUTTON_HEIGHT + DUMP_BUTTON_GAP);
+}
 
 // badge mode: install button in the middle of the bottom screen
 enum {

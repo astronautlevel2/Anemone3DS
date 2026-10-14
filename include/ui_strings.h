@@ -82,6 +82,7 @@ typedef struct {
     const char *download_bgm;
     const char *dump_single;
     const char *dump_all_official;
+    const char *dump_splash;
     const char *dump_badges;
     const char *install_badges;
     const char *install_badges_button;
@@ -181,7 +182,8 @@ typedef struct {
     Instructions_s normal_instructions[MODE_AMOUNT];
     Instructions_s install_instructions;
     Instructions_s splash_install_instructions;
-    Instructions_s extra_instructions[3];
+    Instructions_s extra_instructions[2];
+    Instructions_s dump_instructions[MODE_AMOUNT];
     Instructions_s browse_instructions;
     Camera_Strings_s camera;
     Draw_Strings_s draw;

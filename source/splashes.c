@@ -35,6 +35,51 @@ void splash_delete(void)
     remove("/luma/splashbottom.bin");
 }
 
+static void dump_screen(const u16 * folder, const char * file_name, char * buf, u32 size)
+{
+    u16 path[0x107] = {0};
+    memcpy(path, folder, sizeof(path));
+    struacat(path, file_name);
+    remake_file(fsMakePath(PATH_UTF16, path), ArchiveSD, size);
+    buf_to_file(size, fsMakePath(PATH_UTF16, path), ArchiveSD, buf);
+}
+
+Result splash_dump(void)
+{
+    char * top_buf = NULL;
+    u32 top_size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/splash.bin"), ArchiveSD, &top_buf);
+    char * bottom_buf = NULL;
+    u32 bottom_size = file_to_buf(fsMakePath(PATH_ASCII, "/luma/splashbottom.bin"), ArchiveSD, &bottom_buf);
+
+    Result res = 0;
+    char name[0x100] = {0};
+    if(!top_size && !bottom_size)
+    {
+        throw_error(language.draw.no_splashes, ERROR_LEVEL_WARNING);
+        res = MAKERESULT(RL_PERMANENT, RS_NOTFOUND, RM_APPLICATION, RD_NOT_FOUND);
+    }
+    else if(!ask_dump_folder_name(name, sizeof(name) - 1))
+    {
+        res = MAKERESULT(RL_FATAL, RS_CANCELED, RM_UTIL, RD_CANCEL_REQUESTED);
+    }
+    else
+    {
+        u16 folder[0x107] = {0};
+        struacat(folder, main_paths[REMOTE_MODE_SPLASHES]);
+        struacat(folder, name);
+        FSUSER_CreateDirectory(ArchiveSD, fsMakePath(PATH_UTF16, folder), FS_ATTRIBUTE_DIRECTORY);
+
+        if(top_size)
+            dump_screen(folder, "/splash.bin", top_buf, top_size);
+        if(bottom_size)
+            dump_screen(folder, "/splashbottom.bin", bottom_buf, bottom_size);
+    }
+
+    free(top_buf);
+    free(bottom_buf);
+    return res;
+}
+
 void splash_install(const Entry_s * splash, SplashInstallType install_type)
 {
     char *screen_buf = NULL;

@@ -184,7 +184,10 @@ const Language_s language_english = {
                     NULL
                 }
             }
-        },
+        }
+    },
+    .dump_instructions =
+    {
         {
             .info_line = "\uE001 Leave dump menu",
             .instructions = {
@@ -193,7 +196,49 @@ const Language_s language_english = {
                     "\uE07A Dump All Themes"
                 },
                 {
-                    "\uE07B Dump Badges",
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Leave dump menu",
+            .instructions = {
+                {
+                    "\uE079 Dump Installed Splash",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Leave dump menu",
+            .instructions = {
+                {
+                    "\uE079 Dump Badges",
+                    NULL
+                },
+                {
+                    NULL,
                     NULL
                 },
                 {
@@ -282,6 +327,7 @@ const Language_s language_english = {
         .download_bgm = "Downloading BGM, please wait...",
         .dump_single = "Dumping theme, please wait...",
         .dump_all_official = "Dumping official themes, please wait...",
+        .dump_splash = "Dumping splash, please wait...",
         .dump_badges = "Dumping installed badges, please wait...",
         .install_badges = "Installing badges, please wait...",
         .install_badges_button = "Install badges",
@@ -666,7 +712,10 @@ const Language_s language_spanish = {
                     NULL
                 }
             }
-        },
+        }
+    },
+    .dump_instructions =
+    {
         {
             .info_line = "\uE001 Dejar menú de volcado",
             .instructions = {
@@ -675,7 +724,49 @@ const Language_s language_spanish = {
                     "\uE07A Volcar todos los temas"
                 },
                 {
-                    "\uE07B Volcar Insignias",
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Dejar menú de volcado",
+            .instructions = {
+                {
+                    "\uE079 Volcar fondo instalado",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Salir",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Dejar menú de volcado",
+            .instructions = {
+                {
+                    "\uE079 Volcar Insignias",
+                    NULL
+                },
+                {
+                    NULL,
                     NULL
                 },
                 {
@@ -764,6 +855,7 @@ const Language_s language_spanish = {
         .download_bgm = "Descargando BGM, por favor espera...",
         .dump_single = "Volcando tema, por favor espera...",
         .dump_all_official = "Volcando temas oficiales,\npor favor espera...",
+        .dump_splash = "Volcando fondo, por favor espera...",
         .dump_badges = "Volcando insignias instaladas,\npor favor espera...",
         .install_badges = "Instalando insignias, por favor espera...",
         .install_badges_button = "Instalar insignias",
@@ -1149,7 +1241,10 @@ const Language_s language_french = {
                     NULL
                 }
             }
-        },
+        }
+    },
+    .dump_instructions =
+    {
         {
             .info_line = "Dump... | \uE001 Retour",
             .instructions = {
@@ -1158,7 +1253,49 @@ const Language_s language_french = {
                     "\uE07A thèmes officiels"
                 },
                 {
-                    "\uE07B tous les badges",
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Quitter",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "Dump... | \uE001 Retour",
+            .instructions = {
+                {
+                    "\uE079 splash installé",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Quitter",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "Dump... | \uE001 Retour",
+            .instructions = {
+                {
+                    "\uE079 tous les badges",
+                    NULL
+                },
+                {
+                    NULL,
                     NULL
                 },
                 {
@@ -1247,6 +1384,7 @@ const Language_s language_french = {
         .download_bgm = "Téléchargement de la musique,\nveuillez patienter...",
         .dump_single = "Extraction du thème installé,\nveuillez patienter...",
         .dump_all_official = "Extraction des thèmes officiels,\nveuillez patienter...",
+        .dump_splash = "Extraction du splash installé,\nveuillez patienter...",
         .dump_badges = "Extraction des badges installés\nveuillez patienter...",
         .install_badges = "Installation des badges,\nveuillez patienter...",
         .install_badges_button = "Installer les badges",
@@ -1631,7 +1769,10 @@ const Language_s language_portuguese = {
                     NULL
                 }
             }
-        },
+        }
+    },
+    .dump_instructions =
+    {
         {
             .info_line = "\uE001 Voltar",
             .instructions = {
@@ -1640,7 +1781,49 @@ const Language_s language_portuguese = {
                     "\uE07A Exportar Todos Temas"
                 },
                 {
-                    "\uE07B Exportar Insígnias",
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Sair",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Voltar",
+            .instructions = {
+                {
+                    "\uE079 Exportar Splash Atual",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Sair",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 Voltar",
+            .instructions = {
+                {
+                    "\uE079 Exportar Insígnias",
+                    NULL
+                },
+                {
+                    NULL,
                     NULL
                 },
                 {
@@ -1729,6 +1912,7 @@ const Language_s language_portuguese = {
         .download_bgm = "Baixando BGM, aguarde...",
         .dump_single = "Exportando tema, aguarde...",
         .dump_all_official = "Exportando temas oficiais, aguarde...",
+        .dump_splash = "Exportando splash, aguarde...",
         .dump_badges = "Exportando insígnias instaladas, aguarde...",
         .install_badges = "Instalando insígnias, aguarde...",
         .install_badges_button = "Instalar Insígnias",
@@ -2115,7 +2299,10 @@ const Language_s language_korean = {
                     NULL
                 }
             }
-        },
+        }
+    },
+    .dump_instructions =
+    {
         {
             .info_line = "Dump... | \uE001 Leave dump menu",
             .instructions = {
@@ -2124,7 +2311,49 @@ const Language_s language_korean = {
                     "\uE07A All Themes"
                 },
                 {
-                    "\uE07B Badges",
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "Dump... | \uE001 Leave dump menu",
+            .instructions = {
+                {
+                    "\uE079 Installed Splash",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "Exit",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "Dump... | \uE001 Leave dump menu",
+            .instructions = {
+                {
+                    "\uE079 Badges",
+                    NULL
+                },
+                {
+                    NULL,
                     NULL
                 },
                 {
@@ -2213,6 +2442,7 @@ const Language_s language_korean = {
         .download_bgm = "Downloading BGM, please wait...",
         .dump_single = "Dumping theme, please wait...",
         .dump_all_official = "Dumping official themes,\nplease wait...",
+        .dump_splash = "Dumping splash, please wait...",
         .dump_badges = "Dumping installed badges,\nplease wait...",
         .install_badges = "Installing badges, please wait...",
         .install_badges_button = "Install badges",
@@ -2598,7 +2828,10 @@ const Language_s language_SChinese = {
                     NULL
                 }
             }
-        },
+        }
+    },
+    .dump_instructions =
+    {
         {
             .info_line = "\uE001 退出导出菜单",
             .instructions = {
@@ -2607,7 +2840,49 @@ const Language_s language_SChinese = {
                     "\uE07A 导出所有主题"
                 },
                 {
-                    "\uE07B 导出徽章",
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 退出导出菜单",
+            .instructions = {
+                {
+                    "\uE079 导出当前开机图画",
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    NULL,
+                    NULL
+                },
+                {
+                    "退出",
+                    NULL
+                }
+            }
+        },
+        {
+            .info_line = "\uE001 退出导出菜单",
+            .instructions = {
+                {
+                    "\uE079 导出徽章",
+                    NULL
+                },
+                {
+                    NULL,
                     NULL
                 },
                 {
@@ -2696,6 +2971,7 @@ const Language_s language_SChinese = {
         .download_bgm = "正在下载BGM, 请稍等...",
         .dump_single = "正在导出主题, 请稍等...",
         .dump_all_official = "正在导出官方主题, 请稍等...",
+        .dump_splash = "正在导出开机图画, 请稍等...",
         .dump_badges = "正在导出已安装的徽章, 请稍等...",
         .install_badges = "正在安装徽章, 请稍等...",
         .install_badges_button = "安装徽章",

@@ -383,39 +383,15 @@ Result shuffle_install(const Entry_List_s * themes)
     return install_theme_internal(themes, THEME_INSTALL_SHUFFLE | THEME_INSTALL_BODY | THEME_INSTALL_BGM);
 }
 
-static SwkbdCallbackResult
-dir_name_callback(void * data, const char ** ppMessage, const char * text, size_t textlen)
-{
-    (void)textlen;
-    (void)data;
-    if(strpbrk(text, "><\"?;:/\\+,.|[=]"))
-    {
-        *ppMessage = language.themes.illegal_char;
-        return SWKBD_CALLBACK_CONTINUE;
-    }
-    return SWKBD_CALLBACK_OK;
-}
-
 Result dump_current_theme(void)
 {
     const int max_chars = 255;
     char * output_dir = calloc(max_chars + 1, sizeof(char));
 
-    SwkbdState swkbd;
-
-    swkbdInit(&swkbd, SWKBD_TYPE_WESTERN, 2, max_chars);
-    swkbdSetHintText(&swkbd, language.themes.name_folder);
-
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, language.themes.cancel, false);
-    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, language.themes.done, true);
-    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, max_chars);
-    swkbdSetFilterCallback(&swkbd, dir_name_callback, NULL);
-
-    SwkbdButton button = swkbdInputText(&swkbd, output_dir, max_chars);
-
-    if (button != SWKBD_BUTTON_CONFIRM)
+    if (!ask_dump_folder_name(output_dir, max_chars))
     {
         DEBUG("<dump_theme> Something went wrong with getting swkbd\n");
+        free(output_dir);
         return MAKERESULT(RL_FATAL, RS_CANCELED, RM_UTIL, RD_CANCEL_REQUESTED);
     }
 
