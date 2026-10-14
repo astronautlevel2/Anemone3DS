@@ -207,6 +207,10 @@ Result open_badge_extdata()
         DEBUG("res: 0x%08lx\n", res);
         free(icon_buf);
     }
+    else
+    {
+        FSFILE_Close(test_handle);
+    }
 
     return 0;
 }
