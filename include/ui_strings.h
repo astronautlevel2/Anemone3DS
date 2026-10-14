@@ -46,7 +46,7 @@ typedef struct {
     const char *badge_mode;
     const char *no_themes;
     const char *no_splashes;
-    const char *qr_download;
+    const char *browse_online;
     const char *switch_splashes;
     const char *switch_themes;
     const char *switch_badges;
@@ -182,6 +182,7 @@ typedef struct {
     Instructions_s install_instructions;
     Instructions_s splash_install_instructions;
     Instructions_s extra_instructions[3];
+    Instructions_s browse_instructions;
     Camera_Strings_s camera;
     Draw_Strings_s draw;
     FS_Strings_s fs;

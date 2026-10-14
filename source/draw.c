@@ -93,7 +93,7 @@ void init_screens(void)
     C2D_TextParse(&text[TEXT_NO_THEME_FOUND], staticBuf, language.draw.no_themes);
     C2D_TextParse(&text[TEXT_NO_SPLASH_FOUND], staticBuf, language.draw.no_splashes);
 
-    C2D_TextParse(&text[TEXT_DOWNLOAD_FROM_QR], staticBuf, language.draw.qr_download);
+    C2D_TextParse(&text[TEXT_BROWSE_ONLINE], staticBuf, language.draw.browse_online);
 
     C2D_TextParse(&text[TEXT_SWITCH_TO_SPLASHES], staticBuf, language.draw.switch_splashes);
     C2D_TextParse(&text[TEXT_SWITCH_TO_THEMES], staticBuf, language.draw.switch_themes);
@@ -653,6 +653,35 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
     draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], &text[TEXT_PAGE]);
 }
 
+static void draw_menu_button(float x, float y, float width, float height)
+{
+    C2D_DrawRectSolid(x - 2, y - 2, 0.5f, width + 4, height + 4, colors[COLOR_ACCENT]);
+    C2D_DrawRectSolid(x, y, 0.5f, width, height, C2D_Color32(35, 35, 35, 235));
+}
+
+static void draw_browse_menu(void)
+{
+    C2D_ImageTint accent_tint;
+    C2D_PlainImageTint(&accent_tint, colors[COLOR_WHITE_ACCENT], 1.0f);
+
+    draw_image_tint(sprites_back_idx, TOOLBAR_BROWSE_BACK_X, TOOLBAR_TOP_Y, accent_tint);
+
+    // the QR icon with its label next to it, centered together
+    const char * qr_label = "QR";
+    float label_width = 0, label_height = 0;
+    get_text_dimensions(qr_label, 0.62f, 0.62f, &label_width, &label_height);
+    const float qr_x = BROWSE_QR_BUTTON_X + (BROWSE_QR_BUTTON_WIDTH - (TOOLBAR_BUTTON_SIZE + 4 + label_width)) / 2;
+    draw_menu_button(BROWSE_QR_BUTTON_X, BROWSE_QR_BUTTON_Y, BROWSE_QR_BUTTON_WIDTH, BROWSE_QR_BUTTON_HEIGHT);
+    draw_image_tint(sprites_qr_idx, qr_x, BROWSE_QR_BUTTON_Y + (BROWSE_QR_BUTTON_HEIGHT - TOOLBAR_BUTTON_SIZE) / 2, accent_tint);
+    draw_text(qr_x + TOOLBAR_BUTTON_SIZE + 4, BROWSE_QR_BUTTON_Y + (BROWSE_QR_BUTTON_HEIGHT - label_height) / 2, 0.6f, 0.62f, 0.62f, colors[COLOR_WHITE_ACCENT], qr_label);
+
+    const char * themeplaza_label = "ThemePlaza";
+    get_text_dimensions(themeplaza_label, 0.62f, 0.62f, &label_width, NULL);
+    draw_menu_button(BROWSE_THEMEPLAZA_CARD_X, BROWSE_THEMEPLAZA_CARD_Y, BROWSE_THEMEPLAZA_CARD_WIDTH, BROWSE_THEMEPLAZA_CARD_HEIGHT);
+    draw_image(sprites_themeplaza_icon_idx, BROWSE_THEMEPLAZA_CARD_X + (BROWSE_THEMEPLAZA_CARD_WIDTH - 48) / 2, BROWSE_THEMEPLAZA_CARD_Y + 8);
+    draw_text(BROWSE_THEMEPLAZA_CARD_X + (BROWSE_THEMEPLAZA_CARD_WIDTH - label_width) / 2, BROWSE_THEMEPLAZA_CARD_Y + 66, 0.6f, 0.62f, 0.62f, colors[COLOR_WHITE_ACCENT], themeplaza_label);
+}
+
 void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode draw_mode)
 {
     draw_base_interface();
@@ -669,13 +698,20 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
     draw_c2d_text_center(GFX_TOP, 4, 0.5f, 0.5f, 0.5f, colors[COLOR_WHITE_ACCENT], mode_string[current_mode]);
 
+    if(draw_mode == DRAW_MODE_BROWSE)
+    {
+        draw_instructions(instructions);
+        set_screen(bottom);
+        draw_browse_menu();
+        return;
+    }
+
     if(current_mode == MODE_BADGES)
     {
         draw_instructions(instructions);
 
         set_screen(bottom);
 
-        draw_image_tint(sprites_qr_idx, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
         draw_text(TOOLBAR_EMPTY_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
@@ -696,7 +732,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         };
 
         draw_c2d_text_center(GFX_TOP, 80, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_found_string[current_mode]);
-        draw_c2d_text_center(GFX_TOP, 110, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_DOWNLOAD_FROM_QR]);
+        draw_c2d_text_center(GFX_TOP, 110, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_BROWSE_ONLINE]);
 
         C2D_Text * mode_switch_string[MODE_AMOUNT] = {
             &text[TEXT_SWITCH_TO_SPLASHES],
@@ -716,7 +752,6 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image_tint(sprites_qr_idx, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
 
@@ -746,7 +781,6 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
         if(list_has_installed_entries(list))
             draw_image_tint(sprites_uninstall_idx, TOOLBAR_LIST_UNINSTALL_X, TOOLBAR_TOP_Y, accent_tint);
-        draw_image_tint(sprites_qr_idx, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y, accent_tint);
         draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
         draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
 

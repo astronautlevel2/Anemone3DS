@@ -43,7 +43,7 @@ const Language_s language_english = {
                 },
                 {
                     "\uE004 Switch to splashes",
-                    "\uE005 Scan QR code"
+                    "\uE005 Browse online"
                 },
                 {
                     "Exit",
@@ -64,7 +64,7 @@ const Language_s language_english = {
                 },
                 {
                     "\uE004 Switch to badges",
-                    "\uE005 Scan QR code"
+                    "\uE005 Browse online"
                 },
                 {
                     "Exit",
@@ -85,7 +85,7 @@ const Language_s language_english = {
                 },
                 {
                     "\uE004 Switch to themes",
-                    "\uE005 Scan QR code"
+                    "\uE005 Browse online"
                 },
                 {
                     "Exit",
@@ -172,7 +172,7 @@ const Language_s language_english = {
                     "\uE07A Reload broken icons"
                 },
                 {
-                    "\uE07B Browse ThemePlaza",
+                    NULL,
                     NULL
                 },
                 {
@@ -207,6 +207,28 @@ const Language_s language_english = {
             }
         }
     },
+    .browse_instructions =
+    {
+        .info_line = "\uE001 Leave browse menu",
+        .instructions = {
+            {
+                "\uE079 Browse ThemePlaza",
+                "\uE005 Scan QR code"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Exit",
+                NULL
+            }
+        }
+    },
     .camera = 
     {
         .quit = "Press \uE005 To Quit",
@@ -223,7 +245,7 @@ const Language_s language_english = {
         .badge_mode = "Badge mode",
         .no_themes = "No theme found",
         .no_splashes = "No splash found",
-        .qr_download = "Press \uE005 to download from QR",
+        .browse_online = "Press \uE005 to browse online",
         .switch_splashes = "Or \uE004 to switch to splashes",
         .switch_themes = "Or \uE004 to switch to themes",
         .switch_badges = "Or \uE004 to switch to badges",
@@ -503,7 +525,7 @@ const Language_s language_spanish = {
                 },
                 {
                     "\uE004 Cambiar a fondos",
-                    "\uE005 Escanear código QR"
+                    "\uE005 Explorar en línea"
                 },
                 {
                     "Salir",
@@ -524,7 +546,7 @@ const Language_s language_spanish = {
                 },
                 {
                     "\uE004 Cambiar a insignias",
-                    "\uE005 Escanear código QR"
+                    "\uE005 Explorar en línea"
                 },
                 {
                     "Salir",
@@ -545,7 +567,7 @@ const Language_s language_spanish = {
                 },
                 {
                     "\uE004 Cambiar a temas",
-                    "\uE005 Escanear código QR"
+                    "\uE005 Explorar en línea"
                 },
                 {
                     "Salir",
@@ -632,7 +654,7 @@ const Language_s language_spanish = {
                     "\uE07A Recargar iconos rotos"
                 },
                 {
-                    "\uE07B Explorar ThemePlaza",
+                    NULL,
                     NULL
                 },
                 {
@@ -667,6 +689,28 @@ const Language_s language_spanish = {
             }
         }
     },
+    .browse_instructions =
+    {
+        .info_line = "\uE001 Dejar menú de exploración",
+        .instructions = {
+            {
+                "\uE079 Explorar ThemePlaza",
+                "\uE005 Escanear código QR"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Salir",
+                NULL
+            }
+        }
+    },
     .camera =
     {
         .quit = "Presiona \uE005 para salir",
@@ -683,7 +727,7 @@ const Language_s language_spanish = {
         .badge_mode = "Modo insignias",
         .no_themes = "No se encontraron temas",
         .no_splashes = "No se encontraron fondos",
-        .qr_download = "Presiona \uE005 para descargar desde el código QR",
+        .browse_online = "Presiona \uE005 para explorar en línea",
         .switch_splashes = "O \uE004 para cambiar a fondos",
         .switch_themes = "O \uE004 para cambiar a temas",
         .switch_badges = "O \uE004 para cambiar a insignias",
@@ -964,7 +1008,7 @@ const Language_s language_french = {
                 },
                 {
                     "\uE004 Menu des splashs",
-                    "\uE005 Scanner un QR code"
+                    "\uE005 Parcourir en ligne"
                 },
                 {
                     "Quitter",
@@ -985,7 +1029,7 @@ const Language_s language_french = {
                 },
                 {
                     "\uE004 Menu des badges",
-                    "\uE005 Scanner un QR code"
+                    "\uE005 Parcourir en ligne"
                 },
                 {
                     "Quitter",
@@ -1006,7 +1050,7 @@ const Language_s language_french = {
                 },
                 {
                     "\uE004 Menu des thèmes",
-                    "\uE005 Scanner un QR code"
+                    "\uE005 Parcourir en ligne"
                 },
                 {
                     "Quitter",
@@ -1093,7 +1137,7 @@ const Language_s language_french = {
                     "\uE07A Actualiser les icônes"
                 },
                 {
-                    "\uE07B Aller sur ThemePlaza",
+                    NULL,
                     NULL
                 },
                 {
@@ -1128,6 +1172,28 @@ const Language_s language_french = {
             }
         }
     },
+    .browse_instructions =
+    {
+        .info_line = "\uE001 Retour",
+        .instructions = {
+            {
+                "\uE079 Aller sur ThemePlaza",
+                "\uE005 Scanner un QR code"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Quitter",
+                NULL
+            }
+        }
+    },
     .camera = 
     {
         .quit = "Appuyez sur \uE005 Pour quitter",
@@ -1144,7 +1210,7 @@ const Language_s language_french = {
         .badge_mode = "Badges",
         .no_themes = "Aucun thème trouvé",
         .no_splashes = "Aucun splash trouvé",
-        .qr_download = "Appuyez sur \uE005 pour téléch. depuis un QR",
+        .browse_online = "Appuyez sur \uE005 pour parcourir en ligne",
         .switch_splashes = "Ou \uE004 pour aller sur les splashs",
         .switch_themes = "Ou \uE004 pour aller sur les thèmes",
         .switch_badges = "Ou \uE004 pour aller sur les badges",
@@ -1424,7 +1490,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar para Splashes",
-                    "\uE005 Escanear código QR"
+                    "\uE005 Navegar online"
                 },
                 {
                     "Sair",
@@ -1445,7 +1511,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar para Insígnias",
-                    "\uE005 Escanear código QR"
+                    "\uE005 Navegar online"
                 },
                 {
                     "Sair",
@@ -1466,7 +1532,7 @@ const Language_s language_portuguese = {
                 },
                 {
                     "\uE004 Mudar para Temas",
-                    "\uE005 Escanear código QR"
+                    "\uE005 Navegar online"
                 },
                 {
                     "Sair",
@@ -1553,7 +1619,7 @@ const Language_s language_portuguese = {
                     "\uE07A Att. icones quebrados"
                 },
                 {
-                    "\uE07B Modo ThemePlaza",
+                    NULL,
                     NULL
                 },
                 {
@@ -1588,6 +1654,28 @@ const Language_s language_portuguese = {
             }
         }
     },
+    .browse_instructions =
+    {
+        .info_line = "\uE001 Voltar",
+        .instructions = {
+            {
+                "\uE079 Modo ThemePlaza",
+                "\uE005 Escanear código QR"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Sair",
+                NULL
+            }
+        }
+    },
     .camera = 
     {
         .quit = "Aperte \uE005 para Sair",
@@ -1604,7 +1692,7 @@ const Language_s language_portuguese = {
         .badge_mode = "Modo Insígnia",
         .no_themes = "Nenhum tema encontrado",
         .no_splashes = "Nenhum splash encontrado",
-        .qr_download = "Aperte \uE005 para baixar do QR",
+        .browse_online = "Aperte \uE005 para navegar online",
         .switch_splashes = "Ou \uE004 para mudar para splashes",
         .switch_themes = "Ou \uE004 para mudar para temas",
         .switch_badges = "Ou \uE004 para mudar para insígnias",
@@ -1886,7 +1974,7 @@ const Language_s language_korean = {
                 },
                 {
                     "\uE004 Go to splashes",
-                    "\uE005 Scan QR code"
+                    "\uE005 Browse online"
                 },
                 {
                     "Exit",
@@ -1907,7 +1995,7 @@ const Language_s language_korean = {
                 },
                 {
                     "\uE004 Go to badges",
-                    "\uE005 Scan QR code"
+                    "\uE005 Browse online"
                 },
                 {
                     "Exit",
@@ -1928,7 +2016,7 @@ const Language_s language_korean = {
                 },
                 {
                     "\uE004 Go to themes",
-                    "\uE005 Scan QR code"
+                    "\uE005 Browse online"
                 },
                 {
                     "Exit",
@@ -2015,7 +2103,7 @@ const Language_s language_korean = {
                     "\uE07A Reload icons"
                 },
                 {
-                    "\uE07B Browse TP",
+                    NULL,
                     NULL
                 },
                 {
@@ -2050,6 +2138,28 @@ const Language_s language_korean = {
             }
         }
     },
+    .browse_instructions =
+    {
+        .info_line = "\uE001 Leave browse menu",
+        .instructions = {
+            {
+                "\uE079 Browse TP",
+                "\uE005 Scan QR code"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "Exit",
+                NULL
+            }
+        }
+    },
     .camera = 
     {
         .quit = "Press \uE005 To Quit",
@@ -2066,7 +2176,7 @@ const Language_s language_korean = {
         .badge_mode = "Badge mode",
         .no_themes = "No theme found",
         .no_splashes = "No splash found",
-        .qr_download = "Press \uE005 to dl from QR",
+        .browse_online = "Press \uE005 to browse online",
         .switch_splashes = "Or \uE004 to go to splashes",
         .switch_themes = "Or \uE004 to go to themes",
         .switch_badges = "Or \uE004 to go to badges",
@@ -2347,7 +2457,7 @@ const Language_s language_SChinese = {
                 },
                 {
                     "\uE004 选择开机图画",
-                    "\uE005 扫描QR码"
+                    "\uE005 在线浏览"
                 },
                 {
                     "退出",
@@ -2368,7 +2478,7 @@ const Language_s language_SChinese = {
                 },
                 {
                     "\uE004 选择徽章",
-                    "\uE005 扫描QR码"
+                    "\uE005 在线浏览"
                 },
                 {
                     "退出",
@@ -2389,7 +2499,7 @@ const Language_s language_SChinese = {
                 },
                 {
                     "\uE004 选择主题",
-                    "\uE005 扫描QR码"
+                    "\uE005 在线浏览"
                 },
                 {
                     "退出",
@@ -2476,7 +2586,7 @@ const Language_s language_SChinese = {
                     "\uE07A 重新加载损坏图标"
                 },
                 {
-                    "\uE07B 浏览ThemePlaza",
+                    NULL,
                     NULL
                 },
                 {
@@ -2511,6 +2621,28 @@ const Language_s language_SChinese = {
             }
         }
     },
+    .browse_instructions =
+    {
+        .info_line = "\uE001 退出浏览菜单",
+        .instructions = {
+            {
+                "\uE079 浏览ThemePlaza",
+                "\uE005 扫描QR码"
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                NULL,
+                NULL
+            },
+            {
+                "退出",
+                NULL
+            }
+        }
+    },
     .camera = 
     {
         .quit = "按 \uE005 退出",
@@ -2527,7 +2659,7 @@ const Language_s language_SChinese = {
         .badge_mode = "徽章",
         .no_themes = "未发现主题",
         .no_splashes = "未发现开机图画",
-        .qr_download = "按 \uE005 从QR码下载",
+        .browse_online = "按 \uE005 在线浏览",
         .switch_splashes = "按 \uE004 选择开机图画",
         .switch_themes = "按 \uE004 查看主题",
         .switch_badges = "按 \uE004 查看徽章",

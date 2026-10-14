@@ -105,7 +105,7 @@ typedef enum {
     TEXT_NO_THEME_FOUND,
     TEXT_NO_SPLASH_FOUND,
 
-    TEXT_DOWNLOAD_FROM_QR,
+    TEXT_BROWSE_ONLINE,
 
     TEXT_SWITCH_TO_SPLASHES,
     TEXT_SWITCH_TO_THEMES,
@@ -169,8 +169,7 @@ enum {
 
     // list: top bar
     TOOLBAR_LIST_MENU_X = 2,
-    TOOLBAR_LIST_UNINSTALL_X = 320 - 96,
-    TOOLBAR_LIST_QR_X = 320 - 72,
+    TOOLBAR_LIST_UNINSTALL_X = 320 - 72,
     TOOLBAR_LIST_BROWSE_X = 320 - 48,
     TOOLBAR_LIST_MODE_X = 320 - 24,
     // list: bottom bar
@@ -179,7 +178,6 @@ enum {
     TOOLBAR_LIST_SHUFFLE_X = 50,
 
     // empty list and badge mode: top bar
-    TOOLBAR_EMPTY_QR_X = 320 - 96,
     TOOLBAR_EMPTY_BROWSE_X = 320 - 72,
     TOOLBAR_EMPTY_EXIT_X = 320 - 48,
     TOOLBAR_EMPTY_MODE_X = 320 - 24,
@@ -205,6 +203,9 @@ enum {
     TOOLBAR_EXTRA_EXIT_X = 2,
     TOOLBAR_EXTRA_VERSION_X = 30,
 
+    // browse menu: top bar
+    TOOLBAR_BROWSE_BACK_X = 2,
+
     // remote browser: top bar
     TOOLBAR_REMOTE_BACK_X = 2,
     TOOLBAR_REMOTE_SEARCH_X = 26,
@@ -214,6 +215,19 @@ enum {
     // remote browser: bottom bar
     TOOLBAR_REMOTE_PREVIEW_X = 2,
     TOOLBAR_REMOTE_DOWNLOAD_X = 26,
+};
+
+// browse menu: the QR button above the ThemePlaza card, both centered on the bottom screen
+enum {
+    BROWSE_QR_BUTTON_WIDTH = 96,
+    BROWSE_QR_BUTTON_HEIGHT = 32,
+    BROWSE_QR_BUTTON_X = (320 - BROWSE_QR_BUTTON_WIDTH) / 2,
+    BROWSE_QR_BUTTON_Y = 48,
+
+    BROWSE_THEMEPLAZA_CARD_WIDTH = 144,
+    BROWSE_THEMEPLAZA_CARD_HEIGHT = 96,
+    BROWSE_THEMEPLAZA_CARD_X = (320 - BROWSE_THEMEPLAZA_CARD_WIDTH) / 2,
+    BROWSE_THEMEPLAZA_CARD_Y = 96,
 };
 
 // badge mode: install button in the middle of the bottom screen

@@ -489,6 +489,8 @@ int main(void)
         {
             instructions = language.extra_instructions[extra_index];
         }
+        if(draw_mode == DRAW_MODE_BROWSE)
+            instructions = language.browse_instructions;
 
         if(preview_mode)
         {
@@ -527,95 +529,35 @@ int main(void)
 
         if(kDown & KEY_START) quit = true;
 
-        if(current_mode == MODE_BADGES)
+        if(draw_mode == DRAW_MODE_BROWSE)
         {
-            bool install = kDown & KEY_A;
-            if (kDown & KEY_R)
-            {
-                goto enable_qr;
-            } else if (kDown & KEY_L)
-            {
-                goto switch_mode;
-            } else if (kDown & KEY_TOUCH)
+            bool scan_qr = kDown & KEY_R;
+            bool browse_themeplaza = kDown & KEY_DUP;
+            bool leave = kDown & KEY_B;
+            if(kDown & KEY_TOUCH)
             {
                 touchPosition touch = {0};
                 hidTouchRead(&touch);
 
                 u16 x = touch.px;
                 u16 y = touch.py;
-                if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
+                if(toolbar_hit_rect(x, y, BROWSE_QR_BUTTON_X, BROWSE_QR_BUTTON_Y, BROWSE_QR_BUTTON_WIDTH, BROWSE_QR_BUTTON_HEIGHT))
                 {
-                    goto switch_mode;
-                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
+                    scan_qr = true;
+                } else if(toolbar_hit_rect(x, y, BROWSE_THEMEPLAZA_CARD_X, BROWSE_THEMEPLAZA_CARD_Y, BROWSE_THEMEPLAZA_CARD_WIDTH, BROWSE_THEMEPLAZA_CARD_HEIGHT))
                 {
-                    quit = true;
-                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
+                    browse_themeplaza = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_BROWSE_BACK_X, TOOLBAR_TOP_Y))
                 {
-                    goto browse_themeplaza;
-                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y))
-                {
-                    goto enable_qr;
-                } else if(toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
-                {
-                    install = true;
+                    leave = true;
                 }
             }
 
-            if(install)
-            {
-                draw_install(INSTALL_BADGES);
-                install_badges();
-            }
-            continue;
-        }
-        else if(current_list->entries_count == 0)
-        {
-            if (kDown & KEY_R)
-            {
-                goto enable_qr;
-            } else if (kDown & KEY_L)
-            {
-                goto switch_mode;
-            } else if (kDown & KEY_TOUCH)
-            {
-                touchPosition touch = {0};
-                hidTouchRead(&touch);
+            if(scan_qr || browse_themeplaza || leave)
+                draw_mode = DRAW_MODE_LIST;
 
-                u16 x = touch.px;
-                u16 y = touch.py;
-                if (y < 24)
-                {
-                    if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
-                    {
-                        goto switch_mode;
-                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
-                    {
-                        quit = true;
-                        continue;
-                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
-                    {
-                        goto browse_themeplaza;
-                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_QR_X, TOOLBAR_TOP_Y))
-                    {
-                        goto enable_qr;
-                    }
-                }
-                // the list's own buttons aren't shown here, don't let the tap reach them
-                continue;
-            }
-        }
-        else if(!install_mode && !extra_mode)
-        {
-            if(!preview_mode && kDown & KEY_L) //toggle between splashes and themes
+            if(scan_qr)
             {
-                switch_mode:
-                current_mode++;
-                current_mode %= MODE_AMOUNT;
-                continue;
-            }
-            else if(!preview_mode && kDown & KEY_R) //toggle QR mode
-            {
-                enable_qr:
                 draw_base_interface();
                 draw_text_center(GFX_TOP, 100, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_BACKGROUND], language.main.loading_qr);
                 end_frame();
@@ -643,7 +585,102 @@ int main(void)
                     else
                         throw_error(language.main.camera_broke, ERROR_LEVEL_WARNING);
                 }
+            }
+            else if(browse_themeplaza)
+            {
+                if(themeplaza_browser((RemoteMode) current_mode))
+                {
+                    current_mode = MODE_THEMES;
+                    reload_lists();
+                }
+            }
+            continue;
+        }
 
+        if(current_mode == MODE_BADGES)
+        {
+            bool install = kDown & KEY_A;
+            if (kDown & KEY_R)
+            {
+                draw_mode = DRAW_MODE_BROWSE;
+            } else if (kDown & KEY_L)
+            {
+                goto switch_mode;
+            } else if (kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
+                {
+                    goto switch_mode;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
+                {
+                    quit = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
+                {
+                    draw_mode = DRAW_MODE_BROWSE;
+                } else if(toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
+                {
+                    install = true;
+                }
+            }
+
+            if(install)
+            {
+                draw_install(INSTALL_BADGES);
+                install_badges();
+            }
+            continue;
+        }
+        else if(current_list->entries_count == 0)
+        {
+            if (kDown & KEY_R)
+            {
+                draw_mode = DRAW_MODE_BROWSE;
+                continue;
+            } else if (kDown & KEY_L)
+            {
+                goto switch_mode;
+            } else if (kDown & KEY_TOUCH)
+            {
+                touchPosition touch = {0};
+                hidTouchRead(&touch);
+
+                u16 x = touch.px;
+                u16 y = touch.py;
+                if (y < 24)
+                {
+                    if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
+                    {
+                        goto switch_mode;
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
+                    {
+                        quit = true;
+                        continue;
+                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
+                    {
+                        draw_mode = DRAW_MODE_BROWSE;
+                    }
+                }
+                // the list's own buttons aren't shown here, don't let the tap reach them
+                continue;
+            }
+        }
+        else if(!install_mode && !extra_mode)
+        {
+            if(!preview_mode && kDown & KEY_L) //toggle between splashes and themes
+            {
+                switch_mode:
+                current_mode++;
+                current_mode %= MODE_AMOUNT;
+                continue;
+            }
+            else if(!preview_mode && kDown & KEY_R)
+            {
+                draw_mode = DRAW_MODE_BROWSE;
                 continue;
             }
             else if(kDown & KEY_Y && current_list->entries != NULL) //toggle preview mode
@@ -944,18 +981,6 @@ int main(void)
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                 }
-                else if(kDown & KEY_DLEFT)
-                {
-                    browse_themeplaza:
-                    if(themeplaza_browser((RemoteMode) current_mode))
-                    {
-                        current_mode = MODE_THEMES;
-                        reload_lists();
-                    }
-                    extra_mode = false;
-                    draw_mode = DRAW_MODE_LIST;
-                    extra_index = 1;
-                }
                 else if(kDown & KEY_DUP)
                 {
                     jump:
@@ -1196,13 +1221,9 @@ int main(void)
                             clear_installed_entries(current_list);
                         }
                     }
-                    else if(toolbar_hit(x, y, TOOLBAR_LIST_QR_X, TOOLBAR_TOP_Y))
-                    {
-                        goto enable_qr;
-                    }
                     else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
                     {
-                        goto browse_themeplaza;
+                        draw_mode = DRAW_MODE_BROWSE;
                     }
                     else if(toolbar_hit(x, y, TOOLBAR_LIST_MODE_X, TOOLBAR_TOP_Y))
                     {
