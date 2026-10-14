@@ -653,6 +653,20 @@ void draw_grid_interface(Entry_List_s * list, Instructions_s instructions, int e
     draw_c2d_text(176, 219, 0.5, 0.6, 0.6, colors[COLOR_WHITE_ACCENT], &text[TEXT_PAGE]);
 }
 
+static void draw_extra_toolbars(bool has_list, C2D_ImageTint tint)
+{
+    draw_image_tint(sprites_back_idx, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y, tint);
+    if(has_list)
+    {
+        draw_image_tint(sprites_sort_idx, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y, tint);
+        draw_image_tint(sprites_reload_idx, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y, tint);
+    }
+    draw_image_tint(sprites_dump_idx, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y, tint);
+
+    draw_image_tint(sprites_exit_idx, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y, tint);
+    draw_c2d_text(TOOLBAR_EXTRA_VERSION_X, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_VERSION]);
+}
+
 static void draw_menu_button(float x, float y, float width, float height)
 {
     C2D_DrawRectSolid(x - 2, y - 2, 0.5f, width + 4, height + 4, colors[COLOR_ACCENT]);
@@ -712,9 +726,15 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
-        draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
-        draw_text(TOOLBAR_EMPTY_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
+        if(draw_mode == DRAW_MODE_EXTRA)
+        {
+            draw_extra_toolbars(false, accent_tint);
+            return;
+        }
+
+        draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
 
         C2D_DrawRectSolid(BADGE_INSTALL_BUTTON_X - 2, BADGE_INSTALL_BUTTON_Y - 2, 0.55f, BADGE_INSTALL_BUTTON_WIDTH + 4, BADGE_INSTALL_BUTTON_HEIGHT + 4, colors[COLOR_CURSOR]);
         C2D_DrawRectSolid(BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, 0.56f, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT, colors[COLOR_ACCENT]);
@@ -732,6 +752,14 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
         };
 
         draw_c2d_text_center(GFX_TOP, 80, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], mode_found_string[current_mode]);
+        if(draw_mode == DRAW_MODE_EXTRA)
+        {
+            draw_instructions(instructions);
+            set_screen(bottom);
+            draw_extra_toolbars(false, accent_tint);
+            return;
+        }
+
         draw_c2d_text_center(GFX_TOP, 110, 0.5f, 0.7f, 0.7f, colors[COLOR_YELLOW], &text[TEXT_BROWSE_ONLINE]);
 
         C2D_Text * mode_switch_string[MODE_AMOUNT] = {
@@ -752,10 +780,9 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
 
         set_screen(bottom);
 
-        draw_image_tint(sprites_browse_idx, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
-        draw_image_tint(sprites_exit_idx, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y, accent_tint);
-
-        draw_text(TOOLBAR_EMPTY_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
+        draw_image_tint(sprites_menu_idx, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_image_tint(sprites_browse_idx, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y, accent_tint);
+        draw_text(TOOLBAR_LIST_MODE_X + 2.5, -3, 0.6, 1.0f, 0.9f, colors[COLOR_WHITE_ACCENT], mode_switch_char[current_mode]);
 
         return;
     }
@@ -809,13 +836,7 @@ void draw_interface(Entry_List_s * list, Instructions_s instructions, DrawMode d
             draw_image_tint(sprites_back_idx, TOOLBAR_INSTALL_BACK_X, TOOLBAR_TOP_Y, accent_tint);
         } else if (draw_mode == DRAW_MODE_EXTRA)
         {
-            draw_image_tint(sprites_back_idx, TOOLBAR_EXTRA_BACK_X, TOOLBAR_TOP_Y, accent_tint);
-            draw_image_tint(sprites_sort_idx, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y, accent_tint);
-            draw_image_tint(sprites_reload_idx, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y, accent_tint);
-            draw_image_tint(sprites_dump_idx, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y, accent_tint);
-
-            draw_image_tint(sprites_exit_idx, TOOLBAR_EXTRA_EXIT_X, TOOLBAR_BOTTOM_Y, accent_tint);
-            draw_c2d_text(TOOLBAR_EXTRA_VERSION_X, 219, 0.5f, 0.6f, 0.6f, colors[COLOR_WHITE_ACCENT], &text[TEXT_VERSION]);
+            draw_extra_toolbars(true, accent_tint);
         }
     }
 

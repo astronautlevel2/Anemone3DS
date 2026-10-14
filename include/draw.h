@@ -167,7 +167,7 @@ enum {
     TOOLBAR_TOP_Y = 0,
     TOOLBAR_BOTTOM_Y = 240 - TOOLBAR_BUTTON_SIZE,
 
-    // list: top bar
+    // list (also when it's empty) and badge mode: top bar
     TOOLBAR_LIST_MENU_X = 2,
     TOOLBAR_LIST_UNINSTALL_X = 320 - 72,
     TOOLBAR_LIST_BROWSE_X = 320 - 48,
@@ -176,11 +176,6 @@ enum {
     TOOLBAR_LIST_PREVIEW_X = 2,
     TOOLBAR_LIST_INSTALL_X = 26,
     TOOLBAR_LIST_SHUFFLE_X = 50,
-
-    // empty list and badge mode: top bar
-    TOOLBAR_EMPTY_BROWSE_X = 320 - 72,
-    TOOLBAR_EMPTY_EXIT_X = 320 - 48,
-    TOOLBAR_EMPTY_MODE_X = 320 - 24,
 
     // theme install options: top bar
     TOOLBAR_INSTALL_BACK_X = 2,
@@ -194,7 +189,7 @@ enum {
     TOOLBAR_SPLASH_INSTALL_BOTTOM_X = 320 - 48,
     TOOLBAR_SPLASH_INSTALL_NORMAL_X = 320 - 24,
 
-    // extra menu: top bar
+    // extra menu: top bar (sorting and reloading only with a list)
     TOOLBAR_EXTRA_BACK_X = 2,
     TOOLBAR_EXTRA_SORT_X = 320 - 72,
     TOOLBAR_EXTRA_RELOAD_X = 320 - 48,

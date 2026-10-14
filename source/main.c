@@ -479,6 +479,8 @@ int main(void)
             load_list(current_mode);
 
         current_list = &lists[current_mode];
+        // badge mode has no list, and an empty list has no entries to act on
+        const bool no_list = current_mode == MODE_BADGES || current_list->entries_count == 0;
 
         Instructions_s instructions = language.normal_instructions[current_mode];
         if(current_mode == MODE_SPLASHES && !list_has_installed_entries(current_list))
@@ -488,6 +490,13 @@ int main(void)
         if(extra_mode)
         {
             instructions = language.extra_instructions[extra_index];
+            if(no_list && extra_index == 1)
+            {
+                // jumping, reloading icons and sorting need a list
+                instructions.instructions[0][0] = NULL;
+                instructions.instructions[0][1] = NULL;
+                instructions.instructions[2][0] = NULL;
+            }
         }
         if(draw_mode == DRAW_MODE_BROWSE)
             instructions = language.browse_instructions;
@@ -597,9 +606,10 @@ int main(void)
             continue;
         }
 
-        if(current_mode == MODE_BADGES)
+        if(no_list && !extra_mode)
         {
-            bool install = kDown & KEY_A;
+            bool install = current_mode == MODE_BADGES && (kDown & KEY_A);
+            bool open_menu = kDown & KEY_B;
             if (kDown & KEY_R)
             {
                 draw_mode = DRAW_MODE_BROWSE;
@@ -613,61 +623,33 @@ int main(void)
 
                 u16 x = touch.px;
                 u16 y = touch.py;
-                if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
+                if(toolbar_hit(x, y, TOOLBAR_LIST_MODE_X, TOOLBAR_TOP_Y))
                 {
                     goto switch_mode;
-                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
+                } else if(toolbar_hit(x, y, TOOLBAR_LIST_MENU_X, TOOLBAR_TOP_Y))
                 {
-                    quit = true;
-                } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
+                    open_menu = true;
+                } else if(toolbar_hit(x, y, TOOLBAR_LIST_BROWSE_X, TOOLBAR_TOP_Y))
                 {
                     draw_mode = DRAW_MODE_BROWSE;
-                } else if(toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
+                } else if(current_mode == MODE_BADGES && toolbar_hit_rect(x, y, BADGE_INSTALL_BUTTON_X, BADGE_INSTALL_BUTTON_Y, BADGE_INSTALL_BUTTON_WIDTH, BADGE_INSTALL_BUTTON_HEIGHT))
                 {
                     install = true;
                 }
             }
 
-            if(install)
+            if(open_menu)
+            {
+                extra_mode = true;
+                draw_mode = DRAW_MODE_EXTRA;
+            }
+            else if(install)
             {
                 draw_install(INSTALL_BADGES);
                 install_badges();
             }
+            // the list's own buttons and keys don't apply here
             continue;
-        }
-        else if(current_list->entries_count == 0)
-        {
-            if (kDown & KEY_R)
-            {
-                draw_mode = DRAW_MODE_BROWSE;
-                continue;
-            } else if (kDown & KEY_L)
-            {
-                goto switch_mode;
-            } else if (kDown & KEY_TOUCH)
-            {
-                touchPosition touch = {0};
-                hidTouchRead(&touch);
-
-                u16 x = touch.px;
-                u16 y = touch.py;
-                if (y < 24)
-                {
-                    if(toolbar_hit(x, y, TOOLBAR_EMPTY_MODE_X, TOOLBAR_TOP_Y))
-                    {
-                        goto switch_mode;
-                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_EXIT_X, TOOLBAR_TOP_Y))
-                    {
-                        quit = true;
-                        continue;
-                    } else if(toolbar_hit(x, y, TOOLBAR_EMPTY_BROWSE_X, TOOLBAR_TOP_Y))
-                    {
-                        draw_mode = DRAW_MODE_BROWSE;
-                    }
-                }
-                // the list's own buttons aren't shown here, don't let the tap reach them
-                continue;
-            }
         }
         else if(!install_mode && !extra_mode)
         {
@@ -727,7 +709,7 @@ int main(void)
         int selected_entry = current_list->selected_entry;
         Entry_s * current_entry = &current_list->entries[selected_entry];
 
-        if(preview_mode || current_list->entries == NULL)
+        if(preview_mode || (current_list->entries == NULL && !extra_mode))
             goto touch;
 
 
@@ -939,13 +921,13 @@ int main(void)
                         if (toolbar_hit(x, y, TOOLBAR_EXTRA_DUMP_X, TOOLBAR_TOP_Y))
                         {
                             goto dump_single;
-                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y))
+                        } else if (!no_list && toolbar_hit(x, y, TOOLBAR_EXTRA_RELOAD_X, TOOLBAR_TOP_Y))
                         {
                             load_icons_first(current_list, false);
                             extra_mode = false;
                             draw_mode = DRAW_MODE_LIST;
                             extra_index = 1;
-                        } else if (toolbar_hit(x, y, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y))
+                        } else if (!no_list && toolbar_hit(x, y, TOOLBAR_EXTRA_SORT_X, TOOLBAR_TOP_Y))
                         {
                             switch (current_list->current_sort)
                             {
@@ -981,7 +963,7 @@ int main(void)
                     extra_mode = false;
                     draw_mode = DRAW_MODE_LIST;
                 }
-                else if(kDown & KEY_DUP)
+                else if(!no_list && kDown & KEY_DUP)
                 {
                     jump:
                     jump_menu(current_list);
@@ -990,7 +972,7 @@ int main(void)
                     extra_index = 1;
 
                 }
-                else if(kDown & KEY_DDOWN)
+                else if(!no_list && kDown & KEY_DDOWN)
                 {
                     load_icons_first(current_list, false);
                     extra_mode = false;
@@ -1001,7 +983,7 @@ int main(void)
                 {
                     extra_index = 2;
                 }
-                else if(kDown & KEY_L)
+                else if(!no_list && kDown & KEY_L)
                 {
                     extra_index = 0;
                 }

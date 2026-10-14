@@ -77,7 +77,7 @@ const Language_s language_english = {
             .instructions = {
                 {
                     "\uE000 Install badges",
-                    NULL
+                    "\uE001 More options"
                 },
                 {
                     NULL,
@@ -559,7 +559,7 @@ const Language_s language_spanish = {
             .instructions = {
                 {
                     "\uE000 Instalar insignias",
-                    NULL
+                    "\uE001 Más opciones"
                 },
                 {
                     NULL,
@@ -1042,7 +1042,7 @@ const Language_s language_french = {
             .instructions = {
                 {
                     "\uE000 Installer les badges",
-                    NULL
+                    "\uE001 Plus d'options"
                 },
                 {
                     NULL,
@@ -1524,7 +1524,7 @@ const Language_s language_portuguese = {
             .instructions = {
                 {
                     "\uE000 Instalar Insígnias",
-                    NULL
+                    "\uE001 Mais opções"
                 },
                 {
                     NULL,
@@ -2008,7 +2008,7 @@ const Language_s language_korean = {
             .instructions = {
                 {
                     "\uE000 Install badges",
-                    NULL
+                    "\uE001 More options"
                 },
                 {
                     NULL,
@@ -2491,7 +2491,7 @@ const Language_s language_SChinese = {
             .instructions = {
                 {
                     "\uE000 安装徽章",
-                    NULL
+                    "\uE001 更多选项"
                 },
                 {
                     NULL,
